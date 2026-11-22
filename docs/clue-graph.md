@@ -132,16 +132,16 @@ and every turn play through a rule-free world view, without the story checks. Ea
 ## Accusation
 
 The engine decides; the narrator (`graph_accusation`) only says who was named
-and which held clues were cited. Naming the culprit wins with the confession
+and which held clues they cited. Naming the culprit wins with the confession
 held (their gated true statements the culprit conclusion names), or with that
-conclusion holding on clues not taken back and one of them cited. A first
-right name short of that earns one question: for a clue when support is held,
-else pointing at a lead off the confession's route; then V2's rounds: lost
+conclusion holding on clues not taken back, one cited. A first right name
+short of that earns one question, even at the limit; else V2's rounds: lost
 from the third.
 
-Until the case is resolved a round (`graph_accusation_round`) gets only the
-people and the notebook. The closing scene (`graph_ending`), win or lose,
-tells `truth.timeline`, the culprit conclusion and `truth.motive`.
+Until then a round (`graph_accusation_round`) gets only the people, the
+notebook and, unless support is held, a lead off the confession's route,
+never whether the name was right. The closing scene (`graph_ending`), win or
+lose, tells `truth.timeline`, the culprit conclusion and `truth.motive`.
 
 ## The narrator's judgement
 

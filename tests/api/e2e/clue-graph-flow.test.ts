@@ -6,7 +6,7 @@
 import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import { clueGraphCaseId, GameTurnResponseSchema, validateClueGraph } from "@my2/shared";
-import { API_URL, sendLine, setupApiTestAuth } from "../integration/helpers";
+import { API_URL, readStoredEvents, sendLine, setupApiTestAuth } from "../integration/helpers";
 
 async function playThrough(tag: string, lines: string[], caseId = "greenhouse-prizewinner") {
   const auth = await setupApiTestAuth(tag);
@@ -32,7 +32,7 @@ async function playThrough(tag: string, lines: string[], caseId = "greenhouse-pr
     }
   }
   const narration = last?.kind === "turn" ? last.events.flatMap((event) => event.narration_parts.map((part) => part.text)).join(" ") : "";
-  return { last, clues, takenBack, narration };
+  return { last, clues, takenBack, narration, gameId };
 }
 
 const greenhouse = () =>
@@ -71,13 +71,13 @@ describe("the greenhouse clue-graph case", () => {
     for (const told of [conclusions.culprit_toby.text, truth.motive, ...truth.timeline]) expect(narration).toContain(told);
   });
 
-  // PR #310's self-play report, "The two losses": kid-7 accused Mr. Dobbs first,
-  // then named Toby with the key and his pocket, and lost. Its run output is not
-  // on disk, so the game is rebuilt from that account, holding the route the
-  // key belongs to: the glass outside, the key in the water butt, the spare-key
-  // book, Ms. Hale's key on its hook, and Mia cleared.
-  it("is won by the kid-7 self-play game that phase 1 lost", async () => {
-    const { last, clues, narration } = await playThrough("clue-graph-kid-7", [
+  // A self-play game lost when the narrator judged the accusation: kid-7 accused
+  // Mr. Dobbs first, then named Toby with the key and his pocket. Its run
+  // output is not kept, so it is rebuilt from that account, holding the route
+  // the key belongs to: the glass outside, the key in the water butt, the
+  // spare-key book, Ms. Hale's key on its hook, and Mia cleared.
+  it("is won by a game that named Toby with the key and his pocket after a wrong first name", async () => {
+    const { last, clues, narration, gameId } = await playThrough("clue-graph-kid-7", [
       "talk to Ms. Hale",
       "What about the missing key?",
       "bye",
@@ -113,6 +113,15 @@ describe("the greenhouse clue-graph case", () => {
     expect(clues).not.toContain("toby_confession");
     expect(last?.kind === "turn" && last.result).toBe("win");
     expect(narration).toContain(greenhouse().truth.motive);
+    // The engine decided it, on the key the player cited.
+    const decisions = readStoredEvents(gameId).flatMap((event) => {
+      const saved = event.payload?.clue_graph_accusation;
+      return saved ? [saved] : [];
+    });
+    expect(decisions).toEqual([
+      expect.objectContaining({ accused: "dobbs", verdict: "not_yet" }),
+      expect.objectContaining({ accused: "toby", verdict: "win", cited: expect.arrayContaining(["clue_key_in_water_butt"]) }),
+    ]);
   });
 });
 

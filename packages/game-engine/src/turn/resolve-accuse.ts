@@ -115,7 +115,8 @@ export async function resolveAccuseRound(
  * A clue-graph round (`clue-graph/accusation.ts`): the narrator reports who was
  * named and what was cited, the engine decides, and the narrator words it, as
  * a round given only what the investigator holds or as the closing scene. A
- * report naming someone or something the case does not offer fails the turn.
+ * report naming someone the case does not hold fails the turn; a cited clue
+ * the player does not hold is dropped.
  */
 async function resolveGraphAccuseRound(game: TurnGame, runtime: TurnRuntime, reasoning: string): Promise<ActionOutcome> {
   const graph = game.blueprint.clue_graph!;
@@ -136,18 +137,20 @@ async function resolveGraphAccuseRound(game: TurnGame, runtime: TurnRuntime, rea
     parse: parseGraphAccusationOutput,
   });
   const accused = report.accused_character_id;
-  const unknown = [
-    ...(accused !== null && !Object.hasOwn(graph.characters, accused) ? [accused] : []),
-    ...report.cited_clue_ids.filter((id) => !play.held.includes(id)),
-  ];
-  if (unknown.length > 0) {
-    rejectOutput(runtime, "accuse_reasoning", "Clue-graph accusation named what the case does not offer", { ids: unknown });
+  if (accused !== null && !Object.hasOwn(graph.characters, accused)) {
+    rejectOutput(runtime, "accuse_reasoning", "Clue-graph accusation named someone the case does not hold", { accused });
+  }
+  // A clue the player does not hold cannot be cited: it is dropped, as a restated reveal is.
+  const cited = report.cited_clue_ids.filter((id) => play.held.includes(id));
+  const notHeld = report.cited_clue_ids.filter((id) => !play.held.includes(id));
+  if (notHeld.length > 0) {
+    runtime.logger.log("accusation.cited_not_held", { game_id: game.game_id, clue_ids: notHeld });
   }
 
   const saved: SavedAccusation = {
     accused,
-    cited: report.cited_clue_ids,
-    verdict: decideAccusation(graph, play, game.history, { accused, cited: report.cited_clue_ids }),
+    cited,
+    verdict: decideAccusation(graph, play, game.history, { accused, cited }),
   };
   const ended = resolves(saved.verdict);
   const role = ended ? "graph_ending" : "graph_accusation_round";

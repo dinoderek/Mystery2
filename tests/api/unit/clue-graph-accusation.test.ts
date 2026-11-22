@@ -140,6 +140,7 @@ describe("what the clue-graph accusation narrator is given", () => {
     const given = context.graph_accusation_context!;
     expect(given.held.map((entry) => [entry.id, entry.text])).toEqual(held.map((id) => [id, expect.stringMatching(/^Saved: /)]));
     expect("ending" in given).toBe(false);
+    expect("verdict" in given).toBe(false);
     // Only the accusation so far: the investigation's narration stays in the notebook.
     expect(context.conversation_history.map((entry) => entry.event_type)).toEqual(["accuse_start"]);
     const seen = `${prompt}\n${JSON.stringify(context)}`;
@@ -147,12 +148,20 @@ describe("what the clue-graph accusation narrator is given", () => {
     expect(seen).not.toMatch(/"(truth|rule|culprit|timeline|motive)"/);
   });
 
+  it("reads a right name and a wrong one the same before the case is resolved", async () => {
+    const question = await request("graph_accusation_round", "question");
+    const notYet = await request("graph_accusation_round", "not_yet");
+    expect(question.prompt).toBe(notYet.prompt);
+    expect(question.context).toEqual(notYet.context);
+    // Nothing held supports the culprit yet, so the round points at a lead.
+    expect(question.context.graph_accusation_context).toMatchObject({ lead: expect.stringMatching(/^You have not talked to /) });
+  });
+
   it.each(["win", "lose"] as const)("gives the closing scene of a %s the timeline, the culprit conclusion and the motive", async (verdict) => {
     const { role, context } = await request("graph_ending", verdict);
     expect(role).toBe("graph_ending");
     expect(context.role_name).toBe("graph_ending");
     expect(context.graph_accusation_context).toMatchObject({
-      verdict,
       ending: {
         outcome: verdict,
         culprit: "Toby",

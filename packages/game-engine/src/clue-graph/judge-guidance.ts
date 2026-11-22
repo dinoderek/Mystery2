@@ -33,9 +33,7 @@ export const GRAPH_ACCUSATION_ROUND_PROMPT = `You are the narrator of the accusa
 The investigator says: "{{player_input}}"
 
 The game has judged it, and the case is not solved yet. You know only what the investigator knows: graph_accusation_context.people, and held, their notebook, in which a line marked taken_back no longer stands. Name no clue, fact, secret or part of what happened that is not in held, and never say whether the person they named did it.
-graph_accusation_context.verdict is what the game decided:
-- "question": tell them warmly that it is not proven yet. When lead is set, point them at it in your own words, naming the same person or place, as something to think about. Then ask which of their clues shows who did it.
-- "not_yet": tell them warmly that it is not proven yet, and ask them to try again: who did it, and which clue shows it.
+Tell them warmly that it is not proven yet. When graph_accusation_context.lead is set, point them at it in your own words, naming the same person or place, as something to think about. Then ask them to try again: who did it, and which of their clues shows it.
 End with one short, direct question.
 
 Return JSON:

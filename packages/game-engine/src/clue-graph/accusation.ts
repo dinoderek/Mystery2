@@ -21,8 +21,9 @@ export interface AccusationReport {
 
 /**
  * What the engine decided: `win`; `question`, the one question a right name
- * without support earns; `not_yet`, any other failing round; `lose`, a
- * failing round at the limit.
+ * without support earns, a round even at the limit; `not_yet`, any other
+ * failing round; `lose`, a failing round at the limit. The narrator words
+ * `question` and `not_yet` alike.
  */
 export type AccusationVerdict = "win" | "question" | "not_yet" | "lose";
 
@@ -163,10 +164,14 @@ export interface GraphEnding {
   motive: string;
 }
 
-/** What the narrator words a round from: the engine's decision, and the ending once resolved. */
+/**
+ * What the narrator words a round from. Before the case is resolved it never
+ * says what the engine decided, so a right name and a wrong one read the same:
+ * the case is not proven, with a lead to think about unless support is held.
+ * Once resolved, it carries the ending.
+ */
 export interface GraphVerdictContext extends GraphAccusationContext {
-  verdict: AccusationVerdict;
-  /** On `question`: the lead it points at, or null when support is held and it asks for it. */
+  /** Before resolution: the lead to point at, or null. */
   lead?: string | null;
   /** Set only once the case is resolved. */
   ending?: GraphEnding;
@@ -185,14 +190,11 @@ export function verdictContext(
   verdict: AccusationVerdict,
 ): GraphVerdictContext {
   const base = accusationContext(graph, play);
-  // With support held the question asks for it; without, it points at a lead.
-  if (verdict === "question")
-    return { ...base, verdict, lead: supportingClues(graph, play).length > 0 ? null : questionLead(graph, play) };
-  if (verdict === "not_yet") return { ...base, verdict };
+  if (!resolves(verdict))
+    return { ...base, lead: supportingClues(graph, play).length > 0 ? null : questionLead(graph, play) };
   const { conclusion, character } = culpritOf(graph);
   return {
     ...base,
-    verdict,
     ending: {
       outcome: verdict,
       culprit: graph.characters[character].name,

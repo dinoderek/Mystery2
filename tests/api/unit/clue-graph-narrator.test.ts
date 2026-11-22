@@ -222,7 +222,7 @@ describe("the clue-graph prompts", () => {
     ["graph_search.known", { role: "graph_search", search_query: "the ladder", conversation_history: met }],
     ["graph_search.judge", { role: "graph_search", search_query: "the muddy bits", conversation_history: met }],
     ["graph_accusation", { role: "graph_accusation", session: accusing, player_input: "It was Toby.", conversation_history: met }],
-    ["graph_accusation_round.question", { role: "graph_accusation_round", session: accusing, player_input: "It was Toby.", verdict: "question", conversation_history: met }],
+    ["graph_accusation_round", { role: "graph_accusation_round", session: accusing, player_input: "It was Toby.", verdict: "question", conversation_history: met }],
     ["graph_ending.lose", { role: "graph_ending", session: accusing, player_input: "It was Mr. Thorne.", verdict: "lose", conversation_history: met }],
   ] as const)("%s is as recorded", async (name, input) => {
     const request = await buildRoleRequest({

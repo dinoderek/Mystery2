@@ -34,7 +34,6 @@ import type {
 import {
   buildAccusationJudgeContext,
   buildAccusationStartContext,
-  buildGraphAccusationAIContext,
   buildGraphSearchAIContext,
   buildGraphTalkAIContext,
   buildGraphVerdictAIContext,
@@ -141,12 +140,11 @@ function reconstructContext(roleName: string, ctx: ReconstructInput): AIContext 
     if (roleName === "search") {
       return buildGraphSearchAIContext({ ...common, location_id: locationId, search_query: ctx.searchQuery ?? null });
     }
-    // A round is worded from the engine's saved decision; a round saved before
-    // there was one rebuilds what its judge read.
+    // A round is worded from the engine's saved decision. One saved before the
+    // engine decided was judged on the full blueprint, which is not rebuilt.
     if (roleName === "accusation_judge") {
-      const round = { ...accuseCommon, player_input: playerInput ?? "" };
-      if (!ctx.verdict) return buildGraphAccusationAIContext(round);
-      return buildGraphVerdictAIContext({ ...round, verdict: ctx.verdict });
+      if (!ctx.verdict) return null;
+      return buildGraphVerdictAIContext({ ...accuseCommon, player_input: playerInput ?? "", verdict: ctx.verdict });
     }
   }
 

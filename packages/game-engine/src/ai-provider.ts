@@ -208,9 +208,7 @@ function mockGraphVerdict(context: GraphVerdictContext): string {
     const opening = outcome === "win" ? "You solved it!" : "The case ends here. This time the answer got away.";
     return `[Mock] ${opening} ${culprit} did it. ${what_happened} ${timeline.join(" ")} Why: ${motive}`;
   }
-  if (context.verdict === "question")
-    return `[Mock] Not proven yet. ${context.lead ? `Think about this: ${context.lead} ` : ""}Which of your clues shows who did it?`;
-  return "[Mock] Not proven yet. Who did it, and which clue shows it?";
+  return `[Mock] Not proven yet. ${context.lead ? `Think about this: ${context.lead} ` : ""}Who did it, and which of your clues shows it?`;
 }
 
 /** The mock's notebook line for a clue: its wording, marked as the narrator's, so a test can tell it from the fact. */
@@ -643,7 +641,7 @@ class MockAIProvider implements AIProvider {
       case "graph_accusation_round":
       case "graph_ending": {
         const verdict = context.graph_accusation_context as GraphVerdictContext | undefined;
-        if (!verdict?.verdict) throw new Error(`Mock AI ${role} requires graph_accusation_context with a verdict`);
+        if (!verdict) throw new Error(`Mock AI ${role} requires graph_accusation_context`);
         return { narration: mockGraphVerdict(verdict) };
       }
       case "search": {

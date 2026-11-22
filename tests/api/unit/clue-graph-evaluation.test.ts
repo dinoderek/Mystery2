@@ -119,7 +119,7 @@ describe("a clue-graph game, extracted and judged", () => {
     // An accusation turn is rebuilt as the role that wrote it: the closing scene holds the truth.
     const ending = reconstruction.turns.at(-1);
     expect(ending?.role_name).toBe("graph_ending");
-    expect(ending?.reconstructed_context?.graph_accusation_context).toMatchObject({ verdict: "win", ending: { outcome: "win" } });
+    expect(ending?.reconstructed_context?.graph_accusation_context).toMatchObject({ ending: { outcome: "win" } });
   });
 
   it("accounts a played game's clues by the engine's rules, and flags one that was not offered", async () => {

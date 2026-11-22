@@ -497,17 +497,13 @@ describe("clue-graph sessions and turns", () => {
     expect(found.revealed_clues.map((clue) => clue.id)).toEqual(["clue_glass_outside"]);
   });
 
-  it("asks the judge only who was named and what was cited, and fails a report of what the case does not offer", async () => {
+  it("asks the judge only who was named and what was cited, failing on someone the case does not hold", async () => {
     const opened = await start(clueGraphCaseId("greenhouse-prizewinner"));
     await play(opened.game_id, "accuse");
     const events = await ctx.events.listBySession(opened.game_id);
-    for (const report of [
-      { accused_character_id: "nobody_here", cited_clue_ids: [] },
-      { accused_character_id: "toby", cited_clue_ids: ["clue_welly_prints"] },
-    ]) {
-      await expect(play(opened.game_id, "It was Toby", answering(() => report))).rejects.toBeInstanceOf(RetriableAIError);
-      expect(await ctx.events.listBySession(opened.game_id)).toEqual(events);
-    }
+    const nobody = answering(() => ({ accused_character_id: "nobody_here", cited_clue_ids: [] }));
+    await expect(play(opened.game_id, "It was Toby", nobody)).rejects.toBeInstanceOf(RetriableAIError);
+    expect(await ctx.events.listBySession(opened.game_id)).toEqual(events);
 
     const roles: string[] = [];
     const watching = (profile: Profile): AIProvider => {
@@ -517,12 +513,23 @@ describe("clue-graph sessions and turns", () => {
         return inner.generateRoleOutput(request);
       } };
     };
-    const asked = await play(opened.game_id, "It was Toby", watching);
-    expect(roles).toEqual(["graph_accusation", "graph_accusation_round"]);
+    // A clue the player does not hold, reported as cited, is dropped.
+    const citingUnheld = (profile: Profile): AIProvider => {
+      const inner = watching(profile);
+      return {
+        ...inner,
+        generateRoleOutput: async (request) =>
+          request.role === "graph_accusation"
+            ? request.parse({ accused_character_id: "toby", cited_clue_ids: ["clue_welly_prints"] })
+            : inner.generateRoleOutput(request),
+      };
+    };
+    const asked = await play(opened.game_id, "It was Toby: the welly prints", citingUnheld);
+    expect(roles).toEqual(["graph_accusation_round"]);
     expect(asked.result).toBeNull();
     expect((await ctx.events.listBySession(opened.game_id)).at(-1)?.payload).toMatchObject({
       role: "graph_accusation_round",
-      player_reasoning: "It was Toby",
+      player_reasoning: "It was Toby: the welly prints",
       judge_result: "continue",
       clue_graph_accusation: { accused: "toby", cited: [], verdict: "question" },
     });

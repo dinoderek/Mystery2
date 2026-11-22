@@ -16,9 +16,11 @@ import { AIConfigError } from "../ai-config.ts";
 import type { EngineAIProfile, EngineContext } from "../context.ts";
 import {
   asConflictResponse,
+  asRejectedResponse,
   asRetriableAIResponse,
   badRequest,
   internalError,
+  RequestRejectedError,
   RetriableAIError,
 } from "../errors.ts";
 import {
@@ -52,7 +54,14 @@ export async function handle(
     const gameId = read.data.game_id;
     const narrationLogger = withLogContext(logger, { game_id: gameId });
 
-    const session = await ctx.sessions.getById(gameId);
+    let session;
+    try {
+      session = await ctx.sessions.getById(gameId);
+    } catch (error) {
+      if (!(error instanceof RequestRejectedError)) throw error;
+      log("request.invalid", { reason: error.reason, game_id: gameId, error: error.message });
+      return asRejectedResponse(error)!;
+    }
 
     if (!session) {
       log("request.invalid", { reason: "session_not_found", game_id: gameId });

@@ -28,6 +28,7 @@
 import fs from "node:fs";
 import { buildClueGraphBlueprint } from "../../packages/shared/src/clue-graph-case.ts";
 import { validateClueGraph } from "../../packages/shared/src/clue-graph-validator.ts";
+import { isClueGraphFile } from "../../packages/shared/src/clue-graph-schema.ts";
 import { buildMsfBlueprint, validateMsfCaseFile } from "../../packages/shared/src/msf-case.ts";
 import net from "node:net";
 import os from "node:os";
@@ -158,7 +159,7 @@ function readOptions({ common, values }: ParsedArgs): PlayOptions {
 /** A blueprint by path, or by id, file name or title among the repo's. */
 function readPlayableFile(file: string): PlaytestBlueprint {
   const candidate = JSON.parse(fs.readFileSync(file, "utf8"));
-  if (candidate?.format === "clue-graph/1") return buildClueGraphBlueprint(validateClueGraph(candidate));
+  if (isClueGraphFile(candidate)) return buildClueGraphBlueprint(validateClueGraph(candidate));
   return candidate?.$format === "MSF-CASE/1" || candidate?.msf ? buildMsfBlueprint(validateMsfCaseFile(candidate.msf ?? candidate)) : candidate;
 }
 

@@ -69,7 +69,7 @@ export function notebook(graph: ClueGraphCase, play: ClueGraphPlay): NotebookEnt
     .map((id) => ({
       id,
       kind: graph.clues[id].kind,
-      text: graph.clues[id].text,
+      text: graph.clues[id].fact,
       from: fromLabel(graph, id),
       taken_back: play.retracted.includes(id),
     }));

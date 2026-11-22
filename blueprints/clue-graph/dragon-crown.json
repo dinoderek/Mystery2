@@ -1,5 +1,5 @@
 {
-  "format": "clue-graph/1",
+  "format": "clue-graph/2",
   "metadata": {
     "id": "dragon-crown",
     "title": "The Squashed Dragon Crown",
@@ -8,10 +8,13 @@
   },
   "opening": {
     "location": "hall",
-    "text": [
-      "The golden crown for today's school play, The Dragon's Birthday, has vanished from the hall!",
-      "Mrs. Abara left it on its cushion on the stage steps at ten past twelve. At a quarter to one the cushion was empty.",
-      "The play starts at two. Nina, who plays the queen, was heard wishing the play would be cancelled, and now everyone is whispering about her."
+    "facts": [
+      "The golden crown for today's school play, The Dragon's Birthday, has gone missing from the hall.",
+      "Mrs. Abara left the crown on its cushion on the stage steps at ten past twelve.",
+      "At a quarter to one the cushion was empty.",
+      "The play starts at two.",
+      "Nina plays the queen, and she was heard wishing the play would be cancelled.",
+      "Everyone is now whispering about Nina."
     ]
   },
   "truth": {
@@ -23,12 +26,17 @@
       "12:12: Leo comes into the hall to fetch the gold glitter paint. He sits on the stage steps to tie his shoe and squashes the crown flat, smearing gold glitter over the step and the seat of his trousers. He panics.",
       "12:15: Leo wraps the bent crown in his painting apron, hurries to the art room and wedges it behind the big paper dragon. He tries to glue the bend flat, and leaves the glue tube without its lid. Mr. Pike sees him through the window. Leo decides to say nothing and to point at Nina, who has been grumbling about the play.",
       "12:45: Mrs. Abara comes back and finds only the squashed cushion. The play starts at two."
-    ]
+    ],
+    "motive": "Leo never meant to break the crown: he sat on it by accident. He hid it and blamed Nina, who had been grumbling about the play, because he was terrified of getting into trouble."
   },
   "locations": {
     "hall": {
       "name": "The School Hall",
-      "description": "A big echoing hall that smells of floor polish. A stage with wooden steps stands at one end, and a props table and a rail of dragon costumes wait beside it.",
+      "facts": [
+        "The hall is big and echoing, and it smells of floor polish.",
+        "A stage with wooden steps stands at one end.",
+        "A props table and a rail of dragon costumes stand beside the stage."
+      ],
       "spots": [
         {
           "name": "the stage steps"
@@ -43,7 +51,11 @@
     },
     "art_room": {
       "name": "The Art Room",
-      "description": "Paint pots, brushes and glittery scraps cover every table. Half-finished scenery leans against the walls, and the sink drips into a stained bucket.",
+      "facts": [
+        "Paint pots, brushes and glittery scraps cover every table.",
+        "Half-finished scenery leans against the walls.",
+        "The sink drips into a stained bucket."
+      ],
       "spots": [
         {
           "name": "the paint shelf"
@@ -59,7 +71,11 @@
     },
     "library": {
       "name": "The Library",
-      "description": "A hush of old paper and carpet. Beanbags sit in a corner, and a desk by the door holds a stamp, a pencil pot and a clipboard.",
+      "facts": [
+        "The library is hushed and smells of old paper and carpet.",
+        "Beanbags sit in a corner.",
+        "A desk by the door holds a stamp, a pencil pot and a clipboard."
+      ],
       "spots": [
         {
           "name": "the sign-in sheet on the desk"
@@ -71,7 +87,11 @@
     },
     "playground": {
       "name": "The Playground",
-      "description": "Painted hopscotch squares, a climbing frame and a row of bikes. A ladder leans on the roof of the bike shed, and a pot of black roofing felt sits beside it.",
+      "facts": [
+        "The playground has painted hopscotch squares, a climbing frame and a row of bikes.",
+        "A ladder leans on the roof of the bike shed.",
+        "A pot of black roofing felt sits beside the ladder."
+      ],
       "spots": [
         {
           "name": "behind the bike shed"
@@ -91,7 +111,22 @@
       "personality": "Brisk, kind and a little flustered, with a pencil behind her ear. She runs the school play and wants everyone to feel brave.",
       "demeanor": {
         "open": "Worried about the two o'clock curtain, but warm and glad of help."
-      }
+      },
+      "knows": [
+        {
+          "fact": "Mrs. Abara runs the school play, The Dragon's Birthday."
+        },
+        {
+          "fact": "The dragon costumes for the play hang on the rail beside the stage.",
+          "points_at": {
+            "location": "hall"
+          }
+        }
+      ],
+      "appearance": [
+        "Mrs. Abara is a teacher with a pencil tucked behind her ear.",
+        "She wears a long cardigan with a rolled-up script in its pocket."
+      ]
     },
     "leo": {
       "name": "Leo",
@@ -104,7 +139,19 @@
         "shaken": "Quieter. He has stopped pointing at anyone and answers in short bursts.",
         "cornered": "Out of excuses. His eyes fill up and he chews his sleeve.",
         "cleared": "Tearful but relieved. He wants everyone to know it was an accident."
-      }
+      },
+      "knows": [
+        {
+          "fact": "Leo paints the scenery for the school play.",
+          "points_at": {
+            "location": "art_room"
+          }
+        }
+      ],
+      "appearance": [
+        "Leo is a boy with messy hair and paint on his fingers.",
+        "He wears a school jumper with paint-spattered sleeves."
+      ]
     },
     "nina": {
       "name": "Nina",
@@ -115,7 +162,22 @@
       "demeanor": {
         "open": "Defensive and jumpy. She knows people are whispering about her.",
         "cleared": "Relieved and a little embarrassed. She is ready to be brave."
-      }
+      },
+      "knows": [
+        {
+          "fact": "Nina plays the queen in The Dragon's Birthday and knows all her lines by heart."
+        },
+        {
+          "fact": "Sam is Nina's best friend.",
+          "points_at": {
+            "character": "sam"
+          }
+        }
+      ],
+      "appearance": [
+        "Nina is a girl with her hair in two tight plaits.",
+        "She wears her school jumper with the sleeves pulled over her hands."
+      ]
     },
     "sam": {
       "name": "Sam",
@@ -127,7 +189,25 @@
         "open": "Easy and friendly, glad of company.",
         "guarded": "Nervous. He holds his comic up high and answers a beat too fast.",
         "cleared": "Sorry and relieved. He is glad to stop pretending."
-      }
+      },
+      "knows": [
+        {
+          "fact": "Sam is Nina's best friend.",
+          "points_at": {
+            "character": "nina"
+          }
+        },
+        {
+          "fact": "The library has a comic corner with beanbags.",
+          "points_at": {
+            "location": "library"
+          }
+        }
+      ],
+      "appearance": [
+        "Sam is a boy with round glasses.",
+        "He carries a comic everywhere he goes."
+      ]
     },
     "pike": {
       "name": "Mr. Pike",
@@ -137,13 +217,22 @@
       "personality": "Slow, dry and observant. He sees everything from his ladder and only speaks when somebody asks.",
       "demeanor": {
         "open": "Easygoing and helpful. He answers exactly what he is asked, no more."
-      }
+      },
+      "knows": [
+        {
+          "fact": "Mr. Pike is the school caretaker and mends whatever breaks."
+        }
+      ],
+      "appearance": [
+        "Mr. Pike is a tall, thin man in blue overalls.",
+        "He wears a tool belt and a flat cap."
+      ]
     }
   },
   "clues": {
     "clue_gold_on_steps": {
       "kind": "evidence",
-      "text": "Gold glitter is smeared across the middle stage step, and the velvet cushion lies on it with a big bottom-shaped dent. Someone sat down right here, on something that is now gone.",
+      "fact": "Gold glitter is smeared across the middle stage step. The velvet cushion lies on the step with a big bottom-shaped dent in it. Someone sat down right here, on something that is now gone.",
       "source": {
         "location": "hall",
         "spot": "the stage steps"
@@ -151,7 +240,7 @@
     },
     "clue_glue_out": {
       "kind": "evidence",
-      "text": "The tube of super-strong glue on the shelf has no lid, and there are sticky gold glitter fingerprints on it. Someone has been gluing something gold.",
+      "fact": "The tube of super-strong glue on the paint shelf has no lid, and sticky gold glitter fingerprints are on it. Someone has been gluing something gold.",
       "source": {
         "location": "art_room",
         "spot": "the paint shelf"
@@ -159,7 +248,7 @@
     },
     "clue_crown_behind_dragon": {
       "kind": "evidence",
-      "text": "Wedged behind the dragon is the golden crown, bent flat in the middle, with a line of glue squeezed along the bend. Someone tried to mend it and hid it.",
+      "fact": "The golden crown is wedged behind the big paper dragon. It is bent flat in the middle, with a line of glue squeezed along the bend. Someone tried to mend it and hid it.",
       "source": {
         "location": "art_room",
         "spot": "behind the big paper dragon"
@@ -167,7 +256,7 @@
     },
     "clue_signin_sheet": {
       "kind": "evidence",
-      "text": "The lunchtime sign-in sheet has one name: 'Sam, 12:05'. There is no second name beside it, and Nina's isn't anywhere on the page.",
+      "fact": "The library's lunchtime sign-in sheet has one name: 'Sam, 12:05'. No second name is beside it, and Nina's name is nowhere on the page.",
       "source": {
         "location": "library",
         "spot": "the sign-in sheet on the desk"
@@ -175,7 +264,7 @@
     },
     "clue_script_cards": {
       "kind": "evidence",
-      "text": "Behind the bike shed lies a pile of script cards, crossed out and rewritten, with 'SPEAK UP!' scribbled on top in Nina's writing. The grass here is trampled flat, as if somebody has stood on this spot for ages.",
+      "fact": "A pile of script cards lies behind the bike shed, crossed out and rewritten, with 'SPEAK UP!' scribbled on top in Nina's writing. The grass there is trampled flat, as if somebody stood on that spot for ages.",
       "source": {
         "location": "playground",
         "spot": "behind the bike shed"
@@ -183,7 +272,7 @@
     },
     "abara_missing": {
       "kind": "statement",
-      "text": "The golden crown is gone! I put it on its cushion on the stage steps at ten past twelve and popped to the staff room. When I came back at a quarter to one, there was only the cushion.",
+      "fact": "Mrs. Abara says the golden crown is gone. She put it on its cushion on the stage steps at ten past twelve and went to the staff room. When she came back at a quarter to one, only the cushion was there.",
       "source": {
         "character": "abara"
       },
@@ -194,7 +283,7 @@
     },
     "abara_nina_jumper": {
       "kind": "statement",
-      "text": "Just after twelve, before I put the crown down, I saw Nina hurry past the hall door with something bulging under her jumper.",
+      "fact": "Mrs. Abara says that just after twelve, before she put the crown down, she saw Nina hurry past the hall door with something bulging under her jumper.",
       "source": {
         "character": "abara"
       },
@@ -205,7 +294,7 @@
     },
     "abara_nina_wish": {
       "kind": "statement",
-      "text": "Nina told me last week she hoped something would happen so there would be no play. I thought it was just nerves, but now I don't know what to think.",
+      "fact": "Mrs. Abara says Nina told her last week that she hoped something would happen so there would be no play. Mrs. Abara thought it was just nerves, but now she does not know what to think.",
       "source": {
         "character": "abara"
       },
@@ -221,7 +310,7 @@
     },
     "leo_alibi": {
       "kind": "statement",
-      "text": "I was in the art room all lunchtime, painting the dragon's wing. I never went near the hall.",
+      "fact": "Leo says he was in the art room all lunchtime, painting the dragon's wing, and never went near the hall.",
       "source": {
         "character": "leo"
       },
@@ -233,7 +322,7 @@
     },
     "react_leo_seat": {
       "kind": "tell",
-      "text": "He keeps tugging his jumper down over the back of his trousers, where something gold sparkles.",
+      "fact": "Leo keeps tugging his jumper down over the back of his trousers, where something gold sparkles.",
       "source": {
         "character": "leo"
       },
@@ -244,7 +333,7 @@
     },
     "leo_blames_nina": {
       "kind": "statement",
-      "text": "It was Nina! She said she wished the play would be cancelled, and I saw her sneaking about with a bundle.",
+      "fact": "Leo says it was Nina: she said she wished the play would be cancelled, and he saw her sneaking about with a bundle.",
       "source": {
         "character": "leo"
       },
@@ -256,7 +345,7 @@
     },
     "leo_drops_nina": {
       "kind": "statement",
-      "text": "Oh. She was only practising? Then... then maybe it wasn't Nina. I just thought she looked cross, that's all.",
+      "fact": "Leo says that if Nina was only practising, then maybe it was not Nina. He only thought she looked cross.",
       "source": {
         "character": "leo"
       },
@@ -278,7 +367,7 @@
     },
     "leo_admits_hall": {
       "kind": "statement",
-      "text": "All right, I did go to the hall to fetch the gold glitter paint. I sat on the steps to tie my shoe.",
+      "fact": "Leo admits he did go to the hall to fetch the gold glitter paint, and he sat on the stage steps to tie his shoe.",
       "source": {
         "character": "leo"
       },
@@ -300,7 +389,7 @@
     },
     "leo_confession": {
       "kind": "statement",
-      "text": "I sat on the crown and squashed it flat! I tried to glue it straight and hid it behind the dragon. I was too scared to tell anyone.",
+      "fact": "Leo says he sat on the crown and squashed it flat. He tried to glue it straight and hid it behind the dragon, and he was too scared to tell anyone.",
       "source": {
         "character": "leo"
       },
@@ -317,7 +406,7 @@
     },
     "nina_not_me": {
       "kind": "statement",
-      "text": "I didn't take it! I wasn't even in the hall. Ask Sam!",
+      "fact": "Nina says she did not take the crown and was not even in the hall, and that the investigator should ask Sam.",
       "source": {
         "character": "nina"
       },
@@ -328,7 +417,7 @@
     },
     "react_nina_cards": {
       "kind": "tell",
-      "text": "She hides a fistful of crumpled cards behind her back and glances at the bike shed.",
+      "fact": "Nina hides a fistful of crumpled cards behind her back and glances at the bike shed.",
       "source": {
         "character": "nina"
       },
@@ -338,7 +427,7 @@
     },
     "nina_admits_practising": {
       "kind": "statement",
-      "text": "I was behind the bike shed practising my big speech. I get so nervous I feel sick! I asked Sam to say I was with him because I didn't want anyone to laugh at me.",
+      "fact": "Nina says she was behind the bike shed practising her big speech. She gets so nervous that she feels sick. She asked Sam to say she was with him because she did not want anyone to laugh at her.",
       "source": {
         "character": "nina"
       },
@@ -360,7 +449,7 @@
     },
     "sam_alibi_nina": {
       "kind": "statement",
-      "text": "Nina was in here with me all lunchtime, reading comics, from twelve until the bell. She never went anywhere near the hall.",
+      "fact": "Sam says Nina was in the library with him all lunchtime, reading comics, from twelve until the bell, and that she never went anywhere near the hall.",
       "source": {
         "character": "sam"
       },
@@ -372,7 +461,7 @@
     },
     "react_sam_comic": {
       "kind": "tell",
-      "text": "He holds his comic up so high that it hides his face, and the page never turns.",
+      "fact": "Sam holds his comic up so high that it hides his face, and the page never turns.",
       "source": {
         "character": "sam"
       },
@@ -383,7 +472,7 @@
     },
     "sam_retracts": {
       "kind": "statement",
-      "text": "Okay, she wasn't. I signed in at five past and I was on my own all lunchtime. Nina asked me to say that because she was doing something secret. I don't know what!",
+      "fact": "Sam admits Nina was not with him: he signed in at five past twelve and was on his own all lunchtime. Nina asked him to say she was with him because she was doing something secret, and he does not know what.",
       "source": {
         "character": "sam"
       },
@@ -404,7 +493,7 @@
     },
     "pike_roof": {
       "kind": "statement",
-      "text": "I've been up on the bike-shed roof since twelve, mending the felt. Right across from the art room windows, as it happens.",
+      "fact": "Mr. Pike says he has been up on the bike-shed roof since twelve, mending the felt, right across from the art room windows.",
       "source": {
         "character": "pike"
       },
@@ -415,7 +504,7 @@
     },
     "clue_pike_saw_bundle": {
       "kind": "statement",
-      "text": "At about quarter past twelve I saw young Leo through the art room window. He tucked a bundle wrapped in his apron behind the big paper dragon, and he looked ever so guilty.",
+      "fact": "Mr. Pike says that at about a quarter past twelve he saw young Leo through the art room window. Leo tucked a bundle wrapped in his apron behind the big paper dragon, and he looked very guilty.",
       "source": {
         "character": "pike"
       },
@@ -430,7 +519,7 @@
     },
     "clue_pike_saw_nina": {
       "kind": "statement",
-      "text": "From a few minutes past twelve until a quarter to one, Nina was down beside the shed, whispering to herself. I could see her the whole time, and she never went near the hall.",
+      "fact": "Mr. Pike says that from a few minutes past twelve until a quarter to one, Nina was beside the bike shed, whispering to herself. He could see her the whole time, and she never went near the hall.",
       "source": {
         "character": "pike"
       },

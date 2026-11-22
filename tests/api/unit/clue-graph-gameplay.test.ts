@@ -51,7 +51,7 @@ function fixture(): ClueGraphCase {
   ladder.reached.gate.physical = true;
   graph.clues.react_toby_wellies = {
     kind: "tell",
-    text: "Toby tucks his feet under the bench.",
+    fact: "Toby tucks his feet under the bench.",
     source: { character: "toby" },
     reached: { by: "seen", subject: "wellies" },
   };
@@ -136,7 +136,7 @@ describe("clue-graph sessions and turns", () => {
     expect(entries[index].blueprint.metadata.title).toBe("The Smashed Prize Pumpkin — clue graph");
 
     const started = await start(clueGraphCaseId("greenhouse-prizewinner"));
-    expect(started.narration_events[0].payload).toMatchObject({ case_format: "clue-graph/1" });
+    expect(started.narration_events[0].payload).toMatchObject({ case_format: "clue-graph/2" });
     expect((await ctx.sessions.getById(started.game_id))?.clue_graph_snapshot).toEqual(greenhouse());
     const v2 = await start("123e4567-e89b-12d3-a456-426614174000");
     expect((await ctx.sessions.getById(v2.game_id))?.clue_graph_snapshot).toBeUndefined();
@@ -147,18 +147,18 @@ describe("clue-graph sessions and turns", () => {
     const file = installed(graph);
     const opened = await start(clueGraphCaseId(graph.metadata.id));
     const edited = structuredClone(graph);
-    edited.clues.clue_welly_prints.text = "EDITED ON DISK";
+    edited.clues.clue_welly_prints.fact = "EDITED ON DISK";
     edited.locations.greenhouse.name = "EDITED PLACE";
     fs.writeFileSync(file, JSON.stringify(edited));
 
     const found = await play(opened.game_id, "search the smashed pumpkin");
     expect(found.revealed_clues.map((clue) => [clue.id, clue.text])).toEqual([
-      ["clue_welly_prints", graph.clues.clue_welly_prints.text],
+      ["clue_welly_prints", graph.clues.clue_welly_prints.fact],
     ]);
     const response = await getGame(new Request(`http://test/api/game-get?game_id=${opened.game_id}`), ctx);
     const resumed = GameGetResponseSchema.parse(await response.json());
     expect(resumed.state.locations.find((place) => place.id === "greenhouse")?.name).toBe("The Greenhouse");
-    expect(resumed.state.discovered_clues?.map((clue) => clue.text)).toEqual([graph.clues.clue_welly_prints.text]);
+    expect(resumed.state.discovered_clues?.map((clue) => clue.text)).toEqual([graph.clues.clue_welly_prints.fact]);
     const catalog = await (await listSessions(new Request("http://test/api/game-sessions-list"), ctx)).json();
     expect(catalog.in_progress[0]).toMatchObject({ mystery_title: "The Smashed Prize Pumpkin — clue graph" });
   });
@@ -358,9 +358,9 @@ describe("clue-graph sessions and turns", () => {
       };
     };
     await play(opened.game_id, "bye", keeping);
-    expect(farewell).toContain(graph.clues.toby_alibi.text);
-    expect(farewell).not.toContain(graph.clues.toby_confession.text);
-    expect(farewell).not.toContain(graph.clues.toby_no_key.text);
+    expect(farewell).toContain(graph.clues.toby_alibi.fact);
+    expect(farewell).not.toContain(graph.clues.toby_confession.fact);
+    expect(farewell).not.toContain(graph.clues.toby_no_key.fact);
   });
 
   it("drops reports of clues already held instead of failing", async () => {

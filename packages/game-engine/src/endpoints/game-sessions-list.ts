@@ -1,5 +1,6 @@
 import type { EngineContext, GameSessionSummaryRow } from "../context.ts";
 import { CLUE_GRAPH_TITLE_SUFFIX } from "../../../shared/src/clue-graph-case.ts";
+import { CLUE_GRAPH_FORMAT } from "../../../shared/src/clue-graph-schema.ts";
 import { internalError } from "../errors.ts";
 import { createRequestLogger } from "../logging.ts";
 
@@ -68,13 +69,15 @@ function toSummary(
     ? `${session.clue_graph_title}${CLUE_GRAPH_TITLE_SUFFIX}`
     : titleByBlueprintId.get(session.blueprint_id);
   const mystery_available = Boolean(title);
+  // A game saved with an older clue-graph format stays listed, but cannot be opened.
+  const readable = session.clue_graph_format === undefined || session.clue_graph_format === CLUE_GRAPH_FORMAT;
 
   return {
     game_id: session.id,
     blueprint_id: session.blueprint_id,
     mystery_title: title ?? "Unknown Mystery",
     mystery_available,
-    can_open: mystery_available,
+    can_open: mystery_available && readable,
     mode: session.mode,
     time_remaining: Number.isFinite(session.time_remaining)
       ? Math.max(0, Math.trunc(session.time_remaining))

@@ -48,7 +48,7 @@ describe("the dragon-crown clue graph", () => {
     if (alibi.kind !== "statement") throw new Error("The alibi is a statement");
     expect(alibi.truth).toBe(false);
     expect(alibi.source).toEqual({ character: "sam" });
-    expect(alibi.text).toContain("Nina");
+    expect(alibi.fact).toContain("Nina");
     expect(alibi.reached).toEqual({ by: "first_meeting" });
     // The one it covers is a suspect who never said it herself.
     expect(graph.characters.nina.role).toBe("suspect");
@@ -85,7 +85,7 @@ describe("the dragon-crown clue graph", () => {
     const spots = (play: ClueGraphPlay) => visibleSpots(graph, play, "art_room");
     const pointer = graph.locations.art_room.spots.find((spot) => spot.revealed_by)!;
     expect(pointer.revealed_by).toBe("clue_pike_saw_bundle");
-    expect(graph.clues.clue_pike_saw_bundle.text).toContain("behind the big paper dragon");
+    expect(graph.clues.clue_pike_saw_bundle.fact).toContain("behind the big paper dragon");
     expect(reachClues(graph).map((entry) => entry.id)).toEqual(expect.arrayContaining(["clue_pike_saw_bundle", "clue_crown_behind_dragon"]));
 
     const before = replay(graph, [move("art_room")]);

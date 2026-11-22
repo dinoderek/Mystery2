@@ -136,8 +136,16 @@ function checkClueReferences(
 function checkReferences(graph: ClueGraphCase, report: Report): boolean {
   const refs = new References(graph, report);
   refs.location(["opening", "location"], graph.opening.location);
-  for (const [id, character] of Object.entries(graph.characters))
+  for (const [id, character] of Object.entries(graph.characters)) {
     refs.location(["characters", id, "location"], character.location);
+    character.knows.forEach(({ points_at }, index) => {
+      const at = ["characters", id, "knows", index, "points_at"];
+      if (points_at && "location" in points_at) refs.location([...at, "location"], points_at.location);
+      if (points_at && "character" in points_at) refs.character([...at, "character"], points_at.character);
+    });
+  }
+  graph.cover?.locations?.forEach((location, index) => refs.location(["cover", "locations", index], location));
+  graph.cover?.characters?.forEach((character, index) => refs.character(["cover", "characters", index], character));
   for (const [id, location] of Object.entries(graph.locations)) {
     const names = new Set<string>();
     location.spots.forEach((spot, index) => {

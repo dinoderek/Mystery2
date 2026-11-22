@@ -11,6 +11,7 @@ import {
 import { buildMsfBlueprint, validateMsfCaseFile, type PlayableBlueprint } from "../../shared/src/msf-case.ts";
 import { buildClueGraphBlueprint } from "../../shared/src/clue-graph-case.ts";
 import { validateClueGraph } from "../../shared/src/clue-graph-validator.ts";
+import { isClueGraphFile } from "../../shared/src/clue-graph-schema.ts";
 import type { BlueprintSummaryEntry, ContentStore } from "./context.ts";
 import type { LogWriter } from "./logging.ts";
 import { validateSceneManifest, type SceneManifest } from "../../shared/src/scene-schema.ts";
@@ -79,7 +80,7 @@ export function createLocalContentStore(
       const candidate = JSON.parse(text);
       const blueprint = candidate?.$format === "MSF-CASE/1"
         ? buildMsfBlueprint(validateMsfCaseFile(candidate))
-        : candidate?.format === "clue-graph/1"
+        : isClueGraphFile(candidate)
         ? buildClueGraphBlueprint(validateClueGraph(candidate))
         : BlueprintV2Schema.parse(candidate);
       cache.set(filePath, { stamp: stampOf(stats), blueprint });

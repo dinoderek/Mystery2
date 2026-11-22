@@ -34,7 +34,7 @@ function recordsFor(game: TurnGame, ids: string[]): RevealedClue[] {
         : { kind: "character" as const, character_id: clue.source.character, character_name: graph.characters[clue.source.character].name };
     return {
       id,
-      text: clue.text,
+      text: clue.fact,
       source: clue.kind === "evidence" ? ("search" as const) : ("talk" as const),
       origin,
       discovered_at: at,
@@ -284,7 +284,7 @@ export async function resolveGraphSearch(game: TurnGame, runtime: TurnRuntime, q
         location_name: place.name,
         search_query: query,
         revealed_clue_id: clueId,
-        revealed_clue_text: clueId ? graph.clues[clueId].text : null,
+        revealed_clue_text: clueId ? graph.clues[clueId].fact : null,
         revealed_clue_ids: kept,
         revealed_off_script: [],
         costs_turn: event !== null,

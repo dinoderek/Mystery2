@@ -1,5 +1,5 @@
 {
-  "format": "clue-graph/1",
+  "format": "clue-graph/2",
   "metadata": {
     "id": "greenhouse-prizewinner",
     "title": "The Smashed Prize Pumpkin",
@@ -8,10 +8,14 @@
   },
   "opening": {
     "location": "greenhouse",
-    "text": [
-      "Big Bertha was smashed overnight; a window is broken; the greenhouse key has been missing for days.",
-      "Mr. Dobbs saw her whole on his 8pm rounds; Ms. Hale found her smashed at 7:30.",
-      "Toby and Mia are the club's two pupils; Mr. Thorne is the rival next door, and he is being blamed."
+    "facts": [
+      "Big Bertha, the prize pumpkin, was smashed overnight.",
+      "A greenhouse window is broken.",
+      "The greenhouse key has been missing for days.",
+      "Mr. Dobbs saw Bertha whole on his 8pm rounds.",
+      "Ms. Hale found Bertha smashed at 7:30.",
+      "Toby and Mia are the club's two pupils.",
+      "Mr. Thorne is the rival grower next door, and he is being blamed."
     ]
   },
   "truth": {
@@ -23,12 +27,17 @@
       "Friday: at 4pm Mr. Thorne climbs over the fence to measure Bertha through the side window, leaving huge boot prints. At 5pm Mia waters Bertha, sees the prints, locks up and returns the spare at 5:20. Mr. Thorne takes Goliath to the fair at 6:30pm and is at the growers' barbecue from 7 to 11; Mia serves at the cake tent from 6 to 10 and sells him carrot cake at 9. At 8pm Mr. Dobbs sees Bertha whole and the door locked.",
       "Friday 8:40pm to 8:55pm: Toby sneaks in with the hidden key. At about 8:50 he trips on the hose and the rotten bench collapses onto Bertha, smashing her. He steps in the mush in his club wellies, knocks a side window out from inside, locks the door, drops the key in the water butt and runs home. Mr. Dobbs hears the thud and the glass but blames the fox.",
       "Saturday: at 7:30am Ms. Hale unlocks the still-locked door with the spare and finds Bertha smashed. Toby arrives in trainers and blames Mr. Thorne. The fair says the pumpkin contest will be canceled unless the truth is known by noon."
-    ]
+    ],
+    "motive": "Bertha was Toby's pumpkin. After Ms. Hale took him off the last watering shifts and told him not to go in without a grown-up, he took the key to sneak in and give her extra water. When the rotten bench fell on her by accident, he faked a break-in and blamed Mr. Thorne because he was scared of getting into trouble."
   },
   "locations": {
     "greenhouse": {
       "name": "The Greenhouse",
-      "description": "Warm, damp air smells of soil and squashed pumpkin. Big Bertha lies split open in her soil bed, under a toppled bench and broken pots. A smashed side window lets in a chilly breeze.",
+      "facts": [
+        "The greenhouse air is warm and damp, and it smells of soil and squashed pumpkin.",
+        "Big Bertha lies split open in her soil bed, under a toppled bench and broken pots.",
+        "A smashed side window lets in a chilly breeze."
+      ],
       "spots": [
         {
           "name": "the broken side window"
@@ -46,7 +55,11 @@
     },
     "potting_shed": {
       "name": "The Potting Shed",
-      "description": "A cosy wooden shed full of trowels, flowerpots and seed packets. A paper rota is pinned inside the door, and a row of hooks hangs by the window.",
+      "facts": [
+        "The potting shed is a cosy wooden shed full of trowels, flowerpots and seed packets.",
+        "A paper rota is pinned inside the door.",
+        "A row of hooks hangs by the window."
+      ],
       "spots": [
         {
           "name": "the watering rota on the door"
@@ -64,7 +77,12 @@
     },
     "workshop": {
       "name": "Mr. Dobbs's Workshop",
-      "description": "A cluttered workshop that smells of oil and sawdust. Tools hang on every wall, a kettle steams in the corner, and a window looks out over the school garden.",
+      "facts": [
+        "Mr. Dobbs's workshop is cluttered and smells of oil and sawdust.",
+        "Tools hang on every wall.",
+        "A kettle steams in the corner.",
+        "A window looks out over the school garden."
+      ],
       "spots": [
         {
           "name": "the window over the garden"
@@ -76,7 +94,12 @@
     },
     "thorne_garden": {
       "name": "Mr. Thorne's Garden",
-      "description": "A neat garden with rows of leeks and a shed covered in blue prize ribbons. A muddy patch sits empty where Goliath grew. A tall fence runs along the school garden.",
+      "facts": [
+        "Mr. Thorne's garden is neat, with rows of leeks.",
+        "A shed in the garden is covered in blue prize ribbons.",
+        "A muddy patch sits empty where Goliath grew.",
+        "A tall fence runs along the school garden."
+      ],
       "spots": [
         {
           "name": "the ladder by the fence"
@@ -101,7 +124,22 @@
         "open": "Relieved someone has come to help, and keen to get to the truth before noon.",
         "guarded": "Helpful on every fact, but she steps in front of Toby whenever his feelings come up.",
         "cleared": "Sad and honest. She has said the hard thing and wants Toby treated fairly."
-      }
+      },
+      "knows": [
+        {
+          "fact": "Ms. Hale runs the school gardening club."
+        },
+        {
+          "fact": "Big Bertha was grown for the pumpkin contest at the fair."
+        },
+        {
+          "fact": "The fair will cancel the pumpkin contest unless the truth is known by noon."
+        }
+      ],
+      "appearance": [
+        "Ms. Hale has short grey hair and muddy knees.",
+        "She wears a green apron with gardening gloves in the pocket."
+      ]
     },
     "toby": {
       "name": "Toby",
@@ -114,7 +152,25 @@
         "shaken": "Quieter and slower. He stops offering theories and answers only what he is asked.",
         "cornered": "Out of stories. He stares at the floor and his voice wobbles.",
         "cleared": "In tears, and relieved it is out. He wants everyone to know it was an accident."
-      }
+      },
+      "knows": [
+        {
+          "fact": "Toby knows the name of every plant in the greenhouse.",
+          "points_at": {
+            "location": "greenhouse"
+          }
+        },
+        {
+          "fact": "Mr. Thorne grows a giant pumpkin called Goliath next door.",
+          "points_at": {
+            "character": "thorne"
+          }
+        }
+      ],
+      "appearance": [
+        "Toby is a boy with neat short hair.",
+        "He wears a club hoodie with a big front pocket."
+      ]
     },
     "mia": {
       "name": "Mia",
@@ -126,7 +182,19 @@
         "open": "Friendly and chatty.",
         "guarded": "Friendly but a bit nervous. She worries she will be blamed because she watered Bertha last.",
         "cleared": "Relieved and giggly again."
-      }
+      },
+      "knows": [
+        {
+          "fact": "Mia and Toby are the gardening club's two pupils.",
+          "points_at": {
+            "character": "toby"
+          }
+        }
+      ],
+      "appearance": [
+        "Mia is a girl with curly hair in a bouncy ponytail.",
+        "She wears the club's leaf-pattern wellies."
+      ]
     },
     "dobbs": {
       "name": "Mr. Dobbs",
@@ -136,7 +204,19 @@
       "personality": "Calm, slow-talking and kind, with a dry sense of humour. He likes everything tidy and written down.",
       "demeanor": {
         "open": "Friendly and helpful. He offers a cup of tea and answers plainly."
-      }
+      },
+      "knows": [
+        {
+          "fact": "Mr. Dobbs is the school caretaker."
+        },
+        {
+          "fact": "A fox keeps knocking over Mr. Dobbs's bins."
+        }
+      ],
+      "appearance": [
+        "Mr. Dobbs is an old man in brown overalls.",
+        "He wears slippers indoors."
+      ]
     },
     "thorne": {
       "name": "Mr. Thorne",
@@ -148,20 +228,35 @@
         "guarded": "Prickly and defensive. He has heard he is being blamed and is cross about it.",
         "shaken": "Red-eared and huffy, but no longer shouting.",
         "cleared": "Sheepish. Still gruff, but he wants the children's pumpkin done right by."
-      }
+      },
+      "knows": [
+        {
+          "fact": "Mr. Thorne grows a giant pumpkin called Goliath."
+        },
+        {
+          "fact": "Mr. Thorne has won many blue prize ribbons for his vegetables.",
+          "points_at": {
+            "location": "thorne_garden"
+          }
+        }
+      ],
+      "appearance": [
+        "Mr. Thorne is a big man with a bushy grey beard.",
+        "He wears huge muddy boots."
+      ]
     }
   },
   "clues": {
     "clue_boot_prints": {
       "kind": "evidence",
-      "text": "Huge boot prints sink deep into the flower bed outside the broken window, near Mr. Thorne's fence. They are far too big for a child.",
+      "fact": "Huge boot prints sink deep into the flower bed outside the broken window, near Mr. Thorne's fence. They are far too big for a child.",
       "source": {
         "location": "greenhouse"
       }
     },
     "clue_glass_outside": {
       "kind": "evidence",
-      "text": "The broken glass lies outside on the brick path, not inside. The window was knocked out from inside the greenhouse. Nobody climbed in here!",
+      "fact": "The broken glass from the side window lies outside on the brick path, not inside. The window was knocked out from inside the greenhouse, so nobody climbed in through it.",
       "source": {
         "location": "greenhouse",
         "spot": "the broken side window"
@@ -169,7 +264,7 @@
     },
     "clue_welly_prints": {
       "kind": "evidence",
-      "text": "Small welly prints with a leaf pattern are squished into the pumpkin mush. Only the club's two pupils, Toby and Mia, have leaf-pattern wellies.",
+      "fact": "Small welly prints with a leaf pattern are squished into the pumpkin mush. Only the club's two pupils, Toby and Mia, have leaf-pattern wellies.",
       "source": {
         "location": "greenhouse",
         "spot": "the smashed pumpkin"
@@ -177,7 +272,7 @@
     },
     "clue_snapped_bench": {
       "kind": "evidence",
-      "text": "The old bench had a rotten leg, and it has snapped clean through. When the bench fell, its heavy clay pots crashed down onto Bertha.",
+      "fact": "The old bench had a rotten leg, and the leg has snapped clean through. When the bench fell, its heavy clay pots crashed down onto Bertha.",
       "source": {
         "location": "greenhouse",
         "spot": "the toppled bench"
@@ -185,7 +280,7 @@
     },
     "clue_key_in_water_butt": {
       "kind": "evidence",
-      "text": "At the bottom of the murky water butt, your fingers find a key with a green tag: GREENHOUSE. It's the missing key!",
+      "fact": "A key with a green tag reading GREENHOUSE lies at the bottom of the murky water butt by the door. It is the missing greenhouse key.",
       "source": {
         "location": "greenhouse",
         "spot": "the water butt by the door"
@@ -193,7 +288,7 @@
     },
     "clue_rota_purple_ink": {
       "kind": "evidence",
-      "text": "On the watering rota, Toby's name is crossed out for Thursday, Friday and Saturday. 'MIA' is written over it in sparkly purple pen.",
+      "fact": "On the watering rota, Toby's name is crossed out for Thursday, Friday and Saturday, and 'MIA' is written over it in sparkly purple pen.",
       "source": {
         "location": "potting_shed",
         "spot": "the watering rota on the door"
@@ -201,14 +296,14 @@
     },
     "clue_spare_key_book": {
       "kind": "evidence",
-      "text": "Mr. Dobbs's key book says: 'Greenhouse spare. Thursday: Mia, 5:05 to 5:20. Friday: Mia, 5:00 to 5:20. Saturday: Ms. Hale, 7:25.'",
+      "fact": "Mr. Dobbs's key book says: 'Greenhouse spare. Thursday: Mia, 5:05 to 5:20. Friday: Mia, 5:00 to 5:20. Saturday: Ms. Hale, 7:25.'",
       "source": {
         "location": "workshop"
       }
     },
     "clue_ladder_tape": {
       "kind": "evidence",
-      "text": "A tall ladder leans on Mr. Thorne's side of the fence, right opposite the greenhouse. A tape measure dangles from the top rung.",
+      "fact": "A tall ladder leans on Mr. Thorne's side of the fence, right opposite the greenhouse. A tape measure dangles from its top rung.",
       "source": {
         "location": "thorne_garden",
         "spot": "the ladder by the fence"
@@ -216,7 +311,7 @@
     },
     "hale_found_locked": {
       "kind": "statement",
-      "text": "I unlocked the door at half past seven. It was still locked! And there was Bertha, smashed.",
+      "fact": "Ms. Hale says she unlocked the greenhouse door at half past seven. It was still locked, and Bertha was smashed inside.",
       "source": {
         "character": "hale"
       },
@@ -227,7 +322,7 @@
     },
     "clue_hale_key_last_seen": {
       "kind": "statement",
-      "text": "On Wednesday at half past three, the greenhouse key was on its hook. After that, only Toby and Mia were in the shed until I locked it. Next day, it was gone.",
+      "fact": "Ms. Hale says that on Wednesday at half past three the greenhouse key was on its hook. After that, only Toby and Mia were in the shed until she locked it. The next day, the key was gone.",
       "source": {
         "character": "hale"
       },
@@ -242,7 +337,7 @@
     },
     "clue_hale_borrowed_pen": {
       "kind": "statement",
-      "text": "I changed the rota myself on Wednesday. My pen ran dry, so I borrowed Mia's sparkly purple one.",
+      "fact": "Ms. Hale says she changed the rota herself on Wednesday. Her pen ran dry, so she borrowed Mia's sparkly purple one.",
       "source": {
         "character": "hale"
       },
@@ -260,7 +355,7 @@
     },
     "hale_toby_fine": {
       "kind": "statement",
-      "text": "Toby took it well enough. He loves Bertha. He would never hurt her.",
+      "fact": "Ms. Hale says Toby took losing his watering shifts well enough. He loves Bertha, and he would never hurt her.",
       "source": {
         "character": "hale"
       },
@@ -279,7 +374,7 @@
     },
     "react_hale_gloves": {
       "kind": "tell",
-      "text": "She twists the gardening gloves in her apron pocket and sighs. \"I won't have him made into a villain.\"",
+      "fact": "Ms. Hale twists the gardening gloves in her apron pocket, sighs, and says she won't have Toby made into a villain.",
       "source": {
         "character": "hale"
       },
@@ -290,7 +385,7 @@
     },
     "clue_hale_toby_upset": {
       "kind": "statement",
-      "text": "I took Toby off the last shifts after he forgot to lock up on Monday. I said no going in without a grown-up. He shouted, 'She's MY pumpkin!'",
+      "fact": "Ms. Hale says she took Toby off the last watering shifts after he forgot to lock up on Monday, and told him no going in without a grown-up. Toby shouted, 'She's MY pumpkin!'",
       "source": {
         "character": "hale"
       },
@@ -318,7 +413,7 @@
     },
     "toby_alibi": {
       "kind": "statement",
-      "text": "I was at home all Friday evening finishing my thousand-piece jigsaw. I went to bed at nine.",
+      "fact": "Toby says he was at home all Friday evening, finishing his thousand-piece jigsaw. He went to bed at nine.",
       "source": {
         "character": "toby"
       },
@@ -330,7 +425,7 @@
     },
     "react_toby_sweeping": {
       "kind": "tell",
-      "text": "His cheeks go pink and he sweeps the same patch of floor, over and over.",
+      "fact": "Toby's cheeks go pink and he sweeps the same patch of floor over and over.",
       "source": {
         "character": "toby"
       },
@@ -341,7 +436,7 @@
     },
     "react_toby_trainers": {
       "kind": "tell",
-      "text": "Toby is in trainers on a muddy garden morning, while Mia wears her leaf-pattern club wellies. He tucks his feet out of sight.",
+      "fact": "Toby is wearing trainers on a muddy garden morning, while Mia wears her leaf-pattern club wellies. He tucks his feet out of sight.",
       "source": {
         "character": "toby"
       },
@@ -351,7 +446,7 @@
     },
     "toby_blames_thorne": {
       "kind": "statement",
-      "text": "It was Mr. Thorne! He must have climbed over the fence and smashed the window to get in.",
+      "fact": "Toby says it was Mr. Thorne, who must have climbed over the fence and smashed the window to get in.",
       "source": {
         "character": "toby"
       },
@@ -363,7 +458,7 @@
     },
     "clue_toby_thorne_ladder": {
       "kind": "statement",
-      "text": "On Thursday, Mr. Thorne was up his ladder, staring at Bertha with a tape measure. He said, 'Enjoy her while she lasts!'",
+      "fact": "Toby says that on Thursday Mr. Thorne was up his ladder, staring at Bertha with a tape measure. Mr. Thorne said, 'Enjoy her while she lasts!'",
       "source": {
         "character": "toby"
       },
@@ -374,7 +469,7 @@
     },
     "toby_no_key": {
       "kind": "statement",
-      "text": "I haven't seen the greenhouse key since Wednesday.",
+      "fact": "Toby says he has not seen the greenhouse key since Wednesday.",
       "source": {
         "character": "toby"
       },
@@ -392,7 +487,7 @@
     },
     "react_toby_pocket": {
       "kind": "tell",
-      "text": "His hand pats his hoodie pocket, as if checking for something that isn't there.",
+      "fact": "Toby's hand pats his hoodie pocket, as if checking for something that is not there.",
       "source": {
         "character": "toby"
       },
@@ -403,7 +498,7 @@
     },
     "clue_toby_mia_splat": {
       "kind": "statement",
-      "text": "Mia said she wished Bertha would just go splat, so she could get back to her dance practice.",
+      "fact": "Toby says Mia said she wished Bertha would just go splat, so that she could get back to her dance practice.",
       "source": {
         "character": "toby"
       },
@@ -421,7 +516,7 @@
     },
     "toby_drops_burglar": {
       "kind": "statement",
-      "text": "Oh. Then nobody climbed in. Maybe... maybe it was a fox.",
+      "fact": "Toby admits that then nobody climbed in, and says maybe it was a fox.",
       "source": {
         "character": "toby"
       },
@@ -445,7 +540,7 @@
     },
     "toby_blames_mia": {
       "kind": "statement",
-      "text": "Mia has leaf wellies too. And she had the last shifts. It could just as well have been her.",
+      "fact": "Toby says Mia has leaf wellies too, and she had the last shifts, so it could just as well have been her.",
       "source": {
         "character": "toby"
       },
@@ -465,7 +560,7 @@
     },
     "toby_not_mia": {
       "kind": "statement",
-      "text": "Then it wasn't Mia.",
+      "fact": "Toby admits that then it was not Mia.",
       "source": {
         "character": "toby"
       },
@@ -489,7 +584,7 @@
     },
     "toby_confession": {
       "kind": "statement",
-      "text": "I took the key on Wednesday. I only went in to give her extra water! I tripped on the hose, and the old bench fell on her. I broke the window so it would look like a burglar.",
+      "fact": "Toby says he took the greenhouse key on Wednesday. He only went in to give Bertha extra water. He tripped on the hose, and the old bench fell on her. He broke the window so it would look like a burglar.",
       "source": {
         "character": "toby"
       },
@@ -510,7 +605,7 @@
     },
     "mia_alibi": {
       "kind": "statement",
-      "text": "I watered Bertha at five with Mr. Dobbs's spare key, locked up, and gave it back. Then I helped Mum at the fair's cake tent from six till ten.",
+      "fact": "Mia says she watered Bertha at five with Mr. Dobbs's spare key, locked up and gave the key back. Then she helped her mum at the fair's cake tent from six till ten.",
       "source": {
         "character": "mia"
       },
@@ -521,7 +616,7 @@
     },
     "react_mia_pen": {
       "kind": "tell",
-      "text": "When she talks about her watering shifts, she goes pink and clicks her sparkly purple pen on and off.",
+      "fact": "When Mia talks about her watering shifts, she goes pink and clicks her sparkly purple pen on and off.",
       "source": {
         "character": "mia"
       },
@@ -532,7 +627,7 @@
     },
     "clue_mia_thorne_barbecue": {
       "kind": "statement",
-      "text": "Mr. Thorne was at the growers' barbecue, right by our cake tent, all evening. At nine o'clock he bought carrot cake from me.",
+      "fact": "Mia says Mr. Thorne was at the growers' barbecue, right by her cake tent, all evening. At nine o'clock he bought carrot cake from her.",
       "source": {
         "character": "mia"
       },
@@ -549,7 +644,7 @@
     },
     "mia_admits_splat": {
       "kind": "statement",
-      "text": "I did say it. I was fed up missing dance practice! I would never, ever hurt Bertha.",
+      "fact": "Mia admits she did say she wished Bertha would go splat, because she was fed up missing dance practice. She says she would never, ever hurt Bertha.",
       "source": {
         "character": "mia"
       },
@@ -567,7 +662,7 @@
     },
     "dobbs_rounds": {
       "kind": "statement",
-      "text": "On my eight o'clock rounds I shone my torch in. Bertha was whole, and the door was locked.",
+      "fact": "Mr. Dobbs says that on his eight o'clock rounds he shone his torch into the greenhouse. Bertha was whole, and the door was locked.",
       "source": {
         "character": "dobbs"
       },
@@ -578,7 +673,7 @@
     },
     "react_dobbs_slippers": {
       "kind": "tell",
-      "text": "He rubs the back of his neck and glances at the garden window. \"I should have gone out last night, slippers or no slippers.\"",
+      "fact": "Mr. Dobbs rubs the back of his neck, glances at the garden window, and says he should have gone out last night, slippers or no slippers.",
       "source": {
         "character": "dobbs"
       },
@@ -588,7 +683,7 @@
     },
     "clue_dobbs_crash_time": {
       "kind": "statement",
-      "text": "At about ten to nine last night, I heard a big thud from the garden, then smashing glass. I thought it was that fox at my bins again.",
+      "fact": "Mr. Dobbs says that at about ten to nine last night he heard a big thud from the garden, then smashing glass. He thought it was the fox at his bins again.",
       "source": {
         "character": "dobbs"
       },
@@ -603,7 +698,7 @@
     },
     "thorne_alibi": {
       "kind": "statement",
-      "text": "I was at the fair all evening with Goliath, at the growers' barbecue from seven till eleven.",
+      "fact": "Mr. Thorne says he was at the fair all evening with Goliath, at the growers' barbecue from seven till eleven.",
       "source": {
         "character": "thorne"
       },
@@ -614,7 +709,7 @@
     },
     "clue_thorne_mia_cake": {
       "kind": "statement",
-      "text": "At nine o'clock I bought carrot cake from young Mia at the fair's cake tent, across town. She was serving there from six till ten.",
+      "fact": "Mr. Thorne says that at nine o'clock he bought carrot cake from young Mia at the fair's cake tent, across town. She was serving there from six till ten.",
       "source": {
         "character": "thorne"
       },
@@ -625,7 +720,7 @@
     },
     "thorne_never_set_foot": {
       "kind": "statement",
-      "text": "And I've never set foot in that school garden!",
+      "fact": "Mr. Thorne says he has never set foot in the school garden.",
       "source": {
         "character": "thorne"
       },
@@ -637,7 +732,7 @@
     },
     "react_thorne_boot": {
       "kind": "tell",
-      "text": "His ears turn red and he scuffs one huge boot on the grass.",
+      "fact": "Mr. Thorne's ears turn red and he scuffs one huge boot on the grass.",
       "source": {
         "character": "thorne"
       },
@@ -648,7 +743,7 @@
     },
     "clue_thorne_measured": {
       "kind": "statement",
-      "text": "All right, I climbed over on Friday at four to measure Bertha through the window. Those prints are mine. But she was perfectly whole!",
+      "fact": "Mr. Thorne admits he climbed over on Friday at four to measure Bertha through the window, and that the boot prints are his. He says Bertha was perfectly whole.",
       "source": {
         "character": "thorne"
       },
@@ -672,7 +767,7 @@
     },
     "thorne_ladder_thursday": {
       "kind": "statement",
-      "text": "Yes, I measured her from my ladder on Thursday. 'Enjoy her while she lasts' meant my Goliath would beat her at the weigh-in!",
+      "fact": "Mr. Thorne says he measured Bertha from his ladder on Thursday, and that 'Enjoy her while she lasts' meant his Goliath would beat her at the weigh-in.",
       "source": {
         "character": "thorne"
       },

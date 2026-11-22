@@ -167,7 +167,7 @@ export async function extractSessionTrace(
       source: { kind: "local", database: source.databasePath ? path.resolve(source.databasePath) : null },
       extractedAt,
       clueGraph: {
-        format: "clue-graph/1",
+        format: graph.format,
         revision: 1,
         progress: clueGraphProgress(graph, history),
       },

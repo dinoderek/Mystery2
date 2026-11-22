@@ -3,12 +3,26 @@ import { MAX_TARGET_AGE, MIN_TARGET_AGE } from "./age-profile.ts";
 
 /**
  * The clue graph case format: an opening, clues and conclusions, with the
- * people and places they belong to. The model is `docs/clue-graph.md`; this
- * file holds only its shape. References and the graph checks are in
+ * people and places they belong to. A case holds facts, never the words a
+ * child reads: the narrator writes those. The model is `docs/clue-graph.md`;
+ * this file holds only its shape. References and the graph checks are in
  * `clue-graph-validator.ts`.
  */
 
+/** The format a case file declares. Earlier formats are rejected, never read. */
+export const CLUE_GRAPH_FORMAT = "clue-graph/2";
+
+/**
+ * Whether a parsed file claims to be a clue-graph case, of any format: the
+ * readers send it to the validator, which rejects a format it does not read.
+ */
+export function isClueGraphFile(candidate: unknown): boolean {
+  const format = (candidate as { format?: unknown } | null)?.format;
+  return typeof format === "string" && format.startsWith("clue-graph/");
+}
+
 const text = z.string().trim().min(1);
+const facts = (min = 1) => z.array(text).min(min);
 // IDs are not normalized: changing a map key would break its references.
 const id = z
   .string()
@@ -68,7 +82,8 @@ const SpotSchema = z
 const LocationSchema = z
   .object({
     name: text,
-    description: text,
+    /** What is true of the place, for the narrator to describe. */
+    facts: facts(),
     spots: z.array(SpotSchema),
   })
   .strict();
@@ -85,6 +100,19 @@ const DemeanorSchema = z
     "At least one stance needs a demeanor line",
   );
 
+/** A plain true fact a character shares when asked; never a clue. It may point at a place or a person. */
+const KnowsSchema = z
+  .object({
+    fact: text,
+    points_at: z
+      .union([
+        z.object({ location: id }).strict(),
+        z.object({ character: id }).strict(),
+      ])
+      .optional(),
+  })
+  .strict();
+
 const CharacterSchema = z
   .object({
     name: text,
@@ -92,8 +120,12 @@ const CharacterSchema = z
     role: z.enum(["culprit", "suspect", "witness"]),
     /** Picks the narrator's pronouns, which are never guessed from a name. */
     sex: z.enum(["male", "female"]),
+    /** Direction for the narrator, as are the demeanor lines: not text for the child. */
     personality: text,
     demeanor: DemeanorSchema,
+    knows: z.array(KnowsSchema),
+    /** What the character looks like, for the narrator and the artwork. */
+    appearance: facts(2),
   })
   .strict();
 
@@ -139,7 +171,8 @@ const Seen = z
 const EvidenceSchema = z
   .object({
     kind: z.literal("evidence"),
-    text,
+    /** What the finding establishes, stated plainly and completely. */
+    fact: text,
     source: z.object({ location: id, spot: text.optional() }).strict(),
   })
   .strict();
@@ -149,7 +182,8 @@ const characterSource = z.object({ character: id }).strict();
 const StatementSchema = z
   .object({
     kind: z.literal("statement"),
-    text,
+    /** What the character claims, true or not. */
+    fact: text,
     source: characterSource,
     truth: z.boolean(),
     why: text.optional(),
@@ -161,7 +195,8 @@ const StatementSchema = z
 const TellSchema = z
   .object({
     kind: z.literal("tell"),
-    text,
+    /** What is observed. */
+    fact: text,
     source: characterSource,
     reached: z.discriminatedUnion("by", [FirstMeeting, Seen]),
   })
@@ -220,9 +255,37 @@ const ConclusionSchema = z
     "A conclusion clears, names the culprit or resolves, at most one",
   );
 
+/** Direction for generated images, the shape V2's `metadata.visual_direction` has. */
+const VisualDirectionSchema = z
+  .object({
+    art_style: text,
+    color_palette: text,
+    mood: text,
+    lighting: text,
+    texture: text.optional(),
+    /** Portraits only: an abstract backdrop that names no place in the case. */
+    portrait_background: text.optional(),
+  })
+  .strict();
+
+/** What the cover shows: facts, and the places and people it features. */
+const CoverSchema = z
+  .object({
+    facts: facts(),
+    locations: ids().optional(),
+    characters: ids().optional(),
+  })
+  .strict();
+
+const FormatSchema = z.literal(CLUE_GRAPH_FORMAT, {
+  errorMap: (_issue, ctx) => ({
+    message: `Format ${JSON.stringify(ctx.data)} is not read: a case file is "${CLUE_GRAPH_FORMAT}"`,
+  }),
+});
+
 export const ClueGraphCaseSchema = z
   .object({
-    format: z.literal("clue-graph/1"),
+    format: FormatSchema,
     metadata: z
       .object({
         id: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Must be kebab-case"),
@@ -231,10 +294,10 @@ export const ClueGraphCaseSchema = z
         time_budget: z.number().int().positive().safe(),
       })
       .strict(),
-    opening: z
-      .object({ location: id, text: z.array(text).min(1) })
-      .strict(),
-    truth: z.object({ timeline: z.array(text).min(1) }).strict(),
+    /** The public facts at the start. */
+    opening: z.object({ location: id, facts: facts() }).strict(),
+    /** What the ending tells: the timeline, and why the culprit did it. */
+    truth: z.object({ timeline: facts(), motive: text }).strict(),
     locations: idMap(LocationSchema),
     characters: idMap(CharacterSchema),
     clues: idMap(ClueGraphClueSchema).refine(
@@ -242,6 +305,8 @@ export const ClueGraphCaseSchema = z
       `Clue ID "${OPENING_PROMPT}" is reserved for the opening`,
     ),
     conclusions: idMap(ConclusionSchema),
+    visual_direction: VisualDirectionSchema.optional(),
+    cover: CoverSchema.optional(),
   })
   .strict();
 
@@ -252,3 +317,4 @@ export type ClueGraphTell = z.infer<typeof TellSchema>;
 export type ClueGraphEvidence = z.infer<typeof EvidenceSchema>;
 export type ClueGraphGate = z.infer<typeof GateSchema>;
 export type ClueGraphConclusion = z.infer<typeof ConclusionSchema>;
+export type ClueGraphKnows = z.infer<typeof KnowsSchema>;

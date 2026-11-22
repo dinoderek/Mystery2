@@ -78,7 +78,7 @@ describe("the clue-graph talk contract and mock", () => {
     expect(context.state.answers_if_asked).toEqual([]);
     const output = parseGraphTalkOutput(mockGraphTalk(context, null));
     expect(output).toMatchObject({ opened: [], answered: [], input_understood: true });
-    expect(output.narration).toContain(graph.clues.thorne_never_set_foot.text);
+    expect(output.narration).toContain(graph.clues.thorne_never_set_foot.fact);
   });
 
   it("answers what a line asks about, and opens a gate the line uses or bluffs", () => {
@@ -141,7 +141,7 @@ describe("the clue-graph search outcome and mock", () => {
     expect(searchOutcome(graph, start, null)).toEqual({
       kind: "known",
       spot: null,
-      finds: { id: "clue_boot_prints", text: graph.clues.clue_boot_prints.text },
+      finds: { id: "clue_boot_prints", text: graph.clues.clue_boot_prints.fact },
     });
     expect(searchOutcome(graph, start, "the toppled bench")).toMatchObject({ kind: "known", spot: "the toppled bench" });
     const loose = searchOutcome(graph, start, "the busted glass");

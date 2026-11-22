@@ -56,7 +56,7 @@ function rowOf(graph: ClueGraphCase, step: Step, event: ClueGraphEvent, before: 
     return { event_type: "move", narration: `You head to ${graph.locations[event.location].name}.`, payload: { ...place, destination_id: event.location, clue_graph: event } };
   }
   if (event.type === "search") {
-    const text = revealed.length > 0 ? graph.clues[revealed[0]].text : "You find nothing new.";
+    const text = revealed.length > 0 ? graph.clues[revealed[0]].fact : "You find nothing new.";
     return {
       event_type: "search",
       narration: ("narration" in step && step.narration) || text,

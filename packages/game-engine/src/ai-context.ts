@@ -1182,7 +1182,7 @@ export function clueGraphProgress(graph: ClueGraphCase, history: ConversationFra
   return {
     supported_conclusions: supported.map((id) => ({ id, text: graph.conclusions[id].text })),
     culprit_supported: supported.some((id) => graph.conclusions[id].culprit === culprit),
-    taken_back: play.retracted.filter((id) => play.held.includes(id)).map((id) => graph.clues[id].text),
+    taken_back: play.retracted.filter((id) => play.held.includes(id)).map((id) => graph.clues[id].fact),
   };
 }
 

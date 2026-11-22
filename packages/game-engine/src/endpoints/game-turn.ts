@@ -23,7 +23,7 @@ const JSON_HEADERS = { "Content-Type": "application/json" };
 function errorResponse(error: unknown, logger: LogWriter): Response {
   if (error instanceof RequestRejectedError) {
     if (error.status === 500) logger.logError("request.error", { reason: error.reason, error: error.message });
-    else logger.log("request.invalid", { reason: error.reason });
+    else logger.log("request.invalid", { reason: error.reason, error: error.message });
     return asRejectedResponse(error)!;
   }
   if (error instanceof BadRequestError) {

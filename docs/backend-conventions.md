@@ -25,7 +25,8 @@ bug: a second adapter must fit beside the first.
 - Add a **named operation** to the store interface rather than reaching past
   the seam.
 - **Errors:** a genuine backend failure **throws**; "does not exist" returns
-  `null` or empty. Handlers map a throw to `500` and a `null` to `404`/`400`.
+  `null` or empty. Handlers map a throw to `500` and a `null` to `404`/`400`;
+  a session saved with a case format no longer read throws `410`.
 - **One save per turn.** `ctx.sessions.saveTurn` writes the session change and
   every event in one transaction, after the model has answered, so a failed
   turn writes nothing and a session never disagrees with its history; a stale

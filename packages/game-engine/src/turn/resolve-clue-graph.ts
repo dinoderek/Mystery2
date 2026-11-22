@@ -14,6 +14,7 @@ import { resolveGraphSearchWords } from "../clue-graph/narrator-context.ts";
 import {
   applyEvent,
   lineOf,
+  ridersOf,
   type ClueGraphEvent,
   type ClueGraphPlay,
   type ClueGraphStep,
@@ -174,6 +175,7 @@ export async function resolveGraphTalk(game: TurnGame, runtime: TurnRuntime, cha
 /**
  * Files the narrator's reports by what the state offered: gates opened,
  * questions answered and subject tells shown. What the player already holds,
+ * a tell that rides on a statement this line brings out,
  * or this line's first words, is dropped; anything else fails the turn.
  */
 function acceptLine(
@@ -191,14 +193,18 @@ function acceptLine(
   const event = { type: "line" as const, character: characterId, opened: [] as string[], asked: [] as string[], seen: [] as string[] };
   const unoffered: string[] = [];
   const repeated: string[] = [];
+  const others: string[] = [];
   // Generous on form: an offered id counts whichever list it came in.
   for (const id of new Set([...output.opened, ...output.answered])) {
     if (gates.has(id)) event.opened.push(id);
     else if (answers.has(id)) event.asked.push(id);
     else if (tells.has(id)) event.seen.push(id);
     // First words due come out this line regardless.
-    else if (!dueNow.has(id)) (play.held.includes(id) ? repeated : unoffered).push(id);
+    else if (!dueNow.has(id)) others.push(id);
   }
+  // A tell seen with a statement this line brings out comes out with it.
+  const riding = new Set([...event.opened, ...event.asked, ...dueNow].flatMap((id) => ridersOf(graphOf(game), id)));
+  for (const id of others) if (!riding.has(id)) (play.held.includes(id) ? repeated : unoffered).push(id);
   if (repeated.length > 0) {
     runtime.logger.log("ask.clue_already_discovered", { game_id: game.game_id, character_id: characterId, clue_ids: repeated });
   }

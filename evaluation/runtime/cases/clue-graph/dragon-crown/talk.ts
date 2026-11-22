@@ -18,20 +18,20 @@ const CROWN = "blueprints/clue-graph/dragon-crown.json";
 const line = (steps: Step[], say: string, labels: Parameters<typeof lineCase>[3]) => lineCase(CROWN, steps, say, labels);
 const NOTHING = { revealed_clue_ids: [], input_understood: true };
 
-const HALL: Step = { move: "hall" };
-const SHEET: Step[] = [{ move: "library" }, { search: "the sign-in sheet on the desk" }];
+export const HALL: Step = { move: "hall" };
+export const SHEET: Step[] = [{ move: "library" }, { search: "the sign-in sheet on the desk" }];
 const SAM_GREETS: Step = {
   talk: "sam",
   narration:
     "Sam peeks out from behind a comic. \"Nina was in here with me all lunchtime, reading comics, from twelve until the bell. She never went anywhere near the hall.\" He holds his comic up so high that it hides his face, and the page never turns.",
 };
-const SAM_MET: Step[] = [{ move: "library" }, SAM_GREETS];
+export const SAM_MET: Step[] = [{ move: "library" }, SAM_GREETS];
 /** The sign-in sheet in hand, and Sam's alibi heard. */
-const SAM_WITH_SHEET: Step[] = [...SHEET, SAM_GREETS];
+export const SAM_WITH_SHEET: Step[] = [...SHEET, SAM_GREETS];
 
-const GOLD_STEPS: Step[] = [HALL, { search: "the stage steps" }];
-const CARDS: Step[] = [{ move: "playground" }, { search: "behind the bike shed" }];
-const LEO_GREETS: Step = {
+export const GOLD_STEPS: Step[] = [HALL, { search: "the stage steps" }];
+export const CARDS: Step[] = [{ move: "playground" }, { search: "behind the bike shed" }];
+export const LEO_GREETS: Step = {
   talk: "leo",
   narration:
     "Leo looks up from a half-painted dragon wing. \"I was in the art room all lunchtime, painting the dragon's wing. I never went near the hall.\" He tugs his jumper down over the back of his trousers, where something gold sparkles. \"It was Nina! She said she wished the play would be cancelled, and I saw her sneaking about with a bundle.\"",
@@ -45,22 +45,22 @@ const NINA_GREETS: Step = {
   narration:
     "Nina jumps as you come near. \"I didn't take it! I wasn't even in the hall. Ask Sam!\" She hides a fistful of crumpled cards behind her back and glances at the bike shed.",
 };
-const NINA_MET: Step[] = [{ move: "playground" }, NINA_GREETS];
+export const NINA_MET: Step[] = [{ move: "playground" }, NINA_GREETS];
 
 const PIKE_GREETS: Step = {
   talk: "pike",
   narration:
     "Mr. Pike looks down from the bike-shed roof and rubs his chin. \"I've been up on the bike-shed roof since twelve, mending the felt. Right across from the art room windows, as it happens.\"",
 };
-const PIKE_MET: Step[] = [{ move: "playground" }, PIKE_GREETS];
+export const PIKE_MET: Step[] = [{ move: "playground" }, PIKE_GREETS];
 /** Sam has taken his alibi back, so Mr. Pike is worth asking about Nina. */
-const PIKE_AFTER_SAM: Step[] = [
+export const PIKE_AFTER_SAM: Step[] = [
   ...SAM_WITH_SHEET,
   { say: "The sign-in sheet only has your name on it, at five past twelve.", reply: "Sam lowers his comic. \"Okay, she wasn't. Nina asked me to say that.\"", opened: ["sam_retracts"] },
   ...PIKE_MET,
 ];
 
-const ABARA_GREETS: Step = {
+export const ABARA_GREETS: Step = {
   talk: "abara",
   narration:
     "Mrs. Abara turns from the empty cushion, her pencil behind her ear. \"The golden crown is gone! I put it on its cushion on the stage steps at ten past twelve and popped to the staff room. When I came back at a quarter to one, there was only the cushion. And just after twelve, before I put the crown down, I saw Nina hurry past the hall door with something bulging under her jumper.\"",

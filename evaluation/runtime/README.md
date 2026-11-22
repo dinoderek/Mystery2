@@ -21,10 +21,9 @@ To grade a model, use `narrator-claude`, with no server or database; `--model-ov
 puts the game in the loop, validating clue reveals as the CLI path does not.
 
 The canned narrator proves only the plumbing: keep stub runs to `flesch`.
-`narrator-claude` runs with no tools, MCP servers or settings, so the model
-under test never reads `CLAUDE.md`. `config/wrappers/claude-runtime.sh` backs
-`narrator-claude` and `turn-judge`; skipping
-settings skips logins set only in `settings.json`.
+`narrator-claude` runs with no tools, MCP servers or settings
+(`config/wrappers/claude-runtime.sh`), so the model under test never reads
+`CLAUDE.md`.
 
 ### The throwaway server
 
@@ -33,9 +32,9 @@ A `server` run starts the app on a free port against a temporary config root
 action as a typed line, and removes the root afterwards. It never touches your
 play database. A case that sets
 `accusation_history_mode` needs a CLI narrator, since a typed line cannot carry
-it. `--ai-profile` names the AI each request asks for: `mock` needs nothing,
-`default` is mock on the fresh database, and any other name comes from the
-config root's `ai.json`, copied with its key; a missing name or key fails the run first.
+it. An `--ai-profile` other than `mock` or `default` (mock on the fresh
+database) comes from the config root's `ai.json` with its key; a missing name
+or key fails the run first.
 
 ## Cases
 
@@ -62,9 +61,8 @@ per narrator interaction (`InteractionId` in `packages/shared/src/age-profile.ts
   Here the case's history is context and the action under test is the one judged
   turn.
 
-**Which judges run:** `--judges a,b`, else the case's `judges`, else none. A stored
-turn judged again (below) falls back to its earlier result's judges, else
-`flesch`. The `gm_*` battery is opt-in here.
+**Which judges run:** `--judges a,b`, else the case's `judges`, else none (a
+stored turn: below). The `gm_*` battery is opt-in here.
 
 **Options** go in the case's `judgeConfig.<judge>`: `tolerance` (`flesch`, grade
 levels above target, default 2), `targetAge` (`flesch`, `age_appropriate_turn`) and
@@ -82,7 +80,9 @@ narrator's output as the game reads it: `revealed_clue_id` (search; an id or
 `null`), `revealed_clue_ids` and `used_clue_ids` (sets), `input_understood`.
 `expect.judges` maps a turn judge, such as `gm_roleplay`, to the way its fail
 errs (`withheld`, `given_away`, `either`); it always runs. See
-`cases/expect-example.ts`.
+`cases/expect-example.ts`. On a clue graph, `whole_fact` lists an expected
+clue's details (spellings each); the narration and its notebook line must hold
+each as whole words. A tell riding on a statement counts with it.
 
 It runs `--samples` times per narrator (default 5), as `<case>__<narrator>__s<n>`.
 A wrong sample **withheld** (an expected clue or use missing), **gave away** (one
@@ -98,8 +98,10 @@ model, samples, commit), by convention as `<case folder>/baselines/<model>.json`
 `baseline compare <baseline> <run>` prints the change per case and group.
 `cases/search-reveals/` and `cases/talk-reveals/` have `haiku` and `sonnet`
 baselines, and `<model>-after` ones. Each `cases/clue-graph/` story has
-`haiku` and `sonnet`; ported greenhouse cases keep their IDs. Replay one as in
-Running, then `baseline compare` the run against each.
+`haiku` and `sonnet`; ported greenhouse cases keep their IDs. Its `whole-fact`,
+`plain-unknown` and `invention` groups, with `gm_clue_discipline` and
+`gm_fabrication`, measure [the narrator's judgement](../../docs/clue-graph.md);
+each case and group scores at least 4 of 5.
 
 ## Running
 
@@ -135,8 +137,7 @@ uses default options and is not graded.
 
 `./dev eval cases <trace.json>` turns a stored trace (`evaluation/trace/README.md`)
 into cases: an event becomes one, its pre-event state and earlier events as
-`given`. By default it samples up to 3 `ask` and 3 `talk` events, judged by `flesch`,
-into `<output root>/cases/<trace>/`; `--help` explains overrides.
+`given`; `--help` gives its sampling defaults and overrides.
 
 Given the trace itself, `judge turn` judges each narrated turn on its own
 narration with `flesch` and `age_appropriate_turn` (which still calls its model),

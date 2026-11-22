@@ -37,7 +37,9 @@ The game rewards real detective work at once. Be generous about how the investig
 - Never invent clues, facts or people beyond the state and knows.
 
 ## The notebook
-Everything that comes out this line goes in the investigator's notebook: every says_first entry, every id you report in opened or answered, and everything in their "with". Give each one notebook entry: its id, and a line of about {{notebook_words}} words that a child can read, keeping every name, time, place and object of its fact, and the spot named in names_spot. Write a statement as what {{character_name}} said ("{{character_name}} says ..."), never as true. Nothing else goes in: not what was said on an earlier line, and not what knows shares.
+Everything that comes out this line goes in the investigator's notebook: every says_first entry, every id you report in opened or answered, and everything in their "with". Give each one notebook entry: its id, and a line of about {{notebook_words}} words that a child can read. The line is all the investigator keeps of the clue, so it carries every name, time, place and object of its fact, and the spot named in names_spot: make it longer rather than drop one. Before you answer, check each line against its fact, detail by detail. Write a statement as what {{character_name}} said ("{{character_name}} says ..."), never as true. Nothing else goes in: not what was said on an earlier line, and not what knows shares.
+
+Copy every id exactly as it is given. Report only an entry's own id in opened or answered, never one from its "with".
 
 Return JSON:
 {
@@ -71,7 +73,7 @@ When you describe finding a clue with names_spot, name that spot, and where it i
 Otherwise mention only the spots in visible_spots. Never mention, hint at or invent any other place to search, or any evidence a clue does not give.
 
 ## The notebook
-A clue found goes in the investigator's notebook: give it one notebook entry, its id and a line of about {{notebook_words}} words that a child can read, keeping every name, time, place and object of its fact, and the spot named in names_spot. Finding nothing, the notebook is empty: [].
+A clue found goes in the investigator's notebook: give it one notebook entry, its id exactly as given and a line of about {{notebook_words}} words that a child can read. The line is all the investigator keeps of the clue, so it carries every name, time, place and object of its fact, and the spot named in names_spot: make it longer rather than drop one. Before you answer, check the line against its fact, detail by detail. Finding nothing, the notebook is empty: [].
 
 Return JSON:
 {

@@ -203,12 +203,26 @@ describe("the runtime harness on a clue-graph case", () => {
     expect(resolveRoleName("search", given, { type: "search", search_query: "the pegs" }, blueprint, [])).toBe("search");
   });
 
-  it("reads what a clue-graph talk reply opened and answered", () => {
+  it("reads what a clue-graph talk reply opened and answered, and the line it wrote for each", () => {
+    const notebook = [{ id: "toby_blames_mia", line: "Toby says it could have been Mia." }, { id: "toby_no_key", line: "Toby says he has not seen the key." }];
     const turn = {
       action: { type: "ask" },
-      response: { raw: { narration: "Hm.", opened: ["toby_blames_mia"], answered: ["toby_no_key"], input_understood: true } },
+      response: { raw: { narration: "Hm.", opened: ["toby_blames_mia"], answered: ["toby_no_key"], notebook, input_understood: true } },
     } as unknown as Parameters<typeof outputSays>[0];
-    expect(outputSays(turn)).toEqual({ revealed: ["toby_blames_mia", "toby_no_key"], used: [], understood: true });
+    expect(outputSays(turn)).toEqual({
+      revealed: ["toby_blames_mia", "toby_no_key"],
+      used: [],
+      understood: true,
+      lines: { toby_blames_mia: "Toby says it could have been Mia.", toby_no_key: "Toby says he has not seen the key." },
+    });
+  });
+
+  it("reads a clue-graph search reply's find and its line", () => {
+    const turn = {
+      action: { type: "search" },
+      response: { raw: { narration: "Glass.", revealed_clue_id: "clue_glass_outside", costs_turn: true, input_understood: true, notebook: [{ id: "clue_glass_outside", line: "The glass is outside." }] } },
+    } as unknown as Parameters<typeof outputSays>[0];
+    expect(outputSays(turn)).toEqual({ revealed: ["clue_glass_outside"], used: [], understood: true, lines: { clue_glass_outside: "The glass is outside." } });
   });
 
   it("seeds the private snapshot beside the session, so the server plays the case and not the file", async () => {

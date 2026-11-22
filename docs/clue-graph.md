@@ -123,14 +123,14 @@ checked without the story checks. Each turn that counts saves its event in
 
 - **Talk** (`graph_talk`): the narrator gets `talkState`, `knows` and
   first-meeting appearance, and reports what the line `opened` and
-  `answered`. A report not offered fails the turn, unsaved; one already held
-  is dropped; gibberish records nothing.
+  `answered`. A report not offered fails the turn, unsaved; one already held,
+  or a tell riding on what came out, is dropped; gibberish records nothing.
 - **Search** (`graph_search`) gives one clue. The engine names the spot from
   the words, else the narrator picks a visible spot's clue, the room's, or
-  none. A hidden spot shows once its pointer is held; before, it wins only
-  words it fits better than any visible spot, finds nothing, and is never
-  named to the narrator.
-- **Notebook lines**, one per clue a turn brings out, are saved in the event's
+  none. A hidden spot shows once its pointer is held; before, words that fit
+  it best find nothing, and it is never named to the narrator.
+- **Notebook lines**, one per clue a turn brings out, each keeping every detail
+  of its fact, are saved in the event's
   `notebook`; a missing, extra, blank or repeated line fails the turn, one for
   a held clue is dropped. Every reader (notebook, later turns, farewell,
   accusation) uses that line.
@@ -148,7 +148,8 @@ bears on who, when or where, keeping what earlier narration established. Asked
 anything beyond their clues and `knows` that bears on the case, a character
 says plainly they do not know.
 
-One talk prompt, generous on how the investigator puts things, strict on what
-they do, judges which offered gates a line opened, given their earlier
-lines, so a clue shown and dodged opens on a follow-up. Cases and baselines:
-`evaluation/runtime/cases/clue-graph/`.
+A line opens the gates its words earn, generous on form and strict on deeds;
+a clue shown and dodged opens on a follow-up.
+
+Cases, baselines and grading:
+`evaluation/runtime/cases/clue-graph/` ([README](../evaluation/runtime/README.md)).

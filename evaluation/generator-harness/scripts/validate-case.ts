@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // Clue-graph case validator for the generator workspace: the case's mechanical
-// check exactly as `./dev generate` runs it (`runClueGraphChecks`), with the
-// brief in ./brief.json beside the case, so the agent sees every fault the
-// harness will quote back to it.
+// check exactly as `./dev generate` runs it (`runClueGraphChecks`), with its
+// brief, so the agent sees every fault the harness will quote back to it. The
+// brief is the brief.json beside the case, else the one in the current
+// directory, so an example can be checked too.
 //
 // Usage: node scripts/validate-case.ts ./case.json
 //
@@ -15,6 +16,7 @@
 // Node resolves imports from the script's real path, so this works through the
 // workspace's symlink.
 
+import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
@@ -36,7 +38,8 @@ if (!caseFile || process.argv.length > 3) {
   process.exit(3);
 }
 const resolved = path.resolve(caseFile);
-const message = (await readJson(path.join(path.dirname(resolved), "brief.json"))) as { story_brief?: unknown };
+const beside = path.join(path.dirname(resolved), "brief.json");
+const message = (await readJson(existsSync(beside) ? beside : path.resolve("brief.json"))) as { story_brief?: unknown };
 const candidate = await readJson(resolved);
 
 const [check] = runClueGraphChecks({ brief: message.story_brief ?? message, blueprintCandidate: candidate });

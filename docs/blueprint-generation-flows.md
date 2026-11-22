@@ -2,7 +2,7 @@
 
 V2 schema: `packages/shared/src/blueprint-schema-v2.ts`; narrator context:
 `docs/ai-runtime.md`; [MSF](msf-gameplay.md), [clue graph](clue-graph.md).
-“Input” is sent to the model; “attached” is paired with its output; sessions
+“Input” goes to the model; “attached” is paired with its output; sessions
 store ids.
 
 ## Generating a clue-graph case
@@ -20,8 +20,8 @@ copies a passing final case to `blueprints/clue-graph/`.
 
 ## Generating a blueprint
 
-`./dev generate --format v2` uses `buildBlueprintGenerationChatInput` in
-`packages/blueprint-generator` for both backends:
+`./dev generate --format v2` uses `buildBlueprintGenerationChatInput` for both
+backends:
 
 - **System:** `packages/blueprint-generator/src/generator-prompt.md` plus age
   guidance from `renderGenerationGuidance` in `packages/shared/src/age-profile.ts`.
@@ -30,7 +30,7 @@ copies a passing final case to `blueprints/clue-graph/`.
 - **API response format:** strict JSON Schema from `BlueprintV2Schema`, less
   image ids; strict-mode nulls are removed.
 
-The agent gets both in its workspace.
+The agent's workspace holds both.
 
 ### Repair rounds
 
@@ -99,14 +99,14 @@ Ratios are checked against OpenRouter’s list; models vary.
 ## Generating 3D scenes
 
 `./dev eval scenes <blueprint.json> --install` generates missing location
-recipes through the `scene-generator` binding. Prompts get only visual
-direction and location names, descriptions and searchable areas. A failure never replaces
-installed art.
+recipes through the `scene-generator` binding, keeping existing ones. Prompts
+get only visual direction and location names, descriptions and searchable
+areas. A failure never replaces installed art.
 
 `packages/shared/src/scene-schema.ts` bounds shapes, transforms and
 animations, rejecting executable fields and unknown references. Manifests live
-in `blueprint-scenes/<blueprint-id>.json`, the config root's first; the
-endpoint serves only these.
+in `blueprint-scenes/<blueprint-id>.json`, the config root's winning over
+committed examples; the endpoint serves only these.
 
 ## Narration at play
 <!-- extract:gameplay-narration -->

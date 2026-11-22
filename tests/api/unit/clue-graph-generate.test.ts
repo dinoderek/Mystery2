@@ -272,6 +272,14 @@ describe("the clue-graph workspace", () => {
     expect(run(target, "print-clue-graph-trails.mjs").stdout).toContain("trails");
   });
 
+  it("checks a case elsewhere in the workspace against the workspace's brief", () => {
+    const target = workspace(good, brief);
+    const checked = spawnSync(process.execPath, ["scripts/validate-case.ts", "examples/dragon-crown.json"], { cwd: target, encoding: "utf8" });
+    // The hand-written case has no size, so it does not fit a small brief.
+    expect(checked.status).toBe(1);
+    expect(checked.stderr).toContain("metadata.size: the brief's size is \"small\"");
+  });
+
   it("fails a case its brief does not fit, naming the field", () => {
     const failed = run(workspace(good, { ...brief, size: "medium" }), "validate-case.ts");
     expect(failed.status).toBe(1);

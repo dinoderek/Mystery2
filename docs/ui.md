@@ -21,13 +21,14 @@ New interactions should be commands before widgets.
 
 `src/routes/+layout.svelte` sends every route except `PUBLIC_PATHS` (`/login`,
 `/settings`) to `/login` until a profile is chosen. It renders nothing on a
-protected route meanwhile, or the page mounts and fires its fetches signed out,
-and session endpoints answer 401.
+protected route meanwhile, or the page mounts and fetches signed out, getting
+401s.
 
 The gate is stricter than the server on purpose: the server asks for a profile
 only where something owned is involved ("Identity and access" in
 `docs/architecture.md`). A `PUBLIC_PATHS` route calls a profile endpoint only
-once one is chosen, as settings does for the reading age.
+once one is chosen: settings, linked from the menu, then sets the profile's
+reading age (`docs/game.md`).
 
 ## The session screen
 

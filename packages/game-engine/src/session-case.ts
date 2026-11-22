@@ -6,7 +6,7 @@ import { buildClueGraphBlueprint } from "../../shared/src/clue-graph-case.ts";
 import { buildMsfBlueprint, type PlayableBlueprint } from "../../shared/src/msf-case.ts";
 import type { ContentStore, GameSessionRow } from "./context.ts";
 import type { LogWriter } from "./logging.ts";
-import { atReadingAge } from "../../shared/src/reading-age.ts";
+import { atReadingAge, gameReadingAge } from "../../shared/src/reading-age.ts";
 
 export async function sessionCase(
   content: ContentStore,
@@ -18,5 +18,5 @@ export async function sessionCase(
     : session.clue_graph_snapshot
       ? buildClueGraphBlueprint(session.clue_graph_snapshot)
       : await content.loadBlueprint(session.blueprint_id, logger);
-  return played ? atReadingAge(played, session.reading_age) : null;
+  return played ? atReadingAge(played, gameReadingAge(played.metadata.target_age, session.reading_age)) : null;
 }

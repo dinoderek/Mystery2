@@ -114,7 +114,7 @@ describe("extraction from a database the test made", () => {
     expect(trace.ai_profile).toEqual({ id: "default", model: "vendor/model-x" });
   });
 
-  it("reads a game at the age it was narrated for, and an older game at its case's", async () => {
+  it("reads a game at the age it was narrated for", async () => {
     const game = createGameDatabase(makeScratch());
     const caseAge = ((await extract(game)).blueprint as unknown as { metadata: { target_age: number } }).metadata.target_age;
     const playedAge = caseAge === 6 ? 7 : 6;

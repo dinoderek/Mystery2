@@ -22,7 +22,7 @@ import { buildGameState } from "../game-state-view.ts";
 import { buildNarrationPrompt } from "../role-request.ts";
 import { createRequestLogger, type LogWriter } from "../logging.ts";
 import { readJsonRequest } from "../request.ts";
-import { atReadingAge } from "../../../shared/src/reading-age.ts";
+import { atReadingAge, gameReadingAge } from "../../../shared/src/reading-age.ts";
 import { NARRATOR_SPEAKER } from "../speaker.ts";
 import {
   createNarrationDiagnostics,
@@ -233,7 +233,8 @@ export async function handle(
     }
     // The game reads at the profile's age when it has set one, else at the
     // case's own; the session saves it, so a later change leaves this game be.
-    const blueprint = atReadingAge(loaded.blueprint, await ctx.profile.getReadingAge());
+    const readingAge = gameReadingAge(loaded.blueprint.metadata.target_age, await ctx.profile.getReadingAge());
+    const blueprint = atReadingAge(loaded.blueprint, readingAge);
 
     const opened = await openCase(req, ctx, logger, blueprint, resolved.profile);
     if (!opened) return internalError("Failed to start game");

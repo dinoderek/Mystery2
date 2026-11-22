@@ -1,12 +1,24 @@
 // A game's reading age: the case's age by default, the profile's when it set
 // one, and what every narrator prompt in the game is written for.
 
+import fs from "node:fs";
 import { readFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { buildClueGraphBlueprint, validateClueGraph, type PlayableBlueprint } from "@my2/shared";
-import { atReadingAge, READING_AGES } from "../../../packages/shared/src/reading-age.ts";
+import {
+  buildClueGraphBlueprint,
+  GameGetResponseSchema,
+  GameStartResponseSchema,
+  validateClueGraph,
+  type PlayableBlueprint,
+} from "@my2/shared";
+import { atReadingAge, gameReadingAge, READING_AGES } from "../../../packages/shared/src/reading-age.ts";
+import { createLocalEngine } from "../../../packages/game-engine/src/context-local.ts";
+import { handle as gameStart } from "../../../packages/game-engine/src/endpoints/game-start.ts";
+import { handle as gameGet } from "../../../packages/game-engine/src/endpoints/game-get.ts";
 import { MAX_TARGET_AGE, MIN_TARGET_AGE } from "../../../packages/shared/src/age-profile.ts";
 import { buildNarrationPrompt, buildRoleRequest } from "../../../packages/game-engine/src/role-request.ts";
 import { sessionCase } from "../../../packages/game-engine/src/session-case.ts";
@@ -93,6 +105,19 @@ describe("atReadingAge", () => {
   });
 });
 
+describe("gameReadingAge", () => {
+  it("takes the chosen age over the case's", () => {
+    expect(gameReadingAge(10, 7)).toBe(7);
+    expect(gameReadingAge(14, 9)).toBe(9);
+  });
+
+  it("reads a case at its own age, brought into range as every prompt reads it", () => {
+    expect(gameReadingAge(8, null)).toBe(8);
+    expect(gameReadingAge(14, null)).toBe(MAX_TARGET_AGE);
+    expect(gameReadingAge(3, null)).toBe(MIN_TARGET_AGE);
+  });
+});
+
 describe("the narrator prompt follows the game's age", () => {
   it("gives one V2 case different age guidance at two ages", async () => {
     const at7 = (await talkStart(atReadingAge(v2, 7))).prompt;
@@ -123,5 +148,46 @@ describe("the narrator prompt follows the game's age", () => {
     expect(readerLine((await talkStart(saved!)).prompt)).toBe("7");
     expect(readerLine((await talkStart(older!)).prompt)).toBe(String(v2.metadata.target_age));
     expect((await talkStart(older!)).prompt).toEqual((await talkStart(v2)).prompt);
+  });
+});
+
+describe("a case whose own age is outside the range", () => {
+  it("starts at the nearest age the narrator writes for, and resumes at it", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mystery-reading-age-"));
+    const local = createLocalEngine({
+      repoRoot: process.cwd(),
+      env: { MYSTERY_CONFIG_ROOT: dir },
+      databasePath: path.join(dir, "database", "test", "game.db"),
+    });
+    try {
+      // Its schema takes any positive age, and a generated case may use one.
+      const older = atReadingAge(v2, 14);
+      const base = local.contextFor({ id: local.players.ensure("Ada").id });
+      const ctx = { ...base, content: { ...base.content, loadBlueprint: async () => older } };
+
+      const res = await gameStart(
+        new Request("http://test/api/game-start", { method: "POST", body: JSON.stringify({ blueprint_id: v2.id }) }),
+        ctx,
+      );
+      expect(res.status).toBe(200);
+      const started = GameStartResponseSchema.parse(await res.json());
+      expect(started.reading_age).toBe(MAX_TARGET_AGE);
+
+      // A game saved before games had an age reads at the same one.
+      local.db.prepare("update game_sessions set reading_age = null where id = ?").run(started.game_id);
+      const resumed = await gameGet(new Request(`http://test/api/game-get?game_id=${started.game_id}`), ctx);
+      expect(resumed.status).toBe(200);
+      expect(GameGetResponseSchema.parse(await resumed.json()).reading_age).toBe(MAX_TARGET_AGE);
+    } finally {
+      local.close();
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("narrates exactly as it did before games had an age", async () => {
+    const older = atReadingAge(v2, 14);
+    const played = await sessionCase({ loadBlueprint: async () => older } as unknown as ContentStore, session(null), silentLogger);
+
+    expect((await talkStart(played!)).prompt).toEqual((await talkStart(older)).prompt);
   });
 });

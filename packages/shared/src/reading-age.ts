@@ -5,7 +5,7 @@
 // later change never moves a game already under way (`docs/game.md`).
 
 import { z } from "zod";
-import { MAX_TARGET_AGE, MIN_TARGET_AGE } from "./age-profile.ts";
+import { clampTargetAge, MAX_TARGET_AGE, MIN_TARGET_AGE } from "./age-profile.ts";
 
 /** An age the narrator can write for. */
 export const ReadingAgeSchema = z.number().int().min(MIN_TARGET_AGE).max(MAX_TARGET_AGE);
@@ -15,6 +15,16 @@ export const READING_AGES: readonly number[] = Array.from(
   { length: MAX_TARGET_AGE - MIN_TARGET_AGE + 1 },
   (_, index) => MIN_TARGET_AGE + index,
 );
+
+/**
+ * The age a game reads at: the one chosen for it (the profile's at its start,
+ * then the one it saved), else its case's own. A case may name an age outside
+ * the range (its schema takes any positive one), so that is brought into range
+ * as every prompt already reads it.
+ */
+export function gameReadingAge(caseAge: number, chosen: number | null): number {
+  return chosen ?? clampTargetAge(caseAge);
+}
 
 /**
  * The case as one game plays it: its `metadata.target_age` becomes the game's

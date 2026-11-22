@@ -25,7 +25,7 @@ import { buildRawTrace } from "./normalize.ts";
 import { buildClueGraphBlueprint } from "../../../packages/shared/src/clue-graph-case.ts";
 import { validateClueGraph } from "../../../packages/shared/src/clue-graph-validator.ts";
 import { buildMsfBlueprint, validateMsfCaseFile } from "../../../packages/shared/src/msf-case.ts";
-import { atReadingAge } from "../../../packages/shared/src/reading-age.ts";
+import { atReadingAge, gameReadingAge } from "../../../packages/shared/src/reading-age.ts";
 import { clueGraphProgress } from "../../../packages/game-engine/src/ai-context.ts";
 import type { RawTrace } from "./normalize.ts";
 
@@ -124,8 +124,14 @@ export function createLocalTraceSource({
   };
 }
 
-function hasMetadata(blueprint: unknown): blueprint is { metadata: { target_age: number } } {
-  return typeof (blueprint as { metadata?: unknown } | null)?.metadata === "object";
+function hasTargetAge(blueprint: unknown): blueprint is { metadata: { target_age: number } } {
+  const metadata = (blueprint as { metadata?: { target_age?: unknown } } | null)?.metadata;
+  return typeof metadata?.target_age === "number";
+}
+
+/** The case at the age the game was narrated for, decided as the engine decides it. */
+function playedAt<T extends { metadata: { target_age: number } }>(blueprint: T, readingAge: number | null): T {
+  return atReadingAge(blueprint, gameReadingAge(blueprint.metadata.target_age, readingAge));
 }
 
 // Pulls a full session trace through a source (real or fake) and returns the
@@ -139,7 +145,8 @@ export async function extractSessionTrace(
   const session = await source.fetchSession(sessionId);
   const events = await source.fetchEvents(sessionId);
   // A game is judged at the age it was narrated for, saved at its start; an
-  // older game, or a database from before games had one, reads at its case's.
+  // older game, or a database from before games had one, reads at its case's,
+  // brought into range as the engine plays it.
   const readingAge = typeof session.reading_age === "number" ? session.reading_age : null;
   // The case a clue-graph game played is the private snapshot saved at its
   // start, never the file as it is now; its format and what the player had
@@ -156,7 +163,7 @@ export async function extractSessionTrace(
     return buildRawTrace({
       session,
       events,
-      blueprint: atReadingAge(buildClueGraphBlueprint(graph), readingAge),
+      blueprint: playedAt(buildClueGraphBlueprint(graph), readingAge),
       source: { kind: "local", database: source.databasePath ? path.resolve(source.databasePath) : null },
       extractedAt,
       clueGraph: {
@@ -168,7 +175,7 @@ export async function extractSessionTrace(
   }
   const snapshot = session.msf_snapshot == null ? null : JSON.parse(String(session.msf_snapshot));
   const authored = snapshot ? buildMsfBlueprint(validateMsfCaseFile(snapshot)) : await source.downloadBlueprint(session.blueprint_id as string);
-  const blueprint = hasMetadata(authored) ? atReadingAge(authored, readingAge) : authored;
+  const blueprint = hasTargetAge(authored) ? playedAt(authored, readingAge) : authored;
 
   return buildRawTrace({
     session,

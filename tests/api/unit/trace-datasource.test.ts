@@ -15,6 +15,7 @@ import {
   extractSessionTrace,
 } from "../../../evaluation/trace/lib/datasource.ts";
 import { createGameDatabase } from "./trace-database-fixture.ts";
+import { MAX_TARGET_AGE } from "../../../packages/shared/src/age-profile.ts";
 
 let scratch = "";
 
@@ -125,6 +126,17 @@ describe("extraction from a database the test made", () => {
 
     const trace = await extract(game);
     expect((trace.blueprint as unknown as { metadata: { target_age: number } }).metadata.target_age).toBe(playedAge);
+  });
+
+  it("reads an older game of a case whose own age is out of range at the age the engine played it", async () => {
+    const game = createGameDatabase(makeScratch());
+    const file = path.join(game.root, "blueprints", `${game.blueprintId}.json`);
+    const blueprint = JSON.parse(fs.readFileSync(file, "utf-8"));
+    blueprint.metadata.target_age = 14;
+    fs.writeFileSync(file, JSON.stringify(blueprint));
+
+    const trace = await extract(game);
+    expect((trace.blueprint as unknown as { metadata: { target_age: number } }).metadata.target_age).toBe(MAX_TARGET_AGE);
   });
 
   it("names a missing database and creates nothing", () => {

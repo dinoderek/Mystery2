@@ -7,7 +7,7 @@
  * clue-graph workspace, and checked by the case validator; it may be repaired
  * from the validator's faults alone, and is installed into the library's
  * `clue-graph/` only when its final round passed every check and judge it ran.
- * What follows describes Blueprint V2, which works as it always has.
+ * What follows describes Blueprint V2.
  *
  * `--backend agent` runs the Claude agent in its workspace (the `generator-agent`
  * binding); `--backend api` makes one OpenRouter call (`generator-api`). Both

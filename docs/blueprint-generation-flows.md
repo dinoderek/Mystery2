@@ -8,15 +8,12 @@ store ids.
 ## Generating a clue-graph case
 
 `./dev generate` writes a `clue-graph/2` case by default (agent only) from a
-brief (`packages/blueprint-generator/src/clue-graph-brief.ts`).
-
-- **System:** `packages/blueprint-generator/src/clue-graph-prompt.md`: no age
-  guidance or validator rule.
-- **Workspace:** `setup-workspace.sh <dir> clue-graph`; its validator is the
-  case's mechanical check (`evaluation/generator-harness/template/README.md`).
-
-Repair needs no `--judge` (two rounds by default, five at most); a passing
-final case installs to `blueprints/clue-graph/`.
+brief (`packages/blueprint-generator/src/clue-graph-brief.ts`). Prompt:
+`packages/blueprint-generator/src/clue-graph-prompt.md`, no age guidance or
+validator rule; workspace validator: the mechanical check
+(`evaluation/generator-harness/template/README.md`). Repair needs no
+`--judge` (two by default, five at most); `--install` copies a passing final
+case to `blueprints/clue-graph/`.
 
 ## Generating a blueprint
 
@@ -92,7 +89,7 @@ Three phases keep images consistent:
 For `clue-graph/2`, portraits use appearance facts, locations public facts,
 covers cover facts (else the title) and visual direction; artwork is optional.
 
-Ratios are checked against OpenRouter’s list.
+Ratios are checked against OpenRouter’s list, but support varies by model.
 
 ## Generating 3D scenes
 
@@ -101,8 +98,8 @@ recipes through the `scene-generator` binding, keeping existing ones. Prompts
 get only visual direction and location names, descriptions and searchable
 areas. A failure never replaces installed art.
 
-`packages/shared/src/scene-schema.ts` bounds shapes and rejects executable
-fields and unknown references. Manifests live
+`packages/shared/src/scene-schema.ts` bounds shapes, transforms and
+animations, rejecting executable fields and unknown references. Manifests live
 in `blueprint-scenes/<blueprint-id>.json`, the config root's winning over
 committed examples; the endpoint serves only these.
 

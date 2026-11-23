@@ -14,6 +14,7 @@ import type { ClueGraphCase } from "../../../packages/shared/src/clue-graph-sche
 import type { MsfCaseFile } from "../../../packages/shared/src/msf-case.ts";
 import path from "node:path";
 
+import { ACCUSATIONS } from "../../../packages/game-engine/src/accusations.ts";
 import type { PlayedEvent } from "./database.ts";
 import type { PlayedGame } from "./game.ts";
 import type { Divergence } from "./investigator.ts";
@@ -64,6 +65,10 @@ export interface GameSummary {
   steps: number;
   turns_used: number;
   time_budget: number;
+  /** Judged accusations that did not win: each spent one of the game's three. */
+  accusations_spent: number;
+  /** The game was won by its third accusation, after two failures. */
+  won_on_third_accusation: boolean;
   parser_rejections: number;
   failed_calls: number;
   clues_found: number;
@@ -74,6 +79,24 @@ export interface GameSummary {
   investigator_cost_usd: number | null;
   wall_seconds: number;
   grades?: unknown;
+}
+
+/** The accusations the game judged, from the events its played turns saved. */
+export function countAccusations(steps: PlayedGame["steps"], result: PlayedGame["result"]): {
+  accusations_spent: number;
+  won_on_third_accusation: boolean;
+} {
+  let judged = 0;
+  for (const step of steps) {
+    const body = step.response.body as { kind?: string; events?: Array<{ event_type?: string }> } | null;
+    if (body?.kind !== "turn") continue;
+    judged += (body.events ?? []).filter((event) =>
+      event.event_type === "accuse_failed" || event.event_type === "accuse_resolved"
+    ).length;
+  }
+  const won = result === "win";
+  // A win is the one judged accusation that spends nothing.
+  return { accusations_spent: judged - (won && judged > 0 ? 1 : 0), won_on_third_accusation: won && judged === 3 };
 }
 
 /** Every clue a blueprint defines: at locations, sub-locations and characters; a clue-graph case's, the notebook's. */
@@ -146,6 +169,7 @@ export function summarizeGame({
     steps: game.steps.length,
     turns_used: blueprint.metadata.time_budget - game.finalState.time_remaining,
     time_budget: blueprint.metadata.time_budget,
+    ...countAccusations(game.steps, game.result),
     parser_rejections: game.steps.filter((step) => step.action.kind === "refused" || step.action.kind === "view").length,
     failed_calls: game.steps.filter((step) => step.response && !step.response.ok).length,
     clues_found: found.length,
@@ -191,6 +215,8 @@ function renderTranscript(game: PlayedGame, summary: GameSummary): string {
       : []),
     `- Turns used: ${summary.turns_used} of ${summary.time_budget}; steps: ${summary.steps}` +
       ` (${summary.parser_rejections} not understood by the parser, ${summary.failed_calls} failed calls)`,
+    `- Accusations spent: ${summary.accusations_spent} of ${ACCUSATIONS}` +
+      (summary.won_on_third_accusation ? " (won on the third accusation)" : ""),
     `- Clues found: ${summary.clues_found} of ${summary.clues_total}`,
     `- Cost: narrator ${formatCost(summary.narrator_cost_usd)}, investigator ${formatCost(summary.investigator_cost_usd)}`,
     `- Wall time: ${summary.wall_seconds}s`,

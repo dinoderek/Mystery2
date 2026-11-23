@@ -158,7 +158,7 @@
     "narrator_calls": 0,
     "status": "Sealed for later acceptance; no held-out outputs generated or used for tuning"
   },
-  "interpretation": "Descriptive original-policy development baseline: four fixed states of one purposively selected age-10 mystery, one sample per model/state. Mechanical checks are not a grounding or age-suitability verdict. Human assessment remains pending. Unseen-mystery reliability and a population 95% interval are not estimable from this diagnostic cohort; final acceptance thresholds are not established.",
+  "interpretation": "Descriptive original-policy development baseline: four fixed states of one purposively selected age-10 mystery, one sample per model/state. Mechanical checks are not a grounding or age-suitability verdict. Human assessment remains pending. Unseen-mystery reliability and a population 95% interval are not estimable from this diagnostic cohort; achievement of the final acceptance thresholds is not established.",
   "main_integration": {
     "base_commit": "62b8e3ec24833717bee7a186418a575b0cf4874d",
     "frozen_capture_commit": "34b63818743e9b18138da16161d014ebd3bf055b",

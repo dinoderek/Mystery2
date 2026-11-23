@@ -1,11 +1,18 @@
-import { describe, expect, it } from "vitest";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 
+import { afterEach, describe, expect, it } from "vitest";
+
+import { readBlueprint } from "../../../evaluation/runtime/lib/case.ts";
 import {
   actionForEvent,
+  casesCommand,
   buildCase,
   historyPayload,
   sampleEvenly,
 } from "../../../evaluation/runtime/cases.ts";
+import { makeRawTrace } from "./trace-fixtures";
 
 // These helpers turn a collected game-master trace into deterministic
 // single-event runtime-eval cases. They run without a database or LLM, so we
@@ -188,5 +195,51 @@ describe("buildCase", () => {
     const { given } = buildCase(target, [], blueprintPath, ["flesch"]);
     expect(given.time_remaining).toBe(99);
     expect(given.talk_character_id).toBe("c2");
+  });
+});
+
+describe("the cases command", () => {
+  let scratch = "";
+  afterEach(() => {
+    if (scratch) fs.rmSync(scratch, { recursive: true, force: true });
+    scratch = "";
+  });
+
+  const run = (tracePath: string, out: string) =>
+    casesCommand.run([tracePath, "--out", out], { root: process.cwd(), out: () => {}, err: () => {}, env: {} });
+
+  it("writes the trace's clue-graph case, which the harness reads back, beside the cases", async () => {
+    scratch = fs.mkdtempSync(path.join(os.tmpdir(), "mystery-cases-command-"));
+    const tracePath = path.join(scratch, "trace.json");
+    fs.writeFileSync(tracePath, JSON.stringify(makeRawTrace()));
+    expect(await run(tracePath, path.join(scratch, "out"))).toBe(0);
+
+    const cases = JSON.parse(fs.readFileSync(path.join(scratch, "out", "trace.cases.json"), "utf8"));
+    expect(cases.length).toBeGreaterThan(0);
+    const { blueprint } = await readBlueprint(cases[0].blueprint.path, process.cwd());
+    expect(blueprint.clue_graph.metadata.id).toBe("mock-case");
+  });
+
+  it("writes the case at the age the game was played, which the trace's world view carries", async () => {
+    scratch = fs.mkdtempSync(path.join(os.tmpdir(), "mystery-cases-command-"));
+    const tracePath = path.join(scratch, "trace.json");
+    const trace = makeRawTrace();
+    const authored = trace.blueprint.clue_graph!.metadata.target_age;
+    const played = authored === 7 ? 8 : 7;
+    fs.writeFileSync(tracePath, JSON.stringify({ ...trace, blueprint: { ...trace.blueprint, metadata: { ...trace.blueprint.metadata, target_age: played } } }));
+    expect(await run(tracePath, path.join(scratch, "out"))).toBe(0);
+
+    const cases = JSON.parse(fs.readFileSync(path.join(scratch, "out", "trace.cases.json"), "utf8"));
+    const { blueprint } = await readBlueprint(cases[0].blueprint.path, process.cwd());
+    expect(blueprint.clue_graph.metadata.target_age).toBe(played);
+  });
+
+  it("refuses a trace of a blueprint that is not a clue graph, by name, and writes nothing", async () => {
+    scratch = fs.mkdtempSync(path.join(os.tmpdir(), "mystery-cases-command-"));
+    const tracePath = path.join(scratch, "trace.json");
+    fs.writeFileSync(tracePath, JSON.stringify({ blueprint: { id: "the-missing-heartwood", world: {} }, events: [] }));
+
+    await expect(run(tracePath, path.join(scratch, "out"))).rejects.toThrow(/blueprint the-missing-heartwood, which is not a clue-graph case/);
+    expect(fs.existsSync(path.join(scratch, "out"))).toBe(false);
   });
 });

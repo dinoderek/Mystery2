@@ -17,7 +17,7 @@ import { makeTurn } from "./runtime-turn-helpers.ts";
 import { MOCK_CASE_PATH } from "../../testkit/src/mock-case.ts";
 
 const REPO_ROOT = process.cwd();
-const CASES = "evaluation/runtime/cases/age-readability.ts";
+const CASES = "evaluation/runtime/cases/clue-graph/mock-case/readability.ts";
 const STUB_NARRATOR = {
   cmd: "evaluation/runtime/config/wrappers/stub-runtime.sh",
   args: ["{{user_message_file}}"],

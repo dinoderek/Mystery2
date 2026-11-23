@@ -233,8 +233,6 @@ export const REGISTRY: readonly RegistryEntry[] = [
 
   gameCheck("clue_accounting"),
   gameCheck("spoiler_leak", { spoiler_min_run: 12 }),
-  // Off by default: set `enforce_requires` to run it.
-  gameCheck("clue_requires_violation", { enforce_requires: false }),
 
   gameMasterJudge("gm_roleplay"),
   gameMasterJudge("gm_clue_discipline"),

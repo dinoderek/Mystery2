@@ -173,8 +173,8 @@ describe("projectTraceSubject", () => {
     const phases = Object.fromEntries(
       subject.turns.map((t: { sequence: number; is_accusation_phase: boolean }) => [t.sequence, t.is_accusation_phase]),
     );
-    // 3 accuse_start, 4 accuse_failed, 5 accuse_resolved
-    expect([phases[3], phases[4], phases[5]]).toEqual([false, false, true]);
+    // 4 accuse_start, 5 accuse_failed, 6 accuse_resolved
+    expect([phases[4], phases[5], phases[6]]).toEqual([false, false, true]);
   });
 
   it("flags accusation turns so the spoiler judge stops at the endgame", () => {
@@ -184,7 +184,7 @@ describe("projectTraceSubject", () => {
     );
     expect(accusation.length).toBeGreaterThan(0);
     for (const turn of accusation) {
-      expect(String(turn.role_name)).toMatch(/^accusation_/);
+      expect(String(turn.role_name)).toMatch(/^graph_ending$/);
     }
   });
 });

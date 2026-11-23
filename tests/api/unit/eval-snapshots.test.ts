@@ -29,7 +29,6 @@ import { judgeTurnCommand } from "../../../evaluation/runtime/judge-turn.ts";
 import { gradeGame } from "../../../evaluation/playtest/lib/judge.ts";
 import { INVESTIGATOR_BINDING, listPersonas, modelInvestigator } from "../../../evaluation/playtest/lib/investigator.ts";
 import { buildView } from "../../../evaluation/playtest/lib/view.ts";
-import { validBlueprintV2 } from "./fixtures/blueprint-v2.fixture.ts";
 import {
   clearForRecording,
   expectStored,
@@ -38,7 +37,7 @@ import {
   verdictFile,
   type PromptParts,
 } from "./eval-snapshot-store.ts";
-import { makeClueGraphRawTrace, makeRawTrace } from "./trace-fixtures.ts";
+import { makeClueGraphRawTrace } from "./trace-fixtures.ts";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = process.cwd();
@@ -58,16 +57,13 @@ const GRAPH_JUDGES = [...GM_JUDGES, ...GM_CANDIDATES];
 const PERSONAS = listPersonas() as string[];
 
 const PROMPT_IDS = [
-  ...GM_JUDGES.map((id) => `trace.${id}`),
-  ...GM_JUDGES.map((id) => `runtime.${id}`),
-  "runtime.age_appropriate",
+  "runtime-clue-graph.age_appropriate",
   ...PERSONAS.map((persona) => `investigator.${persona}`),
-  ...GM_CANDIDATES.flatMap((id) => [`trace.${id}`, `runtime.${id}`]),
   ...GRAPH_JUDGES.flatMap((id) => [`trace-clue-graph.${id}`, `runtime-clue-graph.${id}`]),
   "runtime-clue-graph-accusation.gm_spoiler",
   ...CASE_JUDGES.map((id) => `blueprint.${id}`),
 ];
-const VERDICT_NAMES = ["trace", "runtime", "playtest-judging", "candidates", "blueprint-clue-graph", "runtime-clue-graph-accusation"];
+const VERDICT_NAMES = ["trace-clue-graph", "runtime-clue-graph", "playtest-judging", "candidates", "blueprint-clue-graph", "runtime-clue-graph-accusation"];
 
 type Json = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -168,33 +164,6 @@ function judgeDimension(verdict: Json) {
   });
 }
 
-async function runTraceHarness(answersFile: string) {
-  const traceFile = path.join(scratch, "trace", "trace.json");
-  const config = path.join(scratch, "trace", "config.json");
-  fs.mkdirSync(path.dirname(traceFile), { recursive: true });
-  fs.writeFileSync(traceFile, JSON.stringify(makeRawTrace()));
-  fs.writeFileSync(config, JSON.stringify({ "game-judge": stubBinding(answersFile, "trace.{id}") }));
-
-  const outputRoot = path.join(scratch, "trace", "out");
-  const result = await runForResult(
-    ["dev", "eval", "judge", "game", traceFile, "--config", config, "--output-root", outputRoot, "--quiet"],
-    outputRoot,
-  );
-  const reconstruction = JSON.parse(
-    fs.readFileSync(path.join(path.dirname(findFiles(outputRoot, "result.json")[0]), "reconstruction.json"), "utf8"),
-  );
-  // The verdicts, in the shape they were recorded in before the harness moved onto
-  // the core's result format.
-  const judges = result.verdicts.filter((verdict: Json) => verdict.tier === "judge");
-  verdicts.set("trace", {
-    reconstruction: { turns: reconstruction.turns.length, context_errors: reconstruction.issues.length, issues: reconstruction.issues },
-    mechanical: result.verdicts.filter((verdict: Json) => verdict.tier === "mechanical").map(check),
-    dimensions: judges.map(judgeDimension),
-    run_error: result.run_error,
-  });
-  for (const id of GM_JUDGES) prompts.set(`trace.${id}`, capturedPrompt(`trace.${id}`));
-}
-
 /** One ask of Toby in the greenhouse clue-graph case, with the move and greeting before it as recorded by the engine. */
 function graphTurnCase(blueprintFile: string, judges: string[]) {
   return {
@@ -234,42 +203,20 @@ function graphTurnCase(blueprintFile: string, judges: string[]) {
   };
 }
 
-/** Replays one case through `judge turn` with these judges, and reads back what it wrote. */
+/** Replays one clue-graph case through `judge turn` with these judges, and reads back what it wrote. */
 async function runTurnCase(
   answersFile: string,
   folder: string,
   judges: string[],
   expectedCode: number,
-  { graph = false, captureDir }: { graph?: boolean; captureDir?: string } = {},
+  { captureDir }: { captureDir?: string } = {},
 ) {
   const dir = path.join(scratch, folder);
   fs.mkdirSync(dir, { recursive: true });
   const blueprintFile = path.join(dir, "blueprint.json");
-  fs.writeFileSync(
-    blueprintFile,
-    graph ? fs.readFileSync(path.join(REPO_ROOT, "blueprints", "clue-graph", "greenhouse-prizewinner.json")) : JSON.stringify(validBlueprintV2),
-  );
+  fs.writeFileSync(blueprintFile, fs.readFileSync(path.join(REPO_ROOT, "blueprints", "clue-graph", "greenhouse-prizewinner.json")));
 
-  const testCase = graph ? graphTurnCase(blueprintFile, judges) : {
-    id: "ask-alice",
-    blueprint: { path: blueprintFile },
-    given: {
-      mode: "talk",
-      location_id: "kitchen",
-      talk_character_id: "alice",
-      time_remaining: 7,
-      history: [
-        {
-          event_type: "talk",
-          actor: "system",
-          narration: "You step closer to Alice by the counter. She gives you a quick, tight smile.",
-          payload: { character_id: "alice" },
-        },
-      ],
-    },
-    action: { type: "ask", player_input: "Where did the cookies go?" },
-    judges,
-  };
+  const testCase = graphTurnCase(blueprintFile, judges);
   const caseFile = path.join(dir, "case.mjs");
   fs.writeFileSync(caseFile, `export default ${JSON.stringify(testCase)};\n`);
   const config = path.join(dir, "config.json");
@@ -332,15 +279,33 @@ async function runClueGraphHarnesses(answersFile: string) {
     JSON.stringify({ "game-judge": stubBinding(answersFile, "trace.{id}", path.join(scratch, "captured-graph-trace")) }),
   );
   const outputRoot = path.join(dir, "out");
-  await runForResult(
+  const result = await runForResult(
     ["dev", "eval", "judge", "game", traceFile, "--judges", GRAPH_JUDGES.join(","), "--config", config, "--output-root", outputRoot, "--quiet"],
     outputRoot,
   );
-  await runTurnCase(answersFile, "runtime-clue-graph", GRAPH_JUDGES, 2, { graph: true, captureDir: path.join(scratch, "captured-graph-runtime") });
+  const reconstruction = JSON.parse(
+    fs.readFileSync(path.join(path.dirname(findFiles(outputRoot, "result.json")[0]), "reconstruction.json"), "utf8"),
+  );
+  // The verdicts, in the shape they were recorded in before the harness moved onto
+  // the core's result format.
+  verdicts.set("trace-clue-graph", {
+    reconstruction: { turns: reconstruction.turns.length, context_errors: reconstruction.issues.length, issues: reconstruction.issues },
+    mechanical: result.verdicts.filter((verdict: Json) => verdict.tier === "mechanical").map(check),
+    dimensions: result.verdicts.filter((verdict: Json) => verdict.tier === "judge").map(judgeDimension),
+    run_error: result.run_error,
+  });
+  // Two failing judges is a verdict (2); anything else means the run broke.
+  verdicts.set(
+    "runtime-clue-graph",
+    await runTurnCase(answersFile, "runtime-clue-graph", ["flesch", "age_appropriate_turn", ...GRAPH_JUDGES], 2, {
+      captureDir: path.join(scratch, "captured-graph-runtime"),
+    }),
+  );
   for (const id of GRAPH_JUDGES) {
     prompts.set(`trace-clue-graph.${id}`, capturedPrompt(`trace.${id}`, "captured-graph-trace"));
     prompts.set(`runtime-clue-graph.${id}`, capturedPrompt(`runtime.${id}`, "captured-graph-runtime"));
   }
+  prompts.set("runtime-clue-graph.age_appropriate", capturedPrompt("runtime.age_appropriate", "captured-graph-runtime"));
 }
 
 /**
@@ -412,13 +377,6 @@ async function runClueGraphBlueprint(answersFile: string) {
   for (const id of CASE_JUDGES) prompts.set(`blueprint.${id}`, capturedPrompt(`blueprint.${id}`, "captured-case"));
 }
 
-async function runRuntimeHarness(answersFile: string) {
-  // Two failing judges is a verdict (2); anything else means the run broke.
-  verdicts.set("runtime", await runTurnCase(answersFile, "runtime", ["flesch", "age_appropriate_turn", ...GM_JUDGES], 2));
-  for (const id of GM_JUDGES) prompts.set(`runtime.${id}`, capturedPrompt(`runtime.${id}`));
-  prompts.set("runtime.age_appropriate", capturedPrompt("runtime.age_appropriate"));
-}
-
 /** A judge's verdict as the candidate snapshot records it: what it reached and from which findings. */
 function candidateVerdict(verdict: Json) {
   return { id: verdict.id, status: verdict.status, findings: verdict.findings ?? null, details: verdict.details ?? null };
@@ -426,14 +384,14 @@ function candidateVerdict(verdict: Json) {
 
 /**
  * The candidates, each named on its harness's command: on the trace and on a
- * turn. Their prompts are kept beside the battery's.
+ * turn. Their prompts are the clue-graph battery's.
  */
 async function runCandidates(answersFile: string) {
   const dir = path.join(scratch, "candidates");
   const traceFile = path.join(dir, "trace.json");
   const config = path.join(dir, "config.json");
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(traceFile, JSON.stringify(makeRawTrace()));
+  fs.writeFileSync(traceFile, JSON.stringify(makeClueGraphRawTrace()));
   fs.writeFileSync(config, JSON.stringify({ "game-judge": stubBinding(answersFile, "trace.{id}") }));
 
   const traceOut = path.join(dir, "trace-out");
@@ -444,17 +402,13 @@ async function runCandidates(answersFile: string) {
   const runtime = await runTurnCase(answersFile, "candidates-runtime", GM_CANDIDATES, 0);
   const judged = (result: Json) => result.verdicts.filter((verdict: Json) => verdict.tier === "judge").map(candidateVerdict);
   verdicts.set("candidates", { trace: judged(trace), runtime: runtime.judges });
-  for (const id of GM_CANDIDATES) {
-    prompts.set(`trace.${id}`, capturedPrompt(`trace.${id}`));
-    prompts.set(`runtime.${id}`, capturedPrompt(`runtime.${id}`));
-  }
 }
 
 async function runPlaytestJudging(answersFile: string) {
   const gameDir = path.join(scratch, "playtest", "game-1");
   const config = path.join(scratch, "playtest", "config.json");
   fs.mkdirSync(gameDir, { recursive: true });
-  fs.writeFileSync(path.join(gameDir, "trace.json"), JSON.stringify(makeRawTrace()));
+  fs.writeFileSync(path.join(gameDir, "trace.json"), JSON.stringify(makeClueGraphRawTrace()));
   // The same trace the trace harness judges, so its prompts are not kept twice.
   fs.writeFileSync(config, JSON.stringify({ "game-judge": stubBinding(answersFile, "trace.{id}", "-") }));
 
@@ -541,8 +495,6 @@ beforeAll(async () => {
   fs.writeFileSync(answersFile, JSON.stringify(ANSWERS));
 
   await Promise.all([
-    runTraceHarness(answersFile),
-    runRuntimeHarness(answersFile),
     runPlaytestJudging(answersFile),
     runCandidates(answersFile),
     runClueGraphHarnesses(answersFile),

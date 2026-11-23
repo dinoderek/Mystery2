@@ -4,7 +4,6 @@
 
 import { describe, expect, it } from "vitest";
 
-import { runTraceMechanicalChecks } from "../../../evaluation/trace/lib/mechanical.ts";
 import { createAIProviderFromProfile } from "../../../packages/game-engine/src/ai-provider.ts";
 import type { BlueprintContext } from "../../../packages/game-engine/src/ai-context.ts";
 import { isSpotHidden } from "../../../packages/game-engine/src/clue-discovery.ts";
@@ -140,17 +139,6 @@ describe("a targeted search", () => {
         reason: expect.stringContaining("named a locked spot"),
       }),
     });
-  });
-
-  it("that names the locked spot passes the requires check the evaluators run", async () => {
-    const { outcome } = await play("check the snowshoe hooks");
-    const event = { ...outcome.event, id: "s2", sequence: 2, narration: "", clues_revealed: [], created_at: "2026-06-01T10:00:00Z" };
-    const checks = runTraceMechanicalChecks({
-      rawTrace: { blueprint, events: [event] } as never,
-      context: { enforce_requires: true },
-    }) as Array<{ id: string; status: string }>;
-
-    expect(checks.find((check) => check.id === "clue_requires_violation")?.status).toBe("pass");
   });
 
   it("that names another spot finds that one, and never sees the hidden spot", async () => {

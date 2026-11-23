@@ -3,15 +3,15 @@
 An **AI investigator** plays against the real server, saving transcripts and
 [replay](#replay) scripts. Options: `./dev eval play --help`; output layout:
 `evaluation/README.md`.
-A clue-graph case ([`docs/clue-graph.md`](../../docs/clue-graph.md)) is named by path, ID or title.
+Only a clue-graph case ([`docs/clue-graph.md`](../../docs/clue-graph.md)) plays, by path, ID or title; others are refused.
 
 ## Quick start
 
 ```bash
-./dev eval play --blueprint the-missing-heartwood
-./dev eval play --blueprint the-missing-heartwood --persona kid-7 --games 3
+./dev eval play --blueprint greenhouse-prizewinner
+./dev eval play --blueprint greenhouse-prizewinner --persona kid-7 --games 3
 ./dev eval play --replay <run>/<game>/script.json
-./dev eval play --blueprint the-missing-heartwood --judge
+./dev eval play --blueprint greenhouse-prizewinner --judge
 ./dev eval report <run>
 ```
 

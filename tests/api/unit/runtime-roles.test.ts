@@ -12,6 +12,9 @@ import {
   snapshotFromGiven,
 } from "../../../evaluation/runtime/lib/roles.ts";
 import { assertTurnPlayed, extractNarrationParts } from "../../../evaluation/runtime/lib/transcript.ts";
+import { readMockCaseGraph } from "../../testkit/src/mock-case.ts";
+
+const clue_graph = readMockCaseGraph();
 
 // The shared action/role map is the single source of truth both runtime
 // narrators use to turn a case's `action` plus its fixed `given` state into
@@ -148,11 +151,11 @@ describe("ACTIONS registry", () => {
 
 describe("ACTIONS local-replay mapping", () => {
   const blueprint = {
+    clue_graph,
     metadata: { target_age: 9 },
-    narrative: { starting_knowledge: { characters: [] } },
     world: {
-      characters: [{ id: "c1", first_name: "Ann", location_id: "l1" }],
-      locations: [{ id: "l1", name: "Hall", clues: [] }],
+      characters: [{ id: "c1", first_name: "Ann" }],
+      locations: [{ id: "l1", name: "Hall" }],
     },
   };
 
@@ -162,7 +165,8 @@ describe("ACTIONS local-replay mapping", () => {
 
     const input = ACTIONS.talk.roleInput(given, action, blueprint, ["H"] as never);
     expect(input).toMatchObject({
-      role: "talk_start",
+      role: "graph_talk",
+      player_input: null,
       game_id: "case",
       character_id: "c1",
       location_id: "l1",
@@ -174,7 +178,7 @@ describe("ACTIONS local-replay mapping", () => {
     expect(input).not.toHaveProperty("promptVars");
     expect(input).not.toHaveProperty("builder");
 
-    // A talk-start turn is narrated, so the speaker is the narrator.
+    // A greeting is narrated, so the speaker is the narrator.
     expect(ACTIONS.talk.speaker(given, action, blueprint)).toEqual({
       kind: "narrator",
       key: "narrator",
@@ -182,12 +186,12 @@ describe("ACTIONS local-replay mapping", () => {
     });
   });
 
-  it("resolves the talk-conversation role and character speaker for ask", () => {
+  it("resolves the graph talk role and character speaker for ask", () => {
     const given = { mode: "talk", location_id: "l1", talk_character_id: "c1", time_remaining: 20 };
     const action = { type: "ask", player_input: "who?" };
 
     const input = ACTIONS.ask.roleInput(given, action, blueprint, []);
-    expect(input.role).toBe("talk_conversation");
+    expect(input.role).toBe("graph_talk");
     expect(input.player_input).toBe("who?");
     // A reply comes from the character being questioned.
     expect(ACTIONS.ask.speaker(given, action, blueprint)).toEqual({
@@ -197,14 +201,14 @@ describe("ACTIONS local-replay mapping", () => {
     });
   });
 
-  it("picks the search role from the presence of a free-text query", () => {
+  it("plays a search through the graph role, with or without a query", () => {
     const given = { mode: "explore", location_id: "l1", time_remaining: 20 };
-    expect(
-      ACTIONS.search.roleInput(given, { type: "search" }, blueprint, []).role,
-    ).toBe("search_bare");
-    expect(
-      ACTIONS.search.roleInput(given, { type: "search", search_query: "under the bed" }, blueprint, []).role,
-    ).toBe("search_targeted");
+    const bare = ACTIONS.search.roleInput(given, { type: "search" }, blueprint, []);
+    expect(bare.role).toBe("graph_search");
+    expect(bare.search_query).toBeNull();
+    // What the player holds is read from the history, not carried by the case.
+    expect(bare).not.toHaveProperty("revealed_clue_ids");
+    expect(ACTIONS.search.roleInput(given, { type: "search", search_query: "under the bed" }, blueprint, []).search_query).toBe("under the bed");
   });
 
   it("picks the accusation role from the presence of reasoning", () => {
@@ -219,16 +223,10 @@ describe("ACTIONS local-replay mapping", () => {
       blueprint,
       [{ event_type: "accuse_failed" }] as never,
     );
-    expect(judge.role).toBe("accusation_judge");
+    // A clue-graph accusation's one judgement is the report of who was named and what was cited.
+    expect(judge.role).toBe("graph_accusation");
     expect(judge.player_input).toBe("It was Ann");
-    expect(judge.last_accusation).toBe(false);
-    const last = ACTIONS.accuse.roleInput(
-      given,
-      { type: "accuse", player_reasoning: "It was Ann" },
-      blueprint,
-      [{ event_type: "accuse_failed" }, { event_type: "accuse_failed" }] as never,
-    );
-    expect(last.last_accusation).toBe(true);
+    expect(judge).not.toHaveProperty("last_accusation");
   });
 });
 
@@ -236,14 +234,15 @@ describe("ACTIONS local-replay mapping", () => {
 // engine's grammar must read that line back as the same action.
 describe("typed lines for structured actions", () => {
   const blueprint = {
+    clue_graph,
     world: {
       locations: [
         { id: "loc-kitchen", name: "Kitchen" },
         { id: "loc-living-room", name: "Living Room" },
       ],
       characters: [
-        { id: "char-alice", first_name: "Alice", last_name: "Smith", location_id: "loc-kitchen" },
-        { id: "char-bob", first_name: "Bob", last_name: "Jones", location_id: "loc-living-room" },
+        { id: "char-alice", first_name: "Alice", location_id: "loc-kitchen" },
+        { id: "char-bob", first_name: "Bob", location_id: "loc-living-room" },
       ],
     },
   };
@@ -251,7 +250,7 @@ describe("typed lines for structured actions", () => {
     mode,
     location,
     locations: blueprint.world.locations,
-    characters: blueprint.world.characters.map((c) => ({ ...c, location_name: c.location_id })),
+    characters: blueprint.world.characters.map((c) => ({ ...c, last_name: "", location_name: c.location_id })),
   });
   const lineFor = (given: Record<string, unknown>, action: Record<string, unknown>) =>
     ACTIONS[action.type as keyof typeof ACTIONS].line?.(given as never, action as never, blueprint) ?? "";
@@ -270,7 +269,7 @@ describe("typed lines for structured actions", () => {
   });
 
   it("names a character by the name the blueprint gives", () => {
-    expect(lineFor(explore, { type: "talk", character_id: "char-alice" })).toBe("talk to Alice Smith");
+    expect(lineFor(explore, { type: "talk", character_id: "char-alice" })).toBe("talk to Alice");
     expect(readBack(explore, { type: "talk", character_id: "char-alice" })).toEqual({
       kind: "action",
       action: { type: "talk", character_id: "char-alice" },
@@ -376,7 +375,7 @@ describe("narration parts of an answer", () => {
 });
 
 describe("the start action creates its own session", () => {
-  const blueprint = { id: "bp-1", metadata: { target_age: 9 }, world: { characters: [], locations: [] } };
+  const blueprint = { clue_graph, id: "bp-1", metadata: { target_age: 9 }, world: { characters: [], locations: [] } };
 
   it("is flagged as session-creating and has no prior mode", () => {
     // Every other action addresses a seeded session; start makes one, so the
@@ -404,6 +403,7 @@ describe("the start action creates its own session", () => {
 
 describe("blueprint name lookups", () => {
   const blueprint = {
+    clue_graph,
     world: {
       characters: [{ id: "c1", first_name: "Ann" }],
       locations: [{ id: "l1", name: "Hall" }],

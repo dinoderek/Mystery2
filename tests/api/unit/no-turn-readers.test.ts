@@ -121,11 +121,11 @@ describe("readers of a game's events, with lines that cost no turn saved", () =>
   });
 
   it("the mechanical checks give the same verdicts", () => {
-    const checked = runTraceMechanicalChecks({ rawTrace: makeRawTrace({ events: withLines }), context: { enforce_requires: true } });
+    const checked = runTraceMechanicalChecks({ rawTrace: makeRawTrace({ events: withLines }) });
 
-    expect(checked).toHaveLength(3);
+    expect(checked).toHaveLength(2);
     expect(bySequenceAmongPlayed(checked, withLines)).toEqual(
-      runTraceMechanicalChecks({ rawTrace: makeRawTrace({ events: without }), context: { enforce_requires: true } }),
+      runTraceMechanicalChecks({ rawTrace: makeRawTrace({ events: without }) }),
     );
   });
 

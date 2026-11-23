@@ -2,7 +2,7 @@
  * `./dev eval play`: self-play. An AI investigator plays whole games through the
  * real server, or `--replay` replays a recorded game's inputs.
  *
- *   ./dev eval play --blueprint the-missing-heartwood [options]
+ *   ./dev eval play --blueprint greenhouse-prizewinner [options]
  *   ./dev eval play --replay <run>/<game>/script.json [options]
  *
  * It starts the game on a server of its own, against a throwaway database, and
@@ -26,9 +26,7 @@
  */
 
 import fs from "node:fs";
-import { buildClueGraphWorld } from "../../packages/shared/src/clue-graph-case.ts";
-import { validateClueGraph } from "../../packages/shared/src/clue-graph-validator.ts";
-import { isClueGraphFile } from "../../packages/shared/src/clue-graph-schema.ts";
+import { readCaseWorld } from "../runtime/lib/case.ts";
 import net from "node:net";
 import os from "node:os";
 import path from "node:path";
@@ -155,35 +153,37 @@ function readOptions({ common, values }: ParsedArgs): PlayOptions {
   return options;
 }
 
-/** A blueprint by path, or by id, file name or title among the repo's. */
+/** A clue-graph case file's world view; any other format is refused by name. */
 function readPlayableFile(file: string): PlaytestBlueprint {
-  const candidate = JSON.parse(fs.readFileSync(file, "utf8"));
-  if (isClueGraphFile(candidate)) return buildClueGraphWorld(validateClueGraph(candidate));
-  return candidate;
+  return readCaseWorld(JSON.parse(fs.readFileSync(file, "utf8")), file);
 }
 
+/** A case by path, or by id, file name or title among the repo's clue-graph cases. */
 export function findBlueprint(query: string, repoBlueprints: string, hint: string): { file: string; blueprint: PlaytestBlueprint } {
   if (fs.existsSync(query) && fs.statSync(query).isFile()) {
     return { file: path.resolve(query), blueprint: readPlayableFile(query) };
   }
   const wanted = query.toLowerCase().replace(/\.json$/, "");
-  const names = ["", "clue-graph"].flatMap((folder) => {
-    const dir = path.join(repoBlueprints, folder);
-    return fs.existsSync(dir) ? fs.readdirSync(dir).filter((entry) => entry.endsWith(".json")).map((entry) => path.join(folder, entry)) : [];
-  });
+  const dir = path.join(repoBlueprints, "clue-graph");
+  const names = fs.existsSync(dir) ? fs.readdirSync(dir).filter((entry) => entry.endsWith(".json")) : [];
   for (const name of names) {
-    const file = path.join(repoBlueprints, name);
+    const file = path.join(dir, name);
     const blueprint = readPlayableFile(file);
     if (
       blueprint.id === query ||
-      name.replace(/\.json$/, "").toLowerCase() === wanted ||
       path.basename(name, ".json").toLowerCase() === wanted ||
       blueprint.metadata?.title?.toLowerCase() === wanted
     ) {
       return { file, blueprint };
     }
   }
-  throw new UsageError(`No blueprint matches "${query}" (looked for a file, and in ${repoBlueprints}).${hint}`);
+  // A case of another format that the query names, by file name or id, is refused by name rather than not found.
+  for (const name of fs.existsSync(repoBlueprints) ? fs.readdirSync(repoBlueprints).filter((entry) => entry.endsWith(".json")) : []) {
+    const file = path.join(repoBlueprints, name);
+    const id = (JSON.parse(fs.readFileSync(file, "utf8")) as { id?: unknown } | null)?.id;
+    if (path.basename(name, ".json").toLowerCase() === wanted || id === query) readPlayableFile(file);
+  }
+  throw new UsageError(`No blueprint matches "${query}" (looked for a file, and in ${dir}).${hint}`);
 }
 
 function freePort(): Promise<number> {

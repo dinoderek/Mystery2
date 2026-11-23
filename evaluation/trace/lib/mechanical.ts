@@ -6,38 +6,22 @@
 // qualitative calls (did the narration fabricate? did it leak the solution in
 // spirit?) belong to judges, not here.
 //
-// Two checks today:
-//   clue_accounting — every revealed clue id is real and in scope for the
-//                     action that revealed it; bare-search reveals stay an
-//                     ordered, non-repeating prefix of the location's clues.
+// Two checks, on clue-graph games only:
+//   clue_accounting — the recorded events fold through the engine's own rules:
+//                     every revealed clue is real, comes once and was on offer.
 //   spoiler_leak    — no narration before the closing scene copies a long verbatim run of
-//                     ground-truth text (what_happened / why / timeline /
-//                     culprit actual_actions). Verbatim only, by design: a high
-//                     contiguous-word threshold keeps precision high; paraphrase
-//                     leakage is a judge's job.
+//                     ground-truth text (what_happened / why / timeline).
+//                     Verbatim only, by design: a high contiguous-word
+//                     threshold keeps precision high; paraphrase leakage is a
+//                     judge's job.
 
-import { findCharacterById, findLocationById } from "../../../packages/game-engine/src/ai-context.ts";
-import { isClueUnlocked } from "../../../packages/game-engine/src/clue-discovery.ts";
 import { clueGraphEvents } from "../../../packages/game-engine/src/clue-graph/history.ts";
 import { applyEvent, startPlay, type ClueGraphPlay } from "../../../packages/game-engine/src/clue-graph/play.ts";
 import { CLOSING_SCENE_EVENT_TYPES, playedEvents } from "../../lib/game-events.ts";
-import type { RawEvent, RawTrace } from "./normalize.ts";
+import { assertClueGraphBlueprint, type RawEvent, type RawTrace } from "./normalize.ts";
 import { revealedClueIdsForEvent } from "./reconstruct.ts";
 
 const DEFAULT_SPOILER_MIN_RUN = 12;
-
-/** The `requires` ids of every clue of a V2-shaped blueprint, by clue id. */
-function collectClues(blueprint: RawTrace["blueprint"]): Map<string, { requires: string[] }> {
-  const clues = new Map<string, { requires: string[] }>();
-  const add = (clue: { id: string; requires?: { clue_ids?: string[] } | null }) =>
-    clues.set(clue.id, { requires: clue.requires?.clue_ids ?? [] });
-  for (const location of blueprint?.world?.locations ?? []) {
-    for (const clue of location.clues ?? []) add(clue);
-    for (const sub of location.sub_locations ?? []) for (const clue of sub.clues ?? []) add(clue);
-  }
-  for (const character of blueprint?.world?.characters ?? []) for (const clue of character.clues ?? []) add(clue);
-  return clues;
-}
 
 /** One check's result; the details are the violations found, or null when there are none. */
 export interface TraceCheckResult {
@@ -56,123 +40,19 @@ function mkCheck(id: string, passed: boolean, details: Record<string, unknown> |
   };
 }
 
-function locationClueIds(location: ReturnType<typeof findLocationById>): Set<string> {
-  const ids = new Set<string>();
-  for (const clue of location?.clues ?? []) ids.add(clue.id);
-  for (const sub of location?.sub_locations ?? []) {
-    for (const clue of sub?.clues ?? []) ids.add(clue.id);
-  }
-  return ids;
-}
-
 type Violation = Record<string, unknown>;
-
-/** What clue_accounting tracks as it walks the events. */
-interface Accounting {
-  blueprint: RawTrace["blueprint"];
-  everRevealed: Set<string>;
-  violations: Violation[];
-}
-
-/**
- * Bare search reveals the first not-yet-revealed location-level clue that is
- * also UNLOCKED (its `requires` prerequisites are all already revealed). Locked
- * clues are skipped, so the reveal order is the unlocked subsequence, not a
- * strict array-index prefix.
- */
-function checkBareSearchOrder(
-  location: NonNullable<ReturnType<typeof findLocationById>>,
-  clueId: string,
-  sequence: number,
-  state: Accounting,
-): void {
-  const expected =
-    (location.clues ?? []).find((c) => !state.everRevealed.has(c.id) && isClueUnlocked(c, state.everRevealed))?.id ??
-    null;
-  if (expected !== clueId) {
-    state.violations.push({
-      sequence,
-      reason: "bare_search_out_of_order",
-      clue_id: clueId,
-      expected_clue_id: expected,
-    });
-  }
-}
-
-function accountSearchReveals(
-  event: RawEvent,
-  scopeLocation: string | null,
-  revealed: string[],
-  state: Accounting,
-): void {
-  const location = findLocationById(state.blueprint, scopeLocation as string);
-  if (!location) {
-    state.violations.push({
-      sequence: event.sequence,
-      reason: "search_in_unknown_location",
-      location_id: scopeLocation,
-    });
-    return;
-  }
-  const validIds = locationClueIds(location);
-  const locationLevelIds = new Set((location.clues ?? []).map((c) => c.id));
-  const query = event.payload?.search_query;
-  const isBare = !(typeof query === "string" && query.length > 0);
-
-  for (const clueId of revealed) {
-    if (!validIds.has(clueId)) {
-      state.violations.push({
-        sequence: event.sequence,
-        reason: "clue_not_in_location",
-        clue_id: clueId,
-        location_id: location.id,
-      });
-    } else if (state.everRevealed.has(clueId)) {
-      state.violations.push({ sequence: event.sequence, reason: "clue_revealed_again", clue_id: clueId });
-    } else {
-      if (isBare && locationLevelIds.has(clueId)) checkBareSearchOrder(location, clueId, event.sequence, state);
-      state.everRevealed.add(clueId);
-    }
-  }
-}
-
-function accountAskReveals(
-  event: RawEvent,
-  currentCharacter: string | null,
-  revealed: string[],
-  state: Accounting,
-): void {
-  const character = currentCharacter ? findCharacterById(state.blueprint, currentCharacter) : null;
-  const validIds = new Set((character?.clues ?? []).map((c) => c.id));
-  for (const clueId of revealed) {
-    if (!character) {
-      state.violations.push({ sequence: event.sequence, reason: "ask_without_active_character", clue_id: clueId });
-    } else if (!validIds.has(clueId)) {
-      state.violations.push({
-        sequence: event.sequence,
-        reason: "clue_not_for_character",
-        clue_id: clueId,
-        character_id: character.id,
-      });
-    } else if (state.everRevealed.has(clueId)) {
-      state.violations.push({ sequence: event.sequence, reason: "clue_revealed_again", clue_id: clueId });
-    } else {
-      state.everRevealed.add(clueId);
-    }
-  }
-}
 
 // A clue-graph game is accounted by folding its recorded events through the
 // engine's own rules: what an event recorded must be what the fold brings out,
 // no clue comes twice, and nothing the narrator reported was refused.
-function checkClueGraphAccounting(rawTrace: RawTrace): TraceCheckResult {
-  const graph = rawTrace.blueprint.clue_graph;
+function checkClueAccounting(rawTrace: RawTrace): TraceCheckResult {
+  const graph = rawTrace.blueprint.clue_graph!;
   const events = playedEvents(rawTrace.events).sort((a: RawEvent, b: RawEvent) => a.sequence - b.sequence) as RawEvent[];
   const violations: Violation[] = [];
-  let play: ClueGraphPlay | null = graph ? startPlay(graph) : null;
+  let play: ClueGraphPlay = startPlay(graph);
   for (const event of events) {
     const [recorded] = clueGraphEvents([event]);
-    if (!graph || !play || !recorded) continue;
+    if (!recorded) continue;
     let step;
     try {
       step = applyEvent(graph, play, recorded);
@@ -191,47 +71,6 @@ function checkClueGraphAccounting(rawTrace: RawTrace): TraceCheckResult {
     play = step.play;
   }
   return mkCheck("clue_accounting", violations.length === 0, violations.length === 0 ? null : { violations });
-}
-
-// clue_accounting: walks the events in order, tracking which clues have been
-// revealed, and flags any reveal that is invalid (unknown id, out of scope for
-// the action, a repeat, or a bare-search reveal that breaks the ordered prefix).
-function checkClueAccounting(rawTrace: RawTrace): TraceCheckResult {
-  if (rawTrace.blueprint?.clue_graph) return checkClueGraphAccounting(rawTrace);
-  const blueprint = rawTrace.blueprint;
-  const events = playedEvents(rawTrace.events).sort((a: RawEvent, b: RawEvent) => a.sequence - b.sequence) as RawEvent[];
-  const state: Accounting = { blueprint, everRevealed: new Set<string>(), violations: [] };
-
-  let currentLocation: string | null = blueprint?.world?.starting_location_id ?? null;
-  let currentCharacter: string | null = null;
-
-  for (const event of events) {
-    const payload = event.payload ?? null;
-    const payloadLocation = typeof payload?.location_id === "string" ? payload.location_id : null;
-    const payloadCharacter = typeof payload?.character_id === "string" ? payload.character_id : null;
-
-    if (event.event_type === "move") {
-      currentLocation = payloadLocation ?? currentLocation;
-    } else if (event.event_type === "talk") {
-      currentCharacter = payloadCharacter ?? currentCharacter;
-    } else if (event.event_type === "end_talk") {
-      currentCharacter = null;
-    } else {
-      const revealed = revealedClueIdsForEvent(event);
-      if (revealed.length === 0) continue;
-      if (event.event_type === "search") {
-        accountSearchReveals(event, payloadLocation || currentLocation, revealed, state);
-      } else if (event.event_type === "ask") {
-        accountAskReveals(event, currentCharacter, revealed, state);
-      }
-    }
-  }
-
-  return mkCheck(
-    "clue_accounting",
-    state.violations.length === 0,
-    state.violations.length === 0 ? null : { violations: state.violations },
-  );
 }
 
 function normalizeWords(text: unknown): string[] {
@@ -271,13 +110,6 @@ function checkSpoilerLeak(rawTrace: RawTrace, minRun = DEFAULT_SPOILER_MIN_RUN):
   if (gt.what_happened) secrets.push(gt.what_happened);
   if (gt.why_it_happened) secrets.push(gt.why_it_happened);
   for (const entry of gt.timeline ?? []) secrets.push(entry);
-  for (const character of blueprint?.world?.characters ?? []) {
-    if (!character.is_culprit) continue;
-    // A clue-graph character has no actual actions; its truth is the timeline above.
-    for (const action of ("actual_actions" in character ? character.actual_actions : [])) {
-      if (action?.summary) secrets.push(action.summary);
-    }
-  }
   // A secret shorter than minRun words can never produce a minRun-length
   // contiguous match, so it is below this check's floor. This is a deliberate
   // precision tradeoff: a verbatim leak of a very short ground-truth string is
@@ -316,53 +148,8 @@ function checkSpoilerLeak(rawTrace: RawTrace, minRun = DEFAULT_SPOILER_MIN_RUN):
   );
 }
 
-// clue_requires_violation: a clue gated by `requires` must not be revealed until
-// every prerequisite clue has already been revealed earlier in the trace. Reveals
-// the game master granted off-script (listed in the event payload's
-// `revealed_off_script`) are intentional brilliance bypasses and are exempt.
-//
-// This proves the runtime actually HONORS the discovery graph. It is opt-in via
-// context.enforce_requires (default off).
-function checkClueRequiresViolation(rawTrace: RawTrace): TraceCheckResult {
-  const blueprint = rawTrace.blueprint;
-  const clues = collectClues(blueprint);
-  const events = playedEvents(rawTrace.events).sort((a: RawEvent, b: RawEvent) => a.sequence - b.sequence) as RawEvent[];
-  const everRevealed = new Set<string>();
-  const violations: Array<Record<string, unknown>> = [];
-
-  for (const event of events) {
-    const revealed = revealedClueIdsForEvent(event);
-    if (revealed.length === 0) continue;
-    const offScript = new Set(
-      Array.isArray(event.payload?.revealed_off_script)
-        ? event.payload.revealed_off_script
-        : [],
-    );
-    for (const clueId of revealed) {
-      const requires = clues.get(clueId)?.requires ?? [];
-      if (requires.length > 0 && !offScript.has(clueId)) {
-        const missing = requires.filter((dep: string) => !everRevealed.has(dep));
-        if (missing.length > 0) {
-          violations.push({
-            sequence: event.sequence,
-            clue_id: clueId,
-            missing_prerequisites: missing,
-          });
-        }
-      }
-      everRevealed.add(clueId);
-    }
-  }
-
-  return mkCheck(
-    "clue_requires_violation",
-    violations.length === 0,
-    violations.length === 0 ? null : { violations },
-  );
-}
-
 // runTraceMechanicalChecks({ rawTrace, context }) -> check[]
-// context is optional and may carry { spoiler_min_run, enforce_requires }.
+// context is optional and may carry { spoiler_min_run }.
 export function runTraceMechanicalChecks({
   rawTrace,
   context = null,
@@ -374,9 +161,6 @@ export function runTraceMechanicalChecks({
     context && Number.isInteger(context.spoiler_min_run)
       ? (context.spoiler_min_run as number)
       : DEFAULT_SPOILER_MIN_RUN;
-  const checks = [checkClueAccounting(rawTrace), checkSpoilerLeak(rawTrace, minRun)];
-  if (context?.enforce_requires) {
-    checks.push(checkClueRequiresViolation(rawTrace));
-  }
-  return checks;
+  assertClueGraphBlueprint(rawTrace.blueprint, "runTraceMechanicalChecks");
+  return [checkClueAccounting(rawTrace), checkSpoilerLeak(rawTrace, minRun)];
 }

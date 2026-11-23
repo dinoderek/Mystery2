@@ -35,7 +35,7 @@ describe("game battery", () => {
       "gm_fabrication",
       "gm_spoiler",
     ]);
-    expect(mechanical_context).toEqual({ spoiler_min_run: 12, enforce_requires: false });
+    expect(mechanical_context).toEqual({ spoiler_min_run: 12 });
   });
 
   it("resolves every dimension to a brief and a loadable schema in the shared judge directory", async () => {

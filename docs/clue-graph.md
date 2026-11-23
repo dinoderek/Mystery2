@@ -135,12 +135,12 @@ name included, spends one of three accusations; the third failure loses.
 
 A failure saves `reply_kind`: `flaw`, `alternative` or `missing`. The narrator
 (`graph_accusation_round`) gets only citations and reply material:
-held clearing clues or retracted statements with their speaker (flaw first);
+held clearing clues, or retracted statements with speaker (flaw first);
 people a cited culprit route must still clear (excluding accused
 and culprit), with a distinguishing lead; else a missing fact type and lead.
 Missing types follow the nearest non-confession culprit route, never its facts;
-leads avoid the culprit, and lapse at zero turns. Replies never confirm
-names. The closing scene (`graph_ending`) tells the timeline, culprit
+leads avoid the culprit, and are dropped at zero turns. Replies never
+confirm names. The closing scene (`graph_ending`) tells the timeline, culprit
 conclusion and motive.
 
 ## The narrator's judgement

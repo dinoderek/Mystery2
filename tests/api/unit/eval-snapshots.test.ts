@@ -61,6 +61,8 @@ const PROMPT_IDS = [
   ...PERSONAS.map((persona) => `investigator.${persona}`),
   ...GRAPH_JUDGES.flatMap((id) => [`trace-clue-graph.${id}`, `runtime-clue-graph.${id}`]),
   "runtime-clue-graph-accusation.gm_spoiler",
+  "runtime-clue-graph-accusation.report",
+  "runtime-clue-graph-accusation.reply",
   ...CASE_JUDGES.map((id) => `blueprint.${id}`),
 ];
 const VERDICT_NAMES = ["trace-clue-graph", "runtime-clue-graph", "playtest-judging", "candidates", "blueprint-clue-graph", "runtime-clue-graph-accusation"];
@@ -345,6 +347,10 @@ async function runClueGraphAccusation(answersFile: string) {
     summary: result.summary,
   });
   prompts.set("runtime-clue-graph-accusation.gm_spoiler", capturedPrompt("runtime.gm_spoiler", "captured-graph-accusation"));
+  const logs = path.relative(scratch, path.join(path.dirname(resultFile), "logs"));
+  for (const stage of ["report", "reply"]) {
+    prompts.set(`runtime-clue-graph-accusation.${stage}`, capturedPrompt(`narrate-${turn.case_id}-accuse-${stage}`, logs));
+  }
 }
 
 /** `judge blueprint` on the greenhouse case: its check, and the four judges a clue-graph case gets. */

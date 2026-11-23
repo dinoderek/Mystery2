@@ -44,12 +44,10 @@ describe("ai-prompts", () => {
     }
   });
 
-  it("words given facts and lets narration invent mood, never evidence, in every role", async () => {
+  it("lets every role add harmless scenery within its limits, leaving grounding to the system message", async () => {
     for (const role of ROLES) {
       const template = await loadPromptTemplate(role, 10);
-      expect(template).toContain("Each is a fact to put in your own words, keeping every name, time, place and object.");
-      expect(template).toContain("Choose pronouns from each character's sex, never by guessing.");
-      expect(template).toContain("## What you may make up");
+      expect(template).toContain("may add harmless scenery and manner within the role's limits");
       expect(template).not.toContain("never invent more");
     }
   });
@@ -61,7 +59,7 @@ describe("ai-prompts", () => {
       const template = await loadPromptTemplate(role, 7);
       expect(template).toContain(narratorOnly);
       expect(template).not.toContain(dialogue);
-      expect(template).toContain("Each is a fact to put in your own words");
+      expect(template).toContain("may add harmless scenery and manner within the role's limits");
     }
     // Only the ending retells the account, where a character's words may be quoted.
     expect(await loadPromptTemplate("graph_ending", 7)).toContain("What a character said in the account");
@@ -79,7 +77,7 @@ describe("ai-prompts", () => {
     const voiced = buildStyleGuidance("- Only the narrator speaks.");
     expect(voiced).toContain("- Only the narrator speaks.");
     expect(voiced).not.toContain("Characters always speak in direct first-person dialogue");
-    expect(voiced).toContain("## What you may make up");
+    expect(voiced).toContain("may add harmless scenery and manner within the role's limits");
   });
 
   it("states both search budgets when the outcome is the model's to judge", async () => {
@@ -129,7 +127,7 @@ describe("ai-prompts", () => {
     expect(prompt).toContain("8 years old");
     expect(prompt).toContain("Narration style");
     expect(prompt).toContain("Tell every fact below in your own words; leave none out.");
-    expect(prompt).toContain("Opening facts:\n- Someone stole the cake.\n- The baker was out at noon.");
+    expect(prompt).toContain('Opening facts: ["Someone stole the cake.","The baker was out at noon."]');
   });
 
   it("builds a revisit-aware move prompt", () => {
@@ -144,11 +142,11 @@ describe("ai-prompts", () => {
 
     expect(prompt).toContain("9 years old");
     expect(prompt).toContain("acknowledge the return visit");
-    expect(prompt).toContain("Facts about the place:\n- A messy kitchen.");
+    expect(prompt).toContain('Arrival destination: "Kitchen"');
+    expect(prompt).toContain('Facts about the place: ["A messy kitchen."]');
     expect(prompt).toContain("Characters at destination");
     expect(prompt).toContain('"first_name":"Alice"');
     expect(prompt).toContain('"sex":"female"');
-    expect(prompt).toContain("never by guessing");
     expect(prompt).toContain("Narration style");
     // Characters are present, so the arrival plays them as authored. The rules
     // name only fields the pack carries: no private field is listed to forbid it.

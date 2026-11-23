@@ -14,14 +14,35 @@ game's `target_age`; it imports no database, so the eval harness calls it too
 `buildNarrationMessages` construct the system/user pair for live OpenRouter,
 live Claude CLI and replay, including plain `intro` and `ambience`. Provider
 schemas and calls, including both accusation stages, remain distinct from
-messages. The original policy keeps its existing priority; request data stays
-in the user message. Captured messages are compared byte for byte across
-providers in `tests/api/unit/narrator-messages.test.ts`.
+messages. The system message carries the output instruction and grounding
+policy. The user message carries the role task and its data. Structured calls
+read player words and history from context, with any current-visit excerpt
+labelled as data. Openings and arrivals label and quote case facts and
+previous prose. Tests compare live and replay messages byte for byte
+(`tests/api/unit/narrator-messages.test.ts`).
 
-**Lean prompts.** Each rule is stated once and no two conflict. Voice, reading
-level and grounding (only given facts, pronouns from `sex`) live in the shared
-layer alone. Recorded state replaces refereeing: the engine derives what a
-turn can bring out from the graph and the events.
+Voice and reading level are shared. Recorded state replaces refereeing: the
+engine derives what a turn can bring out from the graph and the events.
+
+## Grounding policy
+
+The [runtime text](../packages/game-engine/src/narrator-grounding.ts) helps a
+child reason from dependable facts and receive the clues their work earns.
+Authored facts and current game state take precedence over conflicting earlier
+narration. A visible correction uses existing reveal permission. Otherwise
+the narrator drops the disputed detail and preserves compatible scenery.
+Authored lies remain character accounts. A valid bluff can open its gate while
+the player's claim remains unverified.
+
+Within each existing call, the narrator finds support in its permitted material,
+admits uncertainty, checks its claims and includes earned details in the existing
+output. This also applies to the IDs reported in the first accusation stage.
+Ordinary knowledge helps interpret words and actions. Repeated samples are an
+offline stability measure, and agreement alone cannot establish truth.
+
+Anthropic sources reviewed 23 November 2026.
+[Reduce hallucinations](https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations)
+and [Prompting best practices](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices).
 
 ## Roles
 
@@ -38,15 +59,12 @@ reports invented movement.
 
 ## Narration style
 
-Every prompt's `{{style_guidance}}` slot is filled by `buildStyleGuidance`:
-second person, present tense; warm, cozy, never scary; concrete sensory
-detail; characters speak in the first person with action beats, but in a
-failed accusation or ending only the narrator speaks, never quoting itself
-(the ending may quote a character); no meta-commentary. Each fact given is put
-in the narrator's own words, keeping every name, time, place and object, with
-scenery and manner added under the rules of
-["The narrator's judgement"](clue-graph.md#the-narrators-judgement). The
-reading level above it always wins.
+`buildStyleGuidance` gives the narrator a warm, cozy voice in second person
+and present tense. Characters speak in first person with brief action beats.
+The narrator alone speaks after a failed accusation or at the ending, which may
+quote a character. A scene may add harmless scenery and manner within its
+role's limits ([the narrator's judgement](clue-graph.md#the-narrators-judgement)).
+The reading level always wins.
 
 ## What each role sees
 
@@ -69,8 +87,7 @@ Which case fields reach which role is the "Narration at play" table in
   is held; before then, words that fit it best find nothing. The engine
   decides which spot the words name (`search-target.ts`), since the narrator
   never hears of a hidden one.
-- Every character summary carries `sex`, and every prompt tells the model to use
-  it for pronouns rather than guess.
+- Character summaries carry `sex` for the shared pronoun rule.
 
 ## Trusting the output
 
@@ -131,8 +148,9 @@ so a double confirmation cannot narrate twice. It costs no turn, and its
 
 ## The mock provider
 
-The deterministic default for `npm run dev` and automated suites. Contract,
-prompt, context and provider changes update its tests too.
+The deterministic default for `npm run dev` and automated suites. It decodes
+the same labelled opening and arrival data and voices only those facts and
+visible names. Contract, prompt, context and provider changes update its tests.
 
 ## Failures, logs and attribution
 

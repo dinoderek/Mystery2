@@ -20,6 +20,7 @@ import {
   createAIProviderFromProfile,
 } from "../../../packages/game-engine/src/ai-provider.ts";
 import { RetriableAIError } from "../../../packages/game-engine/src/errors.ts";
+import { NARRATOR_GROUNDING } from "../../../packages/game-engine/src/narrator-grounding.ts";
 
 const FAKE_CLAUDE = fileURLToPath(new URL("./fixtures/fake-claude-cli.mjs", import.meta.url));
 
@@ -97,7 +98,7 @@ describe("claude-cli provider requests", () => {
     const [call] = recordedCalls();
     expect(call.args.slice(0, 5)).toEqual(["--print", "--model", "sonnet", "--output-format", "json"]);
     expect(flagValue(call.args, "--system-prompt")).toBe(
-      'You are a strict JSON API for role "graph_talk". Output JSON only.',
+      `You are a strict JSON API for role "graph_talk". Output JSON only.\n\n${NARRATOR_GROUNDING}`,
     );
     expect(flagValue(call.args, "--tools")).toBe("");
     expect(flagValue(call.args, "--setting-sources")).toBe("");
@@ -120,7 +121,7 @@ describe("claude-cli provider requests", () => {
     expect(narration).toBe("The fake narrator speaks.");
     const [call] = recordedCalls();
     expect(flagValue(call.args, "--system-prompt")).toBe(
-      "You are the narrator for a kids mystery game. Return plain text only.",
+      `You are the narrator for a kids mystery game. Return plain text only.\n\n${NARRATOR_GROUNDING}`,
     );
     expect(call.args).not.toContain("--json-schema");
     expect(call.stdin).toBe("Describe the arrival.");

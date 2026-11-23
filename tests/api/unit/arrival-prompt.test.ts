@@ -78,7 +78,7 @@ describe("the arrival prompt, on the mock case", () => {
 
   it("states every fact of the place", () => {
     const prompt = arrivalAt(2);
-    for (const fact of graph.locations["loc-living-room"].facts) expect(prompt).toContain(`- ${fact}`);
+    expect(prompt).toContain(`Facts about the place: ${JSON.stringify(graph.locations["loc-living-room"].facts)}`);
   });
 
   it("carries the first arrival's words on return, and not the finds since", () => {

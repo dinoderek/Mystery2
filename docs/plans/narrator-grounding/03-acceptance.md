@@ -1,7 +1,8 @@
 # N3: blinded acceptance on unseen mysteries
 
 Depends on: N2 complete in the [milestone](milestone.md). Status: pending.
-Use N1's manifest and baseline and N2's frozen candidate commits/settings.
+Use N1's manifest and baseline and the
+[frozen candidate commits and settings](../../../evaluation/runtime/experiments/grounding/candidates.json).
 
 ## Outcome
 
@@ -15,9 +16,10 @@ valid result; successful implementation is not itself evidence of improvement.
    numerical thresholds still match the frozen experiment. Resolve any missing
    authorisation or binding before model calls. Future runs exclude OpenRouter;
    reviews use Codex GPT-6.1 at Medium effort.
-2. Measure model and policy effects separately. For fixed turns, compare the
-   original and grounded messages on identical state/history for each named
-   model. No intermediate prompt tuning on the held-out material.
+2. Measure model and policy effects separately. Pair original and grounded
+   messages on identical state/history, transport, served model and settings.
+   Report the OpenRouter capture as historical. No intermediate prompt
+   tuning on the held-out material.
 3. Run full games for each frozen model/policy combination on the reserved new
    mysteries, with the fixed investigator, both personas and predeclared
    repetitions/order. Use normal isolated servers/databases. Avoid independent

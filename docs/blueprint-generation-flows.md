@@ -71,7 +71,9 @@ graph; saved lines stand for found clues.
 
 `narrative.starting_knowledge.mystery_summary` is never narrated: `game-start`
 and `game-get` return it as the notebook's case facts. The engine chooses
-accusation verdicts and reply material ([clue graph](clue-graph.md)).
+accusation verdicts and reply material ([clue graph](clue-graph.md)). The
+[grounding policy](ai-runtime.md#grounding-policy) governs how the narrator uses
+the case's facts within its role.
 
 ## Evaluation
 

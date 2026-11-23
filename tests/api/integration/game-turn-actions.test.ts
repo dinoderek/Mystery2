@@ -1,10 +1,7 @@
-import fs from "node:fs";
-
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { GameTurnResponseSchema, SessionTranscriptResponseSchema } from "@my2/shared";
 import { NARRATOR_SPEAKER, characterSpeaker } from "../../testkit/src/fixtures";
-import { buildRoleRequest } from "../../../packages/game-engine/src/role-request.ts";
 import {
   API_URL,
   playLine,
@@ -14,14 +11,8 @@ import {
   setStoredTimeRemaining,
   setupApiTestAuth,
   startMockGame,
-  V2_MOCK_BLUEPRINT_ID,
   type ApiAuthContext,
 } from "./helpers";
-
-/** The V2 fixture, for V2 talk state alone. */
-const v2MockBlueprint = JSON.parse(fs.readFileSync("blueprints/mock-blueprint.json", "utf8")) as Parameters<
-  typeof buildRoleRequest
->[0]["blueprint"];
 
 // What each action does to the game, played as typed lines through `game-turn`
 // under the mock narrator. The request and answer shapes are in
@@ -285,55 +276,6 @@ describe("game-turn actions", () => {
         .filter((event) => event.event_type === "ask")
         .flatMap((event) => (event.payload?.revealed_clue_ids as string[] | undefined) ?? []);
       expect(new Set(recorded).size).toBe(recorded.length);
-    });
-
-    // V2 talk state: it leaves with V2.
-    it("keeps a reaction and a commitment from one visit in the next visit's context", async () => {
-      const gameId = await startMockGame(auth, V2_MOCK_BLUEPRINT_ID);
-      await play(gameId, "search");
-      await play(gameId, "talk to Alice");
-      // The mock reads a line that names a gate clue's id as using it.
-      const shown = await play(gameId, "Look, clue-crumb: someone was snacking!");
-      expect(shown.events[0].payload).toMatchObject({
-        used_clue_ids: ["clue-crumb"],
-        used_quote: "Look, clue-crumb: someone was snacking!",
-      });
-      // A line starting "did you" draws a denial, recorded as a commitment.
-      const denied = await play(gameId, "Did you eat the cookies?");
-      expect(denied.events[0].payload).toMatchObject({ used_clue_ids: [], new_commitments: ["denies: eat the cookies"] });
-      await play(gameId, "goodbye");
-      await play(gameId, "go to the Living Room");
-      await play(gameId, "go to the Kitchen");
-
-      await play(gameId, "talk to Alice");
-      const later = await play(gameId, "Where were you this afternoon?");
-
-      // The second visit's narration keeps to the earned reaction.
-      expect(later.events[0].narration_parts[0].text).toContain(
-        "(Keeps to: Admits she had one snack, but says she was still reading.)",
-      );
-      expect(later.events[0].payload).toMatchObject({ used_clue_ids: [], used_quote: null, new_commitments: [] });
-
-      // Its context, rebuilt from the stored events before it by the builder the
-      // turn used, carries both.
-      const events = readStoredEvents(gameId);
-      const session = readStoredSession(gameId)!;
-      expect(session.mode).toBe("talk");
-      const { context } = await buildRoleRequest({
-        role: "talk_conversation",
-        game_id: gameId,
-        session: { ...session, mode: "talk" },
-        blueprint: v2MockBlueprint,
-        character_id: "char-alice",
-        location_id: "loc-kitchen",
-        player_input: "Where were you this afternoon?",
-        conversation_history: events.slice(0, -1),
-      });
-      expect(context.talk_context?.active_character?.state).toMatchObject({
-        current_story: [expect.any(String), "Admits she had one snack, but says she was still reading."],
-        commitments: ["denies: eat the cookies"],
-        visits_with_questions: 2,
-      });
     });
 
     it("ends the conversation as the narrator, back in explore mode, with the turns as they were", async () => {

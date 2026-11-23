@@ -67,7 +67,15 @@ export interface Db {
  * always the current end state, and the steps below only exist to carry files
  * that already exist up to it.
  */
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 7;
+
+/**
+ * The oldest schema a database is brought forward from. Saves started over at
+ * version 7, when the clue graph became the one case format: nothing reads or
+ * converts an older database, so opening one is refused with the message to
+ * delete it (`DatabaseTooOldError`).
+ */
+export const OLDEST_UPGRADABLE_VERSION = 7;
 
 /** One forward step: the SQL, and the version the database is at afterwards. */
 export interface Migration {
@@ -80,47 +88,23 @@ export interface Migration {
  * bumping `SCHEMA_VERSION` and editing `schema.ts` to match, so that a new
  * database and an upgraded one end up identical.
  *
- * Every version between a file's `PRAGMA user_version` and `SCHEMA_VERSION`
- * needs an entry here — `planMigrations()` refuses to upgrade across a gap
- * rather than stamping a version nothing produced.
+ * Every version between `OLDEST_UPGRADABLE_VERSION` and `SCHEMA_VERSION` needs
+ * an entry here — `planMigrations()` refuses to upgrade across a gap rather than
+ * stamping a version nothing produced.
  */
-const MIGRATIONS: ReadonlyArray<Migration> = [
-  {
-    to: 6,
-    sql: `
-      alter table players add column reading_age integer;
-      alter table game_sessions add column reading_age integer;
-    `,
-  },
-  { to: 5, sql: "alter table game_sessions add column clue_graph_snapshot text;" },
-  { to: 4, sql: "alter table game_sessions add column msf_snapshot text;" },
-  {
-    // The AIs moved into ai.json, so the database keeps only the one that was
-    // chosen. The labelled keys and models go, and the settings row is replaced
-    // by its one-value form. The old choice is not carried over: it named a key
-    // and a model, not an AI, so it is chosen again on the settings page.
-    //
-    // Deliberately written out rather than importing the statement from
-    // `schema.ts`: a migration is a historical fact, and sharing a constant with
-    // the live schema would let a later edit silently rewrite what this step
-    // did. `local-engine-db.test.ts` diffs an upgraded database against a fresh
-    // one, which is what keeps the duplication honest.
-    //
-    // There is no step to 2: `planMigrations()` refuses a database older than
-    // that, and it is deleted and started again.
-    to: 3,
-    sql: `
-      drop table ai_keys;
-      drop table ai_models;
-      drop table app_settings;
+export const MIGRATIONS: ReadonlyArray<Migration> = [];
 
-      create table app_settings (
-          id       integer primary key check (id = 1),
-          ai_name  text not null
-      );
-    `,
-  },
-];
+/** A database older than `OLDEST_UPGRADABLE_VERSION`: it is deleted and started again. */
+export class DatabaseTooOldError extends Error {
+  constructor(databasePath: string, version: number) {
+    super(
+      `The database at ${databasePath} is at schema version ${version}, from before saves were ` +
+        `started over at version ${OLDEST_UPGRADABLE_VERSION}, and this build does not read it. ` +
+        `Delete ${databasePath} and start again: a new one is created on the next start.`,
+    );
+    this.name = "DatabaseTooOldError";
+  }
+}
 
 /**
  * The steps that take `current` to `target`, in ascending order.
@@ -145,9 +129,8 @@ export function planMigrations(
     if (!step) {
       throw new Error(
         `No migration to schema version ${version}. A database at version ` +
-          `${current} cannot be brought to ${target}. If it is older than the ` +
-          "oldest step, delete it and start again; if schema.ts changed without " +
-          "a step, add an entry to MIGRATIONS in db/client.ts.",
+          `${current} cannot be brought to ${target}. If schema.ts changed ` +
+          "without a step, add an entry to MIGRATIONS in db/client.ts.",
       );
     }
     steps.push(step);
@@ -174,7 +157,8 @@ export interface OpenDatabaseOptions {
 
 /**
  * Opens the database, applies the connection pragmas, and brings the schema up
- * to `SCHEMA_VERSION`.
+ * to `SCHEMA_VERSION`. A database older than `OLDEST_UPGRADABLE_VERSION` is
+ * refused, unmodified, with `DatabaseTooOldError`.
  *
  * The pragmas are not optional:
  * - `journal_mode = WAL` so a reader (`npm run db:copy`, an ad-hoc `sqlite3`
@@ -199,6 +183,11 @@ export function openDatabase(options: OpenDatabaseOptions): Db {
       // holds — a reader takes it as it finds it.
       database.pragma("busy_timeout = 5000");
     } else {
+      // Refused before anything is written, the journal mode included: nothing
+      // reads a save from before the clean slate, and the file is left as it was.
+      const current = schemaVersionOf(database);
+      if (current > 0 && current < OLDEST_UPGRADABLE_VERSION) throw new DatabaseTooOldError(options.path, current);
+
       database.pragma("journal_mode = WAL");
       database.pragma("foreign_keys = ON");
       database.pragma("busy_timeout = 5000");
@@ -227,8 +216,12 @@ export function openDatabase(options: OpenDatabaseOptions): Db {
   };
 }
 
+function schemaVersionOf(database: BetterSqlite3.Database): number {
+  return Number(database.pragma("user_version", { simple: true }));
+}
+
 function migrate(database: BetterSqlite3.Database): void {
-  const current = Number(database.pragma("user_version", { simple: true }));
+  const current = schemaVersionOf(database);
 
   if (current > SCHEMA_VERSION) {
     throw new Error(

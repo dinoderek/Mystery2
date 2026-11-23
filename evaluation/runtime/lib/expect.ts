@@ -34,7 +34,7 @@
 import { UsageError } from "../../core/errors.ts";
 import type { Verdict } from "../../core/result.ts";
 import { ACCUSATION_VERDICTS, REPLY_KINDS } from "../../../packages/game-engine/src/clue-graph/accusation.ts";
-import { parseGraphSearchOutput, parseGraphTalkOutput, parseSearchOutput, parseTalkConversationOutput } from "../../../packages/game-engine/src/ai-contracts.ts";
+import { parseGraphSearchOutput, parseGraphTalkOutput } from "../../../packages/game-engine/src/ai-contracts.ts";
 import type { Detail, Expect, JudgedDirection, TurnCase } from "./case.ts";
 import type { StoredTurn } from "./turn.ts";
 
@@ -206,20 +206,14 @@ export function outputSays(turn: StoredTurn): Said {
       lines: linesOf(asRecord(payload.clue_graph)?.notebook),
     };
   }
-  // A clue-graph reply carries a notebook line for each clue it brings out.
-  const graph = Array.isArray(asRecord(turn.response.raw)?.notebook);
+  // A reply carries a notebook line for each clue it brings out.
   if (action === "search") {
-    const output = graph ? parseGraphSearchOutput(turn.response.raw) : parseSearchOutput(turn.response.raw);
-    const lines = "notebook" in output ? linesOf(output.notebook) : {};
-    return { revealed: output.revealed_clue_id ? [output.revealed_clue_id] : [], used: [], understood: output.input_understood, lines };
+    const output = parseGraphSearchOutput(turn.response.raw);
+    return { revealed: output.revealed_clue_id ? [output.revealed_clue_id] : [], used: [], understood: output.input_understood, lines: linesOf(output.notebook) };
   }
-  // A clue-graph talk reply lists the gates it opened and the questions it answered.
-  if (Array.isArray(asRecord(turn.response.raw)?.opened)) {
-    const output = parseGraphTalkOutput(turn.response.raw);
-    return { revealed: [...output.opened, ...output.answered], used: [], understood: output.input_understood, lines: linesOf(output.notebook) };
-  }
-  const output = parseTalkConversationOutput(turn.response.raw);
-  return { revealed: output.revealed_clue_ids, used: output.used_clue_ids, understood: output.input_understood, lines: {} };
+  // A talk reply lists the gates it opened and the questions it answered.
+  const output = parseGraphTalkOutput(turn.response.raw);
+  return { revealed: [...output.opened, ...output.answered], used: [], understood: output.input_understood, lines: linesOf(output.notebook) };
 }
 
 /** One detail a whole-fact case found missing, and where. */

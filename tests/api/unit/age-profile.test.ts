@@ -89,7 +89,7 @@ describe("interactions and explicit word budgets (length dial)", () => {
   });
 
   it("getInteraction returns the role mapping", () => {
-    expect(getInteraction("talk_round").role).toBe("talk_conversation");
+    expect(getInteraction("talk_round").role).toBe("graph_talk");
   });
 });
 

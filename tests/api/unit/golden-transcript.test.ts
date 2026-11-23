@@ -159,6 +159,8 @@ describe("TurnDriver", () => {
       ],
       state: state({ mode: "accuse", time_remaining: 0, location: "loc-b" }),
       revealed_clues: [],
+      leads: [],
+      taken_back: [],
       result: null,
     });
 
@@ -181,6 +183,8 @@ describe("TurnDriver", () => {
       events: [{ sequence: 5, event_type: "accuse_failed", payload: null, narration_parts: [line("Not yet.")] }],
       state: state({ mode, time_remaining: 0 }),
       revealed_clues: [],
+      leads: [],
+      taken_back: [],
       result: null,
     });
     // Out of turns, a failure stays in the accusation.
@@ -197,6 +201,8 @@ describe("TurnDriver", () => {
       events: [{ sequence: 9, event_type: "accuse_resolved", payload: null, narration_parts: [line("Solved.")] }],
       state: state({ mode: "ended" }),
       revealed_clues: [],
+      leads: [],
+      taken_back: [],
       result: "win",
     });
 

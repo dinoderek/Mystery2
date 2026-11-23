@@ -12,7 +12,6 @@
  * costs no turn and writes no session state: the player has not gone anywhere.
  */
 import { GameEnterRequestSchema } from "../../../shared/src/mystery-api-contracts.ts";
-import { lastNameOf } from "../../../shared/src/playable-case.ts";
 import { AIConfigError } from "../ai-config.ts";
 import type { EngineAIProfile, EngineContext } from "../context.ts";
 import {
@@ -196,7 +195,8 @@ export async function handle(
       .map((c) => ({
         id: c.id,
         first_name: c.first_name,
-        last_name: lastNameOf(c),
+        // A clue-graph character goes by one name.
+        last_name: "",
         sex: c.sex,
       }));
 

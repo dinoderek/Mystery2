@@ -13,8 +13,8 @@ subprocess wrappers, the evaluators' direction, and replay and self-play.
 
 One local Node process: SvelteKit serves the SPA and `/api` over SQLite and
 the filesystem. `packages/game-engine/` holds the game, `packages/shared/` the
-schemas both sides import, `evaluation/` the judges and pipelines. Detail:
-`docs/architecture.md`.
+schemas both sides import, `evaluation/` the judges and pipelines. A case is a
+clue graph (`docs/clue-graph.md`). Detail: `docs/architecture.md`.
 
 ## Invariants
 

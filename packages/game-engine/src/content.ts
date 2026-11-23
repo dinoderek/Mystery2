@@ -5,13 +5,10 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import {
-  BlueprintV2Schema,
-} from "../../shared/src/blueprint-schema-v2.ts";
 import type { PlayableCase } from "../../shared/src/playable-case.ts";
 import { buildClueGraphWorld } from "../../shared/src/clue-graph-case.ts";
 import { validateClueGraph } from "../../shared/src/clue-graph-validator.ts";
-import { isClueGraphFile } from "../../shared/src/clue-graph-schema.ts";
+import { CLUE_GRAPH_FORMAT } from "../../shared/src/clue-graph-schema.ts";
 import type { BlueprintSummaryEntry, ContentStore } from "./context.ts";
 import type { LogWriter } from "./logging.ts";
 import { validateSceneManifest, type SceneManifest } from "../../shared/src/scene-schema.ts";
@@ -28,6 +25,13 @@ interface CachedBlueprint {
   /** mtime + size of the file the blueprint was parsed from. */
   stamp: string;
   blueprint: PlayableCase;
+}
+
+/** The format a case file names, under any key a case format has used, or "none". */
+function formatNameOf(candidate: unknown): string {
+  const named = candidate as { format?: unknown; $format?: unknown; schema_version?: unknown } | null;
+  const format = named?.format ?? named?.$format ?? named?.schema_version;
+  return typeof format === "string" ? format : "none";
 }
 
 function stampOf(stats: fs.Stats): string {
@@ -78,10 +82,10 @@ export function createLocalContentStore(
 
     try {
       const candidate = JSON.parse(text);
-      if (candidate?.$format !== undefined) throw new Error(`Unknown case format: ${candidate.$format}`);
-      const blueprint = isClueGraphFile(candidate)
-        ? buildClueGraphWorld(validateClueGraph(candidate))
-        : BlueprintV2Schema.parse(candidate);
+      // The clue graph is the one case format; any other is rejected by its name.
+      const format = formatNameOf(candidate);
+      if (format !== CLUE_GRAPH_FORMAT) throw new Error(`Unknown case format: ${format}`);
+      const blueprint = buildClueGraphWorld(validateClueGraph(candidate));
       cache.set(filePath, { stamp: stampOf(stats), blueprint });
       return blueprint;
     } catch (parseError) {
@@ -150,9 +154,7 @@ export function createLocalContentStore(
         entries.push({ blueprint, source: path.basename(filePath) });
       }
 
-      // V2 cases first, then the other formats of a story.
-      const alternative = (entry: BlueprintSummaryEntry) => Number(entry.blueprint.schema_version !== "v2");
-      return entries.sort((a, b) => alternative(a) - alternative(b));
+      return entries;
     },
 
     async loadBlueprint(

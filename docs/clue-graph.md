@@ -1,6 +1,6 @@
 # Clue Graph
 
-Beside [V2](../packages/shared/src/blueprint-schema-v2.ts). Checks:
+The one case format. Checks:
 `packages/shared/src/clue-graph-schema.ts`; world view (`ClueGraphWorld`):
 `packages/shared/src/clue-graph-case.ts`; play:
 `packages/game-engine/src/clue-graph/`; cases: `blueprints/clue-graph/`,

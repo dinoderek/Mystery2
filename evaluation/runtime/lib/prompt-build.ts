@@ -45,6 +45,3 @@ export async function buildRoleRequest(input: TemplateRoleInput): Promise<ModelR
 export function buildNarrationPrompt(input: NarrationRoleInput): string {
   return shared.buildNarrationPrompt(input);
 }
-
-/** Re-exported so callers resolve roles the same way the handlers do. */
-export const { resolveSearchRole, resolveAccusationRole } = shared;

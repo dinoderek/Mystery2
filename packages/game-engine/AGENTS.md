@@ -7,7 +7,8 @@
   explicit path, never `resolveDatabasePath()`, which names the play database
   (`docs/testing.md`).
 - **`SCHEMA_VERSION` bumps reach `prod`.** The first branch to open `prod`
-  upgrades it, and older checkouts are then locked out. A bump still needs its
-  `MIGRATIONS` step in `src/db/client.ts`. This is a local game and the
+  upgrades it, and older checkouts are then locked out. A bump needs its
+  `MIGRATIONS` step in `src/db/client.ts`, or raises
+  `OLDEST_UPGRADABLE_VERSION` to start saves over. This is a local game and the
   database can be wiped (`docs/backend-conventions.md`): state the bump in the
   PR and proceed, with no effort on preserving data or backups.

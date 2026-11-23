@@ -76,7 +76,7 @@ describe("the game-turn contract", () => {
   });
 });
 
-describe("the notebook of a clue-graph case", () => {
+describe("the notebook", () => {
   it("carries leads with a new mark, taken-back clues and clue kinds, and no truth, rule or gate field", () => {
     const answer = GameTurnResponseSchema.parse({
       ...createTurnPlayedResponse(),
@@ -92,12 +92,15 @@ describe("the notebook of a clue-graph case", () => {
     expect(JSON.stringify(answer)).not.toMatch(/truth|rule|gate|conclusions/);
   });
 
-  it("carries leads on the game state, and leaves a case without them as it was", () => {
+  it("carries leads on the game state", () => {
     expect(GameStateSchema.parse(createGameState({ leads: [createNotebookLead()] })).leads).toHaveLength(1);
-    expect(GameStateSchema.parse(createGameState())).not.toHaveProperty("leads");
-    const turn = createTurnPlayedResponse();
-    expect(turn).not.toHaveProperty("leads");
-    expect(turn).not.toHaveProperty("taken_back");
+  });
+
+  it("refuses a game state without leads, and a played turn without leads or taken_back", () => {
+    const without = (value: object, key: string) => Object.fromEntries(Object.entries(value).filter(([field]) => field !== key));
+    expect(GameStateSchema.safeParse(without(createGameState(), "leads")).success).toBe(false);
+    expect(GameTurnResponseSchema.safeParse(without(createTurnPlayedResponse(), "leads")).success).toBe(false);
+    expect(GameTurnResponseSchema.safeParse(without(createTurnPlayedResponse(), "taken_back")).success).toBe(false);
   });
 
   it("accepts an arrival where someone has one name, as a clue-graph case writes them", () => {
@@ -208,7 +211,6 @@ describe("shared mystery API contracts", () => {
       SessionSummarySchema.parse(summary),
     ).toMatchObject({
       mystery_title: "The Missing Honey Cakes",
-      can_open: true,
       mode: "explore",
     });
   });
@@ -221,7 +223,6 @@ describe("shared mystery API contracts", () => {
           blueprint_id: "123e4567-e89b-12d3-a456-426614174020",
           mystery_title: "Unknown Mystery",
           mystery_available: false,
-          can_open: false,
           mode: "ended",
           time_remaining: 0,
           outcome: "lose",

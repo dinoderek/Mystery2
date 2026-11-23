@@ -55,7 +55,7 @@ describe('session list resume/view API flows', () => {
     expect(listRes.status).toBe(200);
     const listData = await listRes.json();
     const row = listData.in_progress.find((entry: { game_id: string }) => entry.game_id === gameId);
-    expect(row).toMatchObject({ can_open: true, mode: 'talk' });
+    expect(row).toMatchObject({ mystery_available: true, mode: 'talk' });
 
     const resumedGetRes = await fetch(`${API_URL}/game-get?game_id=${gameId}`, {
       method: 'GET',
@@ -166,7 +166,7 @@ describe('session list resume/view API flows', () => {
     const completedRow = listData.completed.find((entry: { game_id: string }) => entry.game_id === gameId);
 
     expect(completedRow).toBeDefined();
-    expect(completedRow.can_open).toBe(true);
+    expect(completedRow.mystery_available).toBe(true);
     expect(completedRow.mode).toBe('ended');
 
     const getData = await loadSessionTranscript(auth, gameId);

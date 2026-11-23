@@ -2,7 +2,7 @@ import { z } from "zod";
 import { SceneManifestSchema } from "./scene-schema.ts";
 import { ReadingAgeSchema } from "./reading-age.ts";
 export { READING_AGES, ReadingAgeSchema } from "./reading-age.ts";
-export type { PlayableBlueprint, PlayableCase } from "./playable-case.ts";
+export type { PlayableCase } from "./playable-case.ts";
 export { ClueGraphCaseSchema, type ClueGraphCase } from "./clue-graph-schema.ts";
 export { validateClueGraph } from "./clue-graph-validator.ts";
 export { buildClueGraphWorld, clueGraphCaseId, CLUE_GRAPH_TITLE_SUFFIX, type ClueGraphWorld } from "./clue-graph-case.ts";
@@ -140,7 +140,7 @@ export const RevealedClueSchema = DiscoveredClueSchema.extend({
 
 /**
  * What the player needs next, in words that name who or where only. `new` is
- * set on the turn the lead first appears. Clue-graph cases only.
+ * set on the turn the lead first appears.
  */
 export const NotebookLeadSchema = z.object({
   /** Stable across turns, so the browser can tell one lead from another. */
@@ -165,10 +165,10 @@ export const TurnPlayedResponseSchema = z.object({
   events: z.array(NarrationEventSchema).min(1),
   state: TurnStateSchema,
   revealed_clues: z.array(RevealedClueSchema),
-  /** Clue-graph cases: the leads as they stand after this turn. */
-  leads: z.array(NotebookLeadSchema).optional(),
-  /** Clue-graph cases: every clue in the notebook taken back so far, not only this turn's. */
-  taken_back: z.array(z.string().min(1)).optional(),
+  /** The leads as they stand after this turn. */
+  leads: z.array(NotebookLeadSchema),
+  /** Every clue in the notebook taken back so far, not only this turn's. */
+  taken_back: z.array(z.string().min(1)),
   /** Set when this turn ended the case. */
   result: OutcomeSchema.nullable(),
 });
@@ -249,8 +249,8 @@ export const GameStateSchema = z.object({
   characters: z.array(CharacterSummarySchema),
   // The notebook's clues, with where each was found.
   discovered_clues: z.array(RevealedClueSchema).optional(),
-  // Clue-graph cases: what to do next.
-  leads: z.array(NotebookLeadSchema).optional(),
+  // What to do next.
+  leads: z.array(NotebookLeadSchema),
   time_remaining: z.number().int().nonnegative(),
   /** The accusations the game has left, derived from its events. */
   accusations_left: z.number().int().nonnegative(),
@@ -291,7 +291,6 @@ export const SessionSummarySchema = z.object({
   blueprint_id: z.string().uuid(),
   mystery_title: z.string().min(1),
   mystery_available: z.boolean(),
-  can_open: z.boolean(),
   mode: ModeSchema,
   time_remaining: z.number().int().nonnegative(),
   outcome: OutcomeSchema.nullable().optional(),

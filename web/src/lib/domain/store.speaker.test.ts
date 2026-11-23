@@ -222,11 +222,13 @@ describe('store speaker behavior', () => {
     expect(store.state?.discovered_clues).toEqual([]);
     await store.submitInput('search');
 
-    expect(store.state?.discovered_clues).toEqual([crumbClue]);
-    expect(store.recentlyDiscovered).toEqual([crumbClue]);
+    // The turn's marks say it is not taken back.
+    const kept = { ...crumbClue, taken_back: false };
+    expect(store.state?.discovered_clues).toEqual([kept]);
+    expect(store.recentlyDiscovered).toEqual([kept]);
 
     // A second search revealing the same clue does not duplicate it.
     await store.submitInput('search');
-    expect(store.state?.discovered_clues).toEqual([crumbClue]);
+    expect(store.state?.discovered_clues).toEqual([kept]);
   });
 });

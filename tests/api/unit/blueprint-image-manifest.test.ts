@@ -12,14 +12,12 @@ import {
   buildImageStorageKey,
   isCanonicalImageId,
 } from "../../../packages/game-engine/src/images.ts";
-import type { BlueprintV2 } from "../../../packages/shared/src/blueprint-schema-v2.ts";
-
-const blueprint: Pick<BlueprintV2, "schema_version" | "id" | "metadata" | "world"> = {
-  schema_version: "v2",
+// The artwork view of a case: only the image fields these helpers read.
+const blueprint = {
   id: "123e4567-e89b-12d3-a456-426614174000",
   metadata: {
     image_id: "mock-blueprint.blueprint.png",
-  } as BlueprintV2["metadata"],
+  },
   world: {
     locations: [
       {
@@ -35,11 +33,11 @@ const blueprint: Pick<BlueprintV2, "schema_version" | "id" | "metadata" | "world
         portrait_image_id: "mock-blueprint.character-char-alice.png",
       },
     ],
-  } as unknown as BlueprintV2["world"],
+  },
 };
 
 describe("blueprint image manifest helpers", () => {
-  it("collects image references using V2 id-based keys", () => {
+  it("collects image references using id-based keys", () => {
     const refs = collectBlueprintImageReferences(blueprint);
     expect(refs).toHaveLength(3);
     expect(refs.map((entry: { purpose: string }) => entry.purpose)).toEqual([

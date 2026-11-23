@@ -74,18 +74,6 @@ export class RequestRejectedError extends Error {
   }
 }
 
-/**
- * A saved game whose case snapshot is in a format the engine no longer reads.
- * It stays listed, marked as unable to open; opening it answers this.
- */
-export function retiredCaseFormat(format: string): RequestRejectedError {
-  return new RequestRejectedError(
-    410,
-    `This game was saved with the case format "${format}", which is no longer read, so it cannot be opened.`,
-    "case_format_retired",
-  );
-}
-
 export function asRejectedResponse(error: unknown): Response | null {
   return error instanceof RequestRejectedError ? jsonError(error.status, error.message) : null;
 }

@@ -1,23 +1,4 @@
 {
-  "packages/game-engine/src/ai-provider.ts": {
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
-  "packages/shared/src/blueprint-schema-v2.ts": {
-    "max-depth": {
-      "count": 3
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    }
-  },
   "scripts/check-doc-refs.mjs": {
     "sonarjs/cognitive-complexity": {
       "count": 1

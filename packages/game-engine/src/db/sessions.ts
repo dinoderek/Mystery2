@@ -12,17 +12,17 @@ import type {
   SessionStore,
   TurnSave,
 } from "../context.ts";
-import { retiredCaseFormat, SaveConflictError } from "../errors.ts";
+import { SaveConflictError } from "../errors.ts";
 import { readGameMode } from "../state-machine.ts";
 import type { Db, SqlValue } from "./client.ts";
 import { insertEventRow } from "./events.ts";
 import { validateClueGraph } from "../../../shared/src/clue-graph-validator.ts";
 import { clueGraphCaseId } from "../../../shared/src/clue-graph-case.ts";
-import { CLUE_GRAPH_FORMAT, type ClueGraphCase } from "../../../shared/src/clue-graph-schema.ts";
+import type { ClueGraphCase } from "../../../shared/src/clue-graph-schema.ts";
 import { ReadingAgeSchema } from "../../../shared/src/reading-age.ts";
 
 const SUMMARY_COLUMNS =
-  "id, blueprint_id, mode, time_remaining, outcome, updated_at, created_at, json_extract(clue_graph_snapshot, '$.metadata.title') as clue_graph_title, json_extract(clue_graph_snapshot, '$.format') as clue_graph_format";
+  "id, blueprint_id, mode, time_remaining, outcome, updated_at, created_at, json_extract(clue_graph_snapshot, '$.metadata.title') as clue_graph_title";
 
 /**
  * How each patchable column is written. `discovered_clues` is a JSON array in
@@ -55,12 +55,10 @@ function readJsonArray(value: unknown): string[] {
   }
 }
 
-/** The saved clue-graph case, or a rejection naming its format when the engine no longer reads it. */
+/** The saved clue-graph case. */
 function readClueGraphSnapshot(value: unknown): ClueGraphCase | undefined {
   if (typeof value !== "string") return undefined;
-  const saved = JSON.parse(value);
-  if (saved?.format !== CLUE_GRAPH_FORMAT) throw retiredCaseFormat(String(saved?.format));
-  return validateClueGraph(saved, { story: false });
+  return validateClueGraph(JSON.parse(value), { story: false });
 }
 
 function toSessionRow(row: Record<string, unknown>): GameSessionRow {
@@ -90,7 +88,6 @@ function toSessionRow(row: Record<string, unknown>): GameSessionRow {
 function toSummaryRow(row: Record<string, unknown>): GameSessionSummaryRow {
   return {
     ...(typeof row.clue_graph_title === "string" ? { clue_graph_title: row.clue_graph_title } : {}),
-    ...(typeof row.clue_graph_format === "string" ? { clue_graph_format: row.clue_graph_format } : {}),
     id: String(row.id),
     blueprint_id: String(row.blueprint_id),
     mode: readGameMode(row.mode),
@@ -108,9 +105,9 @@ function insertSessionRow(db: Db, id: string, session: NewGameSession): void {
   db.prepare(
     `insert into game_sessions (
        id, player_id, blueprint_id, ai_profile_id, mode,
-       current_location_id, time_remaining, created_at, updated_at, msf_snapshot,
+       current_location_id, time_remaining, created_at, updated_at,
        clue_graph_snapshot, reading_age
-     ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     id,
     session.player_id,
@@ -121,7 +118,6 @@ function insertSessionRow(db: Db, id: string, session: NewGameSession): void {
     session.time_remaining,
     now,
     now,
-    null,
     session.clue_graph_snapshot ? JSON.stringify(validateClueGraph(session.clue_graph_snapshot, { story: false })) : null,
     ReadingAgeSchema.parse(session.reading_age),
   );

@@ -293,7 +293,7 @@ describe.each(STORIES)("failed accusation replies on $file", (story) => {
       expect(Object.keys(context).sort()).toEqual(["accused", "held", "people", "reply"]);
       expect(JSON.stringify(context)).not.toMatch(/"(truth|rule|culprit|verdict|timeline|motive)"/);
       for (const clue of Object.values(caseGraph.clues)) expect(JSON.stringify(context)).not.toContain(clue.fact);
-      const prompt = (await loadPromptTemplate("graph_accusation_round", 8, { clueGraph: true })).replace("{{player_input}}", "My case.");
+      const prompt = (await loadPromptTemplate("graph_accusation_round", 8)).replace("{{player_input}}", "My case.");
       await expect(JSON.stringify({ prompt, context }, null, 2)).toMatchFileSnapshot(`snapshots/narrator/${story.file}.reply-${scenario.name}.json`);
       const output = await provider.generateRoleOutput({ role: "graph_accusation_round", prompt, context: { graph_accusation_context: context }, parse: parseGraphAccusationRoundOutput });
       const material = context.reply!;

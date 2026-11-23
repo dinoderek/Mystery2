@@ -1,17 +1,6 @@
 import type { AIRoleName } from "./ai-contracts.ts";
-import {
-  buildDiscoveredClueIdSet,
-  buildKnownCluesWithOrigin,
-  buildPathCoverage,
-  type ClueRequires,
-  isClueUnlocked,
-  isSpotHidden,
-  type KnownClueWithOrigin,
-  type PathCoverage,
-} from "./clue-discovery.ts";
-import { buildCharacterState, FALLBACK_VISITS, gateClueIds, isAgendaFullyEarned, safeSteps } from "./character-state.ts";
-import { type ClueRef, type ClueWorld, mapClueIdsToClues } from "./clues.ts";
-import { namedHiddenSpot } from "./search-target.ts";
+import { buildDiscoveredClueIdSet } from "./clue-discovery.ts";
+import { type ClueRef, mapClueIdsToClues } from "./clues.ts";
 import type { ClueGraphCase } from "../../shared/src/clue-graph-schema.ts";
 import type { ClueGraphWorld } from "../../shared/src/clue-graph-case.ts";
 import { ACCUSE_FAILED } from "./accusations.ts";
@@ -31,133 +20,8 @@ import {
   type GraphTalkContext,
 } from "./clue-graph/narrator-context.ts";
 
-export interface BlueprintClue {
-  id: string;
-  text: string;
-  about_character_id?: string;
-  hint_location_id?: string;
-  hint_sub_location_id?: string;
-  requires?: ClueRequires | null;
-}
-
-export interface BlueprintAgenda {
-  type: string;
-  strategy: string;
-  priority: string;
-  details: string;
-  target_character_id?: string;
-  gated_clue_id?: string;
-  condition?: string;
-  yields_to_clue_ids?: string[];
-  // self_protect only: each fact that breaks the cover story, the clues that show
-  // it, and what it earns.
-  parts?: BlueprintAgendaPart[];
-  confession?: string;
-  // The actual_actions sequences this cover hides from the speaker.
-  hides_steps?: number[];
-}
-
-export interface BlueprintAgendaPart {
-  // Any one of these clues, used, earns the part.
-  clue_ids: string[];
-  shows: string;
-  reaction: string;
-  // The actual_actions sequences this reaction owns up to, once earned.
-  concedes_steps?: number[];
-}
-
-export type BlueprintTellTrigger =
-  | { kind: "always" }
-  | { kind: "condition"; condition: string }
-  | { kind: "clue"; clue_ids: string[] };
-
-export interface BlueprintTell {
-  id: string;
-  text: string;
-  trigger: BlueprintTellTrigger;
-}
-
-export interface BlueprintActualAction {
-  sequence: number;
-  summary: string;
-}
-
-export interface BlueprintReasoningPath {
-  id: string;
-  summary: string;
-  description?: string;
-  location_clue_ids: string[];
-  character_clue_ids: string[];
-}
-
-/** The world view a narrator context is built from: a V2 case's, or a clue graph's own. */
-export type BlueprintContext = V2BlueprintContext | ClueGraphWorld;
-
-export interface V2BlueprintContext {
-  clue_graph?: undefined;
-  metadata: {
-    title: string;
-    one_liner: string;
-    target_age: number;
-    time_budget?: number;
-    image_id?: string;
-    // Optional narration voice for this mystery, layered on top of the
-    // standard narrator style (see buildStyleGuidance in ai-prompts.ts).
-    narration_style?: string;
-  };
-  narrative: {
-    premise: string;
-    starting_knowledge?: {
-      mystery_summary: string;
-      locations: Array<{ location_id: string; summary: string }>;
-      characters: Array<{ character_id: string; summary: string }>;
-    };
-  };
-  world: {
-    starting_location_id: string;
-    locations: Array<{
-      id: string;
-      name: string;
-      description: string;
-      clues: BlueprintClue[];
-      location_image_id?: string;
-      sub_locations?: Array<{
-        id: string;
-        name: string;
-        hint: string;
-        clues: BlueprintClue[];
-      }>;
-    }>;
-    characters: Array<{
-      id: string;
-      first_name: string;
-      last_name: string;
-      location_id: string;
-      sex: "male" | "female";
-      appearance: string;
-      background: string;
-      personality: string;
-      initial_attitude_towards_investigator: string;
-      stated_alibi: string | null;
-      motive: string | null;
-      is_culprit: boolean;
-      portrait_image_id?: string;
-      clues: BlueprintClue[];
-      flavor_knowledge: string[];
-      actual_actions: BlueprintActualAction[];
-      agendas?: BlueprintAgenda[];
-      tells?: BlueprintTell[];
-    }>;
-  };
-  ground_truth: {
-    what_happened: string;
-    why_it_happened: string;
-    timeline: string[];
-  };
-  solution_paths: BlueprintReasoningPath[];
-  red_herrings: BlueprintReasoningPath[];
-  suspect_elimination_paths: BlueprintReasoningPath[];
-}
+/** The world view a narrator context is built from: the clue graph's. */
+export type BlueprintContext = ClueGraphWorld;
 
 export interface SessionSnapshot {
   mode: "explore" | "talk" | "accuse" | "ended";
@@ -178,9 +42,10 @@ export interface SharedMysteryContext {
   target_age: number;
 }
 
-// The role a context is built for: an output-contract role, or `ambience` —
-// arrival narration, which has no output contract but does have a context.
-export type ContextRoleName = AIRoleName | "ambience";
+// The role a context is built for: an output-contract role; `ambience`,
+// arrival narration, which has no output contract but does have a context; or
+// `search`, the name a search's context goes by, as its events do.
+export type ContextRoleName = AIRoleName | "ambience" | "search";
 
 export interface MoveContext {
   destination_id: string;
@@ -197,40 +62,10 @@ export interface MoveContext {
 export interface ArrivalCharacterContext {
   id: string;
   first_name: string;
-  last_name: string;
   sex: "male" | "female";
   appearance: string;
   personality: string;
   initial_attitude_towards_investigator: string;
-  // Each agenda still in play, in priority order, as the manner it gives them.
-  manner: string[];
-  // Only tells that need nothing from the player: `always` ones.
-  tells: string[];
-}
-
-// A clue as search shows it: without its gate. Every clue search sees is one
-// the engine has already let through (unlocked, or admitted by a search that
-// names its spot), so the gate's reason would only read as a reason to withhold.
-export type SearchClue = Omit<BlueprintClue, "requires">;
-
-export interface SubLocationContext {
-  id: string;
-  name: string;
-  hint: string;
-  clues: SearchClue[];
-  unrevealed_clues: SearchClue[];
-  has_unrevealed_clues: boolean;
-}
-
-export interface SearchContext {
-  location_id: string;
-  location_name: string;
-  location_description: string;
-  clues: SearchClue[];
-  revealed_clue_ids: string[];
-  next_clue: SearchClue | null;
-  sub_locations: SubLocationContext[];
-  search_query: string | null;
 }
 
 export interface TalkLocationSummary {
@@ -239,93 +74,24 @@ export interface TalkLocationSummary {
   description: string;
 }
 
-// What ANY character context may say about a character other than the active
-// one: identity, visible appearance, and the player-facing summary from
-// narrative.starting_knowledge. Private authored material (background,
-// personality, alibi, motive, clues, agendas, ...) is reserved for the active
-// character's own private context — cross-character knowledge travels only via
-// explicit clues (about_character_id).
+// What any character context may say about a character other than the active
+// one: identity and visible appearance. What a character knows reaches another
+// only through the clue graph.
 export interface TalkCharacterPublicSummary {
   id: string;
   first_name: string;
-  last_name: string;
   location_id: string;
   sex: "male" | "female";
   appearance: string;
-  // Player-facing public knowledge from narrative.starting_knowledge; null
-  // when the blueprint has no entry for this character.
-  public_summary: string | null;
 }
 
-// A character clue as presented to the narrator during conversation. Carries the
-// gate's `requires_rationale` (the in-fiction reason it is withheld) and
-// precomputed flags so the model does not have to do set math. Clue ids of
-// prerequisites are intentionally NOT sent: the rationale says what the player
-// must use, and the narrator judges use from the conversation.
-export interface TalkClueContext {
-  id: string;
-  text: string;
-  about_character_id?: string;
-  hint_location_id?: string;
-  requires_rationale: string | null;
-  // Why it is locked: `pointer` (an earlier clue tells the player what to
-  // raise) or `leverage` (the character must be shown it). Null when ungated.
-  requires_kind: ClueRequires["kind"] | null;
-  // The player holds this clue's prerequisites, so they are able to use them.
-  // A precondition, never permission: the clue is earned only once they do.
-  // Null for an ungated clue.
-  player_can_use_prerequisites: boolean | null;
-  // The player already discovered this clue; restating it reveals nothing new.
-  known_to_player: boolean;
-}
-
-// A self-protect part as the narrator sees it: what earns it and what it shows.
-// Its reaction is sent only once earned, as part of the character's story.
-export interface TalkAgendaPartContext {
-  clue_ids: string[];
-  shows: string;
-  earned: boolean;
-}
-
-// An agenda as the narrator sees it. A self-protect agenda's confession is sent
-// only once every part is earned, and is null until then.
-export type TalkAgendaContext = Omit<BlueprintAgenda, "parts" | "confession" | "hides_steps"> & {
-  parts?: TalkAgendaPartContext[];
-  confession?: string | null;
-};
-
-// What the player has done to this character so far, rebuilt from the session's
-// events across every visit (`character-state.ts`). It only grows.
-export interface TalkCharacterStateContext {
-  used_clue_ids: string[];
-  // The stated alibi, then each earned reaction in the order it was earned.
-  current_story: string[];
-  // Denials and claims the character made, newest last.
-  commitments: string[];
-  visits_with_questions: number;
-  // The player has questioned this character in enough separate visits that the
-  // repeated-asking fallback may give up a partial truth or a gated clue.
-  fallback_open: boolean;
-}
-
+// The active character of a goodbye: how they carry themselves, and the clues
+// of theirs the player has found, as their notebook lines.
 export interface TalkCharacterPrivateContext extends TalkCharacterPublicSummary {
-  background: string;
   personality: string;
   initial_attitude_towards_investigator: string;
-  stated_alibi: string | null;
-  motive: string | null;
-  clues: TalkClueContext[];
-  flavor_knowledge: string[];
-  // Only the steps safe to say (`safeSteps`): what no cover hides, and what an
-  // earned part or confession has given up.
-  actual_actions: BlueprintActualAction[];
-  agendas: TalkAgendaContext[];
-  tells: BlueprintTell[];
-  player_known_clues: Array<{ id: string; text: string }>;
-  // The clues the player could use on this character (what earns a part or
-  // opens a gate), each with whether they hold it. Only these are reported used.
-  gate_clues: Array<{ id: string; held: boolean }>;
-  state: TalkCharacterStateContext;
+  clues: ClueRef[];
+  player_known_clues: ClueRef[];
 }
 
 export interface TalkContext {
@@ -346,10 +112,7 @@ export interface AccusationStartContext {
   characters: TalkCharacterPublicSummary[];
 }
 
-// The judge receives the whole blueprint, so it knows every clue that EXISTS.
-// What it cannot infer reliably from a long transcript is which of those the
-// investigator actually earned — that is what these two fields carry.
-/** What a clue-graph investigation has earned, derived from the events. */
+/** What an investigation has earned, derived from the events. */
 export interface ClueGraphProgress {
   /** Conclusions whose rule holds over the clues held and not taken back. */
   supported_conclusions: Array<{ id: string; text: string }>;
@@ -357,18 +120,6 @@ export interface ClueGraphProgress {
   culprit_supported: boolean;
   /** Statements the investigator has had taken back. */
   taken_back: string[];
-}
-
-export interface AccusationJudgeContext {
-  /** This accusation is the game's last: one that fails ends the case. */
-  last_accusation: boolean;
-  full_blueprint: V2BlueprintContext;
-  // Every clue discovered this session, in discovery order. The only thing
-  // separating what exists in the blueprint from what the player holds.
-  player_known_clues: KnownClueWithOrigin[];
-  // That set intersected with each reasoning path, precomputed. Lets the judge
-  // tell a near-complete case from a red-herring-led one from a guess.
-  path_coverage: PathCoverage[];
 }
 
 // A type alias rather than an interface on purpose: only an alias gets an
@@ -385,14 +136,12 @@ export type AIContext = {
   conversation_history: ConversationFragment[];
   shared_mystery_context: SharedMysteryContext;
   move_context: MoveContext | null;
-  search_context: SearchContext | null;
   talk_context: TalkContext | null;
   accusation_start_context: AccusationStartContext | null;
-  accusation_judge_context: AccusationJudgeContext | null;
-  // Present only for a clue-graph case's talk and search (`clue-graph/`).
+  // Present only for talk and search (`clue-graph/`).
   graph_talk_context?: GraphTalkContext;
   graph_search_context?: GraphSearchContext;
-  // Present only for a clue-graph accusation (`clue-graph/accusation.ts`).
+  // Present only for an accusation (`clue-graph/accusation.ts`).
   graph_accusation_context?: GraphAccusationContext | GraphVerdictContext;
 };
 
@@ -408,40 +157,22 @@ interface BuildContextInput {
   conversation_history?: ConversationFragment[];
   accusation_history_mode?: "all" | "none";
   move_context?: MoveContext | null;
-  search_context?: SearchContext | null;
   talk_context?: TalkContext | null;
   accusation_start_context?: AccusationStartContext | null;
-  accusation_judge_context?: AccusationJudgeContext | null;
   graph_talk_context?: GraphTalkContext;
   graph_search_context?: GraphSearchContext;
   graph_accusation_context?: GraphAccusationContext | GraphVerdictContext;
 }
 
-export function findLocationById<B extends BlueprintContext>(
-  blueprint: B,
-  locationId: string,
-): B["world"]["locations"][number] | undefined {
-  const locations: B["world"]["locations"][number][] = blueprint.world.locations;
-  return locations.find((l) => l.id === locationId);
+type Location = BlueprintContext["world"]["locations"][number];
+type Character = BlueprintContext["world"]["characters"][number];
+
+export function findLocationById(blueprint: BlueprintContext, locationId: string): Location | undefined {
+  return blueprint.world.locations.find((l) => l.id === locationId);
 }
 
-export function findCharacterById<B extends BlueprintContext>(
-  blueprint: B,
-  characterId: string,
-): B["world"]["characters"][number] | undefined {
-  const characters: B["world"]["characters"][number][] = blueprint.world.characters;
-  return characters.find((c) => c.id === characterId);
-}
-
-/** A V2 case's world view. The V2 roles (talk start and conversation, search, the judge) never play a clue graph. */
-function v2Of(blueprint: BlueprintContext): V2BlueprintContext {
-  if (blueprint.clue_graph) throw new Error("A clue-graph case does not play the V2 roles");
-  return blueprint;
-}
-
-/** The narration voice a case sets; a clue graph sets none. */
-export function narrationStyleOf(blueprint: BlueprintContext): string | null {
-  return blueprint.clue_graph ? null : blueprint.metadata.narration_style ?? null;
+export function findCharacterById(blueprint: BlueprintContext, characterId: string): Character | undefined {
+  return blueprint.world.characters.find((c) => c.id === characterId);
 }
 
 function readPayloadField(
@@ -586,25 +317,17 @@ function buildTalkLocationSummaries(
 export function buildTalkCharacterPublicSummaries(
   blueprint: BlueprintContext,
 ): TalkCharacterPublicSummary[] {
-  const publicSummaryByCharacterId = new Map(
-    (blueprint.clue_graph ? [] : blueprint.narrative.starting_knowledge?.characters ?? []).map(
-      (entry) => [entry.character_id, entry.summary] as const,
-    ),
-  );
-
   return blueprint.world.characters.map((character) => ({
     id: character.id,
     first_name: character.first_name,
-    last_name: v2FieldsOf(character).last_name,
     location_id: character.location_id,
     sex: character.sex,
     appearance: character.appearance,
-    public_summary: publicSummaryByCharacterId.get(character.id) ?? null,
   }));
 }
 
 export function buildPlayerKnownClues(
-  blueprint: ClueWorld,
+  blueprint: BlueprintContext,
   conversationHistory: ConversationFragment[],
 ): ClueRef[] {
   const clueIds = buildDiscoveredClueIdSet(conversationHistory);
@@ -614,202 +337,48 @@ export function buildPlayerKnownClues(
   return mapClueIdsToClues(blueprint, clueIds);
 }
 
-type BlueprintCharacter = BlueprintContext["world"]["characters"][number];
-type V2Character = V2BlueprintContext["world"]["characters"][number];
-type V2CharacterFields = Pick<
-  V2Character,
-  "last_name" | "background" | "stated_alibi" | "motive" | "flavor_knowledge" | "actual_actions" | "agendas" | "tells"
->;
-
-/**
- * A character's V2 fields. A clue-graph character has none of them; the
- * narrator contexts both formats share (talk end, arrival, the roster) read
- * them empty.
- */
-function v2FieldsOf(character: BlueprintCharacter): V2CharacterFields {
-  if ("last_name" in character) return character;
-  return {
-    last_name: "",
-    background: "",
-    stated_alibi: null,
-    motive: null,
-    flavor_knowledge: [],
-    actual_actions: [],
-    agendas: [],
-    tells: [],
-  };
-}
-
-function buildTalkAgendas(character: V2CharacterFields, state: ReturnType<typeof buildCharacterState>): TalkAgendaContext[] {
-  return (character.agendas ?? []).map((agenda, agendaIndex) => {
-    const { parts: authoredParts, confession, ...rest } = agenda;
-    if (agenda.type !== "self_protect") return rest;
-    // The hidden steps decide what reaches actual_actions; the list itself stays back.
-    delete rest.hides_steps;
-    const parts = authoredParts ?? [];
-    return {
-      ...rest,
-      parts: parts.map((part, partIndex) => ({
-        clue_ids: part.clue_ids,
-        shows: part.shows,
-        earned: state.earned_parts.some(
-          (earned) => earned.agenda_index === agendaIndex && earned.part_index === partIndex,
-        ),
-      })),
-      confession: isAgendaFullyEarned(state, agendaIndex, parts.length) ? confession ?? null : null,
-    };
-  });
-}
-
 function buildTalkCharacterPrivateContext(
   blueprint: BlueprintContext,
   characterId: string,
-  playerKnownClues: Array<{ id: string; text: string }>,
-  conversationHistory: ConversationFragment[],
-  options: { asking_now?: boolean } = {},
+  playerKnownClues: ClueRef[],
 ): TalkCharacterPrivateContext {
-  const character = blueprint.world.characters.find(
-    (entry) => entry.id === characterId,
-  );
+  const character = findCharacterById(blueprint, characterId);
   if (!character) {
     throw new Error(`Character ${characterId} not found in blueprint`);
   }
-  const v2 = v2FieldsOf(character);
-
-  const publicSummary = blueprint.clue_graph
-    ? null
-    : blueprint.narrative.starting_knowledge?.characters.find(
-        (entry) => entry.character_id === characterId,
-      )?.summary ?? null;
-
-  const discoveredSet = new Set(playerKnownClues.map((c) => c.id));
-  const clues: TalkClueContext[] = (character.clues as BlueprintClue[]).map((clue) => ({
-    id: clue.id,
-    text: clue.text,
-    about_character_id: clue.about_character_id,
-    hint_location_id: clue.hint_location_id,
-    requires_rationale: clue.requires?.rationale ?? null,
-    requires_kind: clue.requires?.kind ?? null,
-    player_can_use_prerequisites: clue.requires ? isClueUnlocked(clue, discoveredSet) : null,
-    known_to_player: discoveredSet.has(clue.id),
-  }));
-  const stateCharacter = { ...character, ...v2 };
-  const state = buildCharacterState(stateCharacter, conversationHistory, options);
 
   return {
     id: character.id,
     first_name: character.first_name,
-    last_name: v2.last_name,
     location_id: character.location_id,
     sex: character.sex,
     appearance: character.appearance,
-    public_summary: publicSummary,
-    background: v2.background,
     personality: character.personality,
-    initial_attitude_towards_investigator:
-      character.initial_attitude_towards_investigator,
-    stated_alibi: v2.stated_alibi,
-    motive: v2.motive,
-    clues,
-    flavor_knowledge: v2.flavor_knowledge,
-    actual_actions: safeSteps(stateCharacter, state, v2.actual_actions),
-    agendas: buildTalkAgendas(v2, state),
-    tells: v2.tells ?? [],
+    initial_attitude_towards_investigator: character.initial_attitude_towards_investigator,
+    clues: character.clues.map((clue) => ({ id: clue.id, text: clue.text })),
     player_known_clues: playerKnownClues,
-    gate_clues: [...gateClueIds(stateCharacter)].map((id) => ({ id, held: discoveredSet.has(id) })),
-    state: {
-      used_clue_ids: state.used_clue_ids,
-      current_story: state.current_story,
-      commitments: state.commitments,
-      visits_with_questions: state.visits_with_questions,
-      fallback_open: state.visits_with_questions >= FALLBACK_VISITS,
-    },
   };
-}
-
-const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 };
-
-// An agenda as the manner it gives a character before anyone asks them
-// anything. Built from its type and target only: strategy and details name the
-// secret behind it.
-function agendaManner(
-  agenda: BlueprintAgenda,
-  sex: "male" | "female",
-  nameOf: (id: string) => string,
-): string {
-  const target = agenda.target_character_id ? nameOf(agenda.target_character_id) : "someone";
-  switch (agenda.type) {
-    case "self_protect":
-      return `keeps attention away from ${sex === "female" ? "herself" : "himself"}`;
-    case "protect_other":
-      return `protective of ${target}`;
-    case "implicate_other":
-      return `would rather the investigator looked at ${target}`;
-    default:
-      return "holding something back";
-  }
-}
-
-// An agenda the player has already broken no longer shapes the manner: a
-// confessed cover, an agenda that yielded to a used clue, a reveal whose clue
-// has been given. Protecting or blaming someone has no such end, as in talk, so
-// it stays in the manner.
-function isAgendaSpent(
-  agenda: BlueprintAgenda,
-  agendaIndex: number,
-  state: ReturnType<typeof buildCharacterState>,
-  discovered: Set<string>,
-): boolean {
-  if (agenda.type === "self_protect") {
-    return isAgendaFullyEarned(state, agendaIndex, agenda.parts?.length ?? 0);
-  }
-  if (agenda.yields_to_clue_ids?.some((id) => state.used_clue_ids.includes(id))) return true;
-  return agenda.gated_clue_id !== undefined && discovered.has(agenda.gated_clue_id);
 }
 
 /**
  * Every character standing at a location, as arrival narration needs them:
- * looks, personality, attitude, the manner their live agendas give them and
- * their `always` tells. Nobody has asked anything yet, so nothing they know,
- * did or claim is passed, and neither is a tell that waits on the player.
+ * looks, personality and attitude. Nobody has asked anything yet, so nothing
+ * they know, did or claim is passed.
  */
 export function buildArrivalCharacterContexts(
   blueprint: BlueprintContext,
   locationId: string,
-  conversationHistory: ConversationFragment[],
 ): ArrivalCharacterContext[] {
-  const present = blueprint.world.characters.filter(
-    (character) => character.location_id === locationId,
-  );
-  if (present.length === 0) return [];
-
-  const discovered = buildDiscoveredClueIdSet(conversationHistory);
-  const nameOf = (id: string) =>
-    blueprint.world.characters.find((entry) => entry.id === id)?.first_name ?? "someone";
-  return present.map((character) => {
-    const v2 = v2FieldsOf(character);
-    const state = buildCharacterState({ ...character, ...v2 }, conversationHistory);
-    const manner = (v2.agendas ?? [])
-      .map((agenda, index) => ({ agenda, index }))
-      .filter(({ agenda, index }) => !isAgendaSpent(agenda, index, state, discovered))
-      .sort((a, b) =>
-        (PRIORITY_ORDER[a.agenda.priority] ?? 3) - (PRIORITY_ORDER[b.agenda.priority] ?? 3)
-      )
-      .map(({ agenda }) => agendaManner(agenda, character.sex, nameOf));
-    return {
+  return blueprint.world.characters
+    .filter((character) => character.location_id === locationId)
+    .map((character) => ({
       id: character.id,
       first_name: character.first_name,
-      last_name: v2.last_name,
       sex: character.sex,
       appearance: character.appearance,
       personality: character.personality,
       initial_attitude_towards_investigator: character.initial_attitude_towards_investigator,
-      manner: [...new Set(manner)],
-      tells: (v2.tells ?? [])
-        .filter((tell) => tell.trigger.kind === "always")
-        .map((tell) => tell.text),
-    };
-  });
+    }));
 }
 
 /** The narration of the most recent arrival at a location, or null if none. */
@@ -827,7 +396,6 @@ function buildTalkContext(
   locationId: string,
   characterId: string,
   conversationHistory: ConversationFragment[],
-  options: { asking_now?: boolean } = {},
 ): TalkContext {
   const location = findLocationById(blueprint, locationId);
 
@@ -841,8 +409,6 @@ function buildTalkContext(
       blueprint,
       characterId,
       buildPlayerKnownClues(blueprint, conversationHistory),
-      conversationHistory,
-      options,
     ),
   };
 }
@@ -875,12 +441,7 @@ function selectConversationHistoryForRole(
     return [];
   }
 
-  if (
-    input.role_name === "talk_start" ||
-    input.role_name === "talk_conversation" ||
-    input.role_name === "talk_end" ||
-    input.role_name === "graph_talk"
-  ) {
+  if (input.role_name === "talk_end" || input.role_name === "graph_talk") {
     const characterId =
       input.character_id ?? input.session.current_talk_character_id;
     if (!characterId) {
@@ -900,8 +461,8 @@ function selectConversationHistoryForRole(
     return selectLocationConversationHistory(conversationHistory, locationId);
   }
 
-  // A clue-graph accusation reads only the accusation so far: what it may
-  // tell is in its own context (`clue-graph/accusation.ts`).
+  // An accusation reads only the accusation so far: what it may tell is in its
+  // own context (`clue-graph/accusation.ts`).
   if (
     input.role_name === "graph_accusation" ||
     input.role_name === "graph_accusation_round" ||
@@ -910,15 +471,8 @@ function selectConversationHistoryForRole(
     return sanitizeConversationHistory(conversationHistory.filter((entry) => ACCUSATION_HISTORY.has(entry.event_type)));
   }
 
-  if (
-    input.role_name === "accusation_start" ||
-    input.role_name === "accusation_judge"
-  ) {
-    if (input.accusation_history_mode === "none") {
-      return [];
-    }
-
-    return sanitizeConversationHistory(conversationHistory);
+  if (input.role_name === "accusation_start" && input.accusation_history_mode === "none") {
+    return [];
   }
 
   return sanitizeConversationHistory(conversationHistory);
@@ -941,10 +495,8 @@ function buildContext(input: BuildContextInput): AIContext {
     conversation_history: selectConversationHistoryForRole(input),
     shared_mystery_context: buildSharedMysteryContext(input.blueprint),
     move_context: input.move_context ?? null,
-    search_context: input.search_context ?? null,
     talk_context: input.talk_context ?? null,
     accusation_start_context: input.accusation_start_context ?? null,
-    accusation_judge_context: input.accusation_judge_context ?? null,
     ...(input.graph_talk_context ? { graph_talk_context: input.graph_talk_context } : {}),
     ...(input.graph_search_context ? { graph_search_context: input.graph_search_context } : {}),
     ...(input.graph_accusation_context ? { graph_accusation_context: input.graph_accusation_context } : {}),
@@ -954,66 +506,12 @@ function buildContext(input: BuildContextInput): AIContext {
   return context;
 }
 
-export function buildTalkStartContext(input: {
-  game_id: string;
-  session: SessionSnapshot;
-  blueprint: BlueprintContext;
-  character_id: string;
-  location_id: string;
-  conversation_history?: ConversationFragment[];
-}): AIContext {
-  return buildContext({
-    game_id: input.game_id,
-    role_name: "talk_start",
-    session: input.session,
-    blueprint: input.blueprint,
-    location_id: input.location_id,
-    character_id: input.character_id,
-    conversation_history: input.conversation_history,
-    talk_context: buildTalkContext(
-      input.blueprint,
-      input.location_id,
-      input.character_id,
-      input.conversation_history ?? [],
-    ),
-  });
-}
-
-export function buildTalkConversationContext(input: {
-  game_id: string;
-  session: SessionSnapshot;
-  blueprint: BlueprintContext;
-  character_id: string;
-  player_input: string;
-  location_id: string;
-  conversation_history?: ConversationFragment[];
-}): AIContext {
-  return buildContext({
-    game_id: input.game_id,
-    role_name: "talk_conversation",
-    session: input.session,
-    blueprint: input.blueprint,
-    location_id: input.location_id,
-    character_id: input.character_id,
-    player_input: input.player_input,
-    conversation_history: input.conversation_history,
-    talk_context: buildTalkContext(
-      input.blueprint,
-      input.location_id,
-      input.character_id,
-      input.conversation_history ?? [],
-      { asking_now: true },
-    ),
-  });
-}
-
 /**
- * A clue-graph case's world view with every clue the player holds reading as
- * its saved notebook line, as the notebook shows it, so later narration and the
- * accusation never word it afresh. Any other case is returned as it is.
+ * The case's world view with every clue the player holds reading as its saved
+ * notebook line, as the notebook shows it, so later narration never words it
+ * afresh.
  */
 function withSavedLines(blueprint: BlueprintContext, history: ConversationFragment[]): BlueprintContext {
-  if (!blueprint.clue_graph) return blueprint;
   const graph = blueprint.clue_graph;
   const play = playOf(graph, history);
   const reword = <C extends { id: string; text: string }>(clues: C[]): C[] =>
@@ -1033,13 +531,12 @@ function withSavedLines(blueprint: BlueprintContext, history: ConversationFragme
 }
 
 /**
- * A clue-graph case's world view lists every clue a character holds; outside
- * its own talk context (`clue-graph/`), a narrator sees only those already
- * found, as their notebook lines. The rest stay with the graph.
+ * The world view lists every clue a character holds; outside its own talk
+ * context (`clue-graph/`), a narrator sees only those already found, as their
+ * notebook lines. The rest stay with the graph.
  */
 function foundCluesOnly(blueprint: BlueprintContext, history: ConversationFragment[]): BlueprintContext {
   const worded = withSavedLines(blueprint, history);
-  if (!worded.clue_graph) return worded;
   const found = buildDiscoveredClueIdSet(history);
   return {
     ...worded,
@@ -1078,82 +575,6 @@ export function buildTalkEndContext(input: {
   });
 }
 
-function toSearchClue(clue: BlueprintClue): SearchClue {
-  const shown: BlueprintClue = { ...clue };
-  delete shown.requires;
-  return shown;
-}
-
-export function buildSearchContext(input: {
-  game_id: string;
-  session: SessionSnapshot;
-  blueprint: BlueprintContext;
-  location_id: string;
-  revealed_clue_ids: string[];
-  // Session-global set of discovered clue ids, used to gate locked clues. A clue
-  // whose `requires` prerequisites are not all discovered is filtered out of the
-  // prompt context so the narrator never weaves a locked clue's text in.
-  discovered_clue_ids?: string[];
-  next_clue: BlueprintClue | null;
-  search_query?: string | null;
-  conversation_history?: ConversationFragment[];
-}): AIContext {
-  const blueprint = v2Of(input.blueprint);
-  const location = findLocationById(blueprint, input.location_id);
-  if (!location) {
-    throw new Error(`Location ${input.location_id} not found in blueprint`);
-  }
-
-  const revealedSet = new Set(input.revealed_clue_ids);
-  const discoveredSet = new Set(
-    input.discovered_clue_ids ?? input.revealed_clue_ids,
-  );
-  // A clue is visible to the narrator only if it has already been revealed or is
-  // currently unlocked. Locked clues are stripped from EVERY clue list in the
-  // context (not just `unrevealed_clues`) so their text can never be woven into
-  // narration before the player has earned them.
-  const isVisible = (c: BlueprintClue) =>
-    revealedSet.has(c.id) || isClueUnlocked(c, discoveredSet);
-  // A spot whose clues are all locked is left out altogether, so the narrator
-  // never advertises it or narrates "nothing here" for it, unless this targeted
-  // search names it: then it is shown, clues and all, to narrate the find.
-  const admitted = namedHiddenSpot(location, input.search_query, discoveredSet)?.id ?? null;
-  const subLocations: SubLocationContext[] = (location.sub_locations ?? [])
-    .filter((sl) => sl.id === admitted || !isSpotHidden(sl, discoveredSet))
-    .map((sl) => {
-      // A named hidden spot shows only the clue the search can admit.
-      const visibleClues = (sl.id === admitted ? sl.clues.slice(0, 1) : sl.clues.filter(isVisible)).map(toSearchClue);
-      const unrevealed = visibleClues.filter((c) => !revealedSet.has(c.id));
-      return {
-        id: sl.id,
-        name: sl.name,
-        hint: sl.hint,
-        clues: visibleClues,
-        unrevealed_clues: unrevealed,
-        has_unrevealed_clues: unrevealed.length > 0,
-      };
-    });
-
-  return buildContext({
-    game_id: input.game_id,
-    role_name: "search",
-    session: input.session,
-    blueprint: input.blueprint,
-    location_id: input.location_id,
-    conversation_history: input.conversation_history,
-    search_context: {
-      location_id: location.id,
-      location_name: location.name,
-      location_description: location.description,
-      clues: location.clues.filter(isVisible).map(toSearchClue),
-      revealed_clue_ids: input.revealed_clue_ids,
-      next_clue: input.next_clue && toSearchClue(input.next_clue),
-      sub_locations: subLocations,
-      search_query: input.search_query ?? null,
-    },
-  });
-}
-
 export function buildMoveContext(input: {
   game_id: string;
   session: SessionSnapshot;
@@ -1166,12 +587,6 @@ export function buildMoveContext(input: {
   if (!location) {
     throw new Error(`Location ${input.destination_id} not found in blueprint`);
   }
-
-  const destinationCharacters = buildArrivalCharacterContexts(
-    input.blueprint,
-    location.id,
-    input.conversation_history ?? [],
-  );
 
   return buildContext({
     game_id: input.game_id,
@@ -1189,7 +604,7 @@ export function buildMoveContext(input: {
         input.conversation_history ?? [],
         input.destination_id,
       ),
-      destination_characters: destinationCharacters,
+      destination_characters: buildArrivalCharacterContexts(input.blueprint, location.id),
     },
   });
 }
@@ -1226,39 +641,7 @@ export function buildAccusationStartContext(input: {
   });
 }
 
-export function buildAccusationJudgeContext(input: {
-  game_id: string;
-  session: SessionSnapshot;
-  blueprint: BlueprintContext;
-  player_input: string;
-  last_accusation: boolean;
-  forced_by_timeout?: boolean;
-  conversation_history?: ConversationFragment[];
-  history_mode?: "all" | "none";
-}): AIContext {
-  // Reconstructed from the full session history (searches included), not the
-  // `discovered_clues` cache — same source of truth as the talk context.
-  const discovered = buildDiscoveredClueIdSet(input.conversation_history ?? []);
-  const blueprint = v2Of(input.blueprint);
-  return buildContext({
-    game_id: input.game_id,
-    role_name: "accusation_judge",
-    session: input.session,
-    forced_by_timeout: input.forced_by_timeout ?? false,
-    blueprint: input.blueprint,
-    player_input: input.player_input,
-    conversation_history: input.conversation_history,
-    accusation_history_mode: input.history_mode ?? "all",
-    accusation_judge_context: {
-      last_accusation: input.last_accusation,
-      full_blueprint: blueprint,
-      player_known_clues: buildKnownCluesWithOrigin(blueprint, discovered),
-      path_coverage: buildPathCoverage(blueprint, discovered),
-    },
-  });
-}
-
-/** What a clue-graph investigation has earned so far, from the events. */
+/** What the investigation has earned so far, from the events. */
 export function clueGraphProgress(graph: ClueGraphCase, history: ConversationFragment[]): ClueGraphProgress {
   const play = playOf(graph, history);
   const supported = supportedConclusions(graph, play);
@@ -1270,7 +653,7 @@ export function clueGraphProgress(graph: ClueGraphCase, history: ConversationFra
   };
 }
 
-/** A clue-graph accusation as the narrator reads it: who was named, and what was cited. */
+/** An accusation as the narrator reads it: who was named, and what was cited. */
 export function buildGraphAccusationAIContext(input: {
   game_id: string;
   session: SessionSnapshot;
@@ -1324,11 +707,10 @@ export function buildGraphVerdictAIContext(input: {
 }
 
 function graphOf(blueprint: BlueprintContext): ClueGraphCase {
-  if (!blueprint.clue_graph) throw new Error("Not a clue-graph case");
   return blueprint.clue_graph;
 }
 
-/** A clue-graph talk line, or its greeting when `player_input` is null. */
+/** A talk line, or its greeting when `player_input` is null. */
 export function buildGraphTalkAIContext(input: {
   game_id: string;
   session: SessionSnapshot;
@@ -1353,7 +735,7 @@ export function buildGraphTalkAIContext(input: {
   });
 }
 
-/** A clue-graph search, plain when `search_query` is null. */
+/** A search, plain when `search_query` is null. */
 export function buildGraphSearchAIContext(input: {
   game_id: string;
   session: SessionSnapshot;
@@ -1379,21 +761,7 @@ export function assertRoleContextSafety(
   role: ContextRoleName,
   context: AIContext,
 ): void {
-  if (role === "accusation_judge") {
-    if (!context.accusation_judge_context) {
-      throw new Error(
-        "Invalid context: accusation_judge requires accusation_judge_context",
-      );
-    }
-    return;
-  }
-
-  if (context.accusation_judge_context) {
-    throw new Error(
-      `Invalid context: ${role} is not allowed to include accusation_judge_context`,
-    );
-  }
-  // Only the closing scene of a clue-graph case is told the truth.
+  // Only the closing scene is told the truth.
   if (role !== "graph_ending" && context.graph_accusation_context && "ending" in context.graph_accusation_context) {
     throw new Error(`Invalid context: ${role} is not allowed to include the ending`);
   }

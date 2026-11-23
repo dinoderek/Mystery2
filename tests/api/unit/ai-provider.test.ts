@@ -6,11 +6,22 @@ import {
 } from "../../../packages/game-engine/src/ai-provider.ts";
 import { buildGameMovePrompt } from "../../../packages/game-engine/src/ai-prompts.ts";
 import {
-  parseSearchOutput,
-  parseAccusationJudgeOutput,
-  parseTalkConversationOutput,
-  parseTalkStartOutput,
+  type AIRoleName,
+  parseAccusationStartOutput,
+  parseGraphSearchOutput,
+  parseTalkEndOutput,
 } from "../../../packages/game-engine/src/ai-contracts.ts";
+
+/** A search whose outcome the engine knows, as the mock reads it. */
+function knownSearch(finds: { id: string; text: string } | null) {
+  return {
+    graph_search_context: {
+      location_name: "Kitchen",
+      search_query: null,
+      outcome: { kind: "known", spot: null, finds },
+    },
+  };
+}
 
 const originalFetch = globalThis.fetch;
 
@@ -31,10 +42,10 @@ describe("ai-provider runtime configuration", () => {
     );
 
     const output = await provider.generateRoleOutput({
-      role: "search",
+      role: "graph_search",
       prompt: "Search prompt",
-      context: { search_context: { location_name: "Kitchen", next_clue: null } },
-      parse: parseSearchOutput,
+      context: knownSearch(null),
+      parse: parseGraphSearchOutput,
     });
     expect(output.narration).toContain("Kitchen");
   });
@@ -85,10 +96,10 @@ describe("ai-provider openrouter retry behavior", () => {
     );
 
     const output = await provider.generateRoleOutput({
-      role: "search",
+      role: "graph_search",
       prompt: "Search prompt",
       context: { location_name: "Kitchen" },
-      parse: parseSearchOutput,
+      parse: parseGraphSearchOutput,
     });
 
     expect(output.narration).toBe("Recovered");
@@ -212,164 +223,56 @@ describe("ai-provider request metadata", () => {
 });
 
 describe("ai-provider mock role output", () => {
+  const provider = () => createAIProviderFromProfile({ provider: "mock", model: "mock/default" });
+
   it("returns parseable role payloads", async () => {
-    const provider = createAIProviderFromProfile({
-      provider: "mock",
-      model: "mock/default",
-    });
-    const output = await provider.generateRoleOutput({
-      role: "talk_start",
+    const output = await provider().generateRoleOutput({
+      role: "talk_end",
       prompt: "prompt",
-      context: {
-        talk_context: {
-          active_character: {
-            first_name: "Alice",
-            sex: "female",
-          },
-          active_location_name: "Kitchen",
-        },
-      },
-      parse: parseTalkStartOutput,
+      context: { talk_context: { active_character: { first_name: "Alice" } } },
+      parse: parseTalkEndOutput,
     });
 
-    expect(output.narration).toContain("[Mock]");
-    expect(output.narration).toContain("Alice");
-    expect(output.narration).toContain("she");
+    expect(output.narration).toBe("[Mock] You say goodbye to Alice and look around again.");
   });
 
-  it("wins the culprit named at the first accusation", async () => {
-    const provider = createAIProviderFromProfile({
-      provider: "mock",
-      model: "mock/default",
-    });
-
-    const first = await provider.generateRoleOutput({
-      role: "accusation_judge",
+  it("frames the accusation, urgently when time is up", async () => {
+    const open = await provider().generateRoleOutput({
+      role: "accusation_start",
       prompt: "prompt",
-      context: {
-        player_input: "I accuse Alice because she had crumbs on her sleeves.",
-        accusation_judge_context: {
-          last_accusation: false,
-          full_blueprint: {
-            world: {
-              characters: [
-                { first_name: "Alice", is_culprit: true },
-                { first_name: "Bob", is_culprit: false },
-              ],
-            },
-          },
-        },
-      },
-      parse: parseAccusationJudgeOutput,
+      context: { forced_by_timeout: false },
+      parse: parseAccusationStartOutput,
     });
-    expect(first.accusation_resolution).toBe("win");
-    expect(first).not.toHaveProperty("follow_up_prompt");
+    expect(open.narration).toContain("The final accusation begins.");
+    const forced = await provider().generateRoleOutput({
+      role: "accusation_start",
+      prompt: "prompt",
+      context: { forced_by_timeout: true },
+      parse: parseAccusationStartOutput,
+    });
+    expect(forced.narration).toContain("Time is up.");
   });
 
-  it("rejects a wrong accusation with encouragement, losing only on the last", async () => {
-    const provider = createAIProviderFromProfile({
-      provider: "mock",
-      model: "mock/default",
-    });
-
-    const judgeContext = (last: boolean, input = "It was Bob, I'm sure of it.") => ({
-      player_input: input,
-      accusation_judge_context: {
-        last_accusation: last,
-        full_blueprint: {
-          world: {
-            characters: [
-              { first_name: "Alice", is_culprit: true },
-              { first_name: "Bob", is_culprit: false },
-            ],
-          },
-        },
-      },
-    });
-
-    // A wrong accusation before the last is rejected with an invitation to try again.
-    const early = await provider.generateRoleOutput({
-      role: "accusation_judge",
+  it("generates search narration from the known outcome only", async () => {
+    const output = await provider().generateRoleOutput({
+      role: "graph_search",
       prompt: "prompt",
-      context: judgeContext(false),
-      parse: parseAccusationJudgeOutput,
-    });
-    expect(early.accusation_resolution).toBe("continue");
-    expect(early).not.toHaveProperty("follow_up_prompt");
-    expect(early.narration).toContain("have another go");
-
-    // On the last accusation a wrong one, or one naming nobody, resolves to lose.
-    for (const input of ["It was Bob, I'm sure of it.", "I do not know."]) {
-      const last = await provider.generateRoleOutput({
-        role: "accusation_judge",
-        prompt: "prompt",
-        context: judgeContext(true, input),
-        parse: parseAccusationJudgeOutput,
-      });
-      expect(last.accusation_resolution).toBe("lose");
-    }
-  });
-
-  it("points a rejection's closing question at an unfinished solution path", async () => {
-    const provider = createAIProviderFromProfile({ provider: "mock", model: "mock/default" });
-    const round = await provider.generateRoleOutput({
-      role: "accusation_judge",
-      prompt: "prompt",
-      context: {
-        player_input: "It was Bob.",
-        accusation_judge_context: {
-          last_accusation: false,
-          full_blueprint: {
-            world: { characters: [{ first_name: "Alice", is_culprit: true }, { first_name: "Bob" }] },
-          },
-          path_coverage: [{ kind: "solution", summary: "the missing cookies", missing_clue_ids: ["c1"] }],
-        },
-      },
-      parse: parseAccusationJudgeOutput,
-    });
-    expect(round.accusation_resolution).toBe("continue");
-    expect(round.narration).toContain("There is more to know about the missing cookies.");
-    expect(round.narration).toMatch(/\?$/);
-  });
-
-  it("generates search narration from location context only", async () => {
-    const provider = createAIProviderFromProfile({
-      provider: "mock",
-      model: "mock/default",
-    });
-
-    const output = await provider.generateRoleOutput({
-      role: "search",
-      prompt: "prompt",
-      context: {
-        search_context: {
-          location_name: "Kitchen",
-          next_clue: { id: "clue-crumb", text: "A crumb on the floor." },
-        },
-      },
-      parse: parseSearchOutput,
+      context: knownSearch({ id: "clue-crumb", text: "A crumb on the floor." }),
+      parse: parseGraphSearchOutput,
     });
 
     expect(output.narration).toContain("Kitchen");
     expect(output.narration).toContain("A crumb on the floor.");
+    expect(output.revealed_clue_id).toBe("clue-crumb");
+    expect(output.notebook.map((entry) => entry.id)).toEqual(["clue-crumb"]);
   });
 
   it("fails parsing when output shape is invalid", async () => {
-    const provider = createAIProviderFromProfile({
-      provider: "mock",
-      model: "mock/default",
-    });
-
     await expect(
-      provider.generateRoleOutput({
-        role: "talk_start",
+      provider().generateRoleOutput({
+        role: "talk_end",
         prompt: "prompt",
-        context: {
-          talk_context: {
-            active_character: { first_name: "Alice" },
-            active_location_name: "Kitchen",
-          },
-        },
+        context: { talk_context: { active_character: { first_name: "Alice" } } },
         parse: () => {
           throw new Error("validation failed");
         },
@@ -378,142 +281,25 @@ describe("ai-provider mock role output", () => {
   });
 
   it("fails mock generation when required context is missing", async () => {
-    const provider = createAIProviderFromProfile({
-      provider: "mock",
-      model: "mock/default",
-    });
-
     await expect(
-      provider.generateRoleOutput({
-        role: "talk_start",
+      provider().generateRoleOutput({
+        role: "talk_end",
         prompt: "prompt",
         context: {},
-        parse: parseTalkStartOutput,
+        parse: parseTalkEndOutput,
       }),
-    ).rejects.toThrow("talk_start");
-  });
-});
-
-describe("mock talk_conversation clue gating", () => {
-  const provider = createAIProviderFromProfile({ provider: "mock", model: "mock/default" });
-  const askWith = (clues: unknown[], playerInput: string) =>
-    provider.generateRoleOutput({
-      role: "talk_conversation",
-      prompt: "prompt",
-      context: {
-        player_input: playerInput,
-        talk_context: { active_character: { first_name: "Alice", clues } },
-      },
-      parse: parseTalkConversationOutput,
-    });
-
-  it("reveals the first unlocked clue", async () => {
-    const out = await askWith(
-      [
-        { id: "locked", text: "secret", player_can_use_prerequisites: false },
-        { id: "open", text: "open clue", player_can_use_prerequisites: true },
-      ],
-      "What did you see?",
-    );
-    expect(out.revealed_clue_ids).toEqual(["open"]);
-    expect(out.revealed_off_script).toEqual([]);
+    ).rejects.toThrow("talk_end");
   });
 
-  it("skips clues the player already holds", async () => {
-    const out = await askWith(
-      [
-        { id: "known", text: "old news", player_can_use_prerequisites: true, known_to_player: true },
-        { id: "open", text: "open clue", player_can_use_prerequisites: true, known_to_player: false },
-      ],
-      "Where exactly did you find it?",
-    );
-    expect(out.revealed_clue_ids).toEqual(["open"]);
-  });
-
-  it("reveals nothing once the player holds every clue", async () => {
-    const out = await askWith(
-      [
-        { id: "known", text: "old news", player_can_use_prerequisites: true, known_to_player: true },
-        { id: "granted", text: "secret", player_can_use_prerequisites: false, known_to_player: true },
-      ],
-      "Aha — I bet you know more!",
-    );
-    expect(out.revealed_clue_ids).toEqual([]);
-    expect(out.revealed_off_script).toEqual([]);
-  });
-
-  it("withholds clues whose prerequisites are not met", async () => {
-    const out = await askWith(
-      [{ id: "locked", text: "secret", player_can_use_prerequisites: false }],
-      "What did you see?",
-    );
-    expect(out.revealed_clue_ids).toEqual([]);
-  });
-
-  it("grants a locked clue off-script on a brilliance sentinel", async () => {
-    const out = await askWith(
-      [{ id: "locked", text: "secret", player_can_use_prerequisites: false }],
-      "Aha — I bet you were at the dock!",
-    );
-    expect(out.revealed_clue_ids).toEqual(["locked"]);
-    expect(out.revealed_off_script).toEqual(["locked"]);
-  });
-});
-
-describe("mock talk_conversation use and commitments", () => {
-  const provider = createAIProviderFromProfile({ provider: "mock", model: "mock/default" });
-  const askWith = (activeCharacter: Record<string, unknown>, playerInput: string) =>
-    provider.generateRoleOutput({
-      role: "talk_conversation",
-      prompt: "prompt",
-      context: {
-        player_input: playerInput,
-        talk_context: { active_character: { first_name: "Alice", clues: [], ...activeCharacter } },
-      },
-      parse: parseTalkConversationOutput,
-    });
-
-  it("reports a gate clue the line names as used, quoting the line", async () => {
-    const out = await askWith(
-      { gate_clues: [{ id: "clue-crumb", held: true }, { id: "clue-wrapper", held: false }] },
-      "This clue-crumb says you were snacking.",
-    );
-    expect(out.used_clue_ids).toEqual(["clue-crumb"]);
-    expect(out.used_quote).toBe("This clue-crumb says you were snacking.");
-  });
-
-  it("never reports again a use already in the character's state", async () => {
-    const out = await askWith(
-      { gate_clues: [{ id: "clue-crumb", held: true }], state: { used_clue_ids: ["clue-crumb"] } },
-      "This clue-crumb says you were snacking.",
-    );
-    expect(out.used_clue_ids).toEqual([]);
-    expect(out.used_quote).toBeNull();
-  });
-
-  it("reports no use when the line names no gate clue", async () => {
-    const out = await askWith({ gate_clues: [{ id: "clue-crumb", held: true }] }, "Were you snacking?");
-    expect(out.used_clue_ids).toEqual([]);
-    expect(out.used_quote).toBeNull();
-  });
-
-  it("records a denial when asked whether they did something", async () => {
-    const out = await askWith({}, "Did you eat the cookies?");
-    expect(out.new_commitments).toEqual(["denies: eat the cookies"]);
-  });
-
-  it("keeps to the latest earned line of the story, and says nothing of the bare alibi", async () => {
-    const earned = await askWith(
-      { stated_alibi: "I was reading.", state: { current_story: ["I was reading.", "Admits one snack."] } },
-      "Tell me again.",
-    );
-    expect(earned.narration).toContain("(Keeps to: Admits one snack.)");
-    const bare = await askWith(
-      { stated_alibi: "I was reading.", state: { current_story: ["I was reading."] } },
-      "Tell me again.",
-    );
-    expect(bare.narration).not.toContain("Keeps to");
-  });
+  it.each(["talk_start", "talk_conversation", "search", "accusation_judge"])(
+    "has no handler for the retired %s role",
+    async (role) => {
+      const produced = await provider()
+        .generateRoleOutput({ role: role as AIRoleName, prompt: "prompt", context: {}, parse: (value) => value })
+        .catch(() => undefined);
+      expect(produced).toBeUndefined();
+    },
+  );
 });
 
 describe("mock arrival narration", () => {
@@ -523,29 +309,21 @@ describe("mock arrival narration", () => {
     buildGameMovePrompt({
       target_age: 7,
       destination_name: "Leaf-Lab",
-      destination_description: "A lab full of leaves.",
       has_visited_before: false,
       destination_characters_json: JSON.stringify(characters),
+      destination_facts: ["A lab full of leaves."],
     });
 
-  it("names the place and who is there, and nothing of their manner", async () => {
+  it("names the place, states its facts, and names who is there and nothing else of them", async () => {
     const narration = await provider().generateNarration(
-      arrivalPrompt([
-        {
-          id: "char-eva",
-          first_name: "Eva",
-          personality: "prickly",
-          manner: ["keeps attention away from herself"],
-          tells: ["She hums."],
-        },
-      ]),
+      arrivalPrompt([{ id: "char-eva", first_name: "Eva", personality: "prickly" }]),
     );
-    expect(narration).toBe("[Mock] You arrive at Leaf-Lab. Eva is here.");
+    expect(narration).toBe("[Mock] You arrive at Leaf-Lab. A lab full of leaves. Eva is here.");
   });
 
   it("describes an empty place without anyone in it", async () => {
     expect(await provider().generateNarration(arrivalPrompt([]))).toBe(
-      "[Mock] You arrive at Leaf-Lab.",
+      "[Mock] You arrive at Leaf-Lab. A lab full of leaves.",
     );
   });
 
@@ -555,40 +333,3 @@ describe("mock arrival narration", () => {
     );
   });
 });
-
-describe("mock greeting tells", () => {
-  const greet = async (tells: unknown[]) => {
-    const provider = createAIProviderFromProfile({ provider: "mock", model: "mock/default" });
-    const output = await provider.generateRoleOutput({
-      role: "talk_start",
-      prompt: "prompt",
-      context: {
-        talk_context: {
-          active_character: { first_name: "Eva", sex: "female", appearance: "neat", tells },
-          active_location_name: "Leaf-Lab",
-        },
-      },
-      parse: parseTalkStartOutput,
-    });
-    return output.narration;
-  };
-
-  it("shows an always tell, never one the investigator has to earn", async () => {
-    const narration = await greet([
-      { id: "t1", text: "tail puffs up", trigger: { kind: "clue", clue_ids: ["c1"] } },
-      { id: "t2", text: "hums a nervous tune", trigger: { kind: "condition", condition: "x" } },
-      { id: "t3", text: "taps her tiny tools", trigger: { kind: "always" } },
-    ]);
-    expect(narration).toContain("taps her tiny tools");
-    expect(narration).not.toContain("tail puffs up");
-    expect(narration).not.toContain("hums a nervous tune");
-  });
-
-  it("shows no tell when none is ambient", async () => {
-    const narration = await greet([
-      { id: "t1", text: "tail puffs up", trigger: { kind: "clue", clue_ids: ["c1"] } },
-    ]);
-    expect(narration).toBe("[Mock] Eva is here in Leaf-Lab. she looks neat.");
-  });
-});
-

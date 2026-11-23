@@ -16,9 +16,19 @@ function searchTurn(raw: Record<string, unknown>): StoredTurn {
   return { ...turn, response: { ...turn.response, action: "search", raw: { narration: "You look.", ...raw } } };
 }
 
+/** A CLI narrator's talk reply: the gates it opened and the questions it answered. */
 function askTurn(raw: Record<string, unknown>): StoredTurn {
   const turn = makeTurn();
-  return { ...turn, response: { ...turn.response, raw: { narration: "Alice shrugs.", ...raw } } };
+  return { ...turn, response: { ...turn.response, raw: { narration: "Alice shrugs.", opened: [], answered: [], notebook: [], ...raw } } };
+}
+
+/** A talk turn as a server saved it, which is where a recorded use is read from. */
+function servedAsk(payload: Record<string, unknown>): StoredTurn {
+  const turn = makeTurn();
+  return {
+    ...turn,
+    response: { ...turn.response, raw: { kind: "turn", events: [{ event_type: "ask", payload: { revealed_clue_ids: [], input_understood: true, ...payload } }] } },
+  };
 }
 
 function details(verdict: Verdict) {
@@ -56,20 +66,20 @@ describe("grading a search's revealed_clue_id", () => {
 
 describe("grading a talk turn", () => {
   it("compares revealed_clue_ids as a set, in both directions", () => {
-    expect(graded({ revealed_clue_ids: ["a", "b"] }, askTurn({ revealed_clue_ids: ["b", "a"] })).status).toBe("pass");
-    expect(graded({ revealed_clue_ids: ["a", "b"] }, askTurn({ revealed_clue_ids: ["a"] })).erred).toEqual(["withheld"]);
-    expect(graded({ revealed_clue_ids: ["a"] }, askTurn({ revealed_clue_ids: ["a", "b"] })).erred).toEqual(["given_away"]);
+    expect(graded({ revealed_clue_ids: ["a", "b"] }, askTurn({ answered: ["b", "a"] })).status).toBe("pass");
+    expect(graded({ revealed_clue_ids: ["a", "b"] }, askTurn({ answered: ["a"] })).erred).toEqual(["withheld"]);
+    expect(graded({ revealed_clue_ids: ["a"] }, askTurn({ answered: ["a", "b"] })).erred).toEqual(["given_away"]);
   });
 
   it("holds an empty expectation to nothing given", () => {
-    expect(graded({ revealed_clue_ids: [] }, askTurn({ revealed_clue_ids: [] })).status).toBe("pass");
-    expect(graded({ revealed_clue_ids: [] }, askTurn({ revealed_clue_ids: ["a"] })).erred).toEqual(["given_away"]);
+    expect(graded({ revealed_clue_ids: [] }, askTurn({ answered: [] })).status).toBe("pass");
+    expect(graded({ revealed_clue_ids: [] }, askTurn({ answered: ["a"] })).erred).toEqual(["given_away"]);
   });
 
   it("grades used_clue_ids in both directions", () => {
-    expect(graded({ used_clue_ids: ["gate"] }, askTurn({ used_clue_ids: ["gate"] })).status).toBe("pass");
-    expect(graded({ used_clue_ids: ["gate"] }, askTurn({ used_clue_ids: [] })).erred).toEqual(["withheld"]);
-    expect(graded({ used_clue_ids: [] }, askTurn({ used_clue_ids: ["gate"] })).erred).toEqual(["given_away"]);
+    expect(graded({ used_clue_ids: ["gate"] }, servedAsk({ used_clue_ids: ["gate"] })).status).toBe("pass");
+    expect(graded({ used_clue_ids: ["gate"] }, servedAsk({ used_clue_ids: [] })).erred).toEqual(["withheld"]);
+    expect(graded({ used_clue_ids: [] }, servedAsk({ used_clue_ids: ["gate"] })).erred).toEqual(["given_away"]);
   });
 
   it("grades input_understood both ways", () => {
@@ -79,18 +89,18 @@ describe("grading a talk turn", () => {
   });
 
   it("says a withheld clue went unseen when the use is missing", () => {
-    const turn = askTurn({ revealed_clue_ids: [], used_clue_ids: [] });
+    const turn = servedAsk({ revealed_clue_ids: [], used_clue_ids: [] });
     expect(graded({ revealed_clue_ids: ["admission"], used_clue_ids: ["gate"] }, turn)).toMatchObject({ erred: ["withheld"], use: "unseen" });
   });
 
   it("says a withheld clue was seen and refused when the use is there", () => {
-    const turn = askTurn({ revealed_clue_ids: [], used_clue_ids: ["gate"] });
+    const turn = servedAsk({ revealed_clue_ids: [], used_clue_ids: ["gate"] });
     expect(graded({ revealed_clue_ids: ["admission"], used_clue_ids: ["gate"] }, turn)).toMatchObject({ erred: ["withheld"], use: "refused" });
   });
 
   it("says nothing of the use when the case names none, or nothing was withheld", () => {
-    expect(graded({ revealed_clue_ids: ["admission"] }, askTurn({ revealed_clue_ids: [], used_clue_ids: ["gate"] })).use).toBeNull();
-    expect(graded({ revealed_clue_ids: [], used_clue_ids: ["gate"] }, askTurn({ revealed_clue_ids: ["x"], used_clue_ids: ["gate"] })).use).toBeNull();
+    expect(graded({ revealed_clue_ids: ["admission"] }, servedAsk({ revealed_clue_ids: [], used_clue_ids: ["gate"] })).use).toBeNull();
+    expect(graded({ revealed_clue_ids: [], used_clue_ids: ["gate"] }, servedAsk({ revealed_clue_ids: ["x"], used_clue_ids: ["gate"] })).use).toBeNull();
   });
 
   it("reads a server's saved event rather than a role reply", () => {
@@ -195,7 +205,7 @@ describe("a judge-graded case", () => {
 
   it("is right when the judge passes, and errs the way the case says when it fails", () => {
     const expectation: Expect = { used_clue_ids: ["gate"], judges: { gm_roleplay: "withheld" } };
-    const turn = askTurn({ used_clue_ids: ["gate"] });
+    const turn = servedAsk({ used_clue_ids: ["gate"] });
     expect(graded(expectation, turn, [roleplay("pass")]).status).toBe("pass");
     expect(graded(expectation, turn, [roleplay("fail")])).toMatchObject({ erred: ["withheld"], use: "refused" });
     expect(graded({ judges: { gm_roleplay: "given_away" } }, turn, [roleplay("fail")]).erred).toEqual(["given_away"]);

@@ -100,16 +100,6 @@ describe('a clue-graph turn', () => {
       ['later', false],
     ]);
   });
-
-  it('leaves the leads and clues of a case that sends no marks as they were', async () => {
-    const store = createStore();
-    store.state!.leads = [createNotebookLead()];
-    answer(createTurnPlayedResponse());
-
-    await store.submitInput('search');
-
-    expect(store.state?.leads).toEqual([createNotebookLead()]);
-  });
 });
 
 describe('playing a line', () => {

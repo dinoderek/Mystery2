@@ -1,9 +1,8 @@
-// Whether a targeted search names a hidden spot. A hidden sub-location is never
-// shown to the search narrator, so the narrator cannot judge a match against
-// it: the engine does, from the words alone. Specificity, not possession: a
-// player who works out where to look finds the clue there, whatever they hold.
-
-import { type GatedClue, isSpotHidden } from "./clue-discovery.ts";
+// Whether a targeted search names a spot. A hidden spot is never shown to the
+// search narrator, so the narrator cannot judge a match against it: the engine
+// does, from the words alone (`clue-graph/narrator-context.ts`). Specificity,
+// not possession: a player who works out where to look finds the clue there,
+// whatever they hold.
 
 // Words that say where or how to look rather than what at.
 const IGNORED_WORDS = new Set([
@@ -123,35 +122,4 @@ export function spotMatchScore(query: string, spotName: string, locationName: st
     new Set(rawWords(text).filter((word) => !LINKING_WORDS.has(word)).map(stem).filter((word) => !placeWords.has(word)));
   const queryWords = words(query);
   return [...words(spotName)].filter((word) => queryWords.has(word)).length;
-}
-
-interface Spot {
-  id: string;
-  name: string;
-  clues: GatedClue[];
-}
-
-/**
- * The hidden spot (`isSpotHidden`) a targeted search names, if any. The one
- * place this is decided: the search context shows it, and the search turn
- * admits its clue, so every caller agrees. A hidden spot wins only when it
- * fits the query better than every spot in view: "the left drawer" finds a
- * hidden left drawer beside a visible right one, while "the shelf" between a
- * visible top shelf and a hidden bottom one is about the one in view.
- */
-export function namedHiddenSpot<S extends Spot>(
-  location: { name: string; sub_locations?: S[] },
-  query: string | null | undefined,
-  discovered: Set<string>,
-): S | null {
-  if (!query || query.trim().length === 0) return null;
-  let visibleBest = -1;
-  let hidden: { spot: S; score: number } | null = null;
-  for (const spot of location.sub_locations ?? []) {
-    const score = spotMatchScore(query, spot.name, location.name);
-    if (score === null) continue;
-    if (!isSpotHidden(spot, discovered)) visibleBest = Math.max(visibleBest, score);
-    else if (hidden === null || score > hidden.score) hidden = { spot, score };
-  }
-  return hidden !== null && hidden.score > visibleBest ? hidden.spot : null;
 }

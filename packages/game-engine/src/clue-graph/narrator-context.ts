@@ -88,9 +88,9 @@ export type SearchOutcome =
 
 /**
  * The spot of this location a query names best, or null. A hidden spot not yet
- * visible wins only when it fits strictly better than every visible one, as
- * V2's `namedHiddenSpot` decides: "the shelf" between a visible top shelf and a
- * hidden bottom one is about the one in view.
+ * visible wins only when it fits strictly better than every visible one: "the
+ * shelf" between a visible top shelf and a hidden bottom one is about the one
+ * in view.
  */
 export function namedSpot(graph: ClueGraphCase, play: ClueGraphPlay, query: string): string | null {
   const place = graph.locations[play.at];

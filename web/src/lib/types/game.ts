@@ -84,7 +84,6 @@ export interface SessionSummary {
   blueprint_id: string;
   mystery_title: string;
   mystery_available: boolean;
-  can_open: boolean;
   mode: SessionMode;
   time_remaining: number;
   outcome: SessionOutcome;

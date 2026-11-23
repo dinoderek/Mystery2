@@ -9,7 +9,7 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { SCHEMA_VERSION, openDatabase } from "../../../packages/game-engine/src/db/client.ts";
+import { DatabaseTooOldError, openDatabase } from "../../../packages/game-engine/src/db/client.ts";
 import {
   createLocalTraceSource,
   extractSessionTrace,
@@ -89,7 +89,7 @@ describe("extraction from a database the test made", () => {
   it("does not migrate a database from an older schema", async () => {
     // What a version-2 database held: the labelled key and model tables, and none of what came after.
     const older =
-      "alter table players drop column reading_age; alter table game_sessions drop column reading_age; alter table game_sessions drop column msf_snapshot; create table ai_keys (label text primary key); create table ai_models (label text primary key); pragma user_version = 2;";
+      "alter table players drop column reading_age; alter table game_sessions drop column reading_age; create table ai_keys (label text primary key); create table ai_models (label text primary key); pragma user_version = 2;";
     const game = createGameDatabase(makeScratch());
     const db = openDatabase({ path: game.databasePath });
     db.exec(older);
@@ -98,13 +98,8 @@ describe("extraction from a database the test made", () => {
     expect(before.version).toBe(2);
     expect(before.tables).toContain("ai_keys");
 
-    // The control: opening one the way the game does would bring it forward.
-    const control = createGameDatabase(fs.mkdtempSync(path.join(scratch, "control-")));
-    const old = openDatabase({ path: control.databasePath });
-    old.exec(`${older.replace("pragma user_version = 2;", "")} alter table game_sessions drop column clue_graph_snapshot; pragma user_version = 2;`);
-    old.close();
-    openDatabase({ path: control.databasePath }).close();
-    expect(inspect(control.databasePath).version).toBe(SCHEMA_VERSION);
+    // The control: opening one the way the game does refuses it, as from before saves were started over.
+    expect(() => openDatabase({ path: game.databasePath })).toThrow(DatabaseTooOldError);
 
     const trace = await extract(game);
 

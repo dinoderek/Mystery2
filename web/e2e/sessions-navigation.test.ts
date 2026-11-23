@@ -344,7 +344,7 @@ test.describe('Sessions navigation', () => {
     await expect(page).toHaveURL(/\/$/);
   });
 
-  test('blocks opening rows when can_open is false', async ({ page }) => {
+  test('blocks opening rows whose mystery is unavailable', async ({ page }) => {
     await page.route('**/api/game-sessions-list*', async (route) => {
       await route.fulfill({
         json: createSessionCatalog({
@@ -354,7 +354,6 @@ test.describe('Sessions navigation', () => {
               blueprint_id: '00000000-0000-0000-0000-000000000099',
               mystery_title: 'Unknown Mystery',
               mystery_available: false,
-              can_open: false,
               mode: 'ended',
               time_remaining: 0,
               outcome: null,

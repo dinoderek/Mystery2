@@ -29,7 +29,7 @@ security boundary.
 A turn is in-process end to end except the model call, and one transaction
 saves the session change and its events.
 
-Case formats: [V2](../packages/shared/src/blueprint-schema-v2.ts), [clue graph](clue-graph.md).
+Case format: the [clue graph](clue-graph.md).
 
 ## Identity and access
 

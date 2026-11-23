@@ -1,40 +1,33 @@
 import { describe, expect, it } from "vitest";
 
-import { BlueprintV2Schema } from "../../../packages/shared/src/blueprint-schema-v2.ts";
 import {
   buildImagePrompt,
   buildReferenceLegend,
   createImageId,
 } from "../../../scripts/lib/image-prompt-builder.mjs";
-import { validBlueprintV2 } from "./fixtures/blueprint-v2.fixture.ts";
 
-const visualDirection = validBlueprintV2.metadata.visual_direction;
+const visualDirection = {
+  art_style: "soft gouache illustration with visible brushwork",
+  color_palette: "warm kitchen tones — butter yellow, terracotta, cream, sage green",
+  mood: "cozy and inviting with a hint of mischief",
+  lighting: "warm morning sunlight streaming through a large kitchen window, soft shadows",
+  texture: "matte paper with subtle grain",
+};
 
-// Build a test-specific blueprint from the shared fixture, overriding only
-// the fields that these image-prompt-builder tests depend on (art_style
-// fallback value and single-location/single-character world for assertion
-// clarity).  The shared fixture is already Zod-validated at import time, so
-// schema drift is caught even though we spread from it.
+// The fields of a case these image-prompt-builder tests depend on: the art
+// style fallback value and a single-location, single-character world, for
+// assertion clarity. The builder reads the artwork view of a case, and reads
+// a character's last name and background, and a location's clues, when given.
 const blueprint = {
-  ...validBlueprintV2,
+  id: "123e4567-e89b-12d3-a456-426614174000",
   metadata: {
-    ...validBlueprintV2.metadata,
     title: "Mock Blueprint",
     one_liner: "A simple test mystery.",
+    target_age: 8,
     art_style: "storybook watercolor",
+    visual_direction: visualDirection,
   },
-  narrative: {
-    ...validBlueprintV2.narrative,
-    starting_knowledge: {
-      mystery_summary: "The cookies vanished from the kitchen around noon.",
-      locations: [
-        { location_id: "loc_kitchen", summary: "Where the cookies were kept." },
-      ],
-      characters: [
-        { character_id: "char_alice", summary: "The head baker; ran the kitchen." },
-      ],
-    },
-  },
+  narrative: { premise: "The cookie plate is empty and snack time is almost here." },
   world: {
     starting_location_id: "loc_kitchen",
     locations: [
@@ -49,11 +42,14 @@ const blueprint = {
     ],
     characters: [
       {
-        ...validBlueprintV2.world.characters[0],
         id: "char_alice",
+        first_name: "Alice",
+        last_name: "Smith",
         location_id: "loc_kitchen",
+        sex: "female",
         appearance: "Red hair",
         background: "The head baker who runs the kitchen.",
+        personality: "Nervous but kind.",
         initial_attitude_towards_investigator: "Guarded and evasive",
       },
     ],
@@ -63,21 +59,7 @@ const blueprint = {
     location_ids: ["loc_kitchen"],
     character_ids: ["char_alice"],
   },
-  solution_paths: [
-    {
-      id: "solution-crumbs",
-      summary: "Follow the cookie crumbs.",
-      description: "Cookie crumbs on the counter point to Alice.",
-      location_clue_ids: ["clue_crumbs"],
-      character_clue_ids: [],
-    },
-  ],
-  red_herrings: [],
-  suspect_elimination_paths: [],
 };
-
-// Validate the derived blueprint to ensure spread + overrides remain valid.
-BlueprintV2Schema.parse(blueprint);
 
 describe("image prompt builder", () => {
   it("builds blueprint cover prompt from cover_image.description", () => {
@@ -124,8 +106,6 @@ describe("image prompt builder", () => {
         },
       },
     };
-    // The new field must be schema-legal.
-    BlueprintV2Schema.parse(customBlueprint);
 
     const prompt = buildImagePrompt(customBlueprint, {
       targetType: "character",

@@ -95,7 +95,7 @@ function startDiagnostics(blueprint: PlayableCase, relatedSequence?: number) {
 
 function startPayload(blueprint: PlayableCase) {
   return {
-    ...(blueprint.clue_graph ? { case_format: blueprint.clue_graph.format } : {}),
+    case_format: blueprint.clue_graph.format,
     speaker: NARRATOR_SPEAKER,
     blueprint_image_id: blueprint.metadata.image_id ?? null,
     starting_knowledge: blueprint.narrative.starting_knowledge ?? null,
@@ -154,7 +154,7 @@ async function openCase(
         current_location_id: blueprint.world.starting_location_id,
         time_remaining: blueprint.metadata.time_budget,
         reading_age: blueprint.metadata.target_age,
-        ...(blueprint.clue_graph ? { clue_graph_snapshot: blueprint.clue_graph } : {}),
+        clue_graph_snapshot: blueprint.clue_graph,
       },
       events: [buildNarrationEvent(startEvent, 1)],
     });
@@ -179,7 +179,7 @@ function startResponse(
   const state = buildGameState(blueprint, {
     discovered_clues: [],
     // Before anything is played, every lead is new.
-    ...(blueprint.clue_graph ? { leads: notebookMarks(blueprint.clue_graph, []).leads } : {}),
+    leads: notebookMarks(blueprint.clue_graph, []).leads,
     time_remaining: blueprint.metadata.time_budget,
     accusations_left: ACCUSATIONS,
     location: blueprint.world.starting_location_id,

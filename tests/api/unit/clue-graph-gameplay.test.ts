@@ -157,19 +157,15 @@ describe("clue-graph sessions and turns", () => {
     return { graph, events: clueGraphEvents(await ctx.events.listBySession(gameId)) };
   }
 
-  it("lists the greenhouse after the V2 cases and pins it to the session", async () => {
+  it("lists the greenhouse and pins it to the session", async () => {
     const entries = await ctx.content.listBlueprints(silent);
     const index = entries.findIndex((entry) => entry.blueprint.id === clueGraphCaseId("greenhouse-prizewinner"));
     expect(index).toBeGreaterThanOrEqual(0);
-    expect(entries.slice(index).every((entry) => entry.blueprint.schema_version !== "v2")).toBe(true);
     expect(entries[index].blueprint.metadata.title).toBe("The Smashed Prize Pumpkin — clue graph");
 
     const started = await start(clueGraphCaseId("greenhouse-prizewinner"));
     expect(started.narration_events[0].payload).toMatchObject({ case_format: "clue-graph/2" });
     expect((await ctx.sessions.getById(started.game_id))?.clue_graph_snapshot).toEqual(greenhouse());
-    // A V2 game saves no snapshot: it leaves with V2.
-    const v2 = await start("123e4567-e89b-12d3-a456-426614174000");
-    expect((await ctx.sessions.getById(v2.game_id))?.clue_graph_snapshot).toBeUndefined();
   });
 
   it("resumes and plays from the snapshot after the file on disk is edited", async () => {

@@ -74,11 +74,11 @@ describe('session catalog helpers', () => {
   it('cannot open a session whose mystery is no longer available', () => {
     const catalog = toSessionCatalog(
       createSessionCatalog({
-        in_progress: [createSessionSummary({ mystery_available: false, can_open: true })],
+        in_progress: [createSessionSummary({ mystery_available: false })],
       }),
     );
 
-    expect(catalog.in_progress[0]).toMatchObject({ mystery_available: false, can_open: false, outcome: null });
+    expect(catalog.in_progress[0]).toMatchObject({ mystery_available: false, outcome: null });
   });
 
   it('sorts by recency with stable tie-breakers', () => {

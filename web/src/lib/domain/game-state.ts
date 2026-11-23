@@ -33,7 +33,7 @@ export function toGameState(state: WireGameState, history: WireNarrationEvent[])
       summary: character.summary,
     })),
     discovered_clues: state.discovered_clues ?? [],
-    leads: state.leads ?? [],
+    leads: state.leads,
     time_remaining: state.time_remaining,
     accusations_left: state.accusations_left,
     location: state.location,
@@ -64,7 +64,6 @@ export function sortSessionSummaries(summaries: SessionSummary[]): SessionSummar
 function toSessionSummary(summary: WireSessionSummary): SessionSummary {
   return {
     ...summary,
-    can_open: summary.can_open && summary.mystery_available,
     outcome: summary.outcome ?? null,
   };
 }

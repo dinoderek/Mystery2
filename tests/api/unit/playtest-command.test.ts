@@ -75,6 +75,13 @@ describe("self-play's case lookup loads clue graphs only", () => {
 		expect(() => findBlueprint('the-missing-heartwood', root, '')).toThrow(`${file} is not a clue-graph case (v2)`);
 		expect(() => findBlueprint('no-such-case', root, '')).toThrow('No blueprint matches "no-such-case"');
 	});
+
+	it('refuses a case of another format by its id when the file is named otherwise', () => {
+		const { root, file } = retiredRoot();
+		const renamed = path.join(root, 'old-story.json');
+		fs.renameSync(file, renamed);
+		expect(() => findBlueprint('the-missing-heartwood', root, '')).toThrow(`${renamed} is not a clue-graph case (v2)`);
+	});
 });
 
 describe('play refuses what it cannot run, before it starts a server', () => {

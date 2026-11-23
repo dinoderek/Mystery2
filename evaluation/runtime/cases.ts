@@ -203,7 +203,11 @@ export const casesCommand: EvalCommand = {
     const blueprintsDir = path.join(outDir, "blueprints");
     await fs.mkdir(blueprintsDir, { recursive: true });
     const blueprintFile = path.join(blueprintsDir, `${trace.blueprint.id}.json`);
-    await fs.writeFile(blueprintFile, `${JSON.stringify(trace.blueprint.clue_graph, null, 2)}\n`);
+    // The graph carries the case's own age; the game was played at the trace's, so the file says that.
+    const graph = trace.blueprint.clue_graph as { metadata?: Record<string, unknown> };
+    const played = trace.blueprint.metadata?.target_age;
+    const atPlayedAge = played === undefined ? graph : { ...graph, metadata: { ...graph.metadata, target_age: played } };
+    await fs.writeFile(blueprintFile, `${JSON.stringify(atPlayedAge, null, 2)}\n`);
 
     const cases = casesFromTrace(trace, types, max, blueprintFile, judges);
     const outFile = path.join(outDir, `${traceId}.cases.json`);

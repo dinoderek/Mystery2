@@ -177,9 +177,11 @@ export function findBlueprint(query: string, repoBlueprints: string, hint: strin
       return { file, blueprint };
     }
   }
-  // A case of another format that the query names is refused by name rather than not found.
+  // A case of another format that the query names, by file name or id, is refused by name rather than not found.
   for (const name of fs.existsSync(repoBlueprints) ? fs.readdirSync(repoBlueprints).filter((entry) => entry.endsWith(".json")) : []) {
-    if (path.basename(name, ".json").toLowerCase() === wanted) readPlayableFile(path.join(repoBlueprints, name));
+    const file = path.join(repoBlueprints, name);
+    const id = (JSON.parse(fs.readFileSync(file, "utf8")) as { id?: unknown } | null)?.id;
+    if (path.basename(name, ".json").toLowerCase() === wanted || id === query) readPlayableFile(file);
   }
   throw new UsageError(`No blueprint matches "${query}" (looked for a file, and in ${dir}).${hint}`);
 }

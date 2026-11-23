@@ -220,6 +220,20 @@ describe("the cases command", () => {
     expect(blueprint.clue_graph.metadata.id).toBe("mock-case");
   });
 
+  it("writes the case at the age the game was played, which the trace's world view carries", async () => {
+    scratch = fs.mkdtempSync(path.join(os.tmpdir(), "mystery-cases-command-"));
+    const tracePath = path.join(scratch, "trace.json");
+    const trace = makeRawTrace();
+    const authored = trace.blueprint.clue_graph!.metadata.target_age;
+    const played = authored === 7 ? 8 : 7;
+    fs.writeFileSync(tracePath, JSON.stringify({ ...trace, blueprint: { ...trace.blueprint, metadata: { ...trace.blueprint.metadata, target_age: played } } }));
+    expect(await run(tracePath, path.join(scratch, "out"))).toBe(0);
+
+    const cases = JSON.parse(fs.readFileSync(path.join(scratch, "out", "trace.cases.json"), "utf8"));
+    const { blueprint } = await readBlueprint(cases[0].blueprint.path, process.cwd());
+    expect(blueprint.clue_graph.metadata.target_age).toBe(played);
+  });
+
   it("refuses a trace of a blueprint that is not a clue graph, by name, and writes nothing", async () => {
     scratch = fs.mkdtempSync(path.join(os.tmpdir(), "mystery-cases-command-"));
     const tracePath = path.join(scratch, "trace.json");

@@ -14,7 +14,7 @@
  * | `rounds`     | Only from `generate --repair`: each round's blueprint, model call, verdicts and cost, round 0 first; the last is the result's own |
  *
  * A stored subject keeps the shape it has on its own (a blueprint is a
- * Blueprint V2, a trace or a captured turn its harness's shape), so the same
+ * clue-graph case, a trace or a captured turn its harness's shape), so the same
  * command can judge it again; only `result.json` carries this version.
  */
 

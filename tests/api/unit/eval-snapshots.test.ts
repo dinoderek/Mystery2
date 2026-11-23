@@ -267,8 +267,8 @@ async function runTurnCase(
 
 /**
  * A clue-graph game on both harnesses: the trace harness on a played greenhouse
- * game and `judge turn` on one conversation turn of it. The prompts are kept
- * apart from the V2 play ones, so the graph guidance each judge is handed shows.
+ * game and `judge turn` on one conversation turn of it, so the graph guidance
+ * each judge is handed shows in its prompts.
  */
 async function runClueGraphHarnesses(answersFile: string) {
   const dir = path.join(scratch, "clue-graph");

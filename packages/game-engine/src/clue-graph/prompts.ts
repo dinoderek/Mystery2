@@ -3,7 +3,7 @@
 // strict on what they have actually done. The game has already worked out what
 // can come out, as facts; the narrator words them, reports what this line
 // earned, and writes the notebook line each clue keeps from then on. The
-// opening and arrival are built beside V2's (`ai-prompts.ts`).
+// opening and arrival are built in `ai-prompts.ts`.
 
 export const GRAPH_TALK_PROMPT = `You are the narrator of a children's mystery game, playing {{character_name}} in {{location_name}}.
 {{age_guidance}}

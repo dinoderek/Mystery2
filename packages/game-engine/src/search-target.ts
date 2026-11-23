@@ -1,8 +1,7 @@
 // Whether a targeted search names a spot. A hidden spot is never shown to the
 // search narrator, so the narrator cannot judge a match against it: the engine
-// does, from the words alone (`clue-graph/narrator-context.ts`). Specificity,
-// not possession: a player who works out where to look finds the clue there,
-// whatever they hold.
+// does, from the words alone (`clue-graph/narrator-context.ts`). A hidden spot
+// named before its pointer is held finds nothing.
 
 // Words that say where or how to look rather than what at.
 const IGNORED_WORDS = new Set([

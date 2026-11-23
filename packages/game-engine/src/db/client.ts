@@ -90,7 +90,8 @@ export interface Migration {
  *
  * Every version between `OLDEST_UPGRADABLE_VERSION` and `SCHEMA_VERSION` needs
  * an entry here — `planMigrations()` refuses to upgrade across a gap rather than
- * stamping a version nothing produced.
+ * stamping a version nothing produced. A step comes with a test that an
+ * upgraded database has the same shape as a fresh one: nothing else runs it.
  */
 export const MIGRATIONS: ReadonlyArray<Migration> = [];
 

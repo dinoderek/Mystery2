@@ -58,5 +58,5 @@ every other.
 size; a file replaced by one of identical size in the same millisecond needs a
 touch.
 
-**"From before saves were started over."** That database is never read
+**"From before saves were started over."** A database older than schema 7 is never read
 (`docs/backend-conventions.md`): `npm run db:reset [name]` starts it again.

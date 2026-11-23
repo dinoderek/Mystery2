@@ -60,8 +60,8 @@ bug: a second adapter must fit beside the first.
 - **Schema versions.** A `SCHEMA_VERSION` bump upgrades each existing database,
   `prod` included, the first time any checkout opens it; older code then
   refuses that file, and `npm run db:reset` (`--force` for `prod`)
-  starts it again. Saves restarted at 7: an older database is refused,
-  untouched, saying to delete it (`OLDEST_UPGRADABLE_VERSION`).
+  starts it again. A database older than `OLDEST_UPGRADABLE_VERSION` (7) is
+  refused, untouched, saying to delete it.
 
 ## Content
 

@@ -46,10 +46,9 @@ Checks dependencies, Playwright and the port. Worktrees: `./dev worktree create
 There is nothing to seed. The database is created on first run, and blueprints
 are read off disk — the committed stories in `blueprints/` are enough to play.
 
-A database from before the clue graph became the only case format is refused
-at start, with its path. Saves start from a clean slate: delete it with `npm
-run db:reset` (`--force` for `prod`), which loses its games, profiles and
-chosen AI.
+A database older than schema 7 is refused at start, naming its path: delete
+it with `npm run db:reset` (`--force` for `prod`), which loses its games,
+profiles and chosen AI.
 
 ## Local Development
 

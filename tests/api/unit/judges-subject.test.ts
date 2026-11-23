@@ -15,7 +15,7 @@ import { makeMultiStepEvents, makeRawTrace } from "./trace-fixtures";
 function makeInteraction(overrides: Record<string, unknown> = {}) {
   return {
     case_id: "ask-alice",
-    blueprint_path: "blueprints/mock-blueprint.json",
+    blueprint_path: "blueprints/clue-graph/mock-case.json",
     given: {
       mode: "talk",
       location_id: "loc-kitchen",

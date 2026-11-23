@@ -1,11 +1,10 @@
 /**
  * `./dev eval judge blueprint <file>` and `./dev eval validate <file>`.
  *
- * `judge blueprint` runs the mechanical checks, the analyzers and the
- * dimension judges on a blueprint file and writes one `result.json` with the
- * blueprint stored beside it. A clue-graph case gets its own check and judges,
- * and needs no brief. `validate` runs the schema and the mechanical
- * checks only, calls no model and needs no config. Both exit by the core rule
+ * `judge blueprint` runs the mechanical check and the judges on a clue-graph
+ * case file and writes one `result.json` with the case stored beside it; it
+ * needs no brief. `validate` runs the mechanical check only, calls no model
+ * and needs no config. Both exit by the core rule
  * (`exitCodeFor`): 0 all passed, 1 the run broke, 2 a check or judge failed.
  */
 
@@ -21,27 +20,20 @@ import { createRunFolder, resolveOutputRoot } from "../core/run-folder.ts";
 import { judgesFor } from "../core/registry.ts";
 import type { Result } from "../core/result.ts";
 import { createRunTimer, formatTimingSummary } from "../core/timing.ts";
-import { blueprintSubjectId, findBrief, readJsonFile, requireBrief } from "./inputs.ts";
-import { blueprintFormat } from "./judge.ts";
+import { blueprintSubjectId, readJsonFile } from "./inputs.ts";
 import type { JudgeSelection } from "./judge.ts";
-import type { BlueprintFormat } from "../core/registry.ts";
 import { judgeBlueprintSubject, validateBlueprintSubject } from "./subject.ts";
 
 /** The binding the dimension judges run through. */
 export const BLUEPRINT_JUDGE_BINDING = "blueprint-judge";
 
-const BRIEF_OPTION: ReadonlyArray<[string, string]> = [
-  ["--brief <path>", "the story brief a Blueprint V2 was written for: a file or a spec directory (default: brief.json beside the blueprint); a clue-graph case needs none"],
-];
-
 const JUDGE_HELP = formatHelp({
   usage: "judge blueprint <file>",
   summary:
-    "Runs the mechanical checks, the analyzers and the dimension judges on a blueprint, or the case check and the clue-graph judges on a clue-graph case, and writes result.json with the subject stored beside it. Exits 0 when all pass, 2 when a check or judge fails or cannot judge, 1 when the run breaks.",
+    "Runs the case check and the clue-graph judges on a clue-graph case, and writes result.json with the case stored beside it. Exits 0 when all pass, 2 when a check or judge fails or cannot judge, 1 when the run breaks.",
   options: [
-    ...BRIEF_OPTION,
-    ["--judges <a,b>", "run only these dimensions, or candidate judges, which run only when named; the rest are skipped"],
-    ["--no-judges", "run the checks and analyzers only; the judges are skipped"],
+    ["--judges <a,b>", "run only these judges; the rest are skipped"],
+    ["--no-judges", "run the check only; the judges are skipped"],
     ["--quiet", "no live progress digest"],
   ],
 });
@@ -49,16 +41,15 @@ const JUDGE_HELP = formatHelp({
 const VALIDATE_HELP = formatHelp({
   usage: "validate <file>",
   summary:
-    "Checks a blueprint against the schema and the mechanical checks, calling no model. With --brief it also checks the counts the brief asks for. Exits 0 when all pass, 2 when a check fails, 1 when the file cannot be read.",
-  options: BRIEF_OPTION,
+    "Checks a clue-graph case against the case check, calling no model. Exits 0 when it passes, 2 when it fails, 1 when the file cannot be read.",
 });
 
 function stringOption(value: OptionValue): string | undefined {
   return typeof value === "string" ? value : undefined;
 }
 
-/** `--judges` and `--no-judges`, as a selection of the judges a blueprint of this format has. */
-export function parseSelection(values: Record<string, OptionValue>, format: BlueprintFormat = "v2"): JudgeSelection {
+/** `--judges` and `--no-judges`, as a selection of the judges a case has. */
+export function parseSelection(values: Record<string, OptionValue>): JudgeSelection {
   const named = stringOption(values.judges);
   if (values["no-judges"] === true) {
     if (named !== undefined) throw new UsageError("--judges and --no-judges cannot be used together");
@@ -66,10 +57,10 @@ export function parseSelection(values: Record<string, OptionValue>, format: Blue
   }
   if (named === undefined) return "all";
   const ids = named.split(",").map((id) => id.trim()).filter(Boolean);
-  const known = judgesFor("blueprint", { candidates: true, format }).map((entry) => entry.id);
+  const known = judgesFor("blueprint", { candidates: true }).map((entry) => entry.id);
   const unknown = ids.filter((id) => !known.includes(id));
   if (ids.length === 0 || unknown.length > 0) {
-    throw new UsageError(`--judges needs dimension ids from: ${known.join(", ")}${unknown.length > 0 ? ` (got ${unknown.join(", ")})` : ""}`);
+    throw new UsageError(`--judges needs judge ids from: ${known.join(", ")}${unknown.length > 0 ? ` (got ${unknown.join(", ")})` : ""}`);
   }
   return ids;
 }
@@ -111,28 +102,18 @@ export function summaryLines(result: Result, resultFile: string): string[] {
   return lines;
 }
 
-async function readInputs(file: string, briefFlag: string | undefined, briefRequired: boolean) {
+async function readInput(file: string) {
   const blueprintFile = path.resolve(file);
-  const blueprint = await readJsonFile(blueprintFile, "blueprint");
-  // A clue-graph case is judged on its own: no brief is read for it.
-  if (blueprintFormat(blueprint) === "clue_graph") {
-    if (briefFlag !== undefined) throw new UsageError("a clue-graph case is judged without a brief: drop --brief");
-    return { blueprintFile, blueprint, brief: null };
-  }
-  const found = await findBrief(blueprintFile, briefFlag);
-  const source = briefRequired ? requireBrief(found) : found;
-  const brief = source ? await readJsonFile(source.file, "brief") : null;
-  return { blueprintFile, blueprint, brief };
+  return { blueprintFile, blueprint: await readJsonFile(blueprintFile, "case") };
 }
 
 export const judgeBlueprintCommand: EvalCommand = {
   name: "judge blueprint",
-  summary: "Judge a blueprint: mechanical checks, analyzers and the dimension judges",
+  summary: "Judge a clue-graph case: the case check and the clue-graph judges",
   help: JUDGE_HELP,
   async run(argv, context) {
     const parsed = parseCommandArgs(argv, {
       options: {
-        brief: { type: "string" },
         judges: { type: "string" },
         "no-judges": { type: "boolean" },
         quiet: { type: "boolean" },
@@ -140,8 +121,8 @@ export const judgeBlueprintCommand: EvalCommand = {
       positionals: { min: 1, max: 1 },
     });
     const { common, values, positionals } = parsed;
-    const inputs = await readInputs(positionals[0], stringOption(values.brief), true);
-    const selection = parseSelection(values, blueprintFormat(inputs.blueprint));
+    const inputs = await readInput(positionals[0]);
+    const selection = parseSelection(values);
     const binding = judgeBindingFor(selection, context, common);
 
     const run = createRunFolder({
@@ -156,7 +137,7 @@ export const judgeBlueprintCommand: EvalCommand = {
     context.out(`[eval] run=${run.dir}`);
     const result = await judgeBlueprintSubject(
       { run, folder, id, timer: createRunTimer() },
-      { brief: inputs.brief, blueprint: inputs.blueprint, binding, selection, quiet: values.quiet === true, write: context.out },
+      { brief: null, blueprint: inputs.blueprint, binding, selection, quiet: values.quiet === true, write: context.out },
     );
     const index = await run.finish();
     for (const line of summaryLines(result, folder.resultFile)) context.out(line);
@@ -166,14 +147,14 @@ export const judgeBlueprintCommand: EvalCommand = {
 
 export const validateCommand: EvalCommand = {
   name: "validate",
-  summary: "Check a blueprint against the schema and the mechanical checks, with no model",
+  summary: "Check a clue-graph case against the case check, with no model",
   help: VALIDATE_HELP,
   async run(argv, context) {
-    const { common, values, positionals } = parseCommandArgs(argv, {
-      options: { brief: { type: "string" } },
+    const { common, positionals } = parseCommandArgs(argv, {
+      options: {},
       positionals: { min: 1, max: 1 },
     });
-    const inputs = await readInputs(positionals[0], stringOption(values.brief), false);
+    const inputs = await readInput(positionals[0]);
     const run = createRunFolder({
       outputRoot: resolveOutputRoot(common.outputRoot, context.env),
       command: "validate",
@@ -185,7 +166,7 @@ export const validateCommand: EvalCommand = {
     const folder = run.subject({ kind: "blueprint", id });
     const result = await validateBlueprintSubject(
       { run, folder, id, timer: createRunTimer() },
-      { brief: inputs.brief, blueprint: inputs.blueprint },
+      { brief: null, blueprint: inputs.blueprint },
     );
     const index = await run.finish();
     for (const line of summaryLines(result, folder.resultFile)) context.out(line);

@@ -30,7 +30,6 @@ import { gradeGame } from "../../../evaluation/playtest/lib/judge.ts";
 import { INVESTIGATOR_BINDING, listPersonas, modelInvestigator } from "../../../evaluation/playtest/lib/investigator.ts";
 import { buildView } from "../../../evaluation/playtest/lib/view.ts";
 import { validBlueprintV2 } from "./fixtures/blueprint-v2.fixture.ts";
-import { generatorBrief } from "./fixtures/generator-brief.ts";
 import {
   clearForRecording,
   expectStored,
@@ -49,41 +48,26 @@ const ANSWERS = JSON.parse(
   fs.readFileSync(path.join(HERE, "fixtures", "eval-snapshot-answers.json"), "utf8"),
 ) as Record<string, unknown>;
 
-const BLUEPRINT_DIMENSIONS = [
-  "solve_depth",
-  "fairness",
-  "timeline_coherence",
-  "knowledge_coherence",
-  "character_grounding",
-  "path_payoff",
-  "clue_graph",
-  "age_appropriate",
-];
 /** The judges of a clue-graph case, run on the greenhouse story by `judge blueprint`. */
 const CASE_JUDGES = ["cg_soundness", "cg_truth_agreement", "cg_character_grounding", "cg_step_sense"];
 const GM_JUDGES = ["gm_roleplay", "gm_clue_discipline", "gm_fabrication", "gm_spoiler"];
 // Candidates run only when named, so each harness runs them apart from its default battery.
-const BLUEPRINT_CANDIDATES = ["solve_depth_fairness", "knowledge_timeline_coherence", "blueprint_broad"];
 const GM_CANDIDATES = ["gm_broad"];
 /** A clue-graph game's judges carry format guidance, so every game-master judge is kept for it too. */
 const GRAPH_JUDGES = [...GM_JUDGES, ...GM_CANDIDATES];
 const PERSONAS = listPersonas() as string[];
 
 const PROMPT_IDS = [
-  ...BLUEPRINT_DIMENSIONS.map((id) => `blueprint.${id}`),
-  "generator",
-  "generator.repair",
   ...GM_JUDGES.map((id) => `trace.${id}`),
   ...GM_JUDGES.map((id) => `runtime.${id}`),
   "runtime.age_appropriate",
   ...PERSONAS.map((persona) => `investigator.${persona}`),
-  ...BLUEPRINT_CANDIDATES.map((id) => `blueprint.${id}`),
   ...GM_CANDIDATES.flatMap((id) => [`trace.${id}`, `runtime.${id}`]),
   ...GRAPH_JUDGES.flatMap((id) => [`trace-clue-graph.${id}`, `runtime-clue-graph.${id}`]),
   "runtime-clue-graph-accusation.gm_spoiler",
   ...CASE_JUDGES.map((id) => `blueprint.${id}`),
 ];
-const VERDICT_NAMES = ["blueprint", "trace", "runtime", "playtest-judging", "candidates", "blueprint-clue-graph", "runtime-clue-graph-accusation"];
+const VERDICT_NAMES = ["trace", "runtime", "playtest-judging", "candidates", "blueprint-clue-graph", "runtime-clue-graph-accusation"];
 
 type Json = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -165,44 +149,6 @@ function dimension(result: Json) {
   };
 }
 
-/**
- * The verdict set a blueprint run stores: the new result.json read back into the
- * shape the snapshot has always had. The fields a result no longer carries are
- * fixed, so what is compared is each check's and dimension's status, details,
- * reasoning and answer.
- */
-function blueprintVerdicts(result: Result) {
-  const byId = new Map(result.verdicts.map((verdict) => [verdict.id, verdict]));
-  const dimensionIds = result.verdicts.filter((verdict) => verdict.tier === "judge").map((verdict) => verdict.id);
-  return {
-    generation: { source: "cli", attempts: result.production?.calls[0].attempts.map((attempt) => attempt.outcome) },
-    mechanical: result.verdicts
-      .filter((verdict) => verdict.tier === "mechanical")
-      .map((verdict) => ({ id: verdict.id, status: verdict.status, details: verdict.details ?? null })),
-    dimensions: dimensionIds.map((id) => {
-      const analyzer = byId.get(`${id}.analyzer`);
-      const judge = byId.get(id) as Result["verdicts"][number];
-      const statuses = [analyzer?.status, judge.status].filter((status) => status !== undefined);
-      return {
-        id,
-        overall: statuses.every((status) => status === "pass") ? "pass" : "fail",
-        analyzer: analyzer ? { status: analyzer.status, details: analyzer.details } : null,
-        judge: {
-          status: judge.status,
-          reasoning: (judge.answer as Json).reasoning,
-          major_count: null,
-          minor_count: null,
-          model_verdict: null,
-          verdict_disagreement: null,
-          answer: judge.answer,
-        },
-        error: null,
-      };
-    }),
-    run_error: result.run_error,
-  };
-}
-
 /** A game-master judge's verdict in the result format, as the verdict snapshots record a dimension. */
 function judgeDimension(verdict: Json) {
   return dimension({
@@ -220,52 +166,6 @@ function judgeDimension(verdict: Json) {
     },
     error: null,
   });
-}
-
-async function runBlueprintPipeline(answersFile: string) {
-  const briefFile = path.join(scratch, "blueprint", "brief.json");
-  const config = path.join(scratch, "blueprint", "config.json");
-  fs.mkdirSync(path.dirname(briefFile), { recursive: true });
-  fs.writeFileSync(briefFile, JSON.stringify(generatorBrief));
-  fs.writeFileSync(
-    config,
-    JSON.stringify({
-      "generator-agent": stubBinding(answersFile, "generator"),
-      "blueprint-judge": stubBinding(answersFile, "blueprint.{id}"),
-    }),
-  );
-
-  const outputRoot = path.join(scratch, "blueprint", "out");
-  const result = (await runForResult(
-    ["dev", "generate", "--format", "v2", briefFile, "--judge", "--config", config, "--output-root", outputRoot, "--quiet"],
-    outputRoot,
-  )) as Result;
-  verdicts.set("blueprint", blueprintVerdicts(result));
-  prompts.set("generator", capturedPrompt("generator"));
-  for (const id of BLUEPRINT_DIMENSIONS) prompts.set(`blueprint.${id}`, capturedPrompt(`blueprint.${id}`));
-}
-
-/** A repair round on the blueprint the stub judges fail: what the generator is sent to repair it. */
-async function runRepairRound(answersFile: string) {
-  const briefFile = path.join(scratch, "repair", "brief.json");
-  const config = path.join(scratch, "repair", "config.json");
-  fs.mkdirSync(path.dirname(briefFile), { recursive: true });
-  fs.writeFileSync(briefFile, JSON.stringify(generatorBrief));
-  fs.writeFileSync(
-    config,
-    JSON.stringify({
-      "generator-agent": stubBinding(answersFile, "generator.repair"),
-      "blueprint-judge": stubBinding(answersFile, "blueprint.{id}", "-"),
-    }),
-  );
-  const outputRoot = path.join(scratch, "repair", "out");
-  const result = (await runForResult(
-    ["dev", "generate", "--format", "v2", briefFile, "--judge", "--repair", "1", "--config", config, "--output-root", outputRoot, "--quiet"],
-    outputRoot,
-  )) as Result;
-  if (result.rounds?.length !== 2) throw new Error(`the repair run made ${result.rounds?.length ?? 0} round(s), not 2`);
-  // The generation and the repair share the key; the repair is sent last.
-  prompts.set("generator.repair", capturedPrompt("generator.repair"));
 }
 
 async function runTraceHarness(answersFile: string) {
@@ -419,7 +319,7 @@ async function runTurnCase(
 /**
  * A clue-graph game on both harnesses: the trace harness on a played greenhouse
  * game and `judge turn` on one conversation turn of it. The prompts are kept
- * apart from the V2 ones, so the graph guidance each judge is handed shows.
+ * apart from the V2 play ones, so the graph guidance each judge is handed shows.
  */
 async function runClueGraphHarnesses(answersFile: string) {
   const dir = path.join(scratch, "clue-graph");
@@ -525,34 +425,17 @@ function candidateVerdict(verdict: Json) {
 }
 
 /**
- * The candidates, each named on its harness's command: the blueprint ones on
- * the blueprint the generator answers with, the game one on the trace and on
- * a turn. Their prompts are kept beside the battery's.
+ * The candidates, each named on its harness's command: on the trace and on a
+ * turn. Their prompts are kept beside the battery's.
  */
 async function runCandidates(answersFile: string) {
   const dir = path.join(scratch, "candidates");
-  const blueprintFile = path.join(dir, "blueprint.json");
-  const briefFile = path.join(dir, "brief.json");
   const traceFile = path.join(dir, "trace.json");
   const config = path.join(dir, "config.json");
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(blueprintFile, JSON.stringify(validBlueprintV2));
-  fs.writeFileSync(briefFile, JSON.stringify(generatorBrief));
   fs.writeFileSync(traceFile, JSON.stringify(makeRawTrace()));
-  fs.writeFileSync(
-    config,
-    JSON.stringify({
-      "blueprint-judge": stubBinding(answersFile, "blueprint.{id}"),
-      "game-judge": stubBinding(answersFile, "trace.{id}"),
-    }),
-  );
+  fs.writeFileSync(config, JSON.stringify({ "game-judge": stubBinding(answersFile, "trace.{id}") }));
 
-  const blueprintOut = path.join(dir, "blueprint-out");
-  const blueprint = (await runForResult(
-    ["dev", "eval", "judge", "blueprint", blueprintFile, "--brief", briefFile, "--judges", BLUEPRINT_CANDIDATES.join(","),
-      "--config", config, "--output-root", blueprintOut, "--quiet"],
-    blueprintOut,
-  )) as Result;
   const traceOut = path.join(dir, "trace-out");
   const trace = await runForResult(
     ["dev", "eval", "judge", "game", traceFile, "--judges", GM_CANDIDATES.join(","), "--config", config, "--output-root", traceOut, "--quiet"],
@@ -560,8 +443,7 @@ async function runCandidates(answersFile: string) {
   );
   const runtime = await runTurnCase(answersFile, "candidates-runtime", GM_CANDIDATES, 0);
   const judged = (result: Json) => result.verdicts.filter((verdict: Json) => verdict.tier === "judge").map(candidateVerdict);
-  verdicts.set("candidates", { blueprint: judged(blueprint), trace: judged(trace), runtime: runtime.judges });
-  for (const id of BLUEPRINT_CANDIDATES) prompts.set(`blueprint.${id}`, capturedPrompt(`blueprint.${id}`));
+  verdicts.set("candidates", { trace: judged(trace), runtime: runtime.judges });
   for (const id of GM_CANDIDATES) {
     prompts.set(`trace.${id}`, capturedPrompt(`trace.${id}`));
     prompts.set(`runtime.${id}`, capturedPrompt(`runtime.${id}`));
@@ -656,12 +538,9 @@ async function composeInvestigatorPrompts() {
 beforeAll(async () => {
   scratch = fs.mkdtempSync(path.join(os.tmpdir(), "mystery-eval-snapshots-"));
   const answersFile = path.join(scratch, "answers.json");
-  // The generator "answers" with a blueprint, the same fixture the runtime case judges.
-  fs.writeFileSync(answersFile, JSON.stringify({ ...ANSWERS, generator: validBlueprintV2, "generator.repair": validBlueprintV2 }));
+  fs.writeFileSync(answersFile, JSON.stringify(ANSWERS));
 
   await Promise.all([
-    runBlueprintPipeline(answersFile),
-    runRepairRound(answersFile),
     runTraceHarness(answersFile),
     runRuntimeHarness(answersFile),
     runPlaytestJudging(answersFile),

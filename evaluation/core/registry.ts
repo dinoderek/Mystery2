@@ -15,17 +15,11 @@
  * A judge marked `candidate` is outside the default battery: it runs only
  * when a run names it, and a run that does not name it records nothing for it.
  *
- * A blueprint subject comes in two formats, each with its own checks and
- * judges: a Blueprint V2, and a clue-graph case (`docs/clue-graph.md`). An
- * entry with `format: "clue_graph"` applies only to a case; one without, only
- * to a Blueprint V2.
+ * A blueprint subject is a clue-graph case (`docs/clue-graph.md`).
  */
 
 export const SUBJECT_KINDS = ["blueprint", "game", "turn"] as const;
 export type SubjectKind = (typeof SUBJECT_KINDS)[number];
-
-export const BLUEPRINT_FORMATS = ["v2", "clue_graph"] as const;
-export type BlueprintFormat = (typeof BLUEPRINT_FORMATS)[number];
 
 /**
  * How a judge's verdict is reached. `stated`: the model's own `verdict` is
@@ -35,56 +29,24 @@ export type BlueprintFormat = (typeof BLUEPRINT_FORMATS)[number];
 export const VERDICT_RULES = ["stated", "major_findings"] as const;
 export type VerdictRule = (typeof VERDICT_RULES)[number];
 
-/** Sets of ids a judge's answer may cite, read from the blueprint it judged. */
-export type IdSetName =
-  | "solution_path_ids"
-  | "elimination_path_ids"
-  | "clue_ids"
-  | "character_ids"
-  | "non_culprit_ids"
-  | "player_text_paths"
-  | "probe_topics"
-  | "case_clue_ids"
-  | "case_conclusion_ids"
-  | "case_character_ids"
-  | "case_ids"
-  | "case_step_ids";
+/** Sets of ids a judge's answer may cite, read from the case it judged. */
+export type IdSetName = "case_clue_ids" | "case_conclusion_ids" | "case_character_ids" | "case_ids" | "case_step_ids";
 
 /**
  * One rule an answer must obey beyond its schema. `at` is a path into the
- * answer, where `[]` stands for every item of an array: `paths[].id`.
+ * answer, where `[]` stands for every item of an array: `steps[].clue_id`.
  *
- * - `ref`: every value at `at` is a member of `set` (a blueprint set, or the
- *   values another path of the answer holds). `unique` forbids repeats,
- *   `covers` requires every member of the set to appear, `optional` lets a
- *   nullish value pass (or an empty string with `"blank"`); `skipIfEmpty` drops
- *   the rule when the set is empty.
- * - `equals`: the value at `at` is the blueprint's target age.
- * - `field_of`: each item at `at` names a blueprint character by `id`, and
- *   its `field` equals that character's.
- * - `nonempty_when`: an item at `at` whose `when.field` is `when.equals` has
- *   a non-empty `field`.
+ * - `ref`: every value at `at` is a member of `set`. `unique` forbids repeats
+ *   and `covers` requires every member of the set to appear.
  */
-export type IdCheck =
-  | {
-      kind: "ref";
-      at: string;
-      set: IdSetName | { answer: string };
-      label: string;
-      unique?: boolean;
-      covers?: boolean;
-      optional?: "nullish" | "blank";
-      skipIfEmpty?: boolean;
-    }
-  | { kind: "equals"; at: string; to: "target_age" }
-  | { kind: "field_of"; at: string; id: string; field: string }
-  | {
-      kind: "nonempty_when";
-      at: string;
-      when: { field: string; equals: string };
-      field: string;
-      hint: string;
-    };
+export type IdCheck = {
+  kind: "ref";
+  at: string;
+  set: IdSetName;
+  label: string;
+  unique?: boolean;
+  covers?: boolean;
+};
 
 /** Code to run: a module and the name it exports. */
 export interface CodeRef {
@@ -100,8 +62,6 @@ export interface CheckEntry {
   run: CodeRef;
   /** Settings the check reads. */
   context?: Readonly<Record<string, unknown>>;
-  /** Set on a check of a clue-graph case; absent on a Blueprint V2 check. */
-  format?: "clue_graph";
 }
 
 /** A judge whose prompt is a brief, a schema and a preamble kept in files. */
@@ -128,13 +88,11 @@ export interface JudgeEntry {
   verdict: VerdictRule;
   /** Settings sent to the judge with its subject; absent when it needs none. */
   context?: Readonly<Record<string, unknown>>;
-  /** A deterministic analyzer that runs beside the judge; the dimension passes when both do. */
-  analyzer?: CodeRef;
-  /** Blueprint ids the answer may cite, declared here and read by the validator. */
+  /** Case ids the answer may cite, declared here and read by the validator. */
   idChecks?: readonly IdCheck[];
   /** Outside the default battery: runs only when named. */
   candidate?: true;
-  /** Set on a judge of a clue-graph case; absent on a Blueprint V2 judge. */
+  /** Set on a judge of a clue-graph case; its version's hash covers it. */
   format?: "clue_graph";
   /** A clue-graph judge also sent the player's view of the case (`evaluation/blueprint/player-view.ts`). */
   playerView?: true;
@@ -144,29 +102,8 @@ export type RegistryEntry = CheckEntry | JudgeEntry;
 
 const DIMENSIONS = "evaluation/dimensions";
 const JUDGES = "evaluation/judges";
-const BLUEPRINT_PREAMBLE = "evaluation/prompts/judge-system.md";
 const CLUE_GRAPH_PREAMBLE = "evaluation/prompts/clue-graph-judge-system.md";
 const GAME_MASTER_PREAMBLE = "evaluation/judges/prompts/judge-system.md";
-
-function blueprintJudge(
-  id: string,
-  extra: Pick<JudgeEntry, "context" | "analyzer" | "idChecks"> = {},
-): JudgeEntry {
-  const slug = id.replaceAll("_", "-");
-  return {
-    type: "judge",
-    id,
-    subjects: ["blueprint"],
-    prompt: {
-      kind: "files",
-      brief: `${DIMENSIONS}/${slug}.md`,
-      schema: `${DIMENSIONS}/${slug}.schema.ts`,
-      preamble: BLUEPRINT_PREAMBLE,
-    },
-    verdict: "stated",
-    ...extra,
-  };
-}
 
 /** The game-master judges grade a played game and a single turn the same way. */
 function gameMasterJudge(id: string): JudgeEntry {
@@ -186,33 +123,28 @@ function gameMasterJudge(id: string): JudgeEntry {
 }
 
 /**
- * A candidate judge: a merged or broad alternative to judges of the default
- * battery, with its brief and schema beside theirs. Each of its findings names
- * a finding kind, so it fails on any `major` finding.
+ * A candidate judge: a broad alternative to judges of the default battery,
+ * with its brief and schema beside theirs. Each of its findings names a
+ * finding kind, so it fails on any `major` finding.
  */
-function candidateJudge(id: string, subjects: readonly SubjectKind[], context?: Readonly<Record<string, unknown>>): JudgeEntry {
+function candidateJudge(id: string, subjects: readonly SubjectKind[]): JudgeEntry {
   const slug = id.replaceAll("_", "-");
-  const dir = subjects.includes("blueprint") ? DIMENSIONS : JUDGES;
   return {
     type: "judge",
     id,
     subjects,
     prompt: {
       kind: "files",
-      brief: `${dir}/${slug}.md`,
-      schema: `${dir}/${slug}.schema.ts`,
-      preamble: subjects.includes("blueprint") ? BLUEPRINT_PREAMBLE : GAME_MASTER_PREAMBLE,
+      brief: `${JUDGES}/${slug}.md`,
+      schema: `${JUDGES}/${slug}.schema.ts`,
+      preamble: GAME_MASTER_PREAMBLE,
     },
     verdict: "major_findings",
-    ...(context ? { context } : {}),
     candidate: true,
   };
 }
 
-/**
- * A judge of a clue-graph case. Its brief and schema sit beside the V2
- * dimensions'; each finding is `major` or `minor`, and it fails on a major one.
- */
+/** A judge of a clue-graph case: each finding is `major` or `minor`, and it fails on a major one. */
 function clueGraphJudge(id: string, extra: Pick<JudgeEntry, "idChecks" | "playerView"> = {}): JudgeEntry {
   const slug = id.replaceAll("_", "-");
   return {
@@ -228,15 +160,6 @@ function clueGraphJudge(id: string, extra: Pick<JudgeEntry, "idChecks" | "player
     verdict: "major_findings",
     format: "clue_graph",
     ...extra,
-  };
-}
-
-function blueprintCheck(id: string): CheckEntry {
-  return {
-    type: "check",
-    id,
-    subjects: ["blueprint"],
-    run: { module: "evaluation/checks/mechanical.ts", export: "runMechanicalChecks" },
   };
 }
 
@@ -258,165 +181,13 @@ const CASE_FINDING_IDS = {
   label: "case clue, conclusion, character or location id, or opening",
 } as const;
 
-/** A reference to a blueprint character id; the rule it is spread into says where in the answer. */
-const CHARACTER_REF = {
-  kind: "ref",
-  set: "character_ids",
-  label: "blueprint character id",
-} as const;
-
-/** The fallback floor on solve-path length, used when a brief sets no minPathLength. */
-const SOLVE_FLOOR = { min_clues: 3 } as const;
-
-/** What a player may ask any character, the same for every mystery. */
-const PROBE_TOPICS = [
-  "their own background and a brief sketch of their life",
-  "their likes and dislikes",
-  "their personality, attitude, and appearance",
-  "their knowledge of the other characters",
-  "their knowledge of the locations",
-  "their knowledge of the central mystery",
-] as const;
-
 /** Every check and judge, in the order a harness runs them. */
 export const REGISTRY: readonly RegistryEntry[] = [
-  blueprintCheck("brief_schema_valid"),
-  blueprintCheck("blueprint_schema_valid"),
-  blueprintCheck("culprit_count_matches_brief"),
-  blueprintCheck("location_count_matches_brief"),
-  blueprintCheck("character_count_matches_brief"),
-  blueprintCheck("red_herring_count_matches_brief"),
-  blueprintCheck("no_orphan_clues"),
-  blueprintCheck("requires_satisfiable"),
-  blueprintCheck("location_locks_are_pointers"),
-  blueprintCheck("pointers_point_to_target"),
-  blueprintCheck("self_protect_has_parts"),
-  blueprintCheck("parts_name_real_clues"),
-  blueprintCheck("descriptions_hide_locked_spots"),
-
-  blueprintJudge("solve_depth", {
-    context: SOLVE_FLOOR,
-    idChecks: [
-      {
-        kind: "ref",
-        at: "paths[].id",
-        set: "solution_path_ids",
-        label: "blueprint solution path id",
-        unique: true,
-        covers: true,
-      },
-      {
-        kind: "ref",
-        at: "paths[].necessary_clues[]",
-        set: "clue_ids",
-        label: "blueprint clue id",
-      },
-      {
-        kind: "ref",
-        at: "shortest_path_id",
-        set: { answer: "paths[].id" },
-        label: "enumerated path id",
-        optional: "nullish",
-      },
-      {
-        kind: "ref",
-        at: "elimination_paths[].id",
-        set: "elimination_path_ids",
-        label: "blueprint suspect elimination path id",
-        unique: true,
-        covers: true,
-      },
-      { ...CHARACTER_REF, at: "elimination_paths[].suspect_id", optional: "blank" },
-      {
-        kind: "ref",
-        at: "elimination_paths[].necessary_clues[]",
-        set: "clue_ids",
-        label: "blueprint clue id",
-      },
-      {
-        kind: "ref",
-        at: "uncovered_suspects[]",
-        set: "non_culprit_ids",
-        label: "non-culprit character id",
-      },
-    ],
-  }),
-  blueprintJudge("fairness", {
-    idChecks: [
-      {
-        kind: "ref",
-        at: "non_culprits[].character_id",
-        set: "non_culprit_ids",
-        label: "non-culprit character id",
-        unique: true,
-        covers: true,
-      },
-    ],
-  }),
-  blueprintJudge("timeline_coherence"),
-  blueprintJudge("knowledge_coherence", {
-    idChecks: [
-      {
-        kind: "ref",
-        at: "issues[].clue_ids[]",
-        set: "clue_ids",
-        label: "blueprint clue id",
-      },
-      {
-        kind: "nonempty_when",
-        at: "issues[]",
-        when: { field: "kind", equals: "pre_discovery_leak" },
-        field: "clue_ids",
-        hint: "name the clue it gives away",
-      },
-    ],
-  }),
-  blueprintJudge("character_grounding", {
-    context: { probe_topics: PROBE_TOPICS },
-    idChecks: [
-      { ...CHARACTER_REF, at: "characters[].character_id", unique: true, covers: true },
-      {
-        kind: "field_of",
-        at: "characters[]",
-        id: "character_id",
-        field: "first_name",
-      },
-      {
-        kind: "ref",
-        at: "characters[].topics[].topic",
-        set: "probe_topics",
-        label: "context.probe_topics entry, copied verbatim",
-        skipIfEmpty: true,
-      },
-      { ...CHARACTER_REF, at: "reactions[].character_id" },
-      { kind: "ref", at: "reactions[].clue_ids[]", set: "clue_ids", label: "blueprint clue id" },
-    ],
-  }),
-  blueprintJudge("path_payoff"),
-  blueprintJudge("clue_graph", {
-    analyzer: { module: "evaluation/checks/analyzers/clue-graph.ts", export: "analyze" },
-    idChecks: [{ kind: "ref", at: "locks[].clue_id", set: "clue_ids", label: "blueprint clue id", unique: true }],
-  }),
-  blueprintJudge("age_appropriate", {
-    context: { tolerance: 2, min_words: 8 },
-    analyzer: { module: "evaluation/checks/analyzers/age-appropriate.ts", export: "analyze" },
-    idChecks: [
-      { kind: "equals", at: "target_age", to: "target_age" },
-      {
-        kind: "ref",
-        at: "findings[].path",
-        set: "player_text_paths",
-        label: "player-facing string path of the blueprint, spelled exactly",
-      },
-    ],
-  }),
-
   {
     type: "check",
     id: "clue_graph_valid",
     subjects: ["blueprint"],
     run: { module: "evaluation/checks/clue-graph-case.ts", export: "runClueGraphChecks" },
-    format: "clue_graph",
   },
   clueGraphJudge("cg_soundness", {
     idChecks: [
@@ -477,8 +248,6 @@ export const REGISTRY: readonly RegistryEntry[] = [
     run: { module: "evaluation/runtime/lib/flesch.ts", export: "judge" },
   },
   {
-    // The blueprint dimension `age_appropriate` is a different judge: it reads
-    // a blueprint's player-facing text, this one a turn's narration.
     type: "judge",
     id: "age_appropriate_turn",
     subjects: ["turn"],
@@ -486,9 +255,6 @@ export const REGISTRY: readonly RegistryEntry[] = [
     verdict: "stated",
   },
 
-  candidateJudge("solve_depth_fairness", ["blueprint"], SOLVE_FLOOR),
-  candidateJudge("knowledge_timeline_coherence", ["blueprint"]),
-  candidateJudge("blueprint_broad", ["blueprint"], { ...SOLVE_FLOOR, probe_topics: PROBE_TOPICS }),
   candidateJudge("gm_broad", ["game", "turn"]),
 ];
 
@@ -516,27 +282,12 @@ export function getJudgeEntry(id: string): JudgeEntry {
   return entry;
 }
 
-/** Whether an entry applies to a blueprint of this format; game and turn entries carry none. */
-function ofFormat(entry: RegistryEntry, format: BlueprintFormat): boolean {
-  return (entry.format ?? "v2") === format;
+/** The judges that apply to a subject kind, in registry order: the default battery, or with `candidates` also every candidate, which is what a run may name. */
+export function judgesFor(subject: SubjectKind, { candidates = false }: { candidates?: boolean } = {}): JudgeEntry[] {
+  return REGISTRY.filter((e): e is JudgeEntry => e.type === "judge" && e.subjects.includes(subject) && (candidates || e.candidate !== true));
 }
 
-/**
- * The judges that apply to a subject kind, in registry order: the default
- * battery, or with `candidates` also every candidate, which is what a run may
- * name. A blueprint's are those of its `format`, Blueprint V2 by default.
- */
-export function judgesFor(
-  subject: SubjectKind,
-  { candidates = false, format = "v2" }: { candidates?: boolean; format?: BlueprintFormat } = {},
-): JudgeEntry[] {
-  return REGISTRY.filter(
-    (e): e is JudgeEntry =>
-      e.type === "judge" && e.subjects.includes(subject) && (candidates || e.candidate !== true) && ofFormat(e, format),
-  );
-}
-
-/** The checks that apply to a subject kind, in registry order; a blueprint's are those of its `format`. */
-export function checksFor(subject: SubjectKind, format: BlueprintFormat = "v2"): CheckEntry[] {
-  return REGISTRY.filter((e): e is CheckEntry => e.type === "check" && e.subjects.includes(subject) && ofFormat(e, format));
+/** The checks that apply to a subject kind, in registry order. */
+export function checksFor(subject: SubjectKind): CheckEntry[] {
+  return REGISTRY.filter((e): e is CheckEntry => e.type === "check" && e.subjects.includes(subject));
 }

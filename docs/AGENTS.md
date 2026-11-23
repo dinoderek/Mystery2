@@ -1,7 +1,5 @@
 # Docs: what the gate checks
 
-- **Curated extracts.** Editing an `<!-- extract:<id> -->` section fails
-  `curated-docs` until its extract is reviewed and re-hashed.
 - **References must exist.** A path, `npm run` script or relative link that
   does not exist fails `doc-refs`.
 - **Word budgets.** Every `.md` needs a row in `docs/word-budgets.tsv`.

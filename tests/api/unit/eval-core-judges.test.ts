@@ -10,7 +10,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { checkAnswerIds } from "../../../evaluation/core/judge-id-checks.ts";
-import { loadAnalyzer, loadCheck, loadJudge, resolveRegistryPath } from "../../../evaluation/core/judge-loader.ts";
+import { loadCheck, loadJudge, resolveRegistryPath } from "../../../evaluation/core/judge-loader.ts";
 import { validateJudgeAnswer, validateJudgeOutput, validateTurnAgeAnswer } from "../../../evaluation/core/judge-output.ts";
 import {
   composeJudgeSystemPrompt,
@@ -30,7 +30,6 @@ import {
 } from "../../../evaluation/core/registry.ts";
 import type { JudgeEntry } from "../../../evaluation/core/registry.ts";
 import { SNAPSHOT_ROOT } from "./eval-snapshot-store.ts";
-import { validBlueprintV2 } from "./fixtures/blueprint-v2.fixture.ts";
 
 const judges = REGISTRY.filter((e): e is JudgeEntry => e.type === "judge");
 
@@ -56,16 +55,12 @@ describe("registry entries", () => {
     for (const judge of judges) expect(VERDICT_RULES, judge.id).toContain(judge.verdict);
   });
 
-  it("registers the dimensions, the game-master judges, both age judges, flesch and the mechanical checks", () => {
+  it("registers the case check and judges, the game-master judges, both age judges, flesch and the game checks", () => {
     expect(judgesFor("blueprint").map((j) => j.id)).toEqual([
-      "solve_depth",
-      "fairness",
-      "timeline_coherence",
-      "knowledge_coherence",
-      "character_grounding",
-      "path_payoff",
-      "clue_graph",
-      "age_appropriate",
+      "cg_soundness",
+      "cg_truth_agreement",
+      "cg_character_grounding",
+      "cg_step_sense",
     ]);
     expect(judgesFor("game").map((j) => j.id)).toEqual([
       "gm_roleplay",
@@ -80,29 +75,38 @@ describe("registry entries", () => {
       "gm_spoiler",
       "age_appropriate_turn",
     ]);
-    expect(checksFor("blueprint")).toHaveLength(13);
-    expect(judgesFor("blueprint", { format: "clue_graph" }).map((j) => j.id)).toEqual([
+    expect(checksFor("blueprint").map((c) => c.id)).toEqual(["clue_graph_valid"]);
+    expect(checksFor("game").map((c) => c.id)).toEqual(["clue_accounting", "spoiler_leak", "clue_requires_violation"]);
+    expect(checksFor("turn").map((c) => c.id)).toEqual(["flesch"]);
+    expect(REGISTRY.map((e) => e.id)).toEqual([
+      "clue_graph_valid",
       "cg_soundness",
       "cg_truth_agreement",
       "cg_character_grounding",
       "cg_step_sense",
+      "clue_accounting",
+      "spoiler_leak",
+      "clue_requires_violation",
+      "gm_roleplay",
+      "gm_clue_discipline",
+      "gm_fabrication",
+      "gm_spoiler",
+      "flesch",
+      "age_appropriate_turn",
+      "gm_broad",
     ]);
-    expect(checksFor("blueprint", "clue_graph").map((c) => c.id)).toEqual(["clue_graph_valid"]);
-    expect(checksFor("game").map((c) => c.id)).toEqual(["clue_accounting", "spoiler_leak", "clue_requires_violation"]);
-    expect(checksFor("turn").map((c) => c.id)).toEqual(["flesch"]);
   });
 
-  it("keeps the two verdict rules: V2 dimensions take the stated verdict, game-master, clue-graph and candidate judges fail on a major finding", () => {
+  it("keeps the two verdict rules: the turn age judge takes the stated verdict, every other judge fails on a major finding", () => {
     for (const judge of judges) {
-      const findings = judge.id.startsWith("gm_") || judge.candidate || judge.format === "clue_graph";
-      expect(judge.verdict, judge.id).toBe(findings ? "major_findings" : "stated");
+      expect(judge.verdict, judge.id).toBe(judge.id === "age_appropriate_turn" ? "stated" : "major_findings");
     }
   });
 
   it("looks entries up by id and refuses an unknown one, naming the known ids", () => {
-    expect(findEntry("fairness")?.type).toBe("judge");
+    expect(findEntry("cg_soundness")?.type).toBe("judge");
     expect(findEntry("nope")).toBeUndefined();
-    expect(() => getEntry("nope")).toThrow(/Known: .*fairness/);
+    expect(() => getEntry("nope")).toThrow(/Known: .*cg_soundness/);
     expect(() => getJudgeEntry("flesch")).toThrow(/is a check/);
   });
 });
@@ -120,24 +124,15 @@ describe("loader", () => {
     expect(definition.schema?.safeParse({}).success).toBe(false);
   });
 
-  it("loads an analyzer for exactly the judges whose entry names one", async () => {
-    for (const judge of judges) {
-      const analyzer = await loadAnalyzer(judge.id);
-      if (judge.analyzer) expect(typeof analyzer?.analyze, judge.id).toBe("function");
-      else expect(analyzer, judge.id).toBeNull();
-    }
-    expect(judges.filter((j) => j.analyzer).map((j) => j.id)).toEqual(["clue_graph", "age_appropriate"]);
-  });
-
   it("loads the function behind every check", async () => {
     for (const check of REGISTRY.filter((e) => e.type === "check")) {
       expect(typeof (await loadCheck(check.id)), check.id).toBe("function");
     }
-    await expect(loadCheck("fairness")).rejects.toThrow(/is a judge/);
+    await expect(loadCheck("cg_soundness")).rejects.toThrow(/is a judge/);
   });
 
   it("names a file that is missing, and a schema that exports no `schema`", async () => {
-    const base = judges.find((j) => j.id === "fairness") as JudgeEntry & { prompt: { kind: "files" } };
+    const base = judges.find((j) => j.id === "cg_soundness") as JudgeEntry & { prompt: { kind: "files" } };
     await expect(
       loadJudge({ ...base, prompt: { ...base.prompt, brief: "evaluation/dimensions/no-such-brief.md" } }),
     ).rejects.toThrow(/ENOENT/);
@@ -203,7 +198,7 @@ describe("output validator: shape", () => {
   });
 
   it("names the paths that miss the schema", async () => {
-    const { schema } = await loadJudge("fairness");
+    const { schema } = await loadJudge("cg_soundness");
     const result = validateJudgeOutput({}, schema);
     expect(result.ok).toBe(false);
     expect(!result.ok && result.message).toMatch(/schema validation/);
@@ -220,143 +215,45 @@ describe("output validator: shape", () => {
 });
 
 describe("output validator: the id checks a registry entry declares", () => {
-  const blueprint = validBlueprintV2 as unknown as {
-    solution_paths: Array<{ id: string }>;
-    world: { characters: Array<{ id: string; first_name: string; is_culprit?: boolean }> };
+  const greenhouse = JSON.parse(fs.readFileSync(path.join(process.cwd(), "blueprints", "clue-graph", "greenhouse-prizewinner.json"), "utf8")) as {
+    clues: Record<string, unknown>;
+    characters: Record<string, unknown>;
   };
-  const culprit = blueprint.world.characters.find((c) => c.is_culprit)!;
-  const innocents = blueprint.world.characters.filter((c) => !c.is_culprit);
-
-  async function answerFor(id: string, answer: unknown, context: Record<string, unknown> = {}) {
-    return validateJudgeAnswer(await loadJudge(id), answer, blueprint, context);
-  }
-
-  const fairnessAnswer = (ids: string[]) => ({
-    non_culprits: ids.map((id) => ({ character_id: id, ruled_out: true, ruling_evidence: null, reasoning: "r" })),
-    verdict: "pass",
-    reasoning: "r",
-  });
-
-  it("accepts an answer that cites only blueprint ids and covers every non-culprit", async () => {
-    expect(await answerFor("fairness", fairnessAnswer(innocents.map((c) => c.id)))).toMatchObject({ ok: true });
-  });
+  const characterIds = Object.keys(greenhouse.characters);
+  const groundingAnswer = (ids: string[]) => ({ characters: ids.map((id) => ({ character_id: id })), findings: [] });
 
   it("reports the stage that rejects an answer: shape first, then ids", async () => {
-    expect(await answerFor("fairness", {})).toMatchObject({ ok: false, stage: "shape" });
-    expect(await answerFor("fairness", fairnessAnswer(["ghost"]))).toMatchObject({ ok: false, stage: "ids" });
-    // A judge that declares no id checks passes on shape alone.
-    expect(await answerFor("timeline_coherence", { issues: [], verdict: "pass", reasoning: "r" })).toMatchObject({
-      ok: true,
-    });
+    const definition = await loadJudge("cg_character_grounding");
+    expect(validateJudgeAnswer(definition, {}, greenhouse)).toMatchObject({ ok: false, stage: "shape" });
+    const answer = {
+      verdict: "pass",
+      reasoning: "r",
+      characters: characterIds.map((id) => ({ character_id: id, fits: true, note: "n" })),
+      findings: [],
+    };
+    expect(validateJudgeAnswer(definition, answer, greenhouse)).toMatchObject({ ok: true });
+    expect(validateJudgeAnswer(definition, { ...answer, characters: [{ ...answer.characters[0], character_id: "ghost" }] }, greenhouse)).toMatchObject({ ok: false, stage: "ids" });
   });
 
-  it("rejects an answer citing an unknown blueprint id", () => {
-    const rules = getJudgeEntry("fairness").idChecks ?? [];
-    const issues = checkAnswerIds(
-      rules,
-      { non_culprits: [...innocents.map((c) => ({ character_id: c.id })), { character_id: "ghost" }] },
-      blueprint,
-    );
-    expect(issues).toEqual([expect.stringContaining('non_culprits[' + innocents.length + '].character_id "ghost" is not a non-culprit character id')]);
-  });
-
-  it("rejects the culprit named as a non-culprit, a repeat, and a missing character", () => {
-    const rules = getJudgeEntry("fairness").idChecks ?? [];
-    const [first] = innocents;
-    const issues = checkAnswerIds(
-      rules,
-      { non_culprits: [{ character_id: culprit.id }, { character_id: first.id }, { character_id: first.id }] },
-      blueprint,
-    );
-    expect(issues.some((i) => i.includes(`"${culprit.id}" is not a non-culprit`))).toBe(true);
-    expect(issues.some((i) => i.includes(`"${first.id}" appears more than once`))).toBe(true);
-    if (innocents.length > 1) {
-      expect(issues.some((i) => i.includes(`missing an entry for non-culprit character id "${innocents[1].id}"`))).toBe(true);
-    }
-  });
-
-  it("rejects a solve path that is not in the blueprint and a clue that does not exist", () => {
-    const rules = getJudgeEntry("solve_depth").idChecks ?? [];
-    const issues = checkAnswerIds(
-      rules,
-      {
-        paths: [{ id: "path-x", necessary_clues: ["clue-x"] }],
-        shortest_path_id: "path-y",
-        elimination_paths: [],
-        uncovered_suspects: [],
-      },
-      blueprint,
-    );
+  it("rejects an unknown character, a repeat and a missing one", () => {
+    const rules = getJudgeEntry("cg_character_grounding").idChecks ?? [];
+    const [first, second] = characterIds;
+    const issues = checkAnswerIds(rules, groundingAnswer(["ghost", first, first]), greenhouse);
     expect(issues).toEqual(
       expect.arrayContaining([
-        expect.stringContaining('paths[0].id "path-x" is not a blueprint solution path id'),
-        expect.stringContaining('paths[0].necessary_clues[0] "clue-x" is not a blueprint clue id'),
-        expect.stringContaining('shortest_path_id "path-y" is not a enumerated path id'),
+        expect.stringContaining('characters[0].character_id "ghost" is not a case character id'),
+        expect.stringContaining(`characters[2].character_id "${first}" appears more than once`),
+        expect.stringContaining(`characters[].character_id is missing an entry for case character id "${second}"`),
       ]),
     );
-    expect(issues.some((i) => i.startsWith("paths[].id is missing an entry for blueprint solution path id"))).toBe(
-      blueprint.solution_paths.length > 0,
-    );
   });
 
-  it("lets an absent shortest path and an empty suspect pass", () => {
-    const issues = checkAnswerIds(
-      getJudgeEntry("solve_depth").idChecks ?? [],
-      {
-        paths: blueprint.solution_paths.map((p) => ({ id: p.id, necessary_clues: [] })),
-        shortest_path_id: null,
-        elimination_paths: [],
-      },
-      blueprint,
-    ).filter((i) => !i.startsWith("elimination_paths[].id is missing"));
-    expect(issues).toEqual([]);
-  });
-
-  it("checks a clue id cited by an issue, and a leak that names no clue", () => {
-    const rules = getJudgeEntry("knowledge_coherence").idChecks ?? [];
-    expect(checkAnswerIds(rules, { issues: [{ kind: "observability", clue_ids: ["clue-x"] }] }, blueprint)).toEqual([
-      expect.stringContaining('issues[0].clue_ids[0] "clue-x" is not a blueprint clue id'),
-    ]);
-    expect(checkAnswerIds(rules, { issues: [{ kind: "pre_discovery_leak", clue_ids: [] }] }, blueprint)).toEqual([
-      "issues[0] is a pre_discovery_leak but clue_ids is empty (name the clue it gives away)",
-    ]);
-  });
-
-  it("checks that characters are real, named as the blueprint names them, and probed on the given topics", () => {
-    const rules = getJudgeEntry("character_grounding").idChecks ?? [];
-    const [first] = blueprint.world.characters;
-    const issues = checkAnswerIds(
-      rules,
-      {
-        characters: [
-          { character_id: first.id, first_name: "Wrong", topics: [{ topic: "off topic" }] },
-          { character_id: "ghost", first_name: "Boo", topics: [] },
-        ],
-      },
-      blueprint,
-      { probe_topics: ["their likes and dislikes"] },
-    );
-    expect(issues).toEqual(
-      expect.arrayContaining([
-        expect.stringContaining('characters[1].character_id "ghost" is not a blueprint character id'),
-        expect.stringContaining(`characters[0].first_name for "${first.id}" is "Wrong" but the blueprint says "${first.first_name}"`),
-        expect.stringContaining('"off topic" is not a context.probe_topics entry'),
-      ]),
-    );
-    // With no topics in the context, topics are not checked.
-    expect(
-      checkAnswerIds(rules, { characters: [{ character_id: first.id, first_name: first.first_name, topics: [{ topic: "x" }] }] }, blueprint, {}).some(
-        (i) => i.includes("probe_topics"),
-      ),
-    ).toBe(false);
-  });
-
-  it("checks the target age and that every finding names a player-facing path", () => {
-    const rules = getJudgeEntry("age_appropriate").idChecks ?? [];
-    const issues = checkAnswerIds(rules, { target_age: 99, findings: [{ path: "world.not.a.real.path" }] }, blueprint);
-    expect(issues).toEqual([
-      expect.stringContaining("target_age 99 does not match blueprint.metadata.target_age"),
-      expect.stringContaining('findings[0].path "world.not.a.real.path" is not a player-facing string path'),
+  it("lets a finding cite any clue, conclusion, character or location of the case, or the opening", () => {
+    const rules = getJudgeEntry("cg_truth_agreement").idChecks ?? [];
+    const clue = Object.keys(greenhouse.clues)[0];
+    expect(checkAnswerIds(rules, { findings: [{ ids: [clue, characterIds[0], "opening"] }] }, greenhouse)).toEqual([]);
+    expect(checkAnswerIds(rules, { findings: [{ ids: ["ghost"] }] }, greenhouse)).toEqual([
+      expect.stringContaining('findings[0].ids[0] "ghost" is not a case clue, conclusion, character or location id, or opening'),
     ]);
   });
 });

@@ -10,8 +10,8 @@ data into one shared subject:
 | `evaluation/trace/` | a whole played session, reconstructed from the game database | every turn | registry judges for a `game` |
 | `evaluation/runtime/` | ONE replayed interaction | exactly one — the action under test | registry judges for a `turn` |
 
-A failure on a played trace can be frozen into a runtime case
-(`./dev eval cases`) and re-judged on another model or prompt.
+A failed trace turn can be frozen into a runtime case (`./dev eval cases`) and
+re-judged on another model.
 
 ## The battery
 
@@ -23,10 +23,11 @@ A failure on a played trace can be frozen into a runtime case
 | `gm_spoiler` | Did narration before the closing scene give away ground truth? | Naming the culprit; stating the motive or mechanism as fact; confirming a guess |
 
 Four narrow judges, not one "blueprint adherence" judge
-(`docs/evaluation-pipeline.md`, "Three tiers of check"), each stating its
+(`docs/evaluation-pipeline.md`), each stating its
 boundaries so no defect is reported four times. For a clue-graph blueprint
 ([`docs/clue-graph.md`](../../docs/clue-graph.md)), each message adds
-`format_guidance` (`clue-graph-guidance.ts`).
+`format_guidance` (`clue-graph-guidance.ts`). The briefs still describe V2
+fields until their rewrite; the overlay keeps them correct.
 
 ## The subject
 
@@ -35,14 +36,12 @@ input, narration and revealed clues. Three fields carry the design:
 
 - `judged`. A runtime case's prior history is a **fixture**, not the model's
   output, so those turns are context the judge reads but never faults. A trace
-  has no fixture, so every turn is judged. Without it, a case is faulted for
-  its own setup.
+  has no fixture, so every turn is judged.
 - `prior_revealed_clue_ids`. A search gate is judged against what the player
   demonstrably had, from either subject, without the runtime's internal flags.
 - `recorded_use`. What the narrator reported for a character turn: gate clues
   used, the player's words, new commitments (a runtime replay's is unfiltered by
-  the engine). Absent where not recorded, so "used nothing" and "not recorded" differ. A talk gate
-  opens on use, not possession ([`docs/ai-runtime.md`](../../docs/ai-runtime.md),
+  the engine). Absent where not recorded, so "used nothing" and "not recorded" differ. A talk gate opens on use, not possession ([`docs/ai-runtime.md`](../../docs/ai-runtime.md),
   "Earned, not free").
 
 A clue-graph turn also carries `notebook`, the line saved for each clue.
@@ -78,8 +77,8 @@ Keep the common finding fields (`sequence`, `severity`, `quote`, `why`,
 
 Each judge is one model call per subject, run in parallel. The trace
 pipeline runs all four on every trace; the runtime harness makes them opt-in
-(`evaluation/runtime/README.md`). `judge-stub` answers with
-a canned clean verdict for wiring checks:
+(`evaluation/runtime/README.md`). `judge-stub` answers with a canned clean
+verdict for wiring checks:
 
 ```bash
 ./dev eval judge turn <cases> --narrator narrator-stub --judges gm_spoiler --judge-binding judge-stub

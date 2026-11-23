@@ -54,9 +54,9 @@ A change in the left column is not finished until the right column agrees.
 
 | Change | Also touches |
 |---|---|
-| Narrator prompt, contract or context | mock provider and its tests, golden transcripts, eval prompt snapshots, curated extracts, "Narration at play" in `docs/blueprint-generation-flows.md` |
-| `packages/shared/src/age-profile.ts` | narrator prompts, generator guidance, the `age_appropriate_turn` judge's built prompt, the per-age tables in `age_appropriate`, `blueprint_broad` and `gm_broad`, player-text fields, eval prompt snapshots |
-| The definition of "earned" | talk prompt, mock, `gm_roleplay`, `gm_broad`, `gm_spoiler`, `gm_clue_discipline`, generator harness docs, `docs/game.md`, `docs/ai-runtime.md` |
-| Blueprint schema | generator prompt, context builders and "Narration at play", dimensions and mechanical checks, fixtures, extracts |
+| Narrator prompt, contract or context | mock provider and its tests, golden transcripts, eval prompt snapshots, "Narration at play" in `docs/blueprint-generation-flows.md` |
+| `packages/shared/src/age-profile.ts` | narrator prompts, the `age_appropriate_turn` judge's built prompt, the per-age tables in `gm_broad`, player-text fields, eval prompt snapshots |
+| The definition of "earned" | talk prompt, mock, `gm_roleplay`, `gm_broad`, `gm_spoiler`, `gm_clue_discipline`, `docs/game.md`, `docs/ai-runtime.md` |
+| Blueprint schema | context builders and "Narration at play", case judges and the case check, fixtures |
 | Event shapes | transcripts, resume, `playedEvents` readers, trace and runtime readers, goldens |
 | API contract | `packages/shared/src/mystery-api-contracts.ts` first, web store parsing, testkit fixtures |

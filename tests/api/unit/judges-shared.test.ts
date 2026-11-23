@@ -93,8 +93,8 @@ describe("composeJudgeSystemPrompt", () => {
     expect(composed).toContain("spoiler_min_run");
   });
 
-  it("calls a blueprint judge's context per spec", async () => {
-    const composed = composeJudgeSystemPrompt(await loadJudge("solve_depth"), { min_clues: 3 });
+  it("calls a case judge's context per spec", async () => {
+    const composed = composeJudgeSystemPrompt(await loadJudge("cg_soundness"), { min_clues: 3 });
     expect(composed).toContain("## Per-spec context");
   });
 });

@@ -256,6 +256,7 @@ document.getElementById("matrix").innerHTML =
   row("outcome", (g) => esc(g.outcome ?? g.stopReason ?? "—")) +
   row("clues found", (g) => (g.cluesFound != null ? `${g.cluesFound}/${g.cluesTotal}` : "—")) +
   row("turns used", (g) => (g.turnsUsed != null ? `${g.turnsUsed}/${g.timeBudget}` : "—")) +
+  row("accusations spent", (g) => (g.accusationsSpent != null ? `${g.accusationsSpent}${g.wonOnThird ? " · won on the third" : ""}` : "—")) +
   row("cost", (g) => money(gameCost(g))) +
   `</tbody>`;
 if (DATA.targetAge != null) {

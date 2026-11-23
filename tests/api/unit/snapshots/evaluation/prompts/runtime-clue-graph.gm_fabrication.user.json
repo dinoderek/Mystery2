@@ -1,7 +1,7 @@
 {
   "dimension_id": "gm_fabrication",
   "context": null,
-  "format_guidance": "This blueprint is a clue graph. blueprint.clue_graph is the authority; the world's reasoning paths, agendas, tells, alibis and motives are empty by design, and a character's world clues list everything they hold, not what the player has earned. A clue is evidence (always true, found by searching its location or spot), a statement (what a character says: true, or false with a reason, never marked either way to the player) or a tell (what a character does that hints at something). A character's clue comes with first_meeting, seen (a tell, with a statement or when a subject comes up), asked (once its prompt is held) or gated. A gate opens when its \"after\" clues are out, and \"use\" clues are shown (any or all of them) or its \"line\" of questioning is made; a \"physical\" gate with \"use\" cannot be bluffed; a non-physical gate with \"use\" can open on a believable bluff stating the clue's substance; a gate with only \"after\" or \"line\" has nothing to bluff. A gated statement may take back earlier statements: one taken back no longer stands. A search gives at most one clue, from the spot or place named; a hidden spot cannot be found before its revealed_by clue is held. A greeting (a talk turn with no player_input, labelled graph_talk or talk_start) gives the first words and opens nothing. A turn's revealed_clue_ids are what the engine recorded and prior_revealed_clue_ids is what the player already held; recorded_use and revealed_off_script are never set for these turns. A turn's notebook holds, for each clue it recorded, tells included, the line the narrator wrote for the player to keep. The engine already refuses a reveal its state did not offer, so judge the narration against what was offered and recorded.\n\nThe accusation is decided by the engine, not the narrator: the true culprit named, with the confession held or a culprit conclusion holding on clues held and not taken back and one of them cited. A round before the case is resolved (role accusation_start or graph_accusation_round) is given only what the player holds, so it reveals no clue, fact or part of the truth beyond that, and never says whether the person named did it. The closing scene (role graph_ending), win or lose, tells the whole account from truth.timeline, the culprit conclusion and truth.motive: it cannot spoil, but it can still be wrong.\n\nFabrication: the closing scene is judged against truth.timeline, truth.motive and the culprit conclusion; a step told wrong or added, or any contradiction, is a finding. What is authored is every clue's fact, truth.timeline and truth.motive, the opening's facts, each location's facts, spot names, and each character's name, personality, demeanor lines, appearance and knows. A false statement is authored too, and a character telling one is correct, not an invention. The narrator words these facts and may invent scenery and manner (weather, a smell, a sound, a gesture). Invention is a fault only when it could mislead the investigation (it looks like evidence, or bears on who, when or where: a mark, an object to examine, a time, a sighting, a person, a place to search) or when it contradicts what earlier narration established. Judge invented people, places, searchable objects and facts against the whole graph.",
+  "format_guidance": "This blueprint is a clue graph. blueprint.clue_graph is the authority; the world's reasoning paths, agendas, tells, alibis and motives are empty by design, and a character's world clues list everything they hold, not what the player has earned. A clue is evidence (always true, found by searching its location or spot), a statement (what a character says: true, or false with a reason, never marked either way to the player) or a tell (what a character does that hints at something). A character's clue comes with first_meeting, seen (a tell, with a statement or when a subject comes up), asked (once its prompt is held) or gated. A gate opens when its \"after\" clues are out, and \"use\" clues are shown (any or all of them) or its \"line\" of questioning is made; a \"physical\" gate with \"use\" cannot be bluffed; a non-physical gate with \"use\" can open on a believable bluff stating the clue's substance; a gate with only \"after\" or \"line\" has nothing to bluff. A gated statement may take back earlier statements: one taken back no longer stands. A search gives at most one clue, from the spot or place named; a hidden spot cannot be found before its revealed_by clue is held. A greeting (a talk turn with no player_input, labelled graph_talk or talk_start) gives the first words and opens nothing. A turn's revealed_clue_ids are what the engine recorded and prior_revealed_clue_ids is what the player already held; recorded_use and revealed_off_script are never set for these turns. A turn's notebook holds, for each clue it recorded, tells included, the line the narrator wrote for the player to keep. The engine already refuses a reveal its state did not offer, so judge the narration against what was offered and recorded.\n\nThe accusation is decided by the engine, not the narrator: the true culprit named, with the confession held or a culprit conclusion holding on clues held and not taken back and one of them cited. Opening the accusation (accusation_start) reveals nothing beyond what the player holds. A failed accusation (graph_accusation_round) words the engine-chosen reply: a flaw using held clearing clues or retracted statements and their speaker; an alternative naming only the graph-linked people supplied; or a missing fact type with a lead. Flaws come first. It reveals no unseen clue or truth, never identifies the culprit or confirms the accused name, and invites more investigation. The closing scene (role graph_ending), win or lose, tells the whole account from truth.timeline, the culprit conclusion and truth.motive: it cannot spoil, but it can still be wrong.\n\nFabrication: the closing scene is judged against truth.timeline, truth.motive and the culprit conclusion; a step told wrong or added, or any contradiction, is a finding. What is authored is every clue's fact, truth.timeline and truth.motive, the opening's facts, each location's facts, spot names, and each character's name, personality, demeanor lines, appearance and knows. A false statement is authored too, and a character telling one is correct, not an invention. The narrator words these facts and may invent scenery and manner (weather, a smell, a sound, a gesture). Invention is a fault only when it could mislead the investigation (it looks like evidence, or bears on who, when or where: a mark, an object to examine, a time, a sighting, a person, a place to search) or when it contradicts what earlier narration established. Either is major: a contradiction of earlier narration is major even when what it contradicts is scenery, since the player can no longer trust what they were shown. A character asked about something that bears on the case, outside their own clues and knows, says plainly that they do not know: an answer, a guess or a hint at who, when or where is an invention, and so is a dodge that suggests they know more (a character holding back a clue of their own that is not yet out is the game working). Judge invented people, places, searchable objects and facts against the whole graph.",
   "blueprint": {
     "schema_version": "clue-graph/2",
     "id": "9afa1ef4-b543-81b5-a50f-4a366ec7e2ef",
@@ -906,9 +906,7 @@
     "narrative": {
       "premise": "Big Bertha, the prize pumpkin, was smashed overnight. A greenhouse window is broken. The greenhouse key has been missing for days. Mr. Dobbs saw Bertha whole on his 8pm rounds. Ms. Hale found Bertha smashed at 7:30. Toby and Mia are the club's two pupils. Mr. Thorne is the rival grower next door, and he is being blamed.",
       "starting_knowledge": {
-        "mystery_summary": "Big Bertha, the prize pumpkin, was smashed overnight.",
-        "locations": [],
-        "characters": []
+        "mystery_summary": "Big Bertha, the prize pumpkin, was smashed overnight."
       }
     },
     "world": {
@@ -1069,15 +1067,11 @@
         {
           "id": "hale",
           "first_name": "Ms. Hale",
-          "last_name": "",
           "location_id": "greenhouse",
           "sex": "female",
           "appearance": "Ms. Hale has short grey hair and muddy knees. She wears a green apron with gardening gloves in the pocket.",
-          "background": "",
           "personality": "Warm, sensible and fair, with a soft spot for her club.",
           "initial_attitude_towards_investigator": "Relieved someone has come to help, and keen to get to the truth before noon.",
-          "stated_alibi": null,
-          "motive": null,
           "is_culprit": false,
           "clues": [
             {
@@ -1104,24 +1098,16 @@
               "id": "clue_hale_toby_upset",
               "text": "Ms. Hale says she took Toby off the last watering shifts after he forgot to lock up on Monday, and told him no going in without a grown-up. Toby shouted, 'She's MY pumpkin!'"
             }
-          ],
-          "flavor_knowledge": [],
-          "actual_actions": [],
-          "agendas": [],
-          "tells": []
+          ]
         },
         {
           "id": "toby",
           "first_name": "Toby",
-          "last_name": "",
           "location_id": "potting_shed",
           "sex": "male",
           "appearance": "Toby is a boy with neat short hair. He wears a club hoodie with a big front pocket.",
-          "background": "",
           "personality": "Bright, serious and a little bossy about plants. Normally honest, so lying makes him fidgety and fast-talking.",
           "initial_attitude_towards_investigator": "Jumpy and over-eager to help. He keeps bringing the talk back to Mr. Thorne.",
-          "stated_alibi": null,
-          "motive": null,
           "is_culprit": true,
           "clues": [
             {
@@ -1172,24 +1158,16 @@
               "id": "toby_confession",
               "text": "Toby says he took the greenhouse key on Wednesday. He only went in to give Bertha extra water. He tripped on the hose, and the old bench fell on her. He broke the window so it would look like a burglar."
             }
-          ],
-          "flavor_knowledge": [],
-          "actual_actions": [],
-          "agendas": [],
-          "tells": []
+          ]
         },
         {
           "id": "mia",
           "first_name": "Mia",
-          "last_name": "",
           "location_id": "potting_shed",
           "sex": "female",
           "appearance": "Mia is a girl with curly hair in a bouncy ponytail. She wears the club's leaf-pattern wellies.",
-          "background": "",
           "personality": "Bubbly, chatty and quick to giggle, but she goes quiet when she is embarrassed. Loyal to her friends; she sticks up for Toby.",
           "initial_attitude_towards_investigator": "Friendly and chatty.",
-          "stated_alibi": null,
-          "motive": null,
           "is_culprit": false,
           "clues": [
             {
@@ -1208,24 +1186,16 @@
               "id": "mia_admits_splat",
               "text": "Mia admits she did say she wished Bertha would go splat, because she was fed up missing dance practice. She says she would never, ever hurt Bertha."
             }
-          ],
-          "flavor_knowledge": [],
-          "actual_actions": [],
-          "agendas": [],
-          "tells": []
+          ]
         },
         {
           "id": "dobbs",
           "first_name": "Mr. Dobbs",
-          "last_name": "",
           "location_id": "workshop",
           "sex": "male",
           "appearance": "Mr. Dobbs is an old man in brown overalls. He wears slippers indoors.",
-          "background": "",
           "personality": "Calm, slow-talking and kind, with a dry sense of humour. He likes everything tidy and written down.",
           "initial_attitude_towards_investigator": "Friendly and helpful. He offers a cup of tea and answers plainly.",
-          "stated_alibi": null,
-          "motive": null,
           "is_culprit": false,
           "clues": [
             {
@@ -1240,24 +1210,16 @@
               "id": "clue_dobbs_crash_time",
               "text": "Mr. Dobbs says that at about ten to nine last night he heard a big thud from the garden, then smashing glass. He thought it was the fox at his bins again."
             }
-          ],
-          "flavor_knowledge": [],
-          "actual_actions": [],
-          "agendas": [],
-          "tells": []
+          ]
         },
         {
           "id": "thorne",
           "first_name": "Mr. Thorne",
-          "last_name": "",
           "location_id": "thorne_garden",
           "sex": "male",
           "appearance": "Mr. Thorne is a big man with a bushy grey beard. He wears huge muddy boots.",
-          "background": "",
           "personality": "Gruff, proud and easily offended, but not cruel. Under the grumbling he is a fair-minded gardener.",
           "initial_attitude_towards_investigator": "Prickly and defensive. He has heard he is being blamed and is cross about it.",
-          "stated_alibi": null,
-          "motive": null,
           "is_culprit": false,
           "clues": [
             {
@@ -1284,11 +1246,7 @@
               "id": "thorne_ladder_thursday",
               "text": "Mr. Thorne says he measured Bertha from his ladder on Thursday, and that 'Enjoy her while she lasts' meant his Goliath would beat her at the weigh-in."
             }
-          ],
-          "flavor_knowledge": [],
-          "actual_actions": [],
-          "agendas": [],
-          "tells": []
+          ]
         }
       ]
     },
@@ -1309,10 +1267,7 @@
         "Friday 8:40pm to 8:55pm: Toby sneaks in with the hidden key. At about 8:50 he trips on the hose and the rotten bench collapses onto Bertha, smashing her. He steps in the mush in his club wellies, knocks a side window out from inside, locks the door, drops the key in the water butt and runs home. Mr. Dobbs hears the thud and the glass but blames the fox.",
         "Saturday: at 7:30am Ms. Hale unlocks the still-locked door with the spare and finds Bertha smashed. Toby arrives in trainers and blames Mr. Thorne. The fair says the pumpkin contest will be canceled unless the truth is known by noon."
       ]
-    },
-    "solution_paths": [],
-    "red_herrings": [],
-    "suspect_elimination_paths": []
+    }
   },
   "subject": {
     "subject_kind": "interaction",

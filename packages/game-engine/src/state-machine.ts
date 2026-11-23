@@ -24,7 +24,8 @@ export type ActionType =
   | "ask"
   | "end_talk"
   | "accuse"
-  | "accuse_reasoning";
+  | "accuse_reasoning"
+  | "back";
 
 export function validateTransition(
   currentMode: GameMode,
@@ -33,7 +34,7 @@ export function validateTransition(
   const validTransitions: Record<GameMode, ActionType[]> = {
     explore: ["move", "search", "talk", "accuse"],
     talk: ["ask", "end_talk"],
-    accuse: ["accuse_reasoning"],
+    accuse: ["accuse_reasoning", "back"],
     ended: [],
   };
 

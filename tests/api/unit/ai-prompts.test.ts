@@ -52,8 +52,28 @@ describe("ai-prompts", () => {
     });
     expect(styled).toContain("Narration style");
     expect(styled).toContain(
-      "This mystery's own voice (follow it within the rules above): salty harbor air and gull cries",
+      `This mystery's own voice (follow it within the rules above): "salty harbor air and gull cries"`,
     );
+  });
+
+  it("tells the clue-graph accusation round and ending that only the narrator speaks, and every other role keeps the dialogue rule", async () => {
+    const dialogue = "Characters always speak in direct first-person dialogue";
+    const narratorOnly = "No one speaks in this scene but you, the narrator";
+    for (const role of ["graph_accusation_round", "graph_ending"] as const) {
+      const template = await loadPromptTemplate(role, 7, { clueGraph: true, narrationStyle: "crunchy snow" });
+      expect(template).toContain(narratorOnly);
+      expect(template).not.toContain(dialogue);
+      expect(template).toContain("This mystery's own voice");
+      expect(template).toContain("may add harmless scenery and manner within the role's limits");
+    }
+    // Only the ending retells the account, where a character's words may be quoted.
+    expect(await loadPromptTemplate("graph_ending", 7, { clueGraph: true })).toContain("What a character said in the account");
+    expect(await loadPromptTemplate("graph_accusation_round", 7, { clueGraph: true })).not.toContain("What a character said");
+    for (const role of ["graph_talk", "graph_search", "accusation_start", "accusation_judge"] as const) {
+      const template = await loadPromptTemplate(role, 7, { clueGraph: true });
+      expect(template).toContain(dialogue);
+      expect(template).not.toContain(narratorOnly);
+    }
   });
 
   it("keeps the two search prompts' own rules within 2,256 characters", async () => {
@@ -117,14 +137,6 @@ describe("ai-prompts", () => {
     const wordTarget = (s: string) =>
       Number(s.match(/aim for about (\d+) words/)?.[1] ?? 0);
     expect(wordTarget(verdict)).toBeGreaterThan(wordTarget(farewell));
-  });
-
-  it("carries the anti-hallucination rule in the shared layer of every talk prompt", async () => {
-    for (const role of ["talk_start", "talk_conversation", "talk_end"] as const) {
-      const prompt = await loadPromptTemplate(role, 10);
-      expect(prompt).toContain("Use only the characters, places and facts you are given; never invent more.");
-      expect(prompt).toContain("Choose pronouns from each character's sex, never by guessing.");
-    }
   });
 
   it("keeps a greeting from firing tells or cracks the investigator has not earned", async () => {
@@ -261,8 +273,6 @@ describe("ai-prompts", () => {
     expect(prompt).toContain("Characters at destination");
     expect(prompt).toContain('"first_name":"Alice"');
     expect(prompt).toContain('"sex":"female"');
-    expect(prompt).toContain("never by guessing");
-    expect(prompt).toContain("never invent more");
     expect(prompt).toContain("Narration style");
     // Characters are present, so the arrival plays them as authored. The rules
     // name only fields the pack carries: no private field is listed to forbid it.
@@ -284,7 +294,7 @@ describe("ai-prompts", () => {
       narration_style: "seaside carnival bustle",
     });
     expect(start).toContain("Narration style");
-    expect(start).toContain("This mystery's own voice (follow it within the rules above): seaside carnival bustle");
+    expect(start).toContain(`This mystery's own voice (follow it within the rules above): "seaside carnival bustle"`);
 
     const move = buildGameMovePrompt({
       target_age: 9,

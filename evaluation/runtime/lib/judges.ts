@@ -20,9 +20,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import { buildClueGraphBlueprint } from "../../../packages/shared/src/clue-graph-case.ts";
-import { validateClueGraph } from "../../../packages/shared/src/clue-graph-validator.ts";
-import { isClueGraphFile } from "../../../packages/shared/src/clue-graph-schema.ts";
 import type { ResolvedBinding } from "../../core/config.ts";
 import { loadCheck, loadJudge } from "../../core/judge-loader.ts";
 import { validateJudgeOutput, validateTurnAgeAnswer } from "../../core/judge-output.ts";
@@ -41,9 +38,10 @@ import type { CallMemo } from "../../core/runner.ts";
 import { composeGameMasterUserMessage } from "../../judges/clue-graph-guidance.ts";
 import { resolveVerdict } from "../../judges/index.ts";
 import { projectInteractionSubject } from "../../judges/subject.ts";
-import type { BlueprintLike, JudgeOptions } from "./case.ts";
+import { readCaseWorld, type BlueprintLike, type JudgeOptions } from "./case.ts";
 import { parseFencedJson } from "./model-json.ts";
-import { isAccusationRole, resolveRoleName } from "./roles.ts";
+import { CLOSING_SCENE_EVENT_TYPES } from "../../lib/game-events.ts";
+import { resolveRoleName } from "./roles.ts";
 import type { StoredTurn } from "./turn.ts";
 
 export interface TurnJudging {
@@ -70,11 +68,8 @@ async function loadBlueprint(turn: StoredTurn, options: JudgeOptions, root: stri
         "judgeConfig.blueprintPath or replay the case again",
     );
   }
-  const candidate = JSON.parse(await fs.readFile(path.resolve(root, blueprintPath), "utf8"));
-  // A clue-graph case file is read as the game reads it: its world view, with the graph in `clue_graph`.
-  return (isClueGraphFile(candidate)
-    ? buildClueGraphBlueprint(validateClueGraph(candidate))
-    : candidate) as BlueprintLike;
+  const file = path.resolve(root, blueprintPath);
+  return readCaseWorld(JSON.parse(await fs.readFile(file, "utf8")), file);
 }
 
 /**
@@ -87,16 +82,42 @@ export function buildJudgeUserMessage(judgeId: string, turn: StoredTurn, bluepri
   // through the harness's own action map. If an action has no local mapping (or
   // its resolver needs a field this capture lacks), fall back to the action
   // type: a slightly coarser label is better than failing the judge.
-  let roleName: string | null;
+  let roleName: string | null = actionType === "accuse" ? narratedRole(turn) : null;
   try {
-    roleName =
+    roleName ??=
       resolveRoleName(actionType as string, turn.given ?? {}, turn.action ?? {}, blueprint, turn.given?.history) ??
       actionType;
   } catch {
     roleName = actionType;
   }
-  const subject = projectInteractionSubject(turn, { roleName, isAccusationPhase: isAccusationRole(roleName) });
+  const subject = projectInteractionSubject(turn, { roleName, isAccusationPhase: isClosingScene(turn, roleName) });
   return composeGameMasterUserMessage(judgeId, null, { blueprint, subject });
+}
+
+/**
+ * The role an accusation's narration was worded in, as the turn saved it: a
+ * clue-graph accusation is reported in one role and worded in another
+ * (`graph_accusation_round` or `graph_ending`), and the judge reads the wording.
+ * A CLI narrator's raw output names it; a played turn's saved event does.
+ */
+function narratedRole(turn: StoredTurn): string | null {
+  const raw = turn.response?.raw as { role?: unknown; events?: Array<{ payload?: { role?: unknown } }> } | null | undefined;
+  const role = Array.isArray(raw?.events) ? raw.events[0]?.payload?.role : raw?.role;
+  return typeof role === "string" ? role : null;
+}
+
+/**
+ * Whether the turn is the closing scene: only that tells the truth. A played
+ * turn's raw answer names the event it saved first; a turn replayed on a model
+ * CLI holds the role's own output, ended by its resolution or by its role; a
+ * turn taken from a stored game names its event as its action.
+ */
+function isClosingScene(turn: StoredTurn, roleName: string | null): boolean {
+  if (roleName === "graph_ending") return true;
+  const raw = turn.response?.raw as { events?: Array<{ event_type?: unknown }>; accusation_resolution?: unknown } | null | undefined;
+  if (raw?.accusation_resolution === "win" || raw?.accusation_resolution === "lose") return true;
+  const eventType = Array.isArray(raw?.events) ? raw.events[0]?.event_type : turn.response?.action;
+  return typeof eventType === "string" && CLOSING_SCENE_EVENT_TYPES.has(eventType);
 }
 
 function narrationOf(turn: StoredTurn): string {

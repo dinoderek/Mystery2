@@ -2,12 +2,10 @@ import { z } from "zod";
 import { SceneManifestSchema } from "./scene-schema.ts";
 import { ReadingAgeSchema } from "./reading-age.ts";
 export { READING_AGES, ReadingAgeSchema } from "./reading-age.ts";
-export { MysteryStructureSchema, MysteryStructureNodeSchema, type MysteryStructure, type MysteryStructureNode } from "./mystery-structure-schema.ts";
-export { validateMysteryStructure } from "./mystery-structure-validator.ts";
-export { MsfCaseFileSchema, validateMsfCaseFile, buildMsfBlueprint, type MsfCaseFile, type PlayableBlueprint } from "./msf-case.ts";
+export type { PlayableBlueprint, PlayableCase } from "./playable-case.ts";
 export { ClueGraphCaseSchema, type ClueGraphCase } from "./clue-graph-schema.ts";
 export { validateClueGraph } from "./clue-graph-validator.ts";
-export { buildClueGraphBlueprint, clueGraphCaseId, CLUE_GRAPH_TITLE_SUFFIX } from "./clue-graph-case.ts";
+export { buildClueGraphWorld, clueGraphCaseId, CLUE_GRAPH_TITLE_SUFFIX, type ClueGraphWorld } from "./clue-graph-case.ts";
 export { reachClues, type ReachedClue } from "./clue-graph-reach.ts";
 export { cheapestRoute } from "./clue-graph-route.ts";
 export { culpritRoutes, measureCase, type CulpritRoute } from "./clue-graph-story.ts";
@@ -22,7 +20,6 @@ export {
   type SizeOverrides,
 } from "./clue-graph-sizes.ts";
 export { clueGraphTrails } from "./clue-graph-trails.ts";
-export { evaluateMysteryStructure } from "./mystery-structure-progress.ts";
 export { ProceduralSceneSchema, SceneRecipeSchema, SceneManifestSchema, type SceneRecipe, type SceneManifest, type SceneObject, type ProceduralScene } from "./scene-schema.ts";
 
 export const BlueprintScenesRequestSchema = z.object({ blueprint_id: z.string().uuid() });
@@ -156,6 +153,8 @@ export const NotebookLeadSchema = z.object({
 export const TurnStateSchema = z.object({
   mode: ModeSchema,
   time_remaining: z.number().int().nonnegative(),
+  /** The accusations the game has left, derived from its events. */
+  accusations_left: z.number().int().nonnegative(),
   location: z.string().min(1),
   current_talk_character: z.string().nullable(),
 });
@@ -174,7 +173,7 @@ export const TurnPlayedResponseSchema = z.object({
   result: OutcomeSchema.nullable(),
 });
 
-export const RefusalReasonSchema = z.enum(["missing-target", "invalid-target", "unrecognized"]);
+export const RefusalReasonSchema = z.enum(["missing-target", "invalid-target", "unrecognized", "no-way-back"]);
 
 export const TurnRefusedResponseSchema = z.object({
   kind: z.literal("refused"),
@@ -253,6 +252,8 @@ export const GameStateSchema = z.object({
   // Clue-graph cases: what to do next.
   leads: z.array(NotebookLeadSchema).optional(),
   time_remaining: z.number().int().nonnegative(),
+  /** The accusations the game has left, derived from its events. */
+  accusations_left: z.number().int().nonnegative(),
   location: z.string(),
   mode: ModeSchema,
   current_talk_character: z.string().nullable(),

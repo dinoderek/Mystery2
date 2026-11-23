@@ -167,6 +167,7 @@ describe("clue-graph sessions and turns", () => {
     const started = await start(clueGraphCaseId("greenhouse-prizewinner"));
     expect(started.narration_events[0].payload).toMatchObject({ case_format: "clue-graph/2" });
     expect((await ctx.sessions.getById(started.game_id))?.clue_graph_snapshot).toEqual(greenhouse());
+    // A V2 game saves no snapshot: it leaves with V2.
     const v2 = await start("123e4567-e89b-12d3-a456-426614174000");
     expect((await ctx.sessions.getById(v2.game_id))?.clue_graph_snapshot).toBeUndefined();
   });
@@ -316,6 +317,17 @@ describe("clue-graph sessions and turns", () => {
       kind: "tell",
       text: mockNotebookLine(graph.clues.react_toby_pocket.fact),
     });
+  });
+
+  it("keeps a turn whose narrator also reported the tell riding on its answer", async () => {
+    const opened = await start(clueGraphCaseId("greenhouse-prizewinner"));
+    await play(opened.game_id, "go to the potting shed");
+    await play(opened.game_id, "talk to Toby");
+    // The tell comes out with the answer anyway, so reporting it is harmless.
+    const asked = await play(opened.game_id, "What about the missing key?", reporting([], ["toby_no_key", "react_toby_pocket"]));
+    expect(asked.revealed_clues.map((clue) => clue.id)).toEqual(["toby_no_key", "react_toby_pocket"]);
+    const { events } = await derived(opened.game_id);
+    expect(events.at(-1)).toMatchObject({ type: "line", asked: ["toby_no_key"], seen: [] });
   });
 
   it("records a subject tell when the line brings its subject up, and a pointer tell in the notebook", async () => {
@@ -531,7 +543,8 @@ describe("clue-graph sessions and turns", () => {
       role: "graph_accusation_round",
       player_reasoning: "It was Toby: the welly prints",
       judge_result: "continue",
-      clue_graph_accusation: { accused: "toby", cited: [], verdict: "question" },
+      clue_graph_accusation: { accused: "toby", cited: [], verdict: "not_yet" },
+      reply_kind: "missing",
     });
   });
 
@@ -681,10 +694,11 @@ describe("clue-graph sessions and turns", () => {
 
       await play(opened.game_id, "bye", noting);
       await play(opened.game_id, "accuse", noting);
-      await play(opened.game_id, "It was Toby", noting);
+      await play(opened.game_id, "It was Toby: clue_boot_prints", noting);
       for (const role of ["graph_accusation", "graph_accusation_round"]) {
         const { held } = (seen.get(role) as { graph_accusation_context: { held: Array<{ id: string; text: string }> } }).graph_accusation_context;
         expect(held.length, role).toBeGreaterThan(0);
+        if (role === "graph_accusation_round") expect(held.map((entry) => entry.id)).toEqual(["clue_boot_prints"]);
         for (const clue of held) expect(clue.text).toBe(noted(clue.id));
       }
     });

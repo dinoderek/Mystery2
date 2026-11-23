@@ -121,6 +121,7 @@ describe("TurnDriver", () => {
   const state = (overrides: Record<string, unknown> = {}) => ({
     mode: "explore",
     time_remaining: 4,
+    accusations_left: 3,
     location: "loc-a",
     current_talk_character: null,
     ...overrides,
@@ -174,19 +175,20 @@ describe("TurnDriver", () => {
     });
   });
 
-  it("opens the accusation for reasoning given with `accuse`, and not for a later round", async () => {
-    const round = (mode: string) => ({
+  it("opens the accusation for reasoning given with `accuse`, and not for one typed in the scene", async () => {
+    const failed = (mode: string) => ({
       kind: "turn",
-      events: [{ sequence: 5, event_type: "accuse_round", payload: null, narration_parts: [line("Go on.")] }],
-      state: state({ mode }),
+      events: [{ sequence: 5, event_type: "accuse_failed", payload: null, narration_parts: [line("Not yet.")] }],
+      state: state({ mode, time_remaining: 0 }),
       revealed_clues: [],
       result: null,
     });
-    answering(round("accuse"), round("accuse"));
+    // Out of turns, a failure stays in the accusation.
+    answering(failed("accuse"), failed("accuse"));
     const d = driver();
 
     expect(await d.submit("accuse Cleo")).toMatchObject({ events: [{ event_type: "accuse_start" }] });
-    expect(await d.submit("because of the key")).toMatchObject({ events: [{ event_type: "accuse_round" }] });
+    expect(await d.submit("because of the key")).toMatchObject({ events: [{ event_type: "accuse_failed" }] });
   });
 
   it("reports the clues found and the result", async () => {

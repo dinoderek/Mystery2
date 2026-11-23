@@ -93,8 +93,11 @@ describe("Full E2E API Investigation Flow", () => {
     expect(state.mode).toBe("explore");
     expect(narration_events[0].narration_parts[0].speaker.kind).toBe("narrator");
 
-    expect(speakers(await line(headers, game_id, "go to the Kitchen"))).toEqual(["narrator"]);
+    // One route to the culprit: the score sheet that clears Bob, and the empty jar.
+    expect(speakers(await line(headers, game_id, "go to the Living Room"))).toEqual(["narrator"]);
     expect(speakers(await line(headers, game_id, "search"))).toEqual(["narrator"]);
+    expect(speakers(await line(headers, game_id, "go to the Kitchen"))).toEqual(["narrator"]);
+    expect(speakers(await line(headers, game_id, "search the pantry shelf"))).toEqual(["narrator"]);
     expect(speakers(await line(headers, game_id, "talk to Alice"))).toEqual(["narrator"]);
 
     const ask = await line(headers, game_id, "Where were you when this happened?");
@@ -119,14 +122,14 @@ describe("Full E2E API Investigation Flow", () => {
       ),
     ).toBe(true);
 
-    const accuseStart = await line(headers, game_id, "accuse Alice because she was nearby and acted nervous.");
+    const accuseStart = await line(headers, game_id, "accuse");
     expect(accuseStart.state.mode).toBe("accuse");
     expect(speakers(accuseStart)).toEqual(["narrator"]);
 
-    const accuseRoundOne = await line(headers, game_id, "Alice was nearby and behaved nervously.");
-    expect(accuseRoundOne.state.mode).toBe("ended");
-    expect(accuseRoundOne.result).toBe("win");
-    expect(speakers(accuseRoundOne)).toEqual(["narrator"]);
+    const accusation = await line(headers, game_id, "Alice did it: the cookie jar is empty, and Bob was playing his board game.");
+    expect(accusation.state.mode).toBe("ended");
+    expect(accusation.result).toBe("win");
+    expect(speakers(accusation)).toEqual(["narrator"]);
 
     const finalGetRes = await fetch(`${API_URL}/game-get?game_id=${game_id}`, {
       headers,

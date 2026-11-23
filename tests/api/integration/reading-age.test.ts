@@ -3,16 +3,18 @@ import {
   API_URL,
   MOCK_BLUEPRINT_ID,
   setupApiTestAuth,
+  V2_MOCK_BLUEPRINT_ID,
   testDatabase,
   type ApiAuthContext,
 } from "./helpers";
 
 // A game's reading age: the case's own unless the profile set one, saved on
-// the session at its start. The mock narrates the opening by quoting the start
-// of its prompt, which is where the age guidance sits, so the opening shows the
-// age the narrator was asked to write for.
+// the session at its start. That every narrator prompt is written for it is
+// `tests/api/unit/reading-age.test.ts`; the mock narrates a V2 opening by
+// quoting the start of its prompt, where the age guidance sits, so a V2 game
+// also shows it end to end.
 
-const CASE_AGE = 10; // blueprints/mock-blueprint.json
+const CASE_AGE = 10; // blueprints/clue-graph/mock-case.json
 
 describe("a game's reading age", () => {
   let ada: ApiAuthContext;
@@ -36,8 +38,8 @@ describe("a game's reading age", () => {
     expect(await res.json()).toEqual({ reading_age: age });
   }
 
-  async function start(auth: ApiAuthContext) {
-    const res = await request(auth, "game-start", { blueprint_id: MOCK_BLUEPRINT_ID });
+  async function start(auth: ApiAuthContext, blueprintId = MOCK_BLUEPRINT_ID) {
+    const res = await request(auth, "game-start", { blueprint_id: blueprintId });
     expect(res.status).toBe(200);
     const body = await res.json();
     return { gameId: body.game_id as string, readingAge: body.reading_age as number, opening: body.narration_events[0].narration_parts[0].text as string };
@@ -59,7 +61,14 @@ describe("a game's reading age", () => {
 
     expect(game.readingAge).toBe(CASE_AGE);
     expect(storedAge(game.gameId)).toBe(CASE_AGE);
-    expect(game.opening).toContain(`The reader is ${CASE_AGE} `);
+    expect(await resumedAge(ada, game.gameId)).toBe(CASE_AGE);
+  });
+
+  // The V2 opening quotes its prompt: it leaves with V2.
+  it("narrates a V2 opening for the game's age", async () => {
+    expect((await start(ada, V2_MOCK_BLUEPRINT_ID)).opening).toContain(`The reader is ${CASE_AGE} `);
+    await setAge(ada, 7);
+    expect((await start(ada, V2_MOCK_BLUEPRINT_ID)).opening).toContain("The reader is 7 ");
   });
 
   it("starts new games at the profile's age, and leaves a game already started at its own", async () => {
@@ -70,7 +79,6 @@ describe("a game's reading age", () => {
 
     expect(after.readingAge).toBe(7);
     expect(storedAge(after.gameId)).toBe(7);
-    expect(after.opening).toContain("The reader is 7 ");
     expect(await resumedAge(ada, after.gameId)).toBe(7);
 
     expect(storedAge(before.gameId)).toBe(CASE_AGE);

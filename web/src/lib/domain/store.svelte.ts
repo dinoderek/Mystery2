@@ -457,6 +457,7 @@ export class GameSessionStore {
     }
 
     this.applyPosition(answer.state);
+    this.state.accusations_left = answer.state.accusations_left;
     this.mergeDiscoveredClues(answer.revealed_clues);
     this.applyNotebookMarks(answer);
     this.settleCase(answer.state.mode, answer.result);

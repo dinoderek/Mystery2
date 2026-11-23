@@ -29,8 +29,6 @@ import { judgeTurnCommand } from "../../../evaluation/runtime/judge-turn.ts";
 import { gradeGame } from "../../../evaluation/playtest/lib/judge.ts";
 import { INVESTIGATOR_BINDING, listPersonas, modelInvestigator } from "../../../evaluation/playtest/lib/investigator.ts";
 import { buildView } from "../../../evaluation/playtest/lib/view.ts";
-import { validBlueprintV2 } from "./fixtures/blueprint-v2.fixture.ts";
-import { generatorBrief } from "./fixtures/generator-brief.ts";
 import {
   clearForRecording,
   expectStored,
@@ -39,7 +37,7 @@ import {
   verdictFile,
   type PromptParts,
 } from "./eval-snapshot-store.ts";
-import { makeClueGraphRawTrace, makeRawTrace } from "./trace-fixtures.ts";
+import { makeClueGraphRawTrace } from "./trace-fixtures.ts";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = process.cwd();
@@ -49,40 +47,25 @@ const ANSWERS = JSON.parse(
   fs.readFileSync(path.join(HERE, "fixtures", "eval-snapshot-answers.json"), "utf8"),
 ) as Record<string, unknown>;
 
-const BLUEPRINT_DIMENSIONS = [
-  "solve_depth",
-  "fairness",
-  "timeline_coherence",
-  "knowledge_coherence",
-  "character_grounding",
-  "path_payoff",
-  "clue_graph",
-  "age_appropriate",
-];
 /** The judges of a clue-graph case, run on the greenhouse story by `judge blueprint`. */
 const CASE_JUDGES = ["cg_soundness", "cg_truth_agreement", "cg_character_grounding", "cg_step_sense"];
 const GM_JUDGES = ["gm_roleplay", "gm_clue_discipline", "gm_fabrication", "gm_spoiler"];
 // Candidates run only when named, so each harness runs them apart from its default battery.
-const BLUEPRINT_CANDIDATES = ["solve_depth_fairness", "knowledge_timeline_coherence", "blueprint_broad"];
 const GM_CANDIDATES = ["gm_broad"];
 /** A clue-graph game's judges carry format guidance, so every game-master judge is kept for it too. */
 const GRAPH_JUDGES = [...GM_JUDGES, ...GM_CANDIDATES];
 const PERSONAS = listPersonas() as string[];
 
 const PROMPT_IDS = [
-  ...BLUEPRINT_DIMENSIONS.map((id) => `blueprint.${id}`),
-  "generator",
-  "generator.repair",
-  ...GM_JUDGES.map((id) => `trace.${id}`),
-  ...GM_JUDGES.map((id) => `runtime.${id}`),
-  "runtime.age_appropriate",
+  "runtime-clue-graph.age_appropriate",
   ...PERSONAS.map((persona) => `investigator.${persona}`),
-  ...BLUEPRINT_CANDIDATES.map((id) => `blueprint.${id}`),
-  ...GM_CANDIDATES.flatMap((id) => [`trace.${id}`, `runtime.${id}`]),
   ...GRAPH_JUDGES.flatMap((id) => [`trace-clue-graph.${id}`, `runtime-clue-graph.${id}`]),
+  "runtime-clue-graph-accusation.gm_spoiler",
+  "runtime-clue-graph-accusation.report",
+  "runtime-clue-graph-accusation.reply",
   ...CASE_JUDGES.map((id) => `blueprint.${id}`),
 ];
-const VERDICT_NAMES = ["blueprint", "trace", "runtime", "playtest-judging", "candidates", "blueprint-clue-graph"];
+const VERDICT_NAMES = ["trace-clue-graph", "runtime-clue-graph", "playtest-judging", "candidates", "blueprint-clue-graph", "runtime-clue-graph-accusation"];
 
 type Json = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -164,44 +147,6 @@ function dimension(result: Json) {
   };
 }
 
-/**
- * The verdict set a blueprint run stores: the new result.json read back into the
- * shape the snapshot has always had. The fields a result no longer carries are
- * fixed, so what is compared is each check's and dimension's status, details,
- * reasoning and answer.
- */
-function blueprintVerdicts(result: Result) {
-  const byId = new Map(result.verdicts.map((verdict) => [verdict.id, verdict]));
-  const dimensionIds = result.verdicts.filter((verdict) => verdict.tier === "judge").map((verdict) => verdict.id);
-  return {
-    generation: { source: "cli", attempts: result.production?.calls[0].attempts.map((attempt) => attempt.outcome) },
-    mechanical: result.verdicts
-      .filter((verdict) => verdict.tier === "mechanical")
-      .map((verdict) => ({ id: verdict.id, status: verdict.status, details: verdict.details ?? null })),
-    dimensions: dimensionIds.map((id) => {
-      const analyzer = byId.get(`${id}.analyzer`);
-      const judge = byId.get(id) as Result["verdicts"][number];
-      const statuses = [analyzer?.status, judge.status].filter((status) => status !== undefined);
-      return {
-        id,
-        overall: statuses.every((status) => status === "pass") ? "pass" : "fail",
-        analyzer: analyzer ? { status: analyzer.status, details: analyzer.details } : null,
-        judge: {
-          status: judge.status,
-          reasoning: (judge.answer as Json).reasoning,
-          major_count: null,
-          minor_count: null,
-          model_verdict: null,
-          verdict_disagreement: null,
-          answer: judge.answer,
-        },
-        error: null,
-      };
-    }),
-    run_error: result.run_error,
-  };
-}
-
 /** A game-master judge's verdict in the result format, as the verdict snapshots record a dimension. */
 function judgeDimension(verdict: Json) {
   return dimension({
@@ -219,79 +164,6 @@ function judgeDimension(verdict: Json) {
     },
     error: null,
   });
-}
-
-async function runBlueprintPipeline(answersFile: string) {
-  const briefFile = path.join(scratch, "blueprint", "brief.json");
-  const config = path.join(scratch, "blueprint", "config.json");
-  fs.mkdirSync(path.dirname(briefFile), { recursive: true });
-  fs.writeFileSync(briefFile, JSON.stringify(generatorBrief));
-  fs.writeFileSync(
-    config,
-    JSON.stringify({
-      "generator-agent": stubBinding(answersFile, "generator"),
-      "blueprint-judge": stubBinding(answersFile, "blueprint.{id}"),
-    }),
-  );
-
-  const outputRoot = path.join(scratch, "blueprint", "out");
-  const result = (await runForResult(
-    ["dev", "generate", "--format", "v2", briefFile, "--judge", "--config", config, "--output-root", outputRoot, "--quiet"],
-    outputRoot,
-  )) as Result;
-  verdicts.set("blueprint", blueprintVerdicts(result));
-  prompts.set("generator", capturedPrompt("generator"));
-  for (const id of BLUEPRINT_DIMENSIONS) prompts.set(`blueprint.${id}`, capturedPrompt(`blueprint.${id}`));
-}
-
-/** A repair round on the blueprint the stub judges fail: what the generator is sent to repair it. */
-async function runRepairRound(answersFile: string) {
-  const briefFile = path.join(scratch, "repair", "brief.json");
-  const config = path.join(scratch, "repair", "config.json");
-  fs.mkdirSync(path.dirname(briefFile), { recursive: true });
-  fs.writeFileSync(briefFile, JSON.stringify(generatorBrief));
-  fs.writeFileSync(
-    config,
-    JSON.stringify({
-      "generator-agent": stubBinding(answersFile, "generator.repair"),
-      "blueprint-judge": stubBinding(answersFile, "blueprint.{id}", "-"),
-    }),
-  );
-  const outputRoot = path.join(scratch, "repair", "out");
-  const result = (await runForResult(
-    ["dev", "generate", "--format", "v2", briefFile, "--judge", "--repair", "1", "--config", config, "--output-root", outputRoot, "--quiet"],
-    outputRoot,
-  )) as Result;
-  if (result.rounds?.length !== 2) throw new Error(`the repair run made ${result.rounds?.length ?? 0} round(s), not 2`);
-  // The generation and the repair share the key; the repair is sent last.
-  prompts.set("generator.repair", capturedPrompt("generator.repair"));
-}
-
-async function runTraceHarness(answersFile: string) {
-  const traceFile = path.join(scratch, "trace", "trace.json");
-  const config = path.join(scratch, "trace", "config.json");
-  fs.mkdirSync(path.dirname(traceFile), { recursive: true });
-  fs.writeFileSync(traceFile, JSON.stringify(makeRawTrace()));
-  fs.writeFileSync(config, JSON.stringify({ "game-judge": stubBinding(answersFile, "trace.{id}") }));
-
-  const outputRoot = path.join(scratch, "trace", "out");
-  const result = await runForResult(
-    ["dev", "eval", "judge", "game", traceFile, "--config", config, "--output-root", outputRoot, "--quiet"],
-    outputRoot,
-  );
-  const reconstruction = JSON.parse(
-    fs.readFileSync(path.join(path.dirname(findFiles(outputRoot, "result.json")[0]), "reconstruction.json"), "utf8"),
-  );
-  // The verdicts, in the shape they were recorded in before the harness moved onto
-  // the core's result format.
-  const judges = result.verdicts.filter((verdict: Json) => verdict.tier === "judge");
-  verdicts.set("trace", {
-    reconstruction: { turns: reconstruction.turns.length, context_errors: reconstruction.issues.length, issues: reconstruction.issues },
-    mechanical: result.verdicts.filter((verdict: Json) => verdict.tier === "mechanical").map(check),
-    dimensions: judges.map(judgeDimension),
-    run_error: result.run_error,
-  });
-  for (const id of GM_JUDGES) prompts.set(`trace.${id}`, capturedPrompt(`trace.${id}`));
 }
 
 /** One ask of Toby in the greenhouse clue-graph case, with the move and greeting before it as recorded by the engine. */
@@ -333,42 +205,20 @@ function graphTurnCase(blueprintFile: string, judges: string[]) {
   };
 }
 
-/** Replays one case through `judge turn` with these judges, and reads back what it wrote. */
+/** Replays one clue-graph case through `judge turn` with these judges, and reads back what it wrote. */
 async function runTurnCase(
   answersFile: string,
   folder: string,
   judges: string[],
   expectedCode: number,
-  { graph = false, captureDir }: { graph?: boolean; captureDir?: string } = {},
+  { captureDir }: { captureDir?: string } = {},
 ) {
   const dir = path.join(scratch, folder);
   fs.mkdirSync(dir, { recursive: true });
   const blueprintFile = path.join(dir, "blueprint.json");
-  fs.writeFileSync(
-    blueprintFile,
-    graph ? fs.readFileSync(path.join(REPO_ROOT, "blueprints", "clue-graph", "greenhouse-prizewinner.json")) : JSON.stringify(validBlueprintV2),
-  );
+  fs.writeFileSync(blueprintFile, fs.readFileSync(path.join(REPO_ROOT, "blueprints", "clue-graph", "greenhouse-prizewinner.json")));
 
-  const testCase = graph ? graphTurnCase(blueprintFile, judges) : {
-    id: "ask-alice",
-    blueprint: { path: blueprintFile },
-    given: {
-      mode: "talk",
-      location_id: "kitchen",
-      talk_character_id: "alice",
-      time_remaining: 7,
-      history: [
-        {
-          event_type: "talk",
-          actor: "system",
-          narration: "You step closer to Alice by the counter. She gives you a quick, tight smile.",
-          payload: { character_id: "alice" },
-        },
-      ],
-    },
-    action: { type: "ask", player_input: "Where did the cookies go?" },
-    judges,
-  };
+  const testCase = graphTurnCase(blueprintFile, judges);
   const caseFile = path.join(dir, "case.mjs");
   fs.writeFileSync(caseFile, `export default ${JSON.stringify(testCase)};\n`);
   const config = path.join(dir, "config.json");
@@ -418,7 +268,7 @@ async function runTurnCase(
 /**
  * A clue-graph game on both harnesses: the trace harness on a played greenhouse
  * game and `judge turn` on one conversation turn of it. The prompts are kept
- * apart from the V2 ones, so the graph guidance each judge is handed shows.
+ * apart from the V2 play ones, so the graph guidance each judge is handed shows.
  */
 async function runClueGraphHarnesses(answersFile: string) {
   const dir = path.join(scratch, "clue-graph");
@@ -431,14 +281,75 @@ async function runClueGraphHarnesses(answersFile: string) {
     JSON.stringify({ "game-judge": stubBinding(answersFile, "trace.{id}", path.join(scratch, "captured-graph-trace")) }),
   );
   const outputRoot = path.join(dir, "out");
-  await runForResult(
+  const result = await runForResult(
     ["dev", "eval", "judge", "game", traceFile, "--judges", GRAPH_JUDGES.join(","), "--config", config, "--output-root", outputRoot, "--quiet"],
     outputRoot,
   );
-  await runTurnCase(answersFile, "runtime-clue-graph", GRAPH_JUDGES, 2, { graph: true, captureDir: path.join(scratch, "captured-graph-runtime") });
+  const reconstruction = JSON.parse(
+    fs.readFileSync(path.join(path.dirname(findFiles(outputRoot, "result.json")[0]), "reconstruction.json"), "utf8"),
+  );
+  // The verdicts, in the shape they were recorded in before the harness moved onto
+  // the core's result format.
+  verdicts.set("trace-clue-graph", {
+    reconstruction: { turns: reconstruction.turns.length, context_errors: reconstruction.issues.length, issues: reconstruction.issues },
+    mechanical: result.verdicts.filter((verdict: Json) => verdict.tier === "mechanical").map(check),
+    dimensions: result.verdicts.filter((verdict: Json) => verdict.tier === "judge").map(judgeDimension),
+    run_error: result.run_error,
+  });
+  // Two failing judges is a verdict (2); anything else means the run broke.
+  verdicts.set(
+    "runtime-clue-graph",
+    await runTurnCase(answersFile, "runtime-clue-graph", ["flesch", "age_appropriate_turn", ...GRAPH_JUDGES], 2, {
+      captureDir: path.join(scratch, "captured-graph-runtime"),
+    }),
+  );
   for (const id of GRAPH_JUDGES) {
     prompts.set(`trace-clue-graph.${id}`, capturedPrompt(`trace.${id}`, "captured-graph-trace"));
     prompts.set(`runtime-clue-graph.${id}`, capturedPrompt(`runtime.${id}`, "captured-graph-runtime"));
+  }
+  prompts.set("runtime-clue-graph.age_appropriate", capturedPrompt("runtime.age_appropriate", "captured-graph-runtime"));
+}
+
+/**
+ * One failed accusation from the greenhouse case library, chained on the stub
+ * narrator (report, engine decision, reply) and graded: the spoiler judge reads
+ * the reply as a failed accusation's, and the grade says how the canned report
+ * misread the line.
+ */
+async function runClueGraphAccusation(answersFile: string) {
+  const dir = path.join(scratch, "clue-graph-accusation");
+  fs.mkdirSync(dir, { recursive: true });
+  const caseFile = path.join(dir, "case.mjs");
+  const library = path.join(REPO_ROOT, "evaluation/runtime/cases/clue-graph/greenhouse/accusation.ts");
+  fs.writeFileSync(caseFile, `import cases from ${JSON.stringify(library)};\nexport default cases.find((one) => one.id === "accuse-mia-cleared");\n`);
+  const config = path.join(dir, "config.json");
+  fs.writeFileSync(config, JSON.stringify({
+    "narrator-stub": { cmd: "evaluation/runtime/config/wrappers/stub-runtime.sh", args: ["{{user_message_file}}"], timeout_ms: 30_000 },
+    "turn-judge": stubBinding(answersFile, "runtime.{id}", path.join(scratch, "captured-graph-accusation")),
+  }));
+  const outputRoot = path.join(dir, "out");
+  const output: string[] = [];
+  const code = await judgeTurnCommand.run(
+    [caseFile, "--narrator", "narrator-stub", "--samples", "1", "--config", config, "--output-root", outputRoot],
+    { root: REPO_ROOT, out: (text) => output.push(text), err: (text) => output.push(text), env: {} },
+  );
+  // The canned report names nobody, so the engine words what is missing, not the flaw the case expects.
+  if (code !== 2) throw new Error(`judge turn exited ${code}:\n${output.join("\n")}`);
+  const [resultFile] = findFiles(outputRoot, "result.json");
+  const result = JSON.parse(fs.readFileSync(resultFile, "utf8"));
+  const turn = JSON.parse(fs.readFileSync(path.join(path.dirname(resultFile), "turn.json"), "utf8"));
+  verdicts.set("runtime-clue-graph-accusation", {
+    case_id: turn.case_id,
+    narration: turn.response.narration_text,
+    decided: { role: turn.response.raw.role, accusation: turn.response.raw.clue_graph_accusation, reply_kind: turn.response.raw.reply_kind },
+    narrator_calls: result.production.calls.length,
+    verdicts: result.verdicts.map((verdict: Json) => ({ id: verdict.id, status: verdict.status, details: verdict.id === "expect" ? verdict.details : undefined })),
+    summary: result.summary,
+  });
+  prompts.set("runtime-clue-graph-accusation.gm_spoiler", capturedPrompt("runtime.gm_spoiler", "captured-graph-accusation"));
+  const logs = path.relative(scratch, path.join(path.dirname(resultFile), "logs"));
+  for (const stage of ["report", "reply"]) {
+    prompts.set(`runtime-clue-graph-accusation.${stage}`, capturedPrompt(`narrate-${turn.case_id}-accuse-${stage}`, logs));
   }
 }
 
@@ -472,47 +383,23 @@ async function runClueGraphBlueprint(answersFile: string) {
   for (const id of CASE_JUDGES) prompts.set(`blueprint.${id}`, capturedPrompt(`blueprint.${id}`, "captured-case"));
 }
 
-async function runRuntimeHarness(answersFile: string) {
-  // Two failing judges is a verdict (2); anything else means the run broke.
-  verdicts.set("runtime", await runTurnCase(answersFile, "runtime", ["flesch", "age_appropriate_turn", ...GM_JUDGES], 2));
-  for (const id of GM_JUDGES) prompts.set(`runtime.${id}`, capturedPrompt(`runtime.${id}`));
-  prompts.set("runtime.age_appropriate", capturedPrompt("runtime.age_appropriate"));
-}
-
 /** A judge's verdict as the candidate snapshot records it: what it reached and from which findings. */
 function candidateVerdict(verdict: Json) {
   return { id: verdict.id, status: verdict.status, findings: verdict.findings ?? null, details: verdict.details ?? null };
 }
 
 /**
- * The candidates, each named on its harness's command: the blueprint ones on
- * the blueprint the generator answers with, the game one on the trace and on
- * a turn. Their prompts are kept beside the battery's.
+ * The candidates, each named on its harness's command: on the trace and on a
+ * turn. Their prompts are the clue-graph battery's.
  */
 async function runCandidates(answersFile: string) {
   const dir = path.join(scratch, "candidates");
-  const blueprintFile = path.join(dir, "blueprint.json");
-  const briefFile = path.join(dir, "brief.json");
   const traceFile = path.join(dir, "trace.json");
   const config = path.join(dir, "config.json");
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(blueprintFile, JSON.stringify(validBlueprintV2));
-  fs.writeFileSync(briefFile, JSON.stringify(generatorBrief));
-  fs.writeFileSync(traceFile, JSON.stringify(makeRawTrace()));
-  fs.writeFileSync(
-    config,
-    JSON.stringify({
-      "blueprint-judge": stubBinding(answersFile, "blueprint.{id}"),
-      "game-judge": stubBinding(answersFile, "trace.{id}"),
-    }),
-  );
+  fs.writeFileSync(traceFile, JSON.stringify(makeClueGraphRawTrace()));
+  fs.writeFileSync(config, JSON.stringify({ "game-judge": stubBinding(answersFile, "trace.{id}") }));
 
-  const blueprintOut = path.join(dir, "blueprint-out");
-  const blueprint = (await runForResult(
-    ["dev", "eval", "judge", "blueprint", blueprintFile, "--brief", briefFile, "--judges", BLUEPRINT_CANDIDATES.join(","),
-      "--config", config, "--output-root", blueprintOut, "--quiet"],
-    blueprintOut,
-  )) as Result;
   const traceOut = path.join(dir, "trace-out");
   const trace = await runForResult(
     ["dev", "eval", "judge", "game", traceFile, "--judges", GM_CANDIDATES.join(","), "--config", config, "--output-root", traceOut, "--quiet"],
@@ -520,19 +407,14 @@ async function runCandidates(answersFile: string) {
   );
   const runtime = await runTurnCase(answersFile, "candidates-runtime", GM_CANDIDATES, 0);
   const judged = (result: Json) => result.verdicts.filter((verdict: Json) => verdict.tier === "judge").map(candidateVerdict);
-  verdicts.set("candidates", { blueprint: judged(blueprint), trace: judged(trace), runtime: runtime.judges });
-  for (const id of BLUEPRINT_CANDIDATES) prompts.set(`blueprint.${id}`, capturedPrompt(`blueprint.${id}`));
-  for (const id of GM_CANDIDATES) {
-    prompts.set(`trace.${id}`, capturedPrompt(`trace.${id}`));
-    prompts.set(`runtime.${id}`, capturedPrompt(`runtime.${id}`));
-  }
+  verdicts.set("candidates", { trace: judged(trace), runtime: runtime.judges });
 }
 
 async function runPlaytestJudging(answersFile: string) {
   const gameDir = path.join(scratch, "playtest", "game-1");
   const config = path.join(scratch, "playtest", "config.json");
   fs.mkdirSync(gameDir, { recursive: true });
-  fs.writeFileSync(path.join(gameDir, "trace.json"), JSON.stringify(makeRawTrace()));
+  fs.writeFileSync(path.join(gameDir, "trace.json"), JSON.stringify(makeClueGraphRawTrace()));
   // The same trace the trace harness judges, so its prompts are not kept twice.
   fs.writeFileSync(config, JSON.stringify({ "game-judge": stubBinding(answersFile, "trace.{id}", "-") }));
 
@@ -575,6 +457,7 @@ async function composeInvestigatorPrompts() {
           },
         ],
         time_remaining: 7,
+        accusations_left: 3,
         location: "kitchen",
         mode: "explore",
         current_talk_character: null,
@@ -615,17 +498,13 @@ async function composeInvestigatorPrompts() {
 beforeAll(async () => {
   scratch = fs.mkdtempSync(path.join(os.tmpdir(), "mystery-eval-snapshots-"));
   const answersFile = path.join(scratch, "answers.json");
-  // The generator "answers" with a blueprint, the same fixture the runtime case judges.
-  fs.writeFileSync(answersFile, JSON.stringify({ ...ANSWERS, generator: validBlueprintV2, "generator.repair": validBlueprintV2 }));
+  fs.writeFileSync(answersFile, JSON.stringify(ANSWERS));
 
   await Promise.all([
-    runBlueprintPipeline(answersFile),
-    runRepairRound(answersFile),
-    runTraceHarness(answersFile),
-    runRuntimeHarness(answersFile),
     runPlaytestJudging(answersFile),
     runCandidates(answersFile),
     runClueGraphHarnesses(answersFile),
+    runClueGraphAccusation(answersFile),
     runClueGraphBlueprint(answersFile),
   ]);
   await composeInvestigatorPrompts();

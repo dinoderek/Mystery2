@@ -10,10 +10,6 @@
  */
 
 import {
-  validateMsfCaseFile,
-  type MsfCaseFile,
-  validateMysteryStructure,
-  type MysteryStructure,
   SpeakerSchema,
   SceneManifestSchema,
   ProceduralSceneSchema,
@@ -55,42 +51,6 @@ import {
   type NotebookLead,
   type ProfileSettings,
 } from "@my2/shared";
-
-export function createMsfCaseFile(overrides: Partial<MsfCaseFile> = {}): MsfCaseFile {
-  const structure = createMysteryStructure();
-  structure.metadata.id = "46e4e135-82fe-4389-af0b-80aa749867a1";
-  structure.nodes.ada = { ...structure.nodes.ada, kind: "character", name: "Ada Bell", location_id: "hall", knows_fact_ids: ["motive"] };
-  return validateMsfCaseFile({
-    $format: "MSF-CASE/1", paired_blueprint_id: "123e4567-e89b-12d3-a456-426614174000", structure,
-    presentation: {
-      metadata: { one_liner: "Find the medal." },
-      starting_knowledge: { mystery_summary: "The medal is missing.", locations: [{ location_id: "hall", summary: "The medal was here." }], characters: [{ character_id: "ada", summary: "Ada helps in the hall." }] },
-      locations: [{ id: "hall", description: "A sunny hall.", sub_locations: [] }],
-      characters: [{ id: "ada", first_name: "Ada", last_name: "Bell", sex: "female", appearance: "A blue coat.", personality: "Friendly.", initial_attitude_towards_investigator: "Helpful." }],
-      cover_image: { description: "A sunny hall.", location_ids: ["hall"], character_ids: ["ada"] },
-    },
-    ...overrides,
-  });
-}
-
-export function createMysteryStructure(overrides: Partial<MysteryStructure> = {}): MysteryStructure {
-  return validateMysteryStructure({
-    $format: "MYSTERY-STRUCTURE", $specVersion: "0.1.0",
-    metadata: { id: "medal", revision: 1, title: "The Medal", target_age: 9, time_budget: 10 },
-    opening: { premise: "Find the medal.", starting_location_id: "hall", known_fact_ids: [] },
-    nodes: {
-      hall: { kind: "location", name: "Hall" },
-      ada: { kind: "character", name: "Ada", location_id: "hall", knows_fact_ids: ["motive"] },
-      move: { kind: "event", text: "Ada moved the medal.", character_ids: ["ada"], location_id: "hall", object_ids: [], after_event_ids: [], caused_by_event_ids: [] },
-      motive: { kind: "fact", text: "Ada moved the medal to keep it dry.", truth: true, about_ids: ["ada", "move"] },
-      note: { kind: "clue", text: "Ada's note explains where she put the medal and why.", source: { kind: "search", location_id: "hall" }, establishes_fact_ids: ["motive"], reports_claim_ids: [] },
-      solve: { kind: "rule", operator: "AND", children: ["note"], concludes_fact_ids: ["motive"], rationale: "Ada's note establishes the move and motive." },
-    },
-    solution: { culprit_id: "ada", event_ids: ["move"], motive_fact_id: "motive", rule_ids: ["solve"] },
-    red_herrings: [], eliminations: [],
-    ...overrides,
-  });
-}
 
 // ---------------------------------------------------------------------------
 // Internal helper — validate then return the original (unstripped) object
@@ -212,6 +172,7 @@ export function createGameState(
       sex: c.sex,
     })),
     time_remaining: 10,
+    accusations_left: 3,
     location: "Kitchen",
     mode: "explore" as const,
     current_talk_character: null,
@@ -390,7 +351,7 @@ export function createTurnPlayedResponse(
         narration_parts: [{ text: "You search the area.", speaker: NARRATOR_SPEAKER }],
       },
     ],
-    state: { mode: "explore", time_remaining: 9, location: "loc-kitchen", current_talk_character: null },
+    state: { mode: "explore", time_remaining: 9, accusations_left: 3, location: "loc-kitchen", current_talk_character: null },
     revealed_clues: [],
     result: null,
     ...overrides,

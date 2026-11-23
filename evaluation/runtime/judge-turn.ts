@@ -45,15 +45,16 @@ import { createRunFolder, resolveOutputRoot } from "../core/run-folder.ts";
 import type { RunFolder } from "../core/run-folder.ts";
 import { loadCasesFrom, readBlueprint, validateCase } from "./lib/case.ts";
 import type { BlueprintLike, JudgeOptions, TurnCase } from "./lib/case.ts";
-import { EXPECT_VERDICT, expectJudges, gradeExpect, validateExpect } from "./lib/expect.ts";
+import { EXPECT_VERDICT, expectJudges, gradeExpect, validateExpect, type ComesWith } from "./lib/expect.ts";
 import { EXPECT_FILE, formatSummary, summarizeSamples, writeSummary } from "./lib/expect-summary.ts";
 import type { Sample } from "./lib/expect-summary.ts";
 import { judgeTurn } from "./lib/judges.ts";
-import { modelLabel, replayThroughNarrator } from "./lib/replay-cli.ts";
+import { modelLabel, NarratorReplayError, replayThroughNarrator } from "./lib/replay-cli.ts";
 import type { Collected } from "./lib/replay-cli.ts";
 import { ServerNarrator, startThrowawayServer } from "./lib/replay-server.ts";
 import type { StartServer } from "./lib/replay-server.ts";
 import { playedEvents } from "../lib/game-events.ts";
+import { ridersOf } from "../../packages/game-engine/src/clue-graph/play.ts";
 import { TURN_FILE, buildTurn, isStoredTurn, readStoredTurn, turnFromEvent } from "./lib/turn.ts";
 import type { StoredEvent } from "./lib/turn.ts";
 import type { StoredTurn } from "./lib/turn.ts";
@@ -155,7 +156,7 @@ export function storedGameTurns(game: { blueprint: object; events: StoredEvent[]
     .map((event) => turnFromEvent(event, owner));
 }
 
-/** What names a stored game in a run: its file, or its folder when the file is the truth set's `trace.json`. */
+/** What names a stored game in a run: its file, or its folder when the file is named `trace.json`. */
 function gameId(file: string): string {
   const stem = path.basename(file, ".json");
   return stem === "trace" ? path.basename(path.dirname(file)) : stem;
@@ -301,6 +302,12 @@ function gradedSamples(items: readonly WorkItem[], results: readonly Result[], r
   });
 }
 
+/** What comes out with a clue in the case's blueprint: the graph's riders. */
+async function ridersFor(testCase: TurnCase, runtime: Runtime): Promise<ComesWith> {
+  const graph = (await readBlueprint(testCase.blueprint.path, runtime.context.root)).blueprint.clue_graph;
+  return (id) => ridersOf(graph, id);
+}
+
 async function replayCase(narrator: string, testCase: TurnCase, runtime: Runtime, logDir: string): Promise<Collected> {
   const { blueprint, blueprintPath } = await readBlueprint(testCase.blueprint.path, runtime.context.root);
   if (narrator === SERVER_NARRATOR) {
@@ -350,7 +357,7 @@ async function runSubject(item: WorkItem, runtime: Runtime): Promise<Result> {
   const stages: Array<{ name: string; duration_ms: number; failed?: boolean }> = [];
   const startedAt = performance.now();
   let turn: StoredTurn | null = null;
-  let call: ModelCall | null = null;
+  let calls: ModelCall[] = [];
   let runError: RunError | null = null;
   let verdicts: Verdict[] = [];
 
@@ -359,7 +366,7 @@ async function runSubject(item: WorkItem, runtime: Runtime): Promise<Result> {
     if (item.input.kind === "case") {
       const captured = await captureCase(item.narrator as string, item.input.testCase, runtime, folder);
       turn = captured.turn;
-      call = captured.collected.call;
+      calls = captured.collected.calls;
       stages.push({ name: "replay", duration_ms: Math.round(performance.now() - replayStart) });
     } else {
       turn = item.input.turn;
@@ -372,11 +379,13 @@ async function runSubject(item: WorkItem, runtime: Runtime): Promise<Result> {
       logDir: folder.logDir,
       options: judgeOptions(item.input),
     });
-    const expected = item.input.kind === "case" ? item.input.testCase.expect : undefined;
-    if (expected) verdicts.push(gradeExpect(expected, turn, verdicts));
+    if (item.input.kind === "case" && item.input.testCase.expect) {
+      verdicts.push(gradeExpect(item.input.testCase.expect, turn, verdicts, await ridersFor(item.input.testCase, runtime)));
+    }
     stages.push({ name: "judge", duration_ms: Math.round(performance.now() - judgeStart) });
   } catch (error) {
-    runError = { stage: turn ? "judge" : "replay", message: error instanceof Error ? error.message : String(error) };
+    if (error instanceof NarratorReplayError) calls = error.calls;
+    runError = { stage: error instanceof NarratorReplayError ? error.stage : turn ? "judge" : "replay", message: error instanceof Error ? error.message : String(error) };
     stages.push({ name: runError.stage, duration_ms: 0, failed: true });
   }
 
@@ -384,7 +393,7 @@ async function runSubject(item: WorkItem, runtime: Runtime): Promise<Result> {
     schema_version: RESULT_SCHEMA_VERSION,
     run: runtime.folder.info(),
     subject: { kind: "turn", id, path: turn ? TURN_FILE : null },
-    production: call ? { calls: [call] } : null,
+    production: calls.length > 0 ? { calls } : null,
     verdicts,
     summary: summarize(verdicts, runError),
     run_error: runError,
@@ -431,6 +440,8 @@ export function createJudgeTurnCommand({ startServer = startThrowawayServer }: J
         if (input.kind !== "case") continue;
         validateCase(input.testCase, input.testCase.id);
         validateExpect(input.testCase);
+        // A case on anything but a clue graph is refused by name before a call is made.
+        await readBlueprint(input.testCase.blueprint.path, context.root);
       }
 
       const items = await workItems(inputs, narrators, chosenJudges, samples);

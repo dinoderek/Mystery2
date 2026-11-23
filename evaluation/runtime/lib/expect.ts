@@ -11,6 +11,15 @@
  * - `misread`: `input_understood` is not what was expected;
  * - `judged`: a judge failed and the case does not say which way that errs.
  *
+ * A clue-graph case may name, per clue, the details its fact holds
+ * (`whole_fact`): each must be in that clue's notebook line, and in the
+ * narration or the player's words it answers, or the sample `withheld` it.
+ *
+ * A clue-graph accusation is graded on what the engine decided from the
+ * narrator's report: a `verdict` or `reply_kind` other than the case expects
+ * means the report `misread` the player's line. Each `handed` detail, what the
+ * engine handed the reply, must be in the narration, or the sample `withheld` it.
+ *
  * A talk sample that withheld, on a case naming the uses it expects, says
  * whether the use went `unseen` (one is missing from `used_clue_ids`) or was
  * `refused` (every one is there, but the clue or part was not given).
@@ -24,8 +33,9 @@
 
 import { UsageError } from "../../core/errors.ts";
 import type { Verdict } from "../../core/result.ts";
-import { parseGraphTalkOutput, parseSearchOutput, parseTalkConversationOutput } from "../../../packages/game-engine/src/ai-contracts.ts";
-import type { Expect, JudgedDirection, TurnCase } from "./case.ts";
+import { ACCUSATION_VERDICTS, REPLY_KINDS } from "../../../packages/game-engine/src/clue-graph/accusation.ts";
+import { parseRoleOutput } from "../../../packages/game-engine/src/ai-contracts.ts";
+import type { Detail, Expect, JudgedDirection, TurnCase } from "./case.ts";
 import type { StoredTurn } from "./turn.ts";
 
 /** The verdict id the grade is stored under, beside the judges' verdicts. */
@@ -39,7 +49,10 @@ export type UseOutcome = "unseen" | "refused";
 const GRADED_KEYS: Record<string, readonly string[]> = {
   search: ["revealed_clue_id"],
   ask: ["revealed_clue_ids", "used_clue_ids"],
+  accuse: ["verdict", "reply_kind", "handed"],
 };
+/** The keys every graded action but an accusation takes: an accusation reveals no clue and reads no `input_understood`. */
+const CLUE_TURN_KEYS = ["input_understood", "whole_fact"];
 const JUDGED: readonly JudgedDirection[] = ["withheld", "given_away", "either"];
 
 function isIdList(value: unknown): value is string[] {
@@ -47,7 +60,7 @@ function isIdList(value: unknown): value is string[] {
 }
 
 function checkExpectKeys(expect: Expect, action: string, where: string): void {
-  const allowed = new Set([...GRADED_KEYS[action], "input_understood", "judges"]);
+  const allowed = new Set([...GRADED_KEYS[action], "judges", ...(action === "accuse" ? [] : CLUE_TURN_KEYS)]);
   const keys = Object.keys(expect);
   const grades = keys.some((key) => key !== "judges") || Object.keys(expect.judges ?? {}).length > 0;
   if (!grades) throw new UsageError(`${where}: expect names nothing to grade`);
@@ -65,6 +78,42 @@ function checkExpectKeys(expect: Expect, action: string, where: string): void {
   }
   for (const [id, direction] of Object.entries(expect.judges ?? {})) {
     if (!JUDGED.includes(direction)) throw new UsageError(`${where}: expect.judges.${id} must be one of ${JUDGED.join(", ")}`);
+  }
+  if ("whole_fact" in expect) checkWholeFact(expect, where);
+  if (action === "accuse") checkAccusation(expect, where);
+}
+
+/** A failure has a kind of reply; a win or a loss has none. */
+function checkAccusation(expect: Expect, where: string): void {
+  if ("verdict" in expect && !ACCUSATION_VERDICTS.includes(expect.verdict!)) {
+    throw new UsageError(`${where}: expect.verdict must be one of ${ACCUSATION_VERDICTS.join(", ")}`);
+  }
+  if ("reply_kind" in expect) {
+    if (!REPLY_KINDS.includes(expect.reply_kind!)) throw new UsageError(`${where}: expect.reply_kind must be one of ${REPLY_KINDS.join(", ")}`);
+    if (expect.verdict !== undefined && expect.verdict !== "not_yet") throw new UsageError(`${where}: expect.reply_kind applies only to a not_yet verdict`);
+  }
+  if ("handed" in expect && (!Array.isArray(expect.handed) || expect.handed.length === 0 || !expect.handed.every(isDetail))) {
+    throw new UsageError(`${where}: expect.handed must list details, each a spelling or a list of spellings`);
+  }
+}
+
+function isDetail(value: unknown): value is Detail {
+  const spellings = typeof value === "string" ? [value] : value;
+  return Array.isArray(spellings) && spellings.length > 0 && spellings.every((one) => typeof one === "string" && one.trim() !== "");
+}
+
+/** A `whole_fact` names clues the case expects revealed, each with at least one detail. */
+function checkWholeFact(expect: Expect, where: string): void {
+  const entries = Object.entries(expect.whole_fact ?? {});
+  if (typeof expect.whole_fact !== "object" || expect.whole_fact === null || entries.length === 0) {
+    throw new UsageError(`${where}: expect.whole_fact must map clue ids to their details`);
+  }
+  const revealed = expect.revealed_clue_ids ?? (expect.revealed_clue_id ? [expect.revealed_clue_id] : []);
+  for (const [id, details] of entries) {
+    if (!revealed.includes(id)) throw new UsageError(`${where}: expect.whole_fact.${id} is not a clue the case expects revealed`);
+    if (!Array.isArray(details) || details.length === 0 || !details.every(isDetail)) {
+      throw new UsageError(`${where}: expect.whole_fact.${id} must list details, each a spelling or a list of spellings`);
+    }
   }
 }
 
@@ -101,6 +150,10 @@ interface Said {
   revealed: string[];
   used: string[];
   understood: boolean;
+  /** The notebook line written for each clue, on a clue-graph turn. */
+  lines: Record<string, string>;
+  /** On a clue-graph accusation, what the engine decided from the report. */
+  accusation?: { verdict: string; reply_kind: string | null };
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -118,29 +171,97 @@ function savedPayload(raw: unknown): Record<string, unknown> | null {
   return asRecord(asRecord(answer.events[0])?.payload);
 }
 
+/** A notebook as a reply lists it (`[{ id, line }]`) or as the game saves it (keyed by clue). */
+function linesOf(notebook: unknown): Record<string, string> {
+  if (Array.isArray(notebook)) {
+    return Object.fromEntries(notebook.map(asRecord).filter((entry) => typeof entry?.id === "string" && typeof entry.line === "string").map((entry) => [entry!.id, entry!.line]));
+  }
+  return Object.fromEntries(Object.entries(asRecord(notebook) ?? {}).filter((entry): entry is [string, string] => typeof entry[1] === "string"));
+}
+
+/**
+ * What the engine decided of a clue-graph accusation: a server saved it on the
+ * event, and a CLI narrator's chain (`replay-cli.ts`) keeps it in the same shape.
+ * @throws Error when the turn holds no decided accusation
+ */
+function accusationSays(raw: unknown): Said {
+  const payload = savedPayload(raw) ?? asRecord(raw);
+  const decided = asRecord(payload?.clue_graph_accusation);
+  if (typeof decided?.verdict !== "string") throw new Error("the turn holds no clue-graph accusation the engine decided");
+  const kind = payload?.reply_kind;
+  return { revealed: [], used: [], understood: true, lines: {}, accusation: { verdict: decided.verdict, reply_kind: typeof kind === "string" ? kind : null } };
+}
+
 /** @throws Error when a CLI narrator's reply breaks the role's contract */
 export function outputSays(turn: StoredTurn): Said {
   const action = turn.action.type;
-  const payload = savedPayload(turn.response.raw);
-  if (payload) {
+  if (turn.narrator === "server") {
+    if (action === "accuse") return accusationSays(turn.response.raw);
+    const payload = savedPayload(turn.response.raw);
+    if (!payload) throw new Error("the server capture holds no saved event");
     const single = payload.revealed_clue_id;
     return {
       revealed: action === "search" ? (typeof single === "string" && single ? [single] : []) : strings(payload.revealed_clue_ids),
       used: strings(payload.used_clue_ids),
       understood: payload.input_understood !== false,
+      lines: linesOf(asRecord(payload.clue_graph)?.notebook),
     };
   }
-  if (action === "search") {
-    const output = parseSearchOutput(turn.response.raw);
-    return { revealed: output.revealed_clue_id ? [output.revealed_clue_id] : [], used: [], understood: output.input_understood };
+  const role = turn.response.output_role;
+  if (!role) throw new Error("the capture does not name its requested output role");
+  const output = parseRoleOutput(role, turn.response.raw);
+  if (action === "accuse" && (role === "graph_accusation_round" || role === "graph_ending")) return accusationSays(turn.response.raw);
+  if (role === "search" || role === "graph_search") {
+    if (!("revealed_clue_id" in output)) throw new Error("not a search output");
+    return { revealed: output.revealed_clue_id ? [output.revealed_clue_id] : [], used: [], understood: output.input_understood, lines: "notebook" in output ? linesOf(output.notebook) : {} };
   }
-  // A clue-graph talk reply lists the gates it opened and the questions it answered.
-  if (Array.isArray(asRecord(turn.response.raw)?.opened)) {
-    const output = parseGraphTalkOutput(turn.response.raw);
-    return { revealed: [...output.opened, ...output.answered], used: [], understood: output.input_understood };
+  if (role === "graph_talk" && "opened" in output) {
+    return { revealed: [...output.opened, ...output.answered], used: [], understood: output.input_understood, lines: linesOf(output.notebook) };
   }
-  const output = parseTalkConversationOutput(turn.response.raw);
-  return { revealed: output.revealed_clue_ids, used: output.used_clue_ids, understood: output.input_understood };
+  if (role === "talk_conversation" && "used_clue_ids" in output) {
+    return { revealed: output.revealed_clue_ids, used: output.used_clue_ids, understood: output.input_understood, lines: {} };
+  }
+  throw new Error(`cannot grade ${action} with requested role ${role}`);
+}
+
+/** One detail a whole-fact case found missing, and where. */
+export interface MissingDetail {
+  clue: string;
+  detail: string;
+  from: "narration" | "notebook";
+}
+
+/** Text compared for a detail: lower case, straight quotes, single spaces. */
+function plain(text: string): string {
+  return text.toLowerCase().replace(/[\u2018\u2019]/g, "'").replace(/[\u201c\u201d]/g, '"').replace(/\s+/g, " ");
+}
+
+/** Whether one of a detail's spellings stands in the text as whole words. */
+function carries(text: string, detail: Detail): boolean {
+  const spellings = typeof detail === "string" ? [detail] : detail;
+  return spellings.some((spelling) => {
+    const escaped = plain(spelling.trim()).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`(?<![a-z0-9])${escaped}(?![a-z0-9])`).test(plain(text));
+  });
+}
+
+/**
+ * Each detail of each whole-fact clue the turn revealed that its narration or
+ * its notebook line leaves out. The narration answers the player's words, so a
+ * detail they just named may be referred back to ("they're mine"); the line
+ * stands alone and names every one. A clue not revealed is the id check's to grade.
+ */
+function missingDetails(expect: Expect, said: Said, narration: string): MissingDetail[] {
+  const missing: MissingDetail[] = [];
+  for (const [clue, details] of Object.entries(expect.whole_fact ?? {})) {
+    if (!said.revealed.includes(clue)) continue;
+    for (const detail of details) {
+      const name = typeof detail === "string" ? detail : detail[0];
+      if (!carries(narration, detail)) missing.push({ clue, detail: name, from: "narration" });
+      if (!carries(said.lines[clue] ?? "", detail)) missing.push({ clue, detail: name, from: "notebook" });
+    }
+  }
+  return missing;
 }
 
 interface IdCheck {
@@ -161,10 +282,20 @@ function compareIds(field: string, expected: string[], actual: string[]): IdChec
   };
 }
 
-function idChecks(expect: Expect, said: Said): IdCheck[] {
+/** What comes out with a clue besides itself: on a clue graph, the tells seen with a statement. */
+export type ComesWith = (id: string) => string[];
+
+/** The ids with what comes out with each, as the game folds a reveal. */
+function withRiders(ids: string[], comesWith: ComesWith): string[] {
+  return [...new Set(ids.flatMap((id) => [id, ...comesWith(id)]))];
+}
+
+function idChecks(expect: Expect, said: Said, comesWith: ComesWith): IdCheck[] {
   const checks: IdCheck[] = [];
   if ("revealed_clue_id" in expect) checks.push(compareIds("revealed_clue_id", expect.revealed_clue_id ? [expect.revealed_clue_id] : [], said.revealed));
-  if (expect.revealed_clue_ids) checks.push(compareIds("revealed_clue_ids", expect.revealed_clue_ids, said.revealed));
+  if (expect.revealed_clue_ids) {
+    checks.push(compareIds("revealed_clue_ids", withRiders(expect.revealed_clue_ids, comesWith), withRiders(said.revealed, comesWith)));
+  }
   if (expect.used_clue_ids) checks.push(compareIds("used_clue_ids", expect.used_clue_ids, said.used));
   return checks;
 }
@@ -182,8 +313,34 @@ function judgeStatuses(expect: Expect, verdicts: readonly Verdict[]): { statuses
   return { statuses, ungradable: null };
 }
 
-function erredWays(expect: Expect, checks: IdCheck[], said: Said, statuses: Record<string, string>): Direction[] {
+/** How a decided accusation compares with the case: the verdict and reply kind it expects, each against the engine's. */
+interface AccusationCheck {
+  verdict: { expected: string; actual: string } | null;
+  reply_kind: { expected: string; actual: string | null } | null;
+}
+
+function accusationCheck(expect: Expect, said: Said): AccusationCheck | null {
+  if (!said.accusation) return null;
+  return {
+    verdict: expect.verdict === undefined ? null : { expected: expect.verdict, actual: said.accusation.verdict },
+    reply_kind: expect.reply_kind === undefined ? null : { expected: expect.reply_kind, actual: said.accusation.reply_kind },
+  };
+}
+
+/** The `handed` details the narration leaves out, each by its first spelling. */
+function missingHanded(expect: Expect, narration: string): string[] {
+  return (expect.handed ?? []).filter((detail) => !carries(narration, detail)).map((detail) => (typeof detail === "string" ? detail : detail[0]));
+}
+
+/** An accusation errs as `misread` when the engine decided otherwise, and `withheld` a handed detail the reply left out. */
+function accusationErred(accusation: AccusationCheck | null, handed: string[]): Direction[] {
+  const decidedOtherwise = [accusation?.verdict, accusation?.reply_kind].some((check) => check && check.expected !== check.actual);
+  return [...(handed.length > 0 ? ["withheld" as const] : []), ...(decidedOtherwise ? ["misread" as const] : [])];
+}
+
+function erredWays(expect: Expect, checks: IdCheck[], said: Said, statuses: Record<string, string>, missing: MissingDetail[]): Direction[] {
   const erred = new Set<Direction>();
+  if (missing.length > 0) erred.add("withheld");
   for (const check of checks) {
     if (check.missing.length > 0) erred.add("withheld");
     if (check.extra.length > 0) erred.add("given_away");
@@ -201,8 +358,12 @@ function useOutcome(expect: Expect, erred: Direction[], checks: IdCheck[]): UseO
   return used && used.missing.length > 0 ? "unseen" : "refused";
 }
 
-/** The `expect` verdict for one sample, read from its turn and the verdicts its judges gave. */
-export function gradeExpect(expect: Expect, turn: StoredTurn, verdicts: readonly Verdict[]): Verdict {
+/**
+ * The `expect` verdict for one sample, read from its turn and the verdicts its
+ * judges gave. `comesWith` names what comes out with a clue, so a tell the game
+ * gives with its statement counts whether or not the reply listed it.
+ */
+export function gradeExpect(expect: Expect, turn: StoredTurn, verdicts: readonly Verdict[], comesWith: ComesWith = () => []): Verdict {
   let said: Said;
   try {
     said = outputSays(turn);
@@ -211,8 +372,14 @@ export function gradeExpect(expect: Expect, turn: StoredTurn, verdicts: readonly
   }
   const { statuses, ungradable } = judgeStatuses(expect, verdicts);
   if (ungradable) return { id: EXPECT_VERDICT, tier: "mechanical", status: "error", reason: ungradable };
-  const checks = idChecks(expect, said);
-  const erred = erredWays(expect, checks, said, statuses);
+  const checks = idChecks(expect, said, comesWith);
+  const exchange = [turn.action.player_input, turn.action.search_query, turn.response.narration_text].filter(Boolean).join("\n");
+  const missing = missingDetails(expect, said, exchange);
+  const accusation = accusationCheck(expect, said);
+  // The reply words what the engine handed it, so only the narration counts, never the player's line.
+  const handed = missingHanded(expect, turn.response.narration_text ?? "");
+  const ways = new Set([...erredWays(expect, checks, said, statuses, missing), ...accusationErred(accusation, handed)]);
+  const erred = DIRECTIONS.filter((direction) => ways.has(direction));
   return {
     id: EXPECT_VERDICT,
     tier: "mechanical",
@@ -223,6 +390,9 @@ export function gradeExpect(expect: Expect, turn: StoredTurn, verdicts: readonly
       checks,
       input_understood: expect.input_understood === undefined ? null : { expected: expect.input_understood, actual: said.understood },
       judges: statuses,
+      ...(expect.whole_fact ? { missing_details: missing } : {}),
+      ...(accusation ? { accusation } : {}),
+      ...(expect.handed ? { missing_handed: handed } : {}),
     },
   };
 }

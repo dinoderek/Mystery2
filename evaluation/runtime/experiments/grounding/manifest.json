@@ -1,0 +1,227 @@
+{
+  "schema_version": "narrator-grounding/1",
+  "frozen_at": "2026-11-23T21:06:09.554366+00:00",
+  "scope": "clue-graph/2 only; no grounding-policy changes",
+  "policy": {
+    "name": "original",
+    "source_commit": "7eee941810cc79aa3d4c6937f97cb06bf2b1f9aa",
+    "files": {
+      "packages/game-engine/src/ai-prompts.ts": "6109c1d9a7829023161a14f5d31ccea1c6f2c673043c25da0880a052c9b535e0",
+      "packages/game-engine/src/talk-prompt.ts": "e38b6eebcec012f15c51950d6d4b3b46ed059bfdd705cb505064fdc6fc37dcba",
+      "packages/game-engine/src/clue-graph/prompts.ts": "3e65ea1c42652ace6bff4eda5f7030afd948dbeacc05352d1d8b51433253606d"
+    },
+    "priority": "Existing system/user bytes and placement; no instruction promotion."
+  },
+  "archive": "experiments/narrator-grounding-2026-11-23",
+  "models": [
+    {
+      "binding": "narrator-sonnet",
+      "model": "anthropic/claude-sonnet-5.5",
+      "canonical_slug": "anthropic/claude-sonnet-5.5-20260928",
+      "availability": "Requires recorded smoke test; no replacement if unavailable."
+    },
+    {
+      "binding": "narrator-opus",
+      "model": "anthropic/claude-opus-5.5",
+      "canonical_slug": "anthropic/claude-opus-5.5-20260921",
+      "availability": "Requires recorded smoke test; no replacement if unavailable."
+    },
+    {
+      "binding": "narrator-astra",
+      "model": "openai/gpt-6.2-astra",
+      "canonical_slug": "openai/gpt-6.2-astra-20261117",
+      "availability": "Requires recorded smoke test; no replacement if unavailable."
+    }
+  ],
+  "settings": {
+    "endpoint": "OpenRouter chat/completions",
+    "sampling": "Provider defaults; no temperature, seed or reasoning-effort override.",
+    "response_format": "Existing live OpenRouter behavior: json_object for roles, absent for prose.",
+    "baseline_output_limit": 8192,
+    "narrator_timeout_ms": 90000,
+    "wrapper_timeout_ms": 120000,
+    "investigator_retries": 2,
+    "game_max_steps": 40,
+    "subject_concurrency": 1,
+    "cli_retries": 1,
+    "provider_attempts": 3,
+    "provider_backoff_ms": 750,
+    "browser_api_attempts": 3,
+    "browser_api_backoff_ms": [
+      300,
+      600
+    ],
+    "retry_note": "CLI retries follow runner parse/transport failures. Live provider retries transport failures only; game API/browser retries retriable failed turns, including parser/admissibility failures.",
+    "preflight_wrapper_output_limit": 8192,
+    "preflight_engine_output_limit": "Provider default; smoke engine uses Sonnet, whose worst-case reservation fits the smoke cap.",
+    "transport_concurrency": 1
+  },
+  "prices": {
+    "anthropic/claude-sonnet-5.5": {
+      "input": 2e-06,
+      "output": 1e-05,
+      "maxOutputTokens": 128000
+    },
+    "anthropic/claude-opus-5.5": {
+      "input": 4e-06,
+      "output": 2e-05,
+      "maxOutputTokens": 128000
+    },
+    "openai/gpt-6.2-astra": {
+      "input": 8e-06,
+      "output": 4e-05,
+      "maxOutputTokens": 128000
+    }
+  },
+  "limits": {
+    "dollars": 8,
+    "attempts": 3500,
+    "milliseconds": 21600000,
+    "smoke_dollars": "Already completed; included in total, no additional smoke batch.",
+    "stop_on": [
+      "Insufficient reserved budget",
+      "Unaccounted usage",
+      "Unexpected served model",
+      "Unreconciled transport failure"
+    ],
+    "future_spending": "No N2/N3 spending authorised by this manifest."
+  },
+  "development": {
+    "stories": [
+      "blueprints/clue-graph/greenhouse-prizewinner.json"
+    ],
+    "turns_per_story": 4,
+    "behaviours": [
+      "search-find",
+      "hold-pushed",
+      "shown",
+      "accuse-nothing-cited"
+    ],
+    "repetitions": 1,
+    "models": 3,
+    "requested_fixed_samples": 12,
+    "cases_file": "diagnostic-cases.json",
+    "cases_sha256": "51583edeff5395f68da383e1f54f3f336caa145b254c4bfc862d9081d7d7f6b2",
+    "live_model_judges": [],
+    "checks": [
+      "flesch",
+      "expect"
+    ],
+    "whole_games": {
+      "requested": 0,
+      "reason": "Operator-approved diagnostic scope; whole-game acceptance remains a later separately funded task."
+    }
+  },
+  "heldout": {
+    "mysteries": [
+      {
+        "file": "sealed/blueprints/archive-route-map.json",
+        "sha256": "4421d99630285af376abe0e2b5de62ccf9de7e32da34f08d3cb8e4b7d00f1bd7",
+        "age": 11
+      },
+      {
+        "file": "sealed/blueprints/garden-label-switch.json",
+        "sha256": "49e115241bbcb5773783402ea72d19e32e8a74c254896f396b39242704ad0eb7",
+        "age": 7
+      },
+      {
+        "file": "sealed/blueprints/pond-festival-flag.json",
+        "sha256": "55c995939990824090aaffd0bb425d8385b3460d0bd62ba8710fff2a6b55d445",
+        "age": 7
+      },
+      {
+        "file": "sealed/blueprints/puppet-cue-book.json",
+        "sha256": "3fb9bad32ad3ff4d7e4058b3210f1e855dc54dd33971607868429d03eea8db14",
+        "age": 10
+      },
+      {
+        "file": "sealed/blueprints/regatta-pennant.json",
+        "sha256": "7b7a14907b493fb7c58b8a580808a2cbef5c81c2807ad6205d9271acb9e13aa4",
+        "age": 11
+      },
+      {
+        "file": "sealed/blueprints/star-show-disc.json",
+        "sha256": "22315036fcd1450065d153310b1d8e85825fbd270ec8b34ac846faa99166abbb",
+        "age": 10
+      }
+    ],
+    "source": "Fresh hand-authored independent stories, mechanically validated before narration. Different hidden-spot, any/all-use, line, and physical gates; source artifacts are sealed.",
+    "ages": [
+      7,
+      10,
+      11
+    ],
+    "turns_per_story": 12,
+    "fixed_repetitions": 2,
+    "game_repetitions_per_persona": 2,
+    "games_per_model_policy": 24,
+    "seal": "No held-out narrator calls or output inspection before final candidate freeze. Prompt tuning retires the entire mystery.",
+    "cases_sha256": "b19936f8bb1899d1662aac371d157e47bc9966e078bbe6049b17aa5cec352428",
+    "author_sha256": "78334b4864f5c8d3b69b583cc51b5071b31c5b15d0202f0ba704b3544c3a961a",
+    "fixtures_sha256": "7bd1461d6773a8373770a8a416d123cb59b7c1d07e17e0c0f2074f50af1414af"
+  },
+  "order": {
+    "fixed": "Preserve original relative model rotation for the four selected slots; one fresh capped call per model/state, including both accusation stages.",
+    "games": "No N1 whole games."
+  },
+  "rubric": {
+    "major": [
+      "Material contradiction or invented case-bearing fact",
+      "Premature disclosure, including an unearned concession or gated tell",
+      "Wrongful withholding of earned information",
+      "Crucial omission or notebook/narration mismatch"
+    ],
+    "judges": [
+      "gm_roleplay",
+      "gm_clue_discipline",
+      "gm_fabrication",
+      "gm_spoiler",
+      "age_appropriate_turn"
+    ],
+    "readability": "Flesch tolerance 2 plus age_appropriate_turn and human review; formula alone is not ground truth.",
+    "quality_scale": {
+      "1": "Unusable or confusing",
+      "2": "Awkward or hard to follow",
+      "3": "Clear but flat",
+      "4": "Clear, lively and age appropriate",
+      "5": "Exceptional coherence and voice"
+    },
+    "layers": {
+      "cli": "Parsed requested role output; semantic expect checks do not establish full engine admissibility.",
+      "games": "Engine-admitted play; rejected turns remain failures even if later retried."
+    },
+    "failures": "Retain every requested sample and attempt. Report parser, semantic/admissibility, infrastructure, timeout, quit, divergence, incomplete and judge errors separately; none becomes success by exclusion.",
+    "n1_assessment": "Free expect/Flesch plus blinded operator assessment of every primary output. The four narrow judges remain the rubric for later acceptance; no additional N1 model-judge calls."
+  },
+  "acceptance": {
+    "observed_adjudicated_major_violations": 0,
+    "minimum_fixed_correct": 0.95,
+    "minimum_completed_games": 0.95,
+    "minimum_age_appropriate": 0.95,
+    "minimum_median_human_quality": 4,
+    "selection": "Apply independently to every frozen model/policy; report met and unmet criteria. No deployment/default change in measurement. Keep current choice when evidence does not justify a change.",
+    "uncertainty": "Report per-mystery denominators and 95% intervals. Repetitions are correlated; do not present turns or games as independent mysteries.",
+    "interpretation": "Diagnostic development baseline only; twelve samples on one mystery cannot establish transfer or reliability. Existing final acceptance thresholds are not evidence of achievement."
+  },
+  "human_review": {
+    "reviewer": "Operator",
+    "major_findings": "Operator marks major grounding/reveal/omission violations, age suitability and narrative quality (1\u20135) for every sample.",
+    "passed_sample_fraction": 1,
+    "passed_selection": "All twelve primary samples",
+    "blinding": "Packet omits model/policy identities; identity key retained separately. Human ratings remain pending until the operator supplies them.",
+    "ground_truth": "Model judges and judge agreement do not replace human adjudication."
+  },
+  "retention": {
+    "raw": "Normal run folders plus transport request/response/usage records in the private archive.",
+    "index": "baseline.json beside this manifest; immutable hashes reference private artifacts.",
+    "reproduction": "Retain bindings, dataset, inputs, source hashes, code commit, CLI versions, all requests and responses, usage and latency.",
+    "driver_sha256": "95cf0f74d091af4a345667a3949c49455b3b92ae38dba69a7f93630662f7f3bf",
+    "original_driver_sha256": "2f5e3c57883692f65a9e72e8fc680ead0b4567235795e2387e9cf8a4f359b521"
+  },
+  "revision": 2,
+  "supersedes": {
+    "file": "manifest-v1.json",
+    "sha256": "f67667dee82df1dff8d5f1b2eb35b7c88f463ef8c190df341365a63ca139256c",
+    "reason": "Operator chose USD8 total diagnostic baseline; prior captures remain pilot data."
+  }
+}

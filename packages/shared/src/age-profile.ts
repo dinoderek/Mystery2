@@ -245,7 +245,7 @@ export function renderGuidance(id: InteractionId, age: number): string {
  *
  * Titles, location names, and sub-location names are deliberately absent: a
  * name is a label rather than prose, and its length does not scale with reading
- * age. `generator-prompt.md` sizes those directly.
+ * age.
  */
 export type AuthoredFieldId =
   | "one_liner"

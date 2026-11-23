@@ -1,5 +1,5 @@
 // `./dev eval play`, end to end on stub bindings: a stub investigator plays the
-// mock blueprint through a server of the command's own on a temporary database,
+// mock case through a server of the command's own on a temporary database,
 // the mock narrator narrates, a stub judge grades. No model is called.
 //
 // It starts the build the suite already made, because building again would
@@ -103,27 +103,9 @@ function playedLines(gameDir: string): string[] {
 }
 
 describe('play on stub bindings', () => {
-	it('replays a recorded V2 lighthouse game on its paired native MSF case and grades the pinned graph', async () => {
-		const script = path.join(scratch, 'lighthouse-script.json');
-		const inputs = ['talk to Ada', 'What did you hear?', 'Why did you set your alarm?', 'bye', 'go keepers_cottage', 'search tide schedule', 'talk to Finn', 'What happened?', 'Who was in the cottage?', 'bye', 'go village_quay', 'search', 'search harbour tide board', 'search causeway steps', 'Roz took the lens', 'Roz took the lens'];
-		fs.writeFileSync(script, JSON.stringify({ blueprint_id: '7c3e9a52-4f1b-4d8e-9a6c-2b5f1e8d3a47', persona: 'comparison', inputs }));
-		const baseline = await play(['--replay', script, '--narrator', 'mock']);
-		expect(baseline.code, baseline.output).toBe(0);
-		const [baselineGame] = gameDirs(baseline.runDir as string);
-		const alternative = await play(['--replay', path.join(baselineGame, 'script.json'), '--blueprint', 'blueprints/msf/lighthouse.json', '--narrator', 'mock', '--judge']);
-		expect(alternative.code, alternative.output).toBe(0);
-		const [nativeGame] = gameDirs(alternative.runDir as string);
-		const summary = JSON.parse(fs.readFileSync(path.join(nativeGame, 'summary.json'), 'utf8'));
-		expect(summary).toMatchObject({ outcome: 'win', divergence: null, clue_drift: null, turns_used: 8, blueprint: { format: 'msf/0.1.0', revision: 1 } });
-		const trace = JSON.parse(fs.readFileSync(path.join(nativeGame, 'trace.json'), 'utf8'));
-		expect(trace.blueprint.msf.structure.solution.rule_ids).toEqual(['r_solution']);
-		expect(trace.blueprint.solution_paths).toEqual([]);
-		expect((await readResult(path.join(nativeGame, 'result.json'))).summary.passed).toBe(true);
-	}, 120_000);
-
 	it('plays the clue-graph greenhouse by path, ID and title on the mock, and grades it', async () => {
 		const script = path.join(scratch, 'greenhouse-script.json');
-		const inputs = ['search the smashed pumpkin', 'go to the workshop', 'talk to Mr. Dobbs', 'What about the noise last night?', 'bye', 'go to the garden', 'talk to Mr. Thorne', 'bye', 'accuse', 'It was Toby.', 'Toby did it: his welly prints are in the pumpkin.'];
+		const inputs = ['search the smashed pumpkin', 'go to the workshop', 'talk to Mr. Dobbs', 'What about the noise last night?', 'bye', 'go to the garden', 'talk to Mr. Thorne', 'bye', 'accuse', 'It was Toby.', 'accuse Toby did it: his welly prints are in the pumpkin.'];
 		const caseId = '9afa1ef4-b543-81b5-a50f-4a366ec7e2ef';
 		fs.writeFileSync(script, JSON.stringify({ blueprint_id: caseId, persona: 'kid-7', inputs }));
 		for (const query of ['blueprints/clue-graph/greenhouse-prizewinner.json', caseId, 'The Smashed Prize Pumpkin — clue graph']) {
@@ -138,12 +120,19 @@ describe('play on stub bindings', () => {
 			expect(trace.clue_graph).toMatchObject({ format: 'clue-graph/2', revision: 1, progress: { culprit_supported: true } });
 			const mechanical = (await readResult(path.join(game, 'result.json'))).verdicts.filter((verdict) => verdict.tier === 'mechanical');
 			expect(mechanical.map((verdict) => [verdict.id, verdict.status])).toEqual([['clue_accounting', 'pass'], ['spoiler_leak', 'pass']]);
+			if (query === caseId) {
+				const replayed = await play(['--replay', path.join(game, 'script.json'), '--narrator', 'mock']);
+				expect(replayed.code, replayed.output).toBe(0);
+				const [replayedGame] = gameDirs(replayed.runDir as string);
+				expect(playedLines(replayedGame)).toEqual(playedLines(game));
+			}
+
 		}
 	}, 240_000);
 
 	it('plays a short game, writes a valid result, grades it, and replays the same lines', async () => {
 		const before = repoDatabases();
-		const played = await play(['--blueprint', 'mock-blueprint', '--narrator', 'mock', '--judge']);
+		const played = await play(['--blueprint', 'mock-case', '--narrator', 'mock', '--judge']);
 		expect(played.code, played.output).toBe(0);
 		const runDir = played.runDir as string;
 
@@ -155,7 +144,7 @@ describe('play on stub bindings', () => {
 		expect(result.subject).toMatchObject({ kind: 'game', path: 'trace.json' });
 		expect(result.run_error).toBeNull();
 		expect(result.summary.passed).toBe(true);
-		expect(result.production?.calls).toHaveLength(7);
+		expect(result.production?.calls).toHaveLength(10);
 		expect(result.production?.calls[0]).toMatchObject({ binding: 'investigator', model: 'stub-model', cost_usd: 0.01 });
 		expect(result.verdicts.map((verdict) => verdict.id)).toEqual(
 			expect.arrayContaining(['clue_accounting', 'gm_roleplay', 'gm_clue_discipline', 'gm_fabrication', 'gm_spoiler'])
@@ -177,13 +166,13 @@ describe('play on stub bindings', () => {
 			.trim()
 			.split('\n')
 			.map((line) => JSON.parse(line));
-		expect(steps).toHaveLength(7);
+		expect(steps).toHaveLength(10);
 		expect(steps[0].investigator).toMatchObject({ model: 'stub-model', cost_usd: 0.01, attempts: 1 });
 		expect(fs.readdirSync(path.join(gameDir, 'logs'))).toContain('investigator-1.attempt-1.invocation.json');
 		expect(fs.readFileSync(path.join(gameDir, 'transcript.md'), 'utf8')).toContain('## Grades');
 		expect(fs.existsSync(path.join(gameDir, 'trace.json'))).toBe(true);
 		expect(fs.existsSync(path.join(runDir, 'game.db'))).toBe(true);
-		expect(fs.readFileSync(path.join(runDir, 'report.html'), 'utf8')).toContain('Mock Blueprint Playtest');
+		expect(fs.readFileSync(path.join(runDir, 'report.html'), 'utf8')).toContain('Mock Case — clue graph Playtest');
 		expect(readRunIndex(runDir).exit_code).toBe(0);
 
 		// The server was the command's own, on a temporary database, and is gone.
@@ -222,7 +211,7 @@ describe('play on stub bindings', () => {
 	}, 120_000);
 
 	it('exits 2 when a judge fails the game', async () => {
-		const played = await play(['--blueprint', 'mock-blueprint', '--narrator', 'mock', '--judge'], {
+		const played = await play(['--blueprint', 'mock-case', '--narrator', 'mock', '--judge'], {
 			MOCK_JUDGE_MODE: 'fail'
 		});
 		expect(played.code, played.output).toBe(2);
@@ -234,7 +223,7 @@ describe('play on stub bindings', () => {
 	}, 120_000);
 
 	it('exits 1 when the investigator cannot be called, keeping what it tried', async () => {
-		const played = await play(['--blueprint', 'mock-blueprint', '--narrator', 'mock'], {
+		const played = await play(['--blueprint', 'mock-case', '--narrator', 'mock'], {
 			STUB_INVESTIGATOR_MODE: 'crash'
 		});
 		expect(played.code, played.output).toBe(1);

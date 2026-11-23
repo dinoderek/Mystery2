@@ -10,6 +10,7 @@ import { judgesFor } from "../../../evaluation/core/registry.ts";
 import { buildJudgeUserMessage, judgeTurn } from "../../../evaluation/runtime/lib/judges.ts";
 import type { BlueprintLike } from "../../../evaluation/runtime/lib/case.ts";
 import { judgeStubBinding, makeTurn } from "./runtime-turn-helpers.ts";
+import { MOCK_CASE_PATH, readMockCase } from "../../testkit/src/mock-case.ts";
 
 // The gm_* judges run the SHARED briefs over one stored turn. These tests pin
 // the runtime binding (projection, verdict mapping, error paths) against the
@@ -17,7 +18,7 @@ import { judgeStubBinding, makeTurn } from "./runtime-turn-helpers.ts";
 // RUNTIME_JUDGE_STUB_VERDICT steers the stub's reply.
 
 const JUDGE_IDS: string[] = judgesFor("game").map((judge) => judge.id);
-const MOCK_BLUEPRINT = "blueprints/mock-blueprint.json";
+const MOCK_BLUEPRINT = MOCK_CASE_PATH;
 const logDir = fs.mkdtempSync(path.join(os.tmpdir(), "mystery-adherence-judge-"));
 
 function judge(id: string, turn = makeTurn(), options = {}) {
@@ -45,7 +46,7 @@ function finding(overrides: Record<string, unknown> = {}) {
   };
 }
 
-const mockBlueprint = (): BlueprintLike => JSON.parse(fs.readFileSync(MOCK_BLUEPRINT, "utf8"));
+const mockBlueprint = (): BlueprintLike => readMockCase() as unknown as BlueprintLike;
 
 afterEach(() => {
   delete process.env.RUNTIME_JUDGE_STUB_VERDICT;
@@ -151,20 +152,48 @@ describe("buildJudgeUserMessage", () => {
   it("labels the judged turn with the role the model actually ran as", () => {
     const blueprint = mockBlueprint();
     const given = { mode: "explore", location_id: "loc-kitchen", history: [] };
-    // A search WITH a query resolves to a different role than a bare one, and
-    // the label has to follow the same resolver the narrator replay uses.
+    // A clue-graph search is narrated in `graph_search` and saved as `search`; the label follows
+    // the same resolver the narrator replay uses, with or without a query.
     const roleOf = (action: Record<string, unknown>) =>
       JSON.parse(buildJudgeUserMessage("gm_clue_discipline", makeTurn({ given, action }), blueprint)).subject.turns.at(-1).role_name;
-    expect(roleOf({ type: "search" })).toBe("search_bare");
-    expect(roleOf({ type: "search", search_query: "look in the bin" })).toBe("search_targeted");
+    expect(roleOf({ type: "search" })).toBe("search");
+    expect(roleOf({ type: "search", search_query: "look in the bin" })).toBe("search");
+    expect(roleOf({ type: "talk", character_id: "char-alice" })).toBe("graph_talk");
   });
 
-  it("marks an accusation turn so the spoiler judge stands down", () => {
+  it("marks only a clue-graph case's closing scene, by the role its accusation was worded in", () => {
+    const given = { mode: "accuse", location_id: "loc-kitchen", history: [] };
+    const action = { type: "accuse", player_reasoning: "It was Alice: the cookie jar is empty." };
+    const judgedAs = (role: string, eventType: string) => {
+      const response = { ...makeTurn().response, raw: { events: [{ event_type: eventType, payload: { role } }] } };
+      return JSON.parse(buildJudgeUserMessage("gm_spoiler", makeTurn({ given, action, response }), mockBlueprint())).subject.turns.at(-1);
+    };
+    expect(judgedAs("graph_ending", "accuse_resolved")).toMatchObject({ role_name: "graph_ending", is_accusation_phase: true });
+    expect(judgedAs("graph_accusation_round", "accuse_failed")).toMatchObject({ role_name: "graph_accusation_round", is_accusation_phase: false });
+  });
+
+  it("marks only the closing scene so the spoiler judge stands down, never a failed accusation", () => {
     const given = { mode: "accuse", location_id: "loc-kitchen", history: [] };
     const action = { type: "accuse", player_reasoning: "It was Alice, the crumbs prove it." };
-    const message = JSON.parse(buildJudgeUserMessage("gm_spoiler", makeTurn({ given, action }), mockBlueprint()));
-    const judged = message.subject.turns.at(-1);
-    expect(judged.role_name).toBe("accusation_judge");
-    expect(judged.is_accusation_phase).toBe(true);
+    const judgedAs = (eventType: string) => {
+      const response = { ...makeTurn().response, raw: { events: [{ event_type: eventType }] } };
+      const message = JSON.parse(buildJudgeUserMessage("gm_spoiler", makeTurn({ given, action, response }), mockBlueprint()));
+      return message.subject.turns.at(-1);
+    };
+    expect(judgedAs("accuse_resolved")).toMatchObject({ role_name: "graph_accusation", is_accusation_phase: true });
+    expect(judgedAs("accuse_failed")).toMatchObject({ role_name: "graph_accusation", is_accusation_phase: false });
+    // A turn taken from a stored game has no raw answer: its action names the event.
+    const stored = (eventType: string) => {
+      const response = { ...makeTurn().response, action: eventType, raw: null };
+      return JSON.parse(buildJudgeUserMessage("gm_spoiler", makeTurn({ given, action, response }), mockBlueprint())).subject.turns.at(-1);
+    };
+    expect(stored("accuse_resolved").is_accusation_phase).toBe(true);
+    expect(stored("accuse_failed").is_accusation_phase).toBe(false);
+    // A turn replayed on a model CLI holds the judge's own output, its action the case's.
+    const replayed = (resolution: string) => {
+      const response = { ...makeTurn().response, action: "accuse", raw: { narration: "…", accusation_resolution: resolution } };
+      return JSON.parse(buildJudgeUserMessage("gm_spoiler", makeTurn({ given, action, response }), mockBlueprint())).subject.turns.at(-1);
+    };
+    expect(["win", "lose", "continue"].map((resolution) => replayed(resolution).is_accusation_phase)).toEqual([true, true, false]);
   });
 });

@@ -9,9 +9,7 @@
 //   the room does not have; no clue.
 //
 // The greenhouse has no hidden spot, so a hidden spot named before its pointer
-// waits for a story that has one. Cases whose ID matches one in
-// `search-reveals/` port that greenhouse case, so `baseline compare` sets them
-// side by side.
+// waits for a story that has one.
 
 import { searchCase, type Step } from "../support/play.ts";
 

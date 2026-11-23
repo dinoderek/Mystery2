@@ -5,20 +5,14 @@
 
 import { judgeBlueprintCommand, validateCommand } from "./blueprint/commands.ts";
 import type { EvalCommand } from "./core/dispatch.ts";
-import { compareCommand } from "./compare/command.ts";
-import { scenesCommand } from "./generate/scenes.ts";
-import { labelCommand } from "./label/command.ts";
 import { baselineCompareCommand, baselineSaveCommand } from "./runtime/baseline.ts";
 import { casesCommand } from "./runtime/cases.ts";
 import { playCommand } from "./playtest/play.ts";
 import { reportCommand } from "./playtest/report.ts";
 import { judgeTurnCommand } from "./runtime/judge-turn.ts";
-import { scoreCommand } from "./score/command.ts";
-import { suiteCommand } from "./suite/command.ts";
 import { judgeGame } from "./trace/judge-game.ts";
 
 export const COMMANDS: readonly EvalCommand[] = [
-  scenesCommand,
   judgeBlueprintCommand,
   validateCommand,
   judgeGame,
@@ -28,8 +22,4 @@ export const COMMANDS: readonly EvalCommand[] = [
   baselineCompareCommand,
   playCommand,
   reportCommand,
-  labelCommand,
-  scoreCommand,
-  compareCommand,
-  suiteCommand,
 ];

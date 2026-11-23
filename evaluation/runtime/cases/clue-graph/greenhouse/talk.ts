@@ -14,9 +14,6 @@
 // - confession: the last step, a plain question once every crack is out.
 // - hold-*: nothing is used, so nothing opens: pushing, a topic word only, small
 //   talk, a clue held but not used, gibberish.
-//
-// Cases whose ID matches one in `talk-reveals/` port that greenhouse case, so
-// `baseline compare` sets them side by side.
 
 import { lineCase, type Step } from "../support/play.ts";
 
@@ -25,21 +22,21 @@ const line = (steps: Step[], say: string, labels: Parameters<typeof lineCase>[3]
 const NOTHING = { revealed_clue_ids: [], input_understood: true };
 
 /** The greenhouse searched: the glass outside, the welly prints, the boot prints. */
-const SEARCHED: Step[] = [{ search: "the broken side window" }, { search: "the smashed pumpkin" }, { search: null }];
+export const SEARCHED: Step[] = [{ search: "the broken side window" }, { search: "the smashed pumpkin" }, { search: null }];
 
-const TOBY_GREETS: Step = {
+export const TOBY_GREETS: Step = {
   talk: "toby",
   narration: "Toby is sweeping the potting shed in trainers, while Mia's leaf-pattern club wellies stand by the door. He tucks his feet out of sight. \"I was at home all Friday evening, finishing my thousand-piece jigsaw. I went to bed at nine,\" he says, sweeping the same patch over and over. \"It was Mr. Thorne! He must have climbed over the fence and smashed the window to get in. On Thursday he was up his ladder, staring at Bertha with a tape measure. He said, 'Enjoy her while she lasts!'\"",
 };
 const TOBY_MET: Step[] = [...SEARCHED, { move: "potting_shed" }, TOBY_GREETS];
 
-const THORNE_GREETS: Step = {
+export const THORNE_GREETS: Step = {
   talk: "thorne",
   narration: "Mr. Thorne leans on his fence with his arms crossed. \"I was at the fair all evening with Goliath, at the growers' barbecue from seven till eleven. At nine o'clock I bought carrot cake from young Mia at the cake tent, across town. And I've never set foot in that school garden!\" His ears turn red, and he scuffs one huge boot on the grass.",
 };
-const THORNE_MET: Step[] = [...SEARCHED, { move: "thorne_garden" }, THORNE_GREETS];
+export const THORNE_MET: Step[] = [...SEARCHED, { move: "thorne_garden" }, THORNE_GREETS];
 
-const DOBBS_MET: Step[] = [
+export const DOBBS_MET: Step[] = [
   ...SEARCHED,
   { move: "workshop" },
   {
@@ -48,7 +45,7 @@ const DOBBS_MET: Step[] = [
   },
 ];
 
-const HALE_GREETS: Step = {
+export const HALE_GREETS: Step = {
   talk: "hale",
   narration: "Ms. Hale stands by Bertha's split shell, brushing soil from her apron. \"I unlocked the door at half past seven. It was still locked! And there was Bertha, smashed.\"",
 };
@@ -60,28 +57,28 @@ const HALE_SHOWN_ROTA: Step = {
 /** Ms. Hale has stood up for Toby; what she holds back about him waits on the bench, or on kindness to him. */
 const HALE_GUARDED: Step[] = [...SEARCHED, { move: "potting_shed" }, { search: "the watering rota on the door" }, { move: "greenhouse" }, HALE_GREETS, HALE_SHOWN_ROTA];
 
-const MIA_GREETS: Step = {
+export const MIA_GREETS: Step = {
   talk: "mia",
   narration: "Mia looks up from a tray of seedlings. \"I watered Bertha at five with Mr. Dobbs's spare key, locked up, and gave it back. Then I helped Mum at the fair's cake tent from six till ten.\" She goes pink and clicks her sparkly purple pen on and off.",
 };
 
-const TOBY_SHOWN_WELLIES: Step = {
+export const TOBY_SHOWN_WELLIES: Step = {
   say: "Why are there leaf-pattern welly prints squished in the pumpkin mush?",
   reply: "Toby stops sweeping. \"Mia has leaf wellies too. And she had the last shifts. It could just as well have been her.\"",
   opened: ["toby_blames_mia"],
 };
-const TOBY_SHOWN_GLASS: Step = {
+export const TOBY_SHOWN_GLASS: Step = {
   say: "The broken glass is outside on the path, not inside. The window was knocked out from in here!",
   reply: "Toby's broom goes still. \"Oh. Then nobody climbed in. Maybe... maybe it was a fox.\"",
   opened: ["toby_drops_burglar"],
 };
-const TOBY_SHOWN_CAKE: Step = {
+export const TOBY_SHOWN_CAKE: Step = {
   say: "Mr. Thorne bought carrot cake from Mia at the fair at nine o'clock.",
   reply: "Toby looks at his trainers. \"Then it wasn't Mia.\"",
   opened: ["toby_not_mia"],
 };
 /** Thorne's first words give the cake alibi; then Toby, met and talked to. */
-const TOBY_AFTER_THORNE: Step[] = [...SEARCHED, { move: "thorne_garden" }, THORNE_GREETS, { move: "potting_shed" }, TOBY_GREETS];
+export const TOBY_AFTER_THORNE: Step[] = [...SEARCHED, { move: "thorne_garden" }, THORNE_GREETS, { move: "potting_shed" }, TOBY_GREETS];
 
 const shown = [
   line(THORNE_MET, "Someone with giant boots stood by the broken window, then walked to your fence. Whose boots do you think they were?", {

@@ -14,22 +14,14 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { createLocalContentStore } from "../../../packages/game-engine/src/content.ts";
 import { openDatabase } from "../../../packages/game-engine/src/db/client.ts";
-import {
-  resolveBlueprintDirs,
-  resolveBlueprintImagesDir,
-  resolveDatabasePath,
-} from "../../../packages/game-engine/src/paths.ts";
+import { resolveDatabasePath } from "../../../packages/game-engine/src/paths.ts";
 import { buildRawTrace } from "./normalize.ts";
-import { buildClueGraphBlueprint } from "../../../packages/shared/src/clue-graph-case.ts";
+import { buildClueGraphWorld } from "../../../packages/shared/src/clue-graph-case.ts";
 import { validateClueGraph } from "../../../packages/shared/src/clue-graph-validator.ts";
-import { buildMsfBlueprint, validateMsfCaseFile } from "../../../packages/shared/src/msf-case.ts";
 import { atReadingAge, gameReadingAge } from "../../../packages/shared/src/reading-age.ts";
 import { clueGraphProgress } from "../../../packages/game-engine/src/ai-context.ts";
 import type { RawTrace } from "./normalize.ts";
-
-const SILENT_LOGGER = { log: () => {}, logError: () => {} };
 
 type Row = Record<string, unknown>;
 
@@ -47,7 +39,6 @@ export interface TraceDataSource {
   databasePath?: string | null;
   fetchSession(sessionId: string): Promise<Row>;
   fetchEvents(sessionId: string): Promise<Row[]>;
-  downloadBlueprint(blueprintId: string): Promise<unknown>;
   close?(): void;
 }
 
@@ -76,11 +67,6 @@ export function createLocalTraceSource({
     );
   }
   const db = openDatabase({ path: resolvedPath, readonly: true });
-  const content = createLocalContentStore({
-    sceneDirs: [],
-    blueprintDirs: resolveBlueprintDirs(root, env),
-    imagesDir: resolveBlueprintImagesDir(root, env),
-  });
 
   return {
     databasePath: resolvedPath,
@@ -110,23 +96,10 @@ export function createLocalTraceSource({
         }));
     },
 
-    async downloadBlueprint(blueprintId) {
-      const blueprint = await content.loadBlueprint(blueprintId, SILENT_LOGGER);
-      if (!blueprint) {
-        throw new Error(`Could not load blueprint ${blueprintId}: missing`);
-      }
-      return blueprint;
-    },
-
     close() {
       db.close();
     },
   };
-}
-
-function hasTargetAge(blueprint: unknown): blueprint is { metadata: { target_age: number } } {
-  const metadata = (blueprint as { metadata?: { target_age?: unknown } } | null)?.metadata;
-  return typeof metadata?.target_age === "number";
 }
 
 /** The case at the age the game was narrated for, decided as the engine decides it. */
@@ -148,43 +121,32 @@ export async function extractSessionTrace(
   // older game, or a database from before games had one, reads at its case's,
   // brought into range as the engine plays it.
   const readingAge = typeof session.reading_age === "number" ? session.reading_age : null;
-  // The case a clue-graph game played is the private snapshot saved at its
-  // start, never the file as it is now; its format and what the player had
-  // earned by the end go beside it.
-  if (session.clue_graph_snapshot != null) {
-    const graph = validateClueGraph(JSON.parse(String(session.clue_graph_snapshot)), { story: false });
-    const history = events.map((event) => ({
-      sequence: event.sequence as number,
-      event_type: event.event_type as string,
-      actor: event.actor as string,
-      narration: typeof event.narration === "string" ? event.narration : "",
-      payload: event.payload as Record<string, unknown> | null,
-    }));
-    return buildRawTrace({
-      session,
-      events,
-      blueprint: playedAt(buildClueGraphBlueprint(graph), readingAge),
-      source: { kind: "local", database: source.databasePath ? path.resolve(source.databasePath) : null },
-      extractedAt,
-      clueGraph: {
-        format: graph.format,
-        revision: 1,
-        progress: clueGraphProgress(graph, history),
-      },
-    });
+  // The case a game played is the private snapshot saved at its start, never
+  // the file as it is now; its format and what the player had earned by the end
+  // go beside it. A game saved without one was not a clue-graph game.
+  if (session.clue_graph_snapshot == null) {
+    throw new Error(
+      `game ${sessionId} played blueprint ${String(session.blueprint_id)}, which is not a clue-graph case: trace reads clue graphs only`,
+    );
   }
-  const snapshot = session.msf_snapshot == null ? null : JSON.parse(String(session.msf_snapshot));
-  const authored = snapshot ? buildMsfBlueprint(validateMsfCaseFile(snapshot)) : await source.downloadBlueprint(session.blueprint_id as string);
-  const blueprint = hasTargetAge(authored) ? playedAt(authored, readingAge) : authored;
-
+  const graph = validateClueGraph(JSON.parse(String(session.clue_graph_snapshot)), { story: false });
+  const history = events.map((event) => ({
+    sequence: event.sequence as number,
+    event_type: event.event_type as string,
+    actor: event.actor as string,
+    narration: typeof event.narration === "string" ? event.narration : "",
+    payload: event.payload as Record<string, unknown> | null,
+  }));
   return buildRawTrace({
     session,
     events,
-    blueprint,
-    source: {
-      kind: "local",
-      database: source.databasePath ? path.resolve(source.databasePath) : null,
-    },
+    blueprint: playedAt(buildClueGraphWorld(graph), readingAge),
+    source: { kind: "local", database: source.databasePath ? path.resolve(source.databasePath) : null },
     extractedAt,
+    clueGraph: {
+      format: graph.format,
+      revision: 1,
+      progress: clueGraphProgress(graph, history),
+    },
   });
 }

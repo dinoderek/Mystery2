@@ -12,8 +12,9 @@ import type { EngineContext } from "../../../packages/game-engine/src/context.ts
 import { createLocalEngine, type LocalEngine } from "../../../packages/game-engine/src/context-local.ts";
 import { handle as handleEnter } from "../../../packages/game-engine/src/endpoints/game-enter.ts";
 import { handle } from "../../../packages/game-engine/src/endpoints/game-start.ts";
+import { MOCK_CASE_ID } from "../../testkit/src/mock-case.ts";
 
-const BLUEPRINT_ID = "123e4567-e89b-12d3-a456-426614174000";
+const BLUEPRINT_ID = MOCK_CASE_ID;
 
 let dir: string;
 let local: LocalEngine;

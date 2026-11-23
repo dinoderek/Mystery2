@@ -15,7 +15,7 @@ New interactions should be commands before widgets.
   shown, never retried.
 - Logic goes in plain `.ts` beside the rune stores in `src/lib/domain/`, not in
   components, which only browser E2E covers.
-- Components are all in `src/lib/components/`.
+- Components live in `src/lib/components/`.
 
 ## The profile gate
 
@@ -27,17 +27,15 @@ protected route meanwhile, or the page mounts and fetches signed out, getting
 The gate is stricter than the server on purpose: the server asks for a profile
 only where something owned is involved ("Identity and access" in
 `docs/architecture.md`). A `PUBLIC_PATHS` route calls a profile endpoint only
-once one is chosen: settings, linked from the menu, then sets the profile's
-reading age (`docs/game.md`).
+once one is chosen; settings sets the reading age (`docs/game.md`).
 
 ## The session screen
 
-Case selection and opening pages preview the first saved scene; visible cards are
+Case selection and opening pages preview the first scene recipe; visible cards are
 stills. During play, scenes follow the viewed location, including history.
 Conversations prefer portraits, otherwise scenery. Scenes respect reduced motion;
 frame pacing preserves input responsiveness. Failures log once and fall back to
 illustrations. WebGL scenes stay still. Narrow screens stack art above narration and input.
-`/prototype/lighthouse` previews the accepted lantern room.
 
 Two keyboard rules are easy to break:
 
@@ -48,7 +46,7 @@ Two keyboard rules are easy to break:
   coordination; `openNotebook()` closing help is what keeps the notebook on top.
 
 The browser sends each line to `game-turn` as typed; the engine owns the
-grammar. `HelpModal` is the player's reference.
+grammar. The status bar shows ACCUSATIONS left beside TIME; `HelpModal` has the rule.
 
 A clue-graph case (`docs/clue-graph.md`) adds to CLUES: leads first, each
 `[ NEW ]` on its turn, then clues, a statement taken back struck through, a

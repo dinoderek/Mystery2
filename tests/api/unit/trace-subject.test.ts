@@ -18,7 +18,7 @@ describe("projectTraceSubject", () => {
     const subject = projectTraceSubject(turns);
     const projected: ProjTurn[] = subject.turns;
     expect(projected.every((t) => t.role_name !== null)).toBe(true);
-    expect(projected.find((t) => t.sequence === 2)?.narration).toMatch(/muddy footprint/);
+    expect(projected.find((t) => t.sequence === 2)?.narration).toMatch(/cookie crumbs/);
     expect(projected.some((t) => t.sequence === 1)).toBe(false); // start dropped
   });
 

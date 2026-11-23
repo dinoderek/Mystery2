@@ -1,13 +1,13 @@
 /**
- * What the blueprint commands read: a blueprint file, and the brief it was
- * written for. A brief is given as a file or as a spec directory holding
- * `input.brief.json`; a stored blueprint's own folder may hold `brief.json`.
+ * What the blueprint commands read: a case file, and the brief it was written
+ * for, which `generate` reads. A brief is given as a file or as a directory
+ * holding `input.brief.json`.
  */
 
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import { InputError, UsageError } from "../core/errors.ts";
+import { InputError } from "../core/errors.ts";
 import { slugify } from "../core/run-folder.ts";
 
 export const STORED_BLUEPRINT = "blueprint.json";
@@ -50,29 +50,6 @@ export async function resolveBrief(input: string): Promise<BriefSource> {
   const slug =
     base === SPEC_BRIEF ? path.basename(path.dirname(abs)) : base.replace(/\.brief\.json$/i, "").replace(/\.json$/i, "");
   return { file: abs, slug };
-}
-
-/** The brief a blueprint file was stored with, when it sits beside one. */
-async function siblingBrief(blueprintFile: string): Promise<string | null> {
-  for (const name of [STORED_BRIEF, SPEC_BRIEF]) {
-    const candidate = path.join(path.dirname(blueprintFile), name);
-    if (await fs.stat(candidate).then((s) => s.isFile(), () => false)) return candidate;
-  }
-  return null;
-}
-
-/** The brief to use for a blueprint file: the one given, else the one stored beside it. */
-export async function findBrief(blueprintFile: string, given: string | undefined): Promise<BriefSource | null> {
-  if (given) return resolveBrief(given);
-  const sibling = await siblingBrief(blueprintFile);
-  return sibling ? resolveBrief(sibling) : null;
-}
-
-export function requireBrief(brief: BriefSource | null): BriefSource {
-  if (!brief) {
-    throw new UsageError("a brief is needed: pass --brief <brief file or spec directory>, or keep brief.json beside the blueprint");
-  }
-  return brief;
 }
 
 /** A subject id for a blueprint file: its name, or its folder's when it is the stored `blueprint.json`. */

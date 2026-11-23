@@ -36,17 +36,16 @@ schemas both sides import, `evaluation/` the judges and pipelines. Detail:
 | AI backends and settings | `docs/ai-configuration.md` |
 | UI | `docs/ui.md`, `docs/game.md` |
 | API and database | `docs/backend-conventions.md` |
-| Blueprint generation | `packages/shared/src/blueprint-schema-v2.ts`, `docs/blueprint-generation-flows.md`, `packages/blueprint-generator/src/generator-prompt.md`, `evaluation/generator-harness/template/README.md` |
+| Blueprint generation | `packages/shared/src/clue-graph-schema.ts`, `docs/blueprint-generation-flows.md`, `packages/blueprint-generator/src/clue-graph-prompt.md`, `evaluation/generator-harness/template/README.md` |
 | Blueprint judges | `docs/evaluation-pipeline.md`, `evaluation/README.md` |
 | `gm_*` judges | `evaluation/judges/README.md`, "Earned, not free" in `docs/ai-runtime.md` |
-| Trace, runtime, playtest, truth set | the README beside the code |
+| Trace, runtime, playtest | the README beside the code |
 | Running, databases, worktrees | `docs/local-infrastructure.md` |
 | Writing tests, or a failing gate step | `docs/testing.md` |
 
 ## Workflow
 
-- Any workflow ending in a green gate and PR works. Operator sessions use
-  `engine:build` by default: hands-off, merge on green gate and CI.
+- Any workflow ending in a green gate and PR works.
 - Worktrees: `./dev worktree create <branch>`, `./dev worktree release <branch>`.
 - PRs use `.github/pull_request_template.md` and merge by squash.
 

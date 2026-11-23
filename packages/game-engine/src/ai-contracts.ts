@@ -11,7 +11,7 @@ export type AIRoleName =
   | "graph_talk"
   // A clue-graph search: the "search" contract, plus a notebook line.
   | "graph_search"
-  // A clue-graph accusation round: who was named and what was cited, then the
+  // A clue-graph accusation: who was named and what was cited, then the
   // narration of what the engine decided, before or at the end of the case.
   | "graph_accusation"
   | "graph_accusation_round"
@@ -107,13 +107,13 @@ export interface AccusationJudgeOutput {
 
 // What the narrator reads from a clue-graph accusation: the character named,
 // or null, and the held clues the investigator cited. No narration: the engine
-// decides the round (`clue-graph/accusation.ts`), and another call words it.
+// decides the accusation (`clue-graph/accusation.ts`), and another call words it.
 export interface GraphAccusationOutput {
   accused_character_id: string | null;
   cited_clue_ids: string[];
 }
 
-// The narration of a clue-graph accusation round, or of its closing scene.
+// The narration of a failed clue-graph accusation, or of its closing scene.
 export interface GraphVerdictOutput {
   narration: string;
 }
@@ -343,7 +343,7 @@ const ROLE_OUTPUT_SCHEMAS = {
   graph_ending: GraphVerdictOutputSchema,
 } satisfies Record<AIRoleName, z.ZodTypeAny>;
 
-function parseRoleOutput<S extends z.ZodTypeAny>(
+function parseWithSchema<S extends z.ZodTypeAny>(
   role: AIRoleName,
   schema: S,
   value: unknown,
@@ -354,6 +354,11 @@ function parseRoleOutput<S extends z.ZodTypeAny>(
     throw new Error(`Invalid AI ${role} output: ${reason}`);
   }
   return result.data;
+}
+
+/** Dispatch on the requested contract, never on fields in an untrusted answer. */
+export function parseRoleOutput(role: AIRoleName, value: unknown) {
+  return parseWithSchema(role, ROLE_OUTPUT_SCHEMAS[role], value);
 }
 
 /**
@@ -376,51 +381,51 @@ export function roleOutputJsonSchema(role: AIRoleName): Record<string, unknown> 
 }
 
 export function parseTalkStartOutput(value: unknown): TalkStartOutput {
-  return parseRoleOutput("talk_start", TalkStartOutputSchema, value);
+  return parseWithSchema("talk_start", TalkStartOutputSchema, value);
 }
 
 export function parseTalkConversationOutput(
   value: unknown,
 ): TalkConversationOutput {
-  return parseRoleOutput("talk_conversation", TalkConversationOutputSchema, value);
+  return parseWithSchema("talk_conversation", TalkConversationOutputSchema, value);
 }
 
 export function parseGraphTalkOutput(value: unknown): GraphTalkOutput {
-  return parseRoleOutput("graph_talk", GraphTalkOutputSchema, value);
+  return parseWithSchema("graph_talk", GraphTalkOutputSchema, value);
 }
 
 export function parseTalkEndOutput(value: unknown): TalkEndOutput {
-  return parseRoleOutput("talk_end", TalkEndOutputSchema, value);
+  return parseWithSchema("talk_end", TalkEndOutputSchema, value);
 }
 
 export function parseSearchOutput(value: unknown): SearchOutput {
-  return parseRoleOutput("search", SearchOutputSchema, value);
+  return parseWithSchema("search", SearchOutputSchema, value);
 }
 
 export function parseGraphSearchOutput(value: unknown): GraphSearchOutput {
-  return parseRoleOutput("graph_search", GraphSearchOutputSchema, value);
+  return parseWithSchema("graph_search", GraphSearchOutputSchema, value);
 }
 
 export function parseAccusationStartOutput(
   value: unknown,
 ): AccusationStartOutput {
-  return parseRoleOutput("accusation_start", AccusationStartOutputSchema, value);
+  return parseWithSchema("accusation_start", AccusationStartOutputSchema, value);
 }
 
 export function parseAccusationJudgeOutput(
   value: unknown,
 ): AccusationJudgeOutput {
-  return parseRoleOutput("accusation_judge", AccusationJudgeOutputSchema, value);
+  return parseWithSchema("accusation_judge", AccusationJudgeOutputSchema, value);
 }
 
 export function parseGraphAccusationOutput(value: unknown): GraphAccusationOutput {
-  return parseRoleOutput("graph_accusation", GraphAccusationOutputSchema, value);
+  return parseWithSchema("graph_accusation", GraphAccusationOutputSchema, value);
 }
 
 export function parseGraphAccusationRoundOutput(value: unknown): GraphVerdictOutput {
-  return parseRoleOutput("graph_accusation_round", GraphVerdictOutputSchema, value);
+  return parseWithSchema("graph_accusation_round", GraphVerdictOutputSchema, value);
 }
 
 export function parseGraphEndingOutput(value: unknown): GraphVerdictOutput {
-  return parseRoleOutput("graph_ending", GraphVerdictOutputSchema, value);
+  return parseWithSchema("graph_ending", GraphVerdictOutputSchema, value);
 }

@@ -12,13 +12,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { loadCasesFrom } from '../../../evaluation/runtime/lib/case.ts';
 import { ACTIONS } from '../../../evaluation/runtime/lib/roles.ts';
-import { validBlueprintV2 } from './fixtures/blueprint-v2.fixture.ts';
-import { generatorBrief } from './fixtures/generator-brief.ts';
 
 const REPO_ROOT = process.cwd();
-const VALIDATE_BLUEPRINT = path.join(REPO_ROOT, 'evaluation/generator-harness/scripts/validate-blueprint.ts');
 const VALIDATE_JUDGE = path.join(REPO_ROOT, 'evaluation/judge-harness/scripts/validate-judge-output.ts');
-const OPENROUTER_WRAPPER = path.join(REPO_ROOT, 'evaluation/generate/openrouter-wrapper.ts');
 
 let dir = '';
 let nonce = 0;
@@ -79,106 +75,43 @@ function write(name: string, content: unknown): string {
 	return file;
 }
 
-describe('validate-blueprint', () => {
-	// The fixture's prose reads at about grade 9, too hard for its target age of 8.
-	const olderReader = { ...validBlueprintV2, metadata: { ...validBlueprintV2.metadata, target_age: 14 } };
-
-	it('exits 0 for a blueprint that passes the schema and the checks, and reads at its target age', async () => {
-		const file = write('blueprint.json', olderReader);
-		const ran = await runScript(VALIDATE_BLUEPRINT, [file]);
-		expect(ran.code).toBe(0);
-		expect(ran.stdout).toMatch(new RegExp(`^OK: ${file} \\(BlueprintV2; mechanical checks pass; all \\d+ player-facing strings within FK grade 11 \\(age 14\\)\\)\n$`));
-	});
-
-	it('exits 1, naming each string too hard for the target age, for one that passes the schema only', async () => {
-		const file = write('blueprint.json', validBlueprintV2);
-		const ran = await runScript(VALIDATE_BLUEPRINT, [file]);
-		expect(ran.code).toBe(1);
-		expect(ran.stdout).toBe('');
-		expect(ran.stderr).toContain(`TOO HARD TO READ: ${file} — 2 player-facing string(s) above FK grade 5 (age 8)`);
-		expect(ran.stderr).toContain('  - narrative.starting_knowledge.mystery_summary: grade 9.09, "');
-		expect(ran.stderr).toContain('  - world.locations[0].sub_locations[0].clues[0].text: grade 5.86, "');
-	});
-
-	it('exits 1, naming each failed check beside the reading grade, for one that passes the schema only', async () => {
-		const orphan = structuredClone(validBlueprintV2) as unknown as { world: { locations: Array<{ sub_locations: object[] }> } };
-		orphan.world.locations[0].sub_locations.push({ id: 'kitchen-sink', name: 'the sink', hint: 'Something small glints.', clues: [{ id: 'loc-stray', text: 'A stray button.' }] });
-		const file = write('blueprint.json', orphan);
-		const ran = await runScript(VALIDATE_BLUEPRINT, [file]);
-		expect(ran.code).toBe(1);
-		expect(ran.stdout).toBe('');
-		expect(ran.stderr).toContain(`FAILED CHECKS: ${file} — 1 check(s).`);
-		expect(ran.stderr).toContain('  - no_orphan_clues: {"location":["loc-stray"],"character":[]}');
-		expect(ran.stderr).toContain(`TOO HARD TO READ: ${file}`);
-	});
-
-	it('exits 1, naming each issue and where, for one that does not', async () => {
-		const file = write('blueprint.json', { ...olderReader, metadata: { ...olderReader.metadata, time_budget: 'ten' } });
-		const ran = await runScript(VALIDATE_BLUEPRINT, [file]);
-		expect(ran.code).toBe(1);
-		expect(ran.stderr).toContain(`INVALID: ${file}`);
-		expect(ran.stderr).toContain('metadata.time_budget');
-		expect(ran.stderr).toContain('(got: "string")');
-	});
-
-	it('names the root when the whole file is the wrong shape', async () => {
-		const ran = await runScript(VALIDATE_BLUEPRINT, [write('blueprint.json', [])]);
-		expect(ran.code).toBe(1);
-		expect(ran.stderr).toContain('(root)');
-	});
-
-	it('exits 2 for a file that is missing or not JSON, 3 with no argument', async () => {
-		expect(await runScript(VALIDATE_BLUEPRINT, [path.join(dir, 'missing.json')])).toMatchObject({ code: 2, stderr: expect.stringContaining('read error') });
-		const notJson = await runScript(VALIDATE_BLUEPRINT, [write('bad.json', '{ nope')]);
-		expect(notJson).toMatchObject({ code: 2 });
-		expect(notJson.stderr).toContain('invalid JSON');
-		expect(await runScript(VALIDATE_BLUEPRINT, [])).toMatchObject({ code: 3, stderr: expect.stringContaining('usage:') });
-	});
-});
-
 describe('validate-judge-output', () => {
-	const innocents = validBlueprintV2.world.characters.filter((character) => !character.is_culprit).map((character) => character.id);
+	const dragon = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'blueprints/clue-graph/dragon-crown.json'), 'utf8'));
 
-	function workspace(dimension = 'fairness'): void {
+	function workspace(dimension = 'cg_truth_agreement'): void {
 		write('dimension-id', `${dimension}\n`);
-		write('blueprint.json', validBlueprintV2);
+		write('case.json', dragon);
 	}
 
-	const verdict = (ids: string[]) => ({
-		non_culprits: ids.map((id) => ({ character_id: id, ruled_out: true, ruling_evidence: null, reasoning: 'r' })),
+	const answer = (ids: string[]) => ({
+		findings: [{ severity: 'minor', kind: 'detail_mismatch', ids, explanation: 'A small slip.' }],
 		verdict: 'pass',
 		reasoning: 'r'
 	});
 
-	it('exits 0 when the verdict has the right shape and cites only what the blueprint holds', async () => {
+	it('exits 0 when the verdict has the right shape and cites only what the case holds', async () => {
 		workspace();
-		const file = write('verdict.json', verdict(innocents));
-		expect(await runScript(VALIDATE_JUDGE, [file])).toMatchObject({ code: 0, stdout: `OK: ${file} (fairness) [shape + refs]\n` });
+		const file = write('verdict.json', answer(['pike_roof', 'pike']));
+		expect(await runScript(VALIDATE_JUDGE, [file])).toMatchObject({ code: 0, stdout: `OK: ${file} (cg_truth_agreement) [shape + refs]\n` });
 	});
 
 	it('exits 1 for a verdict of the wrong shape', async () => {
 		workspace();
 		const ran = await runScript(VALIDATE_JUDGE, [write('verdict.json', { verdict: 'maybe' })]);
 		expect(ran.code).toBe(1);
-		expect(ran.stderr).toContain('INVALID fairness');
+		expect(ran.stderr).toContain('INVALID cg_truth_agreement');
 		expect(ran.stderr).toContain('shape failure');
 	});
 
-	it('exits 1 for a verdict that cites an id the blueprint does not hold', async () => {
+	it('exits 1 for a verdict that cites an id the case does not hold', async () => {
 		workspace();
-		const ran = await runScript(VALIDATE_JUDGE, [write('verdict.json', verdict([...innocents, 'char-nobody']))]);
+		const ran = await runScript(VALIDATE_JUDGE, [write('verdict.json', answer(['no_such_clue']))]);
 		expect(ran.code).toBe(1);
 		expect(ran.stderr).toMatch(/reference\/coverage issue\(s\)/);
-		expect(ran.stderr).toContain('char-nobody');
+		expect(ran.stderr).toContain('no_such_clue');
 	});
 
-	it('reads the optional context the judge was given', async () => {
-		workspace();
-		write('context.json', { anything: true });
-		expect(await runScript(VALIDATE_JUDGE, [write('verdict.json', verdict(innocents))])).toMatchObject({ code: 0 });
-	});
-
-	it('exits 2 when the workspace is not set up: no dimension, an unknown one, or no blueprint or verdict', async () => {
+	it('exits 2 when the workspace is not set up: no dimension, an unknown one, or no case or verdict', async () => {
 		expect(await runScript(VALIDATE_JUDGE, [path.join(dir, 'verdict.json')])).toMatchObject({
 			code: 2,
 			stderr: expect.stringContaining('could not read ./dimension-id')
@@ -192,73 +125,21 @@ describe('validate-judge-output', () => {
 		expect(missingVerdict).toMatchObject({ code: 2 });
 		expect(missingVerdict.stderr).toContain('could not read');
 
-		fs.rmSync(path.join(dir, 'blueprint.json'));
-		const missingBlueprint = await runScript(VALIDATE_JUDGE, [write('verdict.json', verdict(innocents))]);
-		expect(missingBlueprint.code).toBe(2);
-		expect(missingBlueprint.stderr).toContain('./blueprint.json');
+		fs.rmSync(path.join(dir, 'case.json'));
+		const missingCase = await runScript(VALIDATE_JUDGE, [write('verdict.json', answer(['pike']))]);
+		expect(missingCase.code).toBe(2);
+		expect(missingCase.stderr).toContain('./case.json');
 	});
 
 	it('exits 3 with no verdict argument', async () => {
 		expect(await runScript(VALIDATE_JUDGE, [])).toMatchObject({ code: 3, stderr: expect.stringContaining('usage:') });
-	});
-
-	it('reads a clue-graph case from case.json, and checks the ids cited against it', async () => {
-		write('dimension-id', 'cg_truth_agreement\n');
-		write('case.json', JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'blueprints/clue-graph/dragon-crown.json'), 'utf8')));
-		const answer = (ids: string[]) => ({
-			findings: [{ severity: 'minor', kind: 'detail_mismatch', ids, explanation: 'A small slip.' }],
-			verdict: 'pass',
-			reasoning: 'r'
-		});
-		const file = write('verdict.json', answer(['pike_roof', 'pike']));
-		expect(await runScript(VALIDATE_JUDGE, [file])).toMatchObject({ code: 0, stdout: `OK: ${file} (cg_truth_agreement) [shape + refs]\n` });
-		const ran = await runScript(VALIDATE_JUDGE, [write('verdict.json', answer(['no_such_clue']))]);
-		expect(ran.code).toBe(1);
-		expect(ran.stderr).toContain('no_such_clue');
-	});
-});
-
-describe('the api generation wrapper', () => {
-	const completion = () =>
-		new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify(validBlueprintV2) } }] }), { status: 200 });
-
-	it('prints the model\'s blueprint for the brief it is given', async () => {
-		const requests: string[] = [];
-		vi.stubGlobal('fetch', async (_url: string, init: RequestInit) => {
-			requests.push(String(init.body));
-			return completion();
-		});
-		vi.stubEnv('OPENROUTER_API_KEY', 'sk-or-test-key-0123456789');
-		vi.stubEnv('EVAL_MODEL', 'vendor/some-model');
-		const user = write('user.json', { story_brief: generatorBrief });
-
-		const ran = await runScript(OPENROUTER_WRAPPER, [write('system.txt', 'unused'), user], { waitMs: 50 });
-		expect(ran.stderr).toBe('');
-
-		expect(ran.code).toBeUndefined();
-		expect(requests).toHaveLength(1);
-		expect(ran.stdout).toContain(validBlueprintV2.id);
-	});
-
-	it('exits 2 with no user message file', async () => {
-		const ran = await runScript(OPENROUTER_WRAPPER, []);
-		expect(ran).toMatchObject({ code: 2, stderr: expect.stringContaining('usage:') });
-	});
-
-	it('exits 1 saying why when the call cannot be made, and never prints the key', async () => {
-		vi.stubEnv('OPENROUTER_API_KEY', 'sk-or-secret-value-9876');
-		vi.stubGlobal('fetch', async () => new Response('{"error":{"message":"rate limited"}}', { status: 429 }));
-		const ran = await runScript(OPENROUTER_WRAPPER, [write('system.txt', ''), write('user.json', { story_brief: generatorBrief })]);
-		expect(ran.code).toBe(1);
-		expect(ran.stderr).toContain('openrouter-generate:');
-		expect(ran.stderr).not.toContain('sk-or-secret-value-9876');
 	});
 });
 
 describe('the baseline cases', () => {
 	it('loads every case with a unique id, each naming an action the replay knows', async () => {
 		const cases = await loadCasesFrom(path.join(REPO_ROOT, 'evaluation/runtime/cases'));
-		const baseline = await loadCasesFrom(path.join(REPO_ROOT, 'evaluation/runtime/cases/all-interactions.ts'));
+		const baseline = await loadCasesFrom(path.join(REPO_ROOT, 'evaluation/runtime/cases/clue-graph/mock-case/all-interactions.ts'));
 
 		expect(new Set(cases.map((c) => c.id)).size).toBe(cases.length);
 		expect(baseline.length).toBeGreaterThan(5);

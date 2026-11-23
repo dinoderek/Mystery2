@@ -1,0 +1,177 @@
+{
+  "case_id": "ask-toby",
+  "narrator": "narrator-stub",
+  "model": "narrator-stub",
+  "narration": "You take a slow look around. Nothing new catches your eye just yet.",
+  "judges": [
+    {
+      "id": "flesch",
+      "tier": "mechanical",
+      "status": "pass",
+      "score": 0.56,
+      "details": {
+        "target_age": 10,
+        "expected_grade": 5,
+        "tolerance": 2,
+        "threshold": 7,
+        "action": "ask",
+        "words": 13,
+        "preview": "You take a slow look around. Nothing new catches your eye just yet.",
+        "parts": [
+          {
+            "grade": 0.56,
+            "pass": true,
+            "words": 13,
+            "speaker": "character",
+            "preview": "You take a slow look around. Nothing new catches your eye just yet."
+          }
+        ]
+      },
+      "findings": null,
+      "attempts": null
+    },
+    {
+      "id": "age_appropriate_turn",
+      "tier": "judge",
+      "status": "pass",
+      "score": 9,
+      "details": {
+        "target_age": 10,
+        "estimated_reading_age": 9,
+        "reasoning": "Close to the target age."
+      },
+      "findings": [
+        {
+          "quote": "folding her arms",
+          "kind": "figurative_language",
+          "why": "A child may not read this as defensive.",
+          "suggestion": "crossing her arms"
+        }
+      ],
+      "attempts": [
+        "ok"
+      ]
+    },
+    {
+      "id": "gm_roleplay",
+      "tier": "judge",
+      "status": "fail",
+      "score": 1,
+      "details": {
+        "major_count": 1,
+        "minor_count": 0,
+        "model_verdict": "pass",
+        "verdict_disagreement": true,
+        "reasoning": "Mostly in voice."
+      },
+      "findings": [
+        {
+          "sequence": 3,
+          "severity": "major",
+          "kind": "voice",
+          "quote": "The narrator says it was Alice.",
+          "why": "A character should speak for themselves.",
+          "refers_to": "alice"
+        }
+      ],
+      "attempts": [
+        "ok"
+      ]
+    },
+    {
+      "id": "gm_clue_discipline",
+      "tier": "judge",
+      "status": "fail",
+      "score": 1,
+      "details": {
+        "major_count": 1,
+        "minor_count": 0,
+        "model_verdict": "fail",
+        "verdict_disagreement": false,
+        "reasoning": "A clue came too early."
+      },
+      "findings": [
+        {
+          "sequence": 3,
+          "severity": "major",
+          "kind": "premature",
+          "quote": "the lunch bag",
+          "why": "The bag is gated behind the hallway clue.",
+          "refers_to": "loc-bag"
+        }
+      ],
+      "attempts": [
+        "ok"
+      ]
+    },
+    {
+      "id": "gm_fabrication",
+      "tier": "judge",
+      "status": "pass",
+      "score": 0,
+      "details": {
+        "major_count": 0,
+        "minor_count": 0,
+        "model_verdict": "pass",
+        "verdict_disagreement": false,
+        "reasoning": "Nothing invented."
+      },
+      "findings": [],
+      "attempts": [
+        "ok"
+      ]
+    },
+    {
+      "id": "gm_spoiler",
+      "tier": "judge",
+      "status": "pass",
+      "score": 0,
+      "details": {
+        "major_count": 0,
+        "minor_count": 0,
+        "model_verdict": "pass",
+        "verdict_disagreement": false,
+        "reasoning": "No spoilers."
+      },
+      "findings": [],
+      "attempts": [
+        "ok"
+      ]
+    },
+    {
+      "id": "gm_broad",
+      "tier": "judge",
+      "status": "pass",
+      "score": 0,
+      "details": {
+        "major_count": 0,
+        "minor_count": 1,
+        "model_verdict": "pass",
+        "verdict_disagreement": false,
+        "reasoning": "Readable and in character."
+      },
+      "findings": [
+        {
+          "sequence": 2,
+          "severity": "minor",
+          "kind": "not_age_fit",
+          "quote": "a quick, tight smile",
+          "why": "A figurative turn a little past the age, in an otherwise readable turn.",
+          "refers_to": null
+        }
+      ],
+      "attempts": [
+        "ok"
+      ]
+    }
+  ],
+  "summary": {
+    "counts": {
+      "pass": 5,
+      "fail": 2,
+      "error": 0,
+      "skipped": 0
+    },
+    "passed": false
+  }
+}

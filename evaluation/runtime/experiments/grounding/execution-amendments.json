@@ -1,0 +1,57 @@
+{
+  "schema_version": "narrator-grounding-execution-amendments/1",
+  "original_manifest_sha256": "f67667dee82df1dff8d5f1b2eb35b7c88f463ef8c190df341365a63ca139256c",
+  "amendments": [
+    {
+      "at": "2026-11-23T20:51:11.203205+00:00",
+      "reason": "OpenRouter in-flight spending budget rejected three parallel requests before provider generation; the key and account cannot fund the complete accepted batch. Capture stopped.",
+      "changes": [
+        "Serialize upstream calls without changing their request bytes.",
+        "Resume pending fixed samples with subject concurrency 1; reuse completed captures and recover only missing judge results.",
+        "Keep the first incomplete run and all blocked attempts in the report.",
+        "Record queue time separately from upstream latency.",
+        "Classify queue cancellations/timeouts as infrastructure incompleteness, never model-quality failures.",
+        "Reject fenced role JSON as live OpenRouter does; model-judge fence handling is unchanged."
+      ],
+      "unchanged": [
+        "Model bindings and versions",
+        "Prompt text and instruction priority",
+        "Sampling/reasoning defaults",
+        "Sample sizes, rubric and thresholds",
+        "USD200 / 3500 attempted upstream calls / 6-hour guard limits"
+      ],
+      "evidence": {
+        "initial_measurement_commit": "6b0efcb92bf15482dc6ad265d451a932f98b04c3",
+        "original_partial_run": "runs/2026-11-23/20-43-22-judge-turn",
+        "reconciliation": "transport/reconciliation.json",
+        "pre_provider_refusals": [
+          "00079",
+          "00082",
+          "00083"
+        ],
+        "recorded_cost_usd": 4.108706,
+        "prior_role_outputs_revalidated_as_strict_json": 14
+      },
+      "resume_precondition": "Usable key limit and account balance cover the remaining forecast; verify before restarting. Funding is operator-managed."
+    },
+    {
+      "at": "2026-11-23T21:06:09.554366+00:00",
+      "reason": "Operator explicitly approved USD8 total diagnostic scope after revisiting experiment size and budget.",
+      "manifest_revision": 2,
+      "manifest_sha256": "16216f6983afbbd843b7fba0bb0e0111eca64c2cc5fd2d9e6627e12165b585f7",
+      "changes": [
+        "Twelve fresh matched outputs: four frozen greenhouse behaviours across three models, one repetition.",
+        "8192-token output ceiling for every primary call, including each accusation stage.",
+        "Free expect/Flesch checks; blinded operator review of all twelve; no additional N1 model judges or whole games.",
+        "Retain earlier outputs and incomplete run as pilot evidence, not primary capped samples."
+      ],
+      "unchanged": [
+        "Original narrator policy text and priority",
+        "All three model identities",
+        "Role visibility, output contracts and two-stage accusation",
+        "Six held-out mysteries, no held-out narration before acceptance",
+        "Final acceptance thresholds; the diagnostic cohort does not establish reliability."
+      ]
+    }
+  ]
+}

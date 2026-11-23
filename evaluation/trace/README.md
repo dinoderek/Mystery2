@@ -9,8 +9,8 @@ The game keeps every played session in `game_sessions` and an append-only
 `game_events` log. This pipeline turns that log into a quality signal.
 
 1. **Extract** pulls a session from `game.db` (snapshot, ordered events, the
-   blueprint, the model its events carry) into a **raw** trace with no derived
-   fields. A clue-graph game ([`docs/clue-graph.md`](../../docs/clue-graph.md)) reads from its saved snapshot and adds `clue_graph`: format, revision, progress. A game keeps its reading age. `lib/datasource.ts` is the one evaluation module that resolves the play database
+   case, the model its events carry) into a **raw** trace with no derived
+   fields. The case is the game's saved clue-graph snapshot ([`docs/clue-graph.md`](../../docs/clue-graph.md)), and the trace adds `clue_graph`: format, revision, progress. A game keeps its reading age. A game with no snapshot, or a trace whose blueprint is no clue graph, is refused by the blueprint's name. `lib/datasource.ts` is the one evaluation module that resolves the play database
    path, and it opens the file read-only, with no migration run.
 2. **Judge** reconstructs what the game master saw each turn, by replaying the
    events through the real context builders (`packages/game-engine/src/ai-context.ts`),
@@ -49,14 +49,12 @@ environment note. Two consequences:
 
 ## Checks
 
-The mechanical checks live in `lib/mechanical.ts`. The first two run on every
-trace:
+The mechanical checks live in `lib/mechanical.ts`. Both run on every trace:
 
 | Check | Asks |
 |---|---|
-| `clue_accounting` | Every revealed clue id is real and in scope, with no repeats. Each bare search reveals the next unrevealed location clue that is *unlocked* (its `requires` already revealed), skipping locked ones. A clue-graph game's events are folded by the engine's rules. |
-| `spoiler_leak` | No pre-accusation narration copies a long *verbatim* run of ground-truth text. Verbatim only, so it stays precise; paraphrase is `gm_spoiler`'s job. |
-| `clue_requires_violation` | No `requires`-gated clue is revealed before its prerequisites, unless the event lists it in `revealed_off_script`. **Off by default**: set `enforce_requires: true` on its entry in `evaluation/core/registry.ts`. |
+| `clue_accounting` | The game's events are folded by the engine's rules: every revealed clue is real, comes once and was on offer, and nothing the narrator reported was refused. |
+| `spoiler_leak` | No narration before the closing scene copies a long *verbatim* run of ground truth. Verbatim only, to stay precise; paraphrase is `gm_spoiler`'s. |
 
 The judges are the registry's `game` judges: today the four shared `gm_*` judges,
 one model call each, run in parallel. To re-judge a single turn against another

@@ -1,53 +1,50 @@
 # Judging a turn
 
-Grades one narration against fixed state and history. Options: `evaluation/README.md`.
+Grades fixed-state narration. Options: `evaluation/README.md`.
 
 ## Determinism is the point
 
-A case evaluates **one action** against a **fully specified prior state**. The
-history is part of the case, not played, so the input is identical on every run.
+A case is **one action** on a **fully specified prior state**: the history is
+given, not played, so every run gets identical input.
 
 ## Choosing a narrator
 
-`--narrator` takes a list; each narrator gets byte-identical input.
+`--narrator` takes a list, each fed identical input.
 
 | Narrator | Narration comes from | Needs |
 |---|---|---|
-| `narrator-claude`, `narrator-openai` | a real model, called by the harness | that CLI on PATH (`OPENAI_API_KEY` for openai) |
+| `narrator-*` | a model through its configured CLI wrapper | the binding's credentials and executable |
 | `server` (the default) | the game, on a throwaway server | a build; `--ai-profile` names the AI |
 | `narrator-stub` | a canned shell script | nothing |
 
-To grade a model, use `narrator-claude`, with no server or database; `--model-override narrator-claude=<model>` picks the model. `server`
-puts the game in the loop, validating clue reveals as the CLI path does not.
+`--model-override narrator-claude=<model>` selects the Claude model. `server`
+additionally applies engine reveal checks.
 
-The canned narrator proves only the plumbing: keep stub runs to `flesch`.
-`narrator-claude` runs with no tools, MCP servers or settings, so the model
-under test never reads `CLAUDE.md`. `config/wrappers/claude-runtime.sh` backs
-`narrator-claude` and `turn-judge`; skipping
-settings skips logins set only in `settings.json`.
+Claude runs without tools, MCP or settings. The historical OpenRouter wrapper
+is `config/wrappers/openrouter-runtime.sh`.
 
 ### The throwaway server
 
-A `server` run starts the app on a free port against a temporary config root
-(`scripts/lib/test-server.mjs`), seeds each case's history there, sends the
-action as a typed line, and removes the root afterwards. It never touches your
-play database. A case that sets
-`accusation_history_mode` needs a CLI narrator, since a typed line cannot carry
-it. `--ai-profile` names the AI each request asks for: `mock` needs nothing,
-`default` is mock on the fresh database, and any other name comes from the
-config root's `ai.json`, copied with its key; a missing name or key fails the run first.
+A `server` run starts the app against a temporary config root
+(`scripts/lib/test-server.mjs`), seeds each case's history, sends the action as
+a typed line, and removes the root, never touching your play database. A case setting
+`accusation_history_mode` needs a CLI narrator: a typed line cannot carry it. An `--ai-profile` other than `mock` or `default` (mock on the fresh
+database) comes from the config root's `ai.json` with its key; a missing name
+or key fails the run first.
 
 ## Cases
 
-A case is a blueprint, a `given` state (mode, location, time, the full `history`),
-exactly one `action`, and the judges to run. A case file is `.ts`, `.mjs` or `.json`,
-holding one case or a list; a folder runs every case file in it; `evaluation/runtime/cases/age-readability.ts` is an
-annotated example. `history` rows have the shape the runtime stores in
+A case contains a blueprint, `given` state (mode, location, time, full `history`),
+one `action`, and judges. A case file (`.ts`, `.mjs`, `.json`)
+holds one case or a list; a folder runs every case file in it;
+`evaluation/runtime/cases/clue-graph/mock-case/readability.ts` is an annotated
+example. A case's blueprint must be a clue-graph case: any other format is refused by
+name before a call is made. `history` rows have the shape the runtime stores in
 `game_events`; a clue-graph case's carry `payload.clue_graph`, and a server run seeds its
 snapshot ([`docs/clue-graph.md`](../../docs/clue-graph.md)). Action types and modes: `ACTIONS` in
 `evaluation/runtime/lib/roles.ts`.
 
-`evaluation/runtime/cases/all-interactions.ts` is the coverage baseline: one case
+`evaluation/runtime/cases/clue-graph/mock-case/all-interactions.ts` is the coverage baseline: one case
 per narrator interaction (`InteractionId` in `packages/shared/src/age-profile.ts`).
 
 ## Judges
@@ -55,71 +52,88 @@ per narrator interaction (`InteractionId` in `packages/shared/src/age-profile.ts
 - `flesch`, a check: the deterministic Flesch–Kincaid grade against the
   blueprint's `target_age`.
 - `age_appropriate_turn`, a judge for what the formula cannot see (vocabulary,
-  figurative language), against the narrator prompt's age profile; not the
-  blueprint dimension `age_appropriate`.
+  figurative language), against the narrator prompt's age profile.
 - `gm_roleplay`, `gm_clue_discipline`, `gm_fabrication`, `gm_spoiler`: the
   adherence judges shared with the game harness (`evaluation/judges/README.md`).
-  Here the case's history is context and the action under test is the one judged
-  turn.
+  The history is context; only the action is judged.
 
-**Which judges run:** `--judges a,b`, else the case's `judges`, else none. A stored
-turn judged again (below) falls back to its earlier result's judges, else
-`flesch`. The `gm_*` battery is opt-in here.
+**Which judges run:** `--judges a,b`, else the case's `judges`, else none (a
+stored turn: below).
 
 **Options** go in the case's `judgeConfig.<judge>`: `tolerance` (`flesch`, grade
 levels above target, default 2), `targetAge` (`flesch`, `age_appropriate_turn`) and
 `blueprintPath` (`gm_*`). Every model judge calls the `turn-judge` binding;
-`--judge-binding judge-stub` answers all of them with a fixed pass, for wiring
-checks. A binding that cannot run stops the run before anything is replayed.
+`--judge-binding judge-stub` answers with a fixed pass. A binding that cannot run
+stops the run before anything is replayed.
 
 **Cost:** calls are cases × narrators × samples × (model judges + 1 for a model
-narrator); `flesch` and `expect` are free.
+narrator, 2 for a clue-graph accusation); `flesch` and `expect` are free.
 
 ## Expected outcomes
 
-A `search` or `ask` case may carry `expect`, graded by code against the
+A `search`, `ask` or clue-graph `accuse` case may carry `expect`, graded by code against the
 narrator's output as the game reads it: `revealed_clue_id` (search; an id or
 `null`), `revealed_clue_ids` and `used_clue_ids` (sets), `input_understood`.
-`expect.judges` maps a turn judge, such as `gm_roleplay`, to the way its fail
+`expect.judges` maps a turn judge to the way its fail
 errs (`withheld`, `given_away`, `either`); it always runs. See
-`cases/expect-example.ts`.
+`cases/clue-graph/mock-case/expect.ts`. `whole_fact` lists an expected
+clue's details (spellings each): its notebook line, and the narration or the
+player's words it answers, must hold each. A tell riding on a
+statement counts with it.
+
+An accusation chains the game's steps: the narrator reports the name and the
+citations, the engine decides, the narrator words the reply. `verdict`
+(`win`, `not_yet`, `lose`) and `reply_kind` (`flaw`, `alternative`, `missing`)
+grade the decision; the narration must hold each `handed` detail (spellings
+each) of what the engine handed the reply.
 
 It runs `--samples` times per narrator (default 5), as `<case>__<narrator>__s<n>`.
-A wrong sample **withheld** (an expected clue or use missing), **gave away** (one
-not expected), **misread**, or was **judged** (an `either` judge failed); one that
+A wrong sample **withheld** (an expected clue, use or handed detail missing), **gave away** (one
+not expected), **misread** (an accusation: another verdict or reply kind), or was **judged** (an `either` judge failed); one that
 withheld on a case expecting a use went **unseen** (use missing) or was **refused**.
 `expect.json`, also printed, holds each case's and `group`'s share
 right; `ungraded: true` keeps a case out of its group. A sample that did not run
 or could not be graded, such as a give-away a server refuses, counts neither way
 and marks the run INCOMPLETE.
 
-`./dev eval baseline save <run> <file>` stores a complete run's summary (narrator,
-model, samples, commit), by convention as `<case folder>/baselines/<model>.json`;
-`baseline compare <baseline> <run>` prints the change per case and group.
-`cases/search-reveals/` and `cases/talk-reveals/` have `haiku` and `sonnet`
-baselines, and `<model>-after` ones. Each `cases/clue-graph/` story has
-`haiku` and `sonnet`; ported greenhouse cases keep their IDs. Replay one as in
-Running, then `baseline compare` the run against each.
+`./dev eval baseline save <run> <file>` retains a complete summary;
+`baseline compare <baseline> <run>` prints changes. Clue-graph story folders
+retain their model baselines.
+
+## Frozen grounding experiment
+
+`experiments/grounding/manifest.json` freezes the split, rubric, models, samples,
+order, human review and thresholds; [baseline](experiments/grounding/baseline.json)
+retains results. Raw artifacts stay under the output root. Held-out mysteries
+stay sealed until candidate freeze; tuning retires them. Future runs exclude
+OpenRouter; reviews use Codex GPT-6.1 at Medium effort.
+
+CLI replay records
+`output_role` and uses its normal parser; it measures **parsed role output**,
+not every engine admissibility rule. Wrong reveals count as semantic failures;
+parser failures retain calls/raw logs and never pass. Whole games measure
+**engine-admitted play**, including rejected turns and incomplete games. Invalid,
+rejected, transport and judge failures all remain in the denominator.
+`evaluation/core/budget-proxy.ts` serialises requests, records requests/responses
+and usage, reserves worst-case charges, and stops on unreconciled calls or limits.
 
 ## Running
 
 ```bash
 # Plumbing, no model:
-./dev eval judge turn evaluation/runtime/cases/all-interactions.ts --narrator narrator-stub --judges flesch
+./dev eval judge turn evaluation/runtime/cases/clue-graph/mock-case/all-interactions.ts --narrator narrator-stub --judges flesch
 
 # Graded cases, on one model:
-./dev eval judge turn evaluation/runtime/cases/expect-example.ts \
+./dev eval judge turn evaluation/runtime/cases/clue-graph/mock-case/expect.ts \
   --narrator narrator-claude --model-override narrator-claude=haiku
 
 # The adherence judges:
-./dev eval judge turn evaluation/runtime/cases/age-readability.ts \
+./dev eval judge turn evaluation/runtime/cases/clue-graph/mock-case/readability.ts \
   --narrator narrator-claude --judges gm_roleplay,gm_clue_discipline,gm_fabrication,gm_spoiler
 ```
 
-Each case × narrator is one subject, `<case>__<narrator>/`, holding `turn.json`
-(the raw capture, written **before** any judge runs) and `result.json`. A narrator
-that fails leaves a `result.json` with a run error and exits 1; a judge that fails
-or cannot judge exits 2.
+Each subject holds `turn.json` (captured before judging) and `result.json`.
+Narrator failure exits 1; judge failure or error exits 2.
 
 To re-judge a stored turn without calling its narrator:
 
@@ -127,24 +141,21 @@ To re-judge a stored turn without calling its narrator:
 ./dev eval judge turn <run>/<case>__<narrator>/turn.json
 ```
 
-It runs the judges of the `result.json` beside it, else `flesch`, or `--judges
-a,b`, into a new run. A case's `judgeConfig` and `expect` are not stored, so it
-uses default options and is not graded.
+Re-judging uses the adjacent result's judges, else `flesch`, or `--judges a,b`.
+It uses default options; `judgeConfig` and `expect` are not stored.
 
 ### Cases from a played game
 
-`./dev eval cases <trace.json>` turns a stored trace (`evaluation/trace/README.md`)
-into cases: an event becomes one, its pre-event state and earlier events as
-`given`. By default it samples up to 3 `ask` and 3 `talk` events, judged by `flesch`,
-into `<output root>/cases/<trace>/`; `--help` explains overrides.
+`./dev eval cases <trace.json>` exports supported events, their pre-state and
+complete prior payloads, including notebook lines, use and commitments. It
+retains targeted searches and accusation reasoning (`evaluation/trace/README.md`).
 
-Given the trace itself, `judge turn` judges each narrated turn on its own
-narration with `flesch` and `age_appropriate_turn` (which still calls its model),
-named by event sequence, calling no narrator.
+Given the trace itself, `judge turn` judges each narrated turn's own narration
+with `flesch` and `age_appropriate_turn`, by event sequence, calling no narrator.
 
 ## Adding things
 
-- **A judge**: a registry entry that lists `turn` among its subjects
+- **A judge**: a registry entry listing `turn` among its subjects
   (`evaluation/judges/README.md`).
 - **An action**: an `ACTIONS` entry with its `line`, `roleInput` and `speaker`.
 

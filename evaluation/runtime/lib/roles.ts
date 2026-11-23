@@ -9,11 +9,9 @@
 // packages/game-engine/src/role-request.ts, shared with the server
 // handlers, so both paths pick the same role and build the same prompt.
 
-import {
-  resolveAccusationRole,
-  resolveSearchRole,
-} from "../../../packages/game-engine/src/role-request.ts";
+import { resolveAccusationRole } from "../../../packages/game-engine/src/role-request.ts";
 import type { BlueprintLike, Given, HistoryEntry, Speaker, TurnAction } from "./case.ts";
+import { ACCUSE_FAILED, ACCUSE_RESOLVED } from "../../../packages/game-engine/src/accusations.ts";
 
 /** A history row with every field a context builder reads filled in. */
 export interface HistoryRow {
@@ -58,10 +56,11 @@ export function locationName(blueprint: BlueprintLike, locationId: string | unde
   return blueprint.world.locations.find((l) => l.id === locationId)?.name ?? String(locationId);
 }
 
-function characterFullName(blueprint: BlueprintLike, characterId: string | undefined): string {
+/** A clue-graph character has one name, as the case writes it. */
+function characterName(blueprint: BlueprintLike, characterId: string | undefined): string {
   const character = blueprint.world.characters.find((c) => c.id === characterId);
   if (!character) throw new Error(`Character "${characterId}" is not in the blueprint`);
-  return `${character.first_name} ${character.last_name ?? ""}`.trim();
+  return character.first_name;
 }
 
 // A structured action as the line a player would type for it. The engine's
@@ -80,7 +79,7 @@ function accusationLine(given: Given, action: TurnAction): string {
   return reasoning ? `accuse ${reasoning}` : "accuse";
 }
 
-const talkLine: LineBuilder = (g, a, bp) => `talk to ${characterFullName(bp, a.character_id)}`;
+const talkLine: LineBuilder = (g, a, bp) => `talk to ${characterName(bp, a.character_id)}`;
 const askLine: LineBuilder = (g, a) => a.player_input ?? "";
 const endTalkLine: LineBuilder = () => "bye";
 const moveLine: LineBuilder = (g, a) => `move to ${a.destination}`;
@@ -162,8 +161,8 @@ export const ACTIONS: Record<string, ActionSpec> = {
     endpoint: turnEndpoint(talkLine),
     events: ["talk"],
     roleInput: (g, a, bp, history = []) => ({
-      role: bp.clue_graph ? "graph_talk" : "talk_start",
-      ...(bp.clue_graph ? { player_input: null } : {}),
+      role: "graph_talk",
+      player_input: null,
       game_id: "case",
       blueprint: bp,
       session: snapshotFromGiven(g),
@@ -180,7 +179,7 @@ export const ACTIONS: Record<string, ActionSpec> = {
     endpoint: turnEndpoint(askLine),
     events: ["ask"],
     roleInput: (g, a, bp, history = []) => ({
-      role: bp.clue_graph ? "graph_talk" : "talk_conversation",
+      role: "graph_talk",
       game_id: "case",
       blueprint: bp,
       session: snapshotFromGiven(g),
@@ -230,19 +229,12 @@ export const ACTIONS: Record<string, ActionSpec> = {
     endpoint: turnEndpoint(searchLine),
     events: ["search"],
     roleInput: (g, a, bp, history = []) => ({
-      role: bp.clue_graph ? "graph_search" : resolveSearchRole(a.search_query),
+      role: "graph_search",
       game_id: "case",
       blueprint: bp,
       session: snapshotFromGiven(g),
       location_id: g.location_id,
       // A clue-graph search reads what the player holds from the history.
-      ...(bp.clue_graph
-        ? {}
-        : {
-            revealed_clue_ids: g.revealed_clue_ids ?? [],
-            discovered_clue_ids: g.discovered_clues ?? [],
-            next_clue: a.search_query ? null : (nextUnrevealedClue(bp, g) ?? null),
-          }),
       search_query: a.search_query ?? null,
       conversation_history: history,
     }),
@@ -253,12 +245,10 @@ export const ACTIONS: Record<string, ActionSpec> = {
     requiredMode: "accuse",
     line: accusationLine,
     endpoint: turnEndpoint(accusationLine),
-    events: ["accuse_start", "accuse_round", "accuse_resolved"],
+    events: ["accuse_start", ACCUSE_FAILED, ACCUSE_RESOLVED],
     roleInput: (g, a, bp, history = []) => {
-      // A clue-graph round's one judgement is its first call: who was named, and what was cited.
-      const role = bp.clue_graph && resolveAccusationRole(a.player_reasoning) === "accusation_judge"
-        ? "graph_accusation"
-        : resolveAccusationRole(a.player_reasoning);
+      // A clue-graph accusation's one judgement is its first call: who was named, and what was cited.
+      const role = resolveAccusationRole(a.player_reasoning) === "accusation_judge" ? "graph_accusation" : "accusation_start";
       const base = {
         role,
         game_id: "case",
@@ -267,43 +257,17 @@ export const ACTIONS: Record<string, ActionSpec> = {
         conversation_history: history,
         ...(a.accusation_history_mode ? { history_mode: a.accusation_history_mode } : {}),
       };
-      if (role === "graph_accusation") return { ...base, player_input: a.player_reasoning };
-      return role === "accusation_judge"
-        ? {
-          ...base,
-          player_input: a.player_reasoning,
-          round: history.filter((e) => e.event_type === "accuse_round").length,
-        }
-        : base;
+      return role === "graph_accusation" ? { ...base, player_input: a.player_reasoning } : base;
     },
     speaker: () => narratorSpeaker(),
   },
 };
 
 /**
- * The first location-level clue a bare search would surface, mirroring the
- * handler's rule (unrevealed AND unlocked). Locking needs the session-global
- * discovered set, which a case supplies via `given.discovered_clues`.
- */
-function nextUnrevealedClue(blueprint: BlueprintLike, given: Given) {
-  const location = (blueprint.world.locations ?? []).find((l) => l.id === given.location_id);
-  if (!location) return null;
-  const revealed = new Set(given.revealed_clue_ids ?? []);
-  const discovered = new Set(given.discovered_clues ?? []);
-  return (
-    (location.clues ?? []).find(
-      (c) =>
-        !revealed.has(c.id) &&
-        (c.requires?.clue_ids ?? []).every((id) => discovered.has(id)),
-    ) ?? null
-  );
-}
-
-/**
  * The AI role an action resolves to, via the SAME roleInput mapping the
  * narrator replay uses — so a judge labels a turn with the role the model actually ran
- * as, including the resolutions that depend on the input (a search with a query
- * is `search_targeted`, an accusation with reasoning is `accusation_judge`).
+ * as, including the resolutions that depend on the input (an accusation with
+ * reasoning is judged, one without opens the scene).
  */
 export function resolveRoleName(
   actionType: string,
@@ -315,11 +279,6 @@ export function resolveRoleName(
   const role = getAction(actionType).roleInput(given, action, blueprint, normalizeHistory(history)).role;
   // A clue-graph search is judged as a `search`, the role the game saves it under.
   return role === "graph_search" ? "search" : role;
-}
-
-/** Whether a role name belongs to the endgame, where the solution is discussed. */
-export function isAccusationRole(roleName: unknown): boolean {
-  return typeof roleName === "string" && (roleName.startsWith("accusation") || roleName.startsWith("graph_accusation") || roleName === "graph_ending");
 }
 
 export function getAction(type: string): ActionSpec {

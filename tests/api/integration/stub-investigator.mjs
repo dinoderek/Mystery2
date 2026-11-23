@@ -15,12 +15,15 @@ import process from "node:process";
 
 const INPUTS = [
   "search",
+  "search the pantry shelf",
   "talk to alice",
   "Where were you last night?",
   "bye",
+  "go to living room",
+  "search",
   "accuse",
-  "Alice did it, the crumbs lead to her.",
-  "Alice took the cookies: the crumbs and the empty jar both point to her.",
+  "Bob did it, he was in the living room.",
+  "accuse Alice took the cookies: the cookie crumbs and the empty cookie jar both point to her.",
 ];
 
 const mode = process.env.STUB_INVESTIGATOR_MODE ?? "ok";

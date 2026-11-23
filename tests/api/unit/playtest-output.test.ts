@@ -10,9 +10,10 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { copyDatabase, readPlayedEvents } from '../../../evaluation/playtest/lib/database.ts';
 import type { PlayedGame } from '../../../evaluation/playtest/lib/game.ts';
-import { countBlueprintClues, summarizeGame, writeGameFolder } from '../../../evaluation/playtest/lib/output.ts';
+import { countAccusations, countBlueprintClues, summarizeGame, writeGameFolder } from '../../../evaluation/playtest/lib/output.ts';
 import type { PlaytestBlueprint } from '../../../evaluation/playtest/lib/output.ts';
 import { createGameDatabase } from './trace-database-fixture.ts';
+import { MOCK_CASE_ID, readMockCase } from '../../testkit/src/mock-case.ts';
 
 let dir = '';
 
@@ -24,14 +25,9 @@ afterEach(() => {
 	fs.rmSync(dir, { recursive: true, force: true });
 });
 
-const BLUEPRINT: PlaytestBlueprint = {
-	id: 'mock-blueprint',
-	metadata: { title: 'Mock Blueprint', time_budget: 10 },
-	world: {
-		locations: [{ clues: [{}, {}], sub_locations: [{ clues: [{}] }, {}] }, {}],
-		characters: [{ clues: [{}] }, {}]
-	}
-};
+/** The clue-graph mock case: 12 clues in its notebook, tells and statements included. */
+const BLUEPRINT: PlaytestBlueprint = readMockCase();
+const CLUES = 12;
 
 const CHECKPOINT = { mode: 'explore', location: 'loc-kitchen', talk_character: null, people_here: [], clues: [] };
 
@@ -103,8 +99,8 @@ const FOLDER = {
 };
 
 describe('counting a blueprint\'s clues', () => {
-	it('counts those at locations, sub-locations and characters', () => {
-		expect(countBlueprintClues(BLUEPRINT)).toBe(4);
+	it('counts every clue of the case: evidence at places and spots, and what characters say or show', () => {
+		expect(countBlueprintClues(BLUEPRINT)).toBe(CLUES);
 	});
 });
 
@@ -119,7 +115,7 @@ describe('summarizing a game', () => {
 		expect(summary).toMatchObject({
 			game_number: 2,
 			game_id: 'game-1',
-			blueprint: { id: 'mock-blueprint', title: 'Mock Blueprint' },
+			blueprint: { id: MOCK_CASE_ID, title: BLUEPRINT.metadata.title, format: 'clue-graph/2', revision: 1 },
 			outcome: 'win',
 			stop_reason: 'ended',
 			final_mode: 'ended',
@@ -129,7 +125,7 @@ describe('summarizing a game', () => {
 			parser_rejections: 1,
 			failed_calls: 1,
 			clues_found: 2,
-			clues_total: 4,
+			clues_total: CLUES,
 			clue_ids_found: ['clue-a', 'clue-b'],
 			narrator_calls: 3,
 			investigator_cost_usd: 0.75,
@@ -154,6 +150,42 @@ describe('summarizing a game', () => {
 	});
 });
 
+// A played turn as the server answered it, with the events it saved.
+function turn(...eventTypes: string[]): PlayedGame['steps'][number] {
+	return {
+		...game().steps[0],
+		response: { ok: true, status: 200, body: { kind: 'turn', events: eventTypes.map((event_type) => ({ event_type })) } }
+	};
+}
+const refused = { ...game().steps[1] };
+
+describe('counting accusations', () => {
+	it('counts none for a game that never accused', () => {
+		expect(countAccusations([turn('search'), refused], null)).toEqual({ accusations_spent: 0, won_on_third_accusation: false });
+	});
+
+	it('spends one for a failure, and none for the win that follows', () => {
+		const steps = [turn('accuse_start'), turn('accuse_failed'), turn('search'), turn('accuse_resolved')];
+		expect(countAccusations(steps, 'win')).toEqual({ accusations_spent: 1, won_on_third_accusation: false });
+	});
+
+	it('counts a win on the third accusation', () => {
+		const steps = [turn('accuse_failed'), turn('search'), turn('accuse_failed'), turn('accuse_resolved')];
+		expect(countAccusations(steps, 'win')).toEqual({ accusations_spent: 2, won_on_third_accusation: true });
+	});
+
+	it('counts the third failure, which ends the case, as spent', () => {
+		const steps = [turn('accuse_failed'), turn('accuse_failed'), turn('accuse_resolved')];
+		expect(countAccusations(steps, 'lose')).toEqual({ accusations_spent: 3, won_on_third_accusation: false });
+	});
+
+	it('goes into the summary', () => {
+		const played = game({ steps: [turn('accuse_failed'), turn('accuse_failed'), turn('accuse_resolved')] });
+		const summary = summarizeGame({ ...FOLDER, game: played, calls: [] });
+		expect(summary).toMatchObject({ accusations_spent: 2, won_on_third_accusation: true });
+	});
+});
+
 describe('writing the game folder', () => {
 	it('writes the transcript, script, steps, calls, events and summary', () => {
 		const callLog = path.join(dir, 'calls.jsonl');
@@ -173,15 +205,15 @@ describe('writing the game folder', () => {
 
 		expect(fs.readdirSync(out).sort()).toEqual(['ai-calls.jsonl', 'events.json', 'script.json', 'steps.jsonl', 'summary.json', 'transcript.md']);
 		const transcript = fs.readFileSync(path.join(out, 'transcript.md'), 'utf8');
-		expect(transcript).toContain('# Mock Blueprint: detective');
+		expect(transcript).toContain(`# ${BLUEPRINT.metadata.title}: detective`);
 		expect(transcript).toContain('*(look for crumbs)*\n**> search kitchen**');
 		expect(transcript).toContain('- Outcome: win (stopped: ended)');
 		expect(transcript).toContain('- Turns used: 4 of 10; steps: 3 (1 not understood by the parser, 1 failed calls)');
-		expect(transcript).toContain('- Clues found: 2 of 4');
+		expect(transcript).toContain(`- Clues found: 2 of ${CLUES}`);
 		expect(transcript).toContain('- Cost: narrator $0.050, investigator $0.750');
 		expect(transcript).toContain('- Wall time: 12s');
 		expect(JSON.parse(fs.readFileSync(path.join(out, 'script.json'), 'utf8'))).toEqual({
-			blueprint_id: 'mock-blueprint',
+			blueprint_id: MOCK_CASE_ID,
 			persona: 'detective',
 			inputs: ['search kitchen', 'quit'],
 			checkpoints: [CHECKPOINT],
@@ -234,7 +266,7 @@ describe('reading the game database the run wrote', () => {
 		const { databasePath, sessionId } = createGameDatabase(dir);
 		const events = readPlayedEvents(databasePath, sessionId);
 		expect(events.map((event) => event.type)).toEqual(['start', 'search']);
-		expect(events[1]).toMatchObject({ sequence: 2, payload: { search_query: 'the counter' } });
+		expect(events[1]).toMatchObject({ sequence: 2, payload: { search_query: 'the pantry shelf' } });
 		expect(events[0].parts[0].text).toBe('You arrive in the kitchen.');
 		expect(readPlayedEvents(databasePath, 'nobody')).toEqual([]);
 	});

@@ -14,8 +14,10 @@ import { createLocalEngine, type LocalEngine } from "../../../packages/game-engi
 import { RetriableAIError, SaveConflictError } from "../../../packages/game-engine/src/errors.ts";
 import { playTurn, type TurnOptions } from "../../../packages/game-engine/src/turn/play-turn.ts";
 import { NARRATOR_SPEAKER } from "../../testkit/src/fixtures.ts";
+import { MOCK_CASE_ID, readMockCaseGraph } from "../../testkit/src/mock-case.ts";
 
-const BLUEPRINT_ID = "123e4567-e89b-12d3-a456-426614174000";
+/** The V2 fixture, for the V2-only judging and talk recording below: they leave with V2. */
+const V2_BLUEPRINT_ID = "123e4567-e89b-12d3-a456-426614174000";
 const REPO_ROOT = process.cwd();
 
 let dir: string;
@@ -54,18 +56,24 @@ beforeEach(async () => {
     databasePath: path.join(dir, "database", "test", "game.db"),
   });
   ctx = local.contextFor({ id: local.players.ensure("Ada").id });
+  await startGame(MOCK_CASE_ID);
+});
+
+/** Saves a fresh game on `blueprintId` at the kitchen, as `gameId`: the mock case with its snapshot, or the V2 fixture. */
+async function startGame(blueprintId: string) {
   gameId = crypto.randomUUID();
   await ctx.sessions.saveTurn({
     game_id: gameId,
     expected_sequence: 1,
     start: {
       player_id: ctx.player.id,
-      blueprint_id: BLUEPRINT_ID,
+      blueprint_id: blueprintId,
       ai_profile_id: "default",
       mode: "explore",
       current_location_id: "loc-kitchen",
       time_remaining: 10,
       reading_age: 8,
+      ...(blueprintId === MOCK_CASE_ID ? { clue_graph_snapshot: readMockCaseGraph() } : {}),
     },
     events: [
       {
@@ -78,7 +86,7 @@ beforeEach(async () => {
       },
     ],
   });
-});
+}
 
 afterEach(() => {
   local.close();
@@ -94,7 +102,7 @@ describe("playTurn, for a line that plays nothing", () => {
     expect(await play("go to the moon", { createProvider })).toEqual({
       kind: "refused",
       reason: "invalid-target",
-      hint: '"the moon" is not a valid destination. Try: Kitchen, Living Room, Alice Smith.',
+      hint: '"the moon" is not a valid destination. Try: Kitchen, Living Room, Alice.',
     });
     expect(await play("help", { createProvider })).toEqual({ kind: "view", view: "help", section: null, note: "Help menu opened." });
     expect(await play("characters", { createProvider })).toEqual({ kind: "view", view: "characters", section: "people", note: null });
@@ -131,7 +139,7 @@ describe("playTurn, for a line that plays nothing", () => {
     expect(refused).toMatchObject({
       actor: "system",
       payload: { input: "go to the moon", answered: "refused", reason: "invalid-target" },
-      narration: '"the moon" is not a valid destination. Try: Kitchen, Living Room, Alice Smith.',
+      narration: '"the moon" is not a valid destination. Try: Kitchen, Living Room, Alice.',
       narration_parts: [{ speaker: { kind: "system" } }],
     });
     expect(help).toMatchObject({ payload: { input: "Help", answered: "help" }, narration: "Help menu opened." });
@@ -182,13 +190,21 @@ describe("playTurn, for each action", () => {
   it("moves: a turn spent, the place changed, the line stored as typed", async () => {
     const answer = await playAction("  go to the Living Room  ");
 
-    expect(answer.state).toEqual({ mode: "explore", time_remaining: 9, location: "loc-living-room", current_talk_character: null });
+    expect(answer.state).toEqual({
+      mode: "explore",
+      time_remaining: 9,
+      accusations_left: 3,
+      location: "loc-living-room",
+      current_talk_character: null,
+    });
     expect(answer.events).toHaveLength(1);
     expect(answer.events[0]).toMatchObject({
       sequence: 2,
       event_type: "move",
       payload: { location_id: "loc-living-room", input: "go to the Living Room" },
-      narration_parts: [{ text: "[Mock] You arrive at Living Room. Bob is here." }],
+      narration_parts: [
+        { text: "[Mock] You arrive at Living Room. The living room is cosy, with a sofa and a tall bookshelf. A board game is laid out on the low table. Bob is here." },
+      ],
     });
     expect(storedEvents().at(-1)).toMatchObject({ sequence: 2, event_type: "move", payload: { input: "go to the Living Room" } });
     expect(await ctx.sessions.getById(gameId)).toMatchObject({ current_location_id: "loc-living-room", time_remaining: 9 });
@@ -199,39 +215,123 @@ describe("playTurn, for each action", () => {
 
     expect(answer.state.time_remaining).toBe(9);
     expect(answer.revealed_clues).toEqual([
-      expect.objectContaining({ id: "clue-crumb", source: "search", origin: expect.objectContaining({ kind: "location", location_id: "loc-kitchen" }) }),
+      expect.objectContaining({ id: "clue_crumbs", source: "search", origin: expect.objectContaining({ kind: "location", location_id: "loc-kitchen" }) }),
     ]);
-    expect((await ctx.sessions.getById(gameId))?.discovered_clues).toEqual(["clue-crumb"]);
+    expect((await ctx.sessions.getById(gameId))?.discovered_clues).toEqual(["clue_crumbs"]);
   });
 
   it("talks, asks and says goodbye: only walking up costs a turn", async () => {
     const talk = await playAction("talk to Alice");
     expect(talk.state).toMatchObject({ mode: "talk", time_remaining: 9, current_talk_character: "char-alice" });
 
-    const ask = await playAction("Where were you?");
+    const ask = await playAction("Where were you at noon?");
     expect(ask.state).toMatchObject({ mode: "talk", time_remaining: 9 });
-    expect(ask.events[0]).toMatchObject({ event_type: "ask", payload: { player_input: "Where were you?", input: "Where were you?" } });
-    expect(ask.revealed_clues.map((clue) => [clue.id, clue.source])).toEqual([["clue-alice-saw-bob", "talk"]]);
+    expect(ask.events[0]).toMatchObject({ event_type: "ask", payload: { player_input: "Where were you at noon?", input: "Where were you at noon?" } });
+    expect(ask.revealed_clues.map((clue) => [clue.id, clue.source])).toEqual([["alice_noon", "talk"]]);
 
     const bye = await playAction("bye");
     expect(bye.state).toMatchObject({ mode: "explore", time_remaining: 9, current_talk_character: null });
     expect(bye.events[0]).toMatchObject({ event_type: "end_talk", payload: { input: "bye" } });
   });
 
-  it("accuses: the scene, a round that goes on, and a verdict", async () => {
+  it("accuses: the scene, back for nothing, a failure that spends one and returns to exploring, then a win", async () => {
     const start = await playAction("accuse");
     expect(start.events[0].event_type).toBe("accuse_start");
-    expect(start.state.mode).toBe("accuse");
+    expect(start.state).toMatchObject({ mode: "accuse", accusations_left: 3 });
 
-    const round = await playAction("Maybe it was Bob?");
-    expect(round.events[0]).toMatchObject({ event_type: "accuse_round", payload: { player_reasoning: "Maybe it was Bob?" } });
-    expect(round.result).toBeNull();
+    const back = await playAction("back");
+    expect(back.events[0]).toMatchObject({ event_type: "accuse_back", payload: { input: "back" } });
+    expect(back.state).toMatchObject({ mode: "explore", time_remaining: 10, accusations_left: 3 });
 
-    const verdict = await playAction("I think it was Alice, because of the empty cookie jar.");
-    expect(verdict.events[0].event_type).toBe("accuse_resolved");
-    expect(verdict.result).not.toBeNull();
-    expect(verdict.state.mode).toBe("ended");
-    expect((await ctx.sessions.getById(gameId))?.outcome).toBe(verdict.result);
+    await playAction("accuse");
+    const failed = await playAction("Maybe it was Bob?");
+    expect(failed.events[0]).toMatchObject({
+      event_type: "accuse_failed",
+      payload: { player_reasoning: "Maybe it was Bob?", judge_result: "continue", reply_kind: "missing" },
+    });
+    expect(failed.result).toBeNull();
+    expect(failed.state).toMatchObject({ mode: "explore", time_remaining: 10, accusations_left: 2 });
+
+    // One route to the culprit: the empty jar, and the score sheet that clears Bob.
+    const searched = await playAction("search the pantry shelf");
+    expect(searched.state).toMatchObject({ mode: "explore", accusations_left: 2 });
+    await playAction("go to the Living Room");
+    await playAction("search");
+
+    const verdict = await playAction("accuse Alice, because of the empty cookie jar.");
+    expect(verdict.events[0]).toMatchObject({ event_type: "accuse_resolved", payload: { judge_result: "win" } });
+    expect(verdict.result).toBe("win");
+    expect(verdict.state).toMatchObject({ mode: "ended", accusations_left: 2 });
+    expect((await ctx.sessions.getById(gameId))?.outcome).toBe("win");
+  });
+
+  it("ends the case lost on the third failure, each accusation judged once", async () => {
+    const first = await playAction("accuse Bob because he was here");
+    expect(first.events.map((event) => event.event_type)).toEqual(["accuse_failed"]);
+    expect(first.state).toMatchObject({ mode: "explore", accusations_left: 2 });
+    expect((await playAction("accuse Bob, again")).state).toMatchObject({ mode: "explore", accusations_left: 1 });
+
+    const last = await playAction("accuse Bob for the last time");
+    expect(last.events[0]).toMatchObject({ event_type: "accuse_resolved", payload: { judge_result: "lose" } });
+    expect(last.result).toBe("lose");
+    expect(last.state).toMatchObject({ mode: "ended", accusations_left: 0 });
+    expect(storedEvents().map((event) => event.event_type)).toEqual(["start", "accuse_failed", "accuse_failed", "accuse_resolved"]);
+  });
+
+  it("out of turns, refuses the way back and asks again after each failure", async () => {
+    await ctx.sessions.update(gameId, { mode: "accuse", time_remaining: 0 });
+    const judged: Array<Record<string, unknown>> = [];
+    const watching = (profile: EngineAIProfile): AIProvider => {
+      const inner = createAIProviderFromProfile(profile, { openrouterApiKey: null });
+      return {
+        profile: inner.profile,
+        get resolvedModel() {
+          return inner.resolvedModel;
+        },
+        generateNarration: (prompt, metadata) => inner.generateNarration(prompt, metadata),
+        generateRoleOutput: (request) => {
+          if (request.role === "graph_accusation_round" || request.role === "graph_ending") judged.push({ role: request.role, ...request.context });
+          return inner.generateRoleOutput(request);
+        },
+      };
+    };
+
+    expect(await play("back")).toMatchObject({ kind: "refused", reason: "no-way-back" });
+    const failed = await playAction("It was Bob", { createProvider: watching });
+    // The narrator is told there is no more looking, and that this is not yet the last accusation.
+    expect(judged[0]).toMatchObject({ role: "graph_accusation_round", forced_by_timeout: true });
+    expect(failed.events[0].event_type).toBe("accuse_failed");
+    expect(failed.state).toMatchObject({ mode: "accuse", time_remaining: 0, accusations_left: 2 });
+    expect(await play("never mind")).toMatchObject({ kind: "refused", reason: "no-way-back" });
+    expect((await playAction("It was Bob, truly")).state).toMatchObject({ mode: "accuse", accusations_left: 1 });
+    expect((await playAction("Bob!", { createProvider: watching })).result).toBe("lose");
+    expect(judged[1]).toMatchObject({ role: "graph_ending" });
+  });
+
+  // The V2 judge: it leaves with V2.
+  it("retries a judge that answers outside what this accusation allows", async () => {
+    await startGame(V2_BLUEPRINT_ID);
+    const judging = (resolution: string) => (profile: EngineAIProfile): AIProvider => {
+      const inner = createAIProviderFromProfile(profile, { openrouterApiKey: null });
+      return {
+        profile: inner.profile,
+        get resolvedModel() {
+          return inner.resolvedModel;
+        },
+        generateNarration: (prompt, metadata) => inner.generateNarration(prompt, metadata),
+        generateRoleOutput: (request) =>
+          request.role === "accusation_judge"
+            ? Promise.resolve(request.parse({ narration: "Hmm.", accusation_resolution: resolution }))
+            : inner.generateRoleOutput(request),
+      };
+    };
+
+    // A loss before the last accusation, and a question on the last one, are the wrong scene.
+    await expect(play("accuse Bob", { createProvider: judging("lose") })).rejects.toBeInstanceOf(RetriableAIError);
+    await playAction("accuse Bob");
+    await playAction("accuse Bob");
+    await expect(play("accuse Bob", { createProvider: judging("continue") })).rejects.toBeInstanceOf(RetriableAIError);
+    expect(storedEvents().map((event) => event.event_type)).toEqual(["start", "accuse_failed", "accuse_failed"]);
   });
 
   it("forces the accusation when the last turn is spent, in the same save", async () => {
@@ -248,7 +348,10 @@ describe("playTurn, for each action", () => {
   });
 });
 
+// V2 talk recording: it leaves with V2.
 describe("playTurn, recording what a character was shown", () => {
+  beforeEach(() => startGame(V2_BLUEPRINT_ID));
+
   // The mock narrator, with its talk_conversation answer replaced by `answer`.
   const answering = (answer: Record<string, unknown>) => (profile: EngineAIProfile): AIProvider => {
     const inner = createAIProviderFromProfile(profile, { openrouterApiKey: null });

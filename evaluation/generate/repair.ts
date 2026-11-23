@@ -1,15 +1,13 @@
 /**
  * `generate --repair <n>`: after round 0 (generate, check, judge), each later
- * round hands the generator agent its last blueprint and the reports it failed,
- * and has it fix those faults in place; then every mechanical check and every
+ * round hands the generator agent its last case and the reports it failed,
+ * and has it fix those faults in place; then the mechanical check and every
  * judge runs again, since a fix can break another dimension. The loop stops
  * when nothing fails or after `n` repair rounds.
  *
  * The judges are the battery `generate --judge` runs, through the same binding,
- * so they are the judges the truth set measures; they are sent the brief and
- * the blueprint only, never the generator's work or an earlier round. A
- * clue-graph case may be repaired without judges: its rounds then rerun only
- * its mechanical check, the validator.
+ * and are sent the case only, never the generator's work or an earlier round.
+ * Without `--judge`, a round reruns only the mechanical check, the validator.
  *
  * A report reaches the generator as quoted data inside its user message
  * (`repair.reports`), under a notice that it is not an instruction. Each round
@@ -25,7 +23,6 @@ import { judgeBlueprint, runMechanical } from "../blueprint/judge.ts";
 import { runErrorOf, writeBlueprintResult } from "../blueprint/subject.ts";
 import type { BlueprintSubject } from "../blueprint/subject.ts";
 import type { ResolvedBinding } from "../core/config.ts";
-import type { BlueprintFormat } from "../core/registry.ts";
 import { formatDuration, startDigest } from "../core/progress.ts";
 import { summarize } from "../core/result.ts";
 import type { ModelCall, Result, Round, RunError, Verdict } from "../core/result.ts";
@@ -41,49 +38,13 @@ export const REPORTS_NOTICE =
 export interface RepairReport {
   id: string;
   tier: Verdict["tier"];
-  /** A check's or analyzer's details; absent when it gave none. */
+  /** A check's details; absent when it gave none. */
   details?: unknown;
-  /** A judge's answer, less the items it checked and found sound. */
+  /** A judge's answer, whole: its findings and its reasoning. */
   answer?: unknown;
 }
 
-// How an item in a judge's answer says it is sound. An item is left out of a
-// report only when it carries at least one of these fields and every one it
-// carries says so; any other item is kept, so a report says too much rather
-// than too little.
-const SOUND_WHEN_TRUE = new Set(["passes", "fits_its_kind", "concedes_only_what_clue_shows", "ruled_out", "graph_is_sensible", "has_ungated_entry", "reaches_culprit"]);
-const SOUND_WHEN_FALSE = new Set(["is_one_giant_chain", "creates_dead_end"]);
-const SOUND_VALUE: Record<string, string> = { verdict: "pass", problem: "none", status: "grounded" };
-/** Every field name an item's soundness is read from. */
-export const SOUNDNESS_FIELDS = [...SOUND_WHEN_TRUE, ...SOUND_WHEN_FALSE, ...Object.keys(SOUND_VALUE)];
-
-function soundness(item: Record<string, unknown>): boolean | null {
-  let seen = false;
-  for (const [key, value] of Object.entries(item)) {
-    let sound: boolean | null = null;
-    if (SOUND_WHEN_TRUE.has(key) && typeof value === "boolean") sound = value;
-    else if (SOUND_WHEN_FALSE.has(key) && typeof value === "boolean") sound = !value;
-    else if (key in SOUND_VALUE && typeof value === "string") sound = value === SOUND_VALUE[key];
-    if (sound === false) return false;
-    if (sound === true) seen = true;
-  }
-  return seen ? true : null;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-/** A judge's answer with every item it found sound left out, at any depth; its reasoning and other fields stay. */
-export function flaggedItems(answer: unknown): unknown {
-  if (Array.isArray(answer)) {
-    return answer.filter((item) => !isRecord(item) || soundness(item) !== true).map(flaggedItems);
-  }
-  if (!isRecord(answer)) return answer;
-  return Object.fromEntries(Object.entries(answer).map(([key, value]) => [key, flaggedItems(value)]));
-}
-
-/** The verdicts a repair round works from: every failing check, analyzer and judge. An `error` is not the blueprint's fault, so it is not one. */
+/** The verdicts a repair round works from: every failing check and judge. An `error` is not the blueprint's fault, so it is not one. */
 export function failingVerdicts(verdicts: readonly Verdict[]): Verdict[] {
   return verdicts.filter((verdict) => verdict.status === "fail");
 }
@@ -93,7 +54,7 @@ export function repairReports(verdicts: readonly Verdict[]): RepairReport[] {
   return failingVerdicts(verdicts).map((verdict) => {
     const report: RepairReport = { id: verdict.id, tier: verdict.tier };
     if (verdict.details !== undefined) report.details = verdict.details;
-    if (verdict.answer !== undefined) report.answer = flaggedItems(verdict.answer);
+    if (verdict.answer !== undefined) report.answer = verdict.answer;
     return report;
   });
 }
@@ -174,8 +135,6 @@ export interface RepairSettings {
   judge: ResolvedBinding | null;
   /** Reads the generator's answer, as the generation did. */
   parser: () => AnswerParser;
-  /** The format every round is checked as, whatever the generator wrote. */
-  format: BlueprintFormat;
   /** The environment the generator's wrapper is started with, besides the round's folder. */
   env?: Record<string, string>;
   /** The most repair rounds to run. */
@@ -276,9 +235,8 @@ export async function repairLoop(subject: BlueprintSubject, settings: RepairSett
               timer,
               quiet: settings.quiet,
               write: settings.write,
-              format: settings.format,
             })
-          : await timer.stage("mechanical", () => runMechanical(settings.brief, made.blueprint, settings.format), (checks) => ({ checks: checks.length }));
+          : await timer.stage("mechanical", () => runMechanical(settings.brief, made.blueprint), (checks) => ({ checks: checks.length }));
         return { ...made, verdicts };
       });
       blueprint = repaired.blueprint;

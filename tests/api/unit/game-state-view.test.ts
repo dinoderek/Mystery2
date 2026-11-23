@@ -17,6 +17,7 @@ const BLUEPRINT = BlueprintV2Schema.parse(validBlueprintV2);
 const STANDING = {
   discovered_clues: [],
   time_remaining: 7,
+  accusations_left: 3,
   location: "kitchen",
   mode: "explore" as const,
   current_talk_character: null,

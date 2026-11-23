@@ -10,7 +10,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { readAIConfig } from "../../../packages/game-engine/src/ai-config.ts";
-import { LiveRunError, planBlueprintRun, planServerRun } from "../../../scripts/lib/live-run.mjs";
+import { LiveRunError, planServerRun } from "../../../scripts/lib/live-run.mjs";
 import { getLiveSuiteTitle, requireLiveAIName, resolveLiveAIName } from "../../testkit/src/live-ai.ts";
 
 const REPO_ROOT = process.cwd();
@@ -87,39 +87,6 @@ describe("the server runner's plan", () => {
   });
 });
 
-describe("the blueprint runner's plan", () => {
-  it("gives the suite the named AI's model and key, from ai.json", () => {
-    expect(planBlueprintRun({ repoRoot: root, env: env({ AI_MODEL: "vendor/ignored" }), argv: ["free"] })).toEqual({
-      name: "free",
-      suiteEnv: {
-        AI_LIVE: "1",
-        AI_LIVE_AI: "free",
-        AI_LIVE_TEST_TIMEOUT_MS: "600000",
-        AI_LIVE_MODEL: "vendor/free",
-        OPENROUTER_API_KEY: "sk-test-throwaway",
-      },
-    });
-  });
-
-  it("takes a key the entry lacks from the environment", () => {
-    expect(planBlueprintRun({ repoRoot: root, env: env({ OPENROUTER_API_KEY: "sk-env" }), argv: ["paid"] }).suiteEnv).toMatchObject({
-      AI_LIVE_MODEL: "vendor/paid",
-      OPENROUTER_API_KEY: "sk-env",
-    });
-  });
-
-  it.each([
-    [[], /names the AI it calls/],
-    [["mock"], /"mock" calls no model/],
-    [["free", "paid"], /Usage: node scripts\/run-live-blueprint-generation\.mjs/],
-    [["luna"], /AI "luna" is not in/],
-    [["paid"], /AI "paid" uses openrouter but has no key/],
-    [["claude"], /AI "claude" is a claude-cli AI; blueprint generation calls an openrouter one/],
-  ])("refuses %j", (argv, message) => {
-    expect(() => planBlueprintRun({ repoRoot: root, env: env(), argv })).toThrow(message);
-  });
-});
-
 describe("the scripts", () => {
   function run(script: string, args: string[]) {
     const result = spawnSync(process.execPath, [path.join(REPO_ROOT, "scripts", script), ...args], {
@@ -135,7 +102,6 @@ describe("the scripts", () => {
     for (const [script, args] of [
       ["run-live-ai.mjs", ["integration"]],
       ["run-live-ai.mjs", []],
-      ["run-live-blueprint-generation.mjs", []],
     ] as const) {
       const { status, output } = run(script, [...args]);
       expect(status, output).toBe(1);
@@ -147,7 +113,6 @@ describe("the scripts", () => {
   it("refuse an AI that is not in ai.json, naming it", () => {
     for (const [script, args] of [
       ["run-live-ai.mjs", ["e2e", "luna"]],
-      ["run-live-blueprint-generation.mjs", ["luna"]],
     ] as const) {
       const { status, output } = run(script, [...args]);
       expect(status, output).toBe(1);

@@ -18,6 +18,9 @@ import fs from "node:fs";
 import path from "node:path";
 import url from "node:url";
 
+import { buildClueGraphWorld, clueGraphCaseId } from "../../../packages/shared/src/clue-graph-case.ts";
+import { isClueGraphFile } from "../../../packages/shared/src/clue-graph-schema.ts";
+import { validateClueGraph } from "../../../packages/shared/src/clue-graph-validator.ts";
 import { InputError } from "../../core/errors.ts";
 import { readRunIndex } from "../../core/run-folder.ts";
 import type { RunIndex } from "../../core/run-folder.ts";
@@ -62,7 +65,7 @@ function parseJson<T>(text: string, fallback: T): T {
 
 /**
  * The blueprint behind a run: from a game's trace.json when the run was
- * graded, else the repo's blueprints/ by id. Null when neither has it; clues
+ * graded, else the repo's clue-graph cases by id. Null when neither has it; clues
  * then show the text their event recorded, or only their id.
  */
 function findBlueprint(gameDirs: string[], blueprintId: string | undefined, repoRoot: string): ReportBlueprint | null {
@@ -70,11 +73,19 @@ function findBlueprint(gameDirs: string[], blueprintId: string | undefined, repo
     const trace = readJson<{ blueprint?: ReportBlueprint }>(path.join(dir, "trace.json"));
     if (trace?.blueprint) return trace.blueprint;
   }
-  const dir = path.join(repoRoot, "blueprints");
-  if (!blueprintId || !fs.existsSync(dir)) return null;
-  for (const name of fs.readdirSync(dir).filter((file) => file.endsWith(".json"))) {
-    const blueprint = parseJson<ReportBlueprint | null>(fs.readFileSync(path.join(dir, name), "utf8"), null);
-    if (blueprint?.id === blueprintId) return blueprint;
+  if (!blueprintId) return null;
+  for (const dir of [path.join(repoRoot, "blueprints", "clue-graph")]) {
+    if (!fs.existsSync(dir)) continue;
+    for (const name of fs.readdirSync(dir).filter((file) => file.endsWith(".json"))) {
+      const parsed = parseJson<unknown>(fs.readFileSync(path.join(dir, name), "utf8"), null);
+      if (!isClueGraphFile(parsed)) continue;
+      // A clue-graph case is named by its metadata.id, and read through its world view, which lists
+      // every clue's fact. Only the run's own is validated, without story checks, as a saved game is.
+      const caseId = (parsed as { metadata?: { id?: unknown } }).metadata?.id;
+      if (typeof caseId === "string" && clueGraphCaseId(caseId) === blueprintId) {
+        return buildClueGraphWorld(validateClueGraph(parsed, { story: false })) as unknown as ReportBlueprint;
+      }
+    }
   }
   return null;
 }
@@ -256,6 +267,8 @@ export interface ReportGame {
   replayOf: string | null;
   turnsUsed: number | null;
   timeBudget: number | null;
+  accusationsSpent: number | null;
+  wonOnThird: boolean;
   steps: number;
   cluesFound: number | null;
   cluesTotal: number | null;
@@ -300,6 +313,8 @@ function buildGame(number: number, dir: string, summary: GameSummary, clueText: 
     replayOf: summary.replay_of ?? null,
     turnsUsed: summary.turns_used ?? null,
     timeBudget: summary.time_budget ?? null,
+    accusationsSpent: summary.accusations_spent ?? null,
+    wonOnThird: summary.won_on_third_accusation ?? false,
     steps: summary.steps ?? steps.length,
     cluesFound: summary.clues_found ?? null,
     cluesTotal: summary.clues_total ?? null,

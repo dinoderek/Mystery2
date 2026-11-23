@@ -5,15 +5,14 @@
 // Two stages, both from the judge's registry entry (evaluation/core/registry.ts)
 // through the core's output validator (evaluation/core/judge-output.ts):
 //   1. Shape — the verdict satisfies the dimension's schema.
-//   2. Ids — every id, path and topic it cites exists in ./blueprint.json (or
-//      ./case.json, for a clue-graph case), it covers what the entry says it
-//      must, and it repeats nothing it must not. The registry entry declares
-//      these checks per dimension.
+//   2. Ids — every id it cites exists in ./case.json, it covers what the
+//      entry says it must, and it repeats nothing it must not. The registry
+//      entry declares these checks per dimension.
 //
 // Usage: node validate-judge-output.ts <path-to-verdict.json>
 //
-// Reads ./dimension-id, ./blueprint.json or ./case.json, and (optionally)
-// ./context.json from the working directory, which is the judge workspace.
+// Reads ./dimension-id and ./case.json from the working directory, which is
+// the judge workspace.
 //
 // Exit codes:
 //   0 — both stages passed
@@ -21,7 +20,6 @@
 //   2 — file missing or unparseable, unknown dimension, or workspace misconfigured
 //   3 — usage error
 
-import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
@@ -33,14 +31,10 @@ function messageOf(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
-async function readJson(file: string): Promise<unknown> {
-  return JSON.parse(await fs.readFile(file, "utf8"));
-}
-
 /** Read a workspace file as JSON, or exit 2 saying which one and why. */
 async function readOrExit(file: string, what: string): Promise<unknown> {
   try {
-    return await readJson(path.resolve(file));
+    return JSON.parse(await fs.readFile(path.resolve(file), "utf8"));
   } catch (err) {
     process.stderr.write(`could not read ${what} (${messageOf(err)}).\n`);
     process.exit(2);
@@ -72,11 +66,9 @@ async function main() {
   }
 
   const verdict = await readOrExit(verdictPath, verdictPath);
-  const subject = existsSync(path.resolve("case.json")) ? "case.json" : "blueprint.json";
-  const blueprint = await readOrExit(subject, `./${subject}`);
-  const context = (await readJson(path.resolve("context.json")).catch(() => ({}))) as Record<string, unknown>;
+  const subject = await readOrExit("case.json", "./case.json");
 
-  const result = validateJudgeAnswer(definition, verdict, blueprint, context);
+  const result = validateJudgeAnswer(definition, verdict, subject);
   if (!result.ok) {
     const label = result.stage === "shape" ? "shape failure" : `${result.messages.length} reference/coverage issue(s)`;
     process.stderr.write(`INVALID ${dimId} ${verdictPath} — ${label}:\n`);

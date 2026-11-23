@@ -29,13 +29,14 @@
  * next clue to reveal) is passed in, not fetched here.
  */
 
-import type { AIPromptKey } from "./ai-contracts.ts";
+import type { AIPromptKey, AIRoleName } from "./ai-contracts.ts";
 import { authoredFieldBudget, type InteractionId } from "../../shared/src/age-profile.ts";
 import {
   type AIContext,
   type BlueprintClue,
   type BlueprintContext,
   buildAccusationJudgeContext,
+  narrationStyleOf,
   buildAccusationStartContext,
   buildArrivalCharacterContexts,
   buildGraphAccusationAIContext,
@@ -61,7 +62,7 @@ import {
   renderPrompt,
 } from "./ai-prompts.ts";
 import { talkPromptProfile } from "./talk-prompt.ts";
-import { msfRoleGuidance } from "./msf-context.ts";
+import { NARRATOR_GROUNDING } from "./narrator-grounding.ts";
 import { clueGraphRoleGuidance } from "./clue-graph/judge-guidance.ts";
 import { GRAPH_TALK_EARLIER_LINES, GRAPH_TALK_GREETING_TURN, GRAPH_TALK_LINE_TURN } from "./clue-graph/prompts.ts";
 import { linesThisConversation, playOf } from "./clue-graph/history.ts";
@@ -77,6 +78,30 @@ import type { AccusationVerdict } from "./clue-graph/accusation.ts";
 export type NarrationRoleName = "intro" | "ambience";
 
 export type RoleRequestName = AIPromptKey | NarrationRoleName;
+
+/** Transport-independent messages. Only stable policy and output instructions go in system. */
+export interface NarratorMessages {
+  system: string;
+  user: string;
+}
+
+export function buildNarrationMessages(prompt: string): NarratorMessages {
+  return {
+    system: `You are the narrator for a kids mystery game. Return plain text only.\n\n${NARRATOR_GROUNDING}`,
+    user: prompt,
+  };
+}
+
+export function outputRoleForPrompt(role: AIPromptKey): AIRoleName {
+  return role === "search_bare" || role === "search_targeted" ? "search" : role;
+}
+
+export function buildRoleMessages(request: { role: AIRoleName; prompt: string; context: Record<string, unknown> }): NarratorMessages {
+  return {
+    system: `You are a strict JSON API for role "${request.role}". Output JSON only.\n\n${NARRATOR_GROUNDING}`,
+    user: JSON.stringify({ prompt: request.prompt, context: request.context }),
+  };
+}
 
 /**
  * A role-output request: prompt plus the context the provider validates and
@@ -141,9 +166,9 @@ export type RoleRequestInput =
     player_input: string | null;
   } & SessionInput)
   | ({ role: "graph_search"; location_id: string; search_query: string | null } & SessionInput)
-  // A clue-graph accusation round: the judge, then what the engine decided, worded.
+  // A clue-graph accusation: the judge, then what the engine decided, worded.
   | ({ role: "graph_accusation"; player_input: string } & SessionInput)
-  | ({ role: "graph_accusation_round"; player_input: string; verdict: AccusationVerdict } & SessionInput)
+  | ({ role: "graph_accusation_round"; player_input: string; verdict: AccusationVerdict; accused: string | null; cited: string[] } & SessionInput)
   | ({ role: "graph_ending"; player_input: string; verdict: AccusationVerdict; cited: string[] } & SessionInput)
   | ({
     role: "accusation_start";
@@ -154,7 +179,10 @@ export type RoleRequestInput =
   | ({
     role: "accusation_judge";
     player_input: string;
-    round: number;
+    /** This accusation is the game's last: a failure ends the case. */
+    last_accusation: boolean;
+    /** Out of turns: the investigator cannot go back to exploring. */
+    forced_by_timeout?: boolean;
     history_mode?: "all" | "none";
   } & SessionInput);
 
@@ -227,7 +255,7 @@ const REGISTRY: Record<RoleRequestName, any> = {
       buildGameStartPrompt({
         target_age: input.blueprint.metadata.target_age,
         premise: input.blueprint.narrative.premise,
-        narration_style: input.blueprint.metadata.narration_style ?? null,
+        narration_style: narrationStyleOf(input.blueprint),
         // A clue-graph opening words the case's public facts.
         ...(input.blueprint.clue_graph ? { facts: input.blueprint.clue_graph.opening.facts } : {}),
       }),
@@ -261,7 +289,7 @@ const REGISTRY: Record<RoleRequestName, any> = {
         ),
         destination_sub_locations_json:
           subLocations.length > 0 ? JSON.stringify(subLocations) : undefined,
-        narration_style: input.blueprint.metadata.narration_style ?? null,
+        narration_style: narrationStyleOf(input.blueprint),
         ...(graph ? { destination_facts: graph.locations[destination.id].facts } : {}),
       });
     },
@@ -299,7 +327,6 @@ const REGISTRY: Record<RoleRequestName, any> = {
       }),
     vars: (input: InputFor<"talk_conversation">) => ({
       character_name: characterNameFor(input.blueprint, input.character_id),
-      player_input: input.player_input,
       target_age: input.blueprint.metadata.target_age,
     }),
   } satisfies TemplateRoleSpec<"talk_conversation">,
@@ -357,11 +384,10 @@ const REGISTRY: Record<RoleRequestName, any> = {
       const earlier = linesThisConversation(input.conversation_history ?? [], input.character_id);
       const names = {
         character_name: characterName,
-        player_input: input.player_input ?? "",
         earlier_lines:
           earlier.length === 0
             ? ""
-            : renderPrompt(GRAPH_TALK_EARLIER_LINES, { character_name: characterName, lines: earlier.map((line) => `- "${line}"`).join("\n") }),
+            : renderPrompt(GRAPH_TALK_EARLIER_LINES, { lines: JSON.stringify(earlier) }),
       };
       return {
         ...names,
@@ -386,8 +412,6 @@ const REGISTRY: Record<RoleRequestName, any> = {
         conversation_history: input.conversation_history,
       }),
     vars: (input: InputFor<"graph_search">) => ({
-      location_name: locationNameFor(input.blueprint, input.location_id),
-      search_target: input.search_query ? `: "${input.search_query}"` : "",
       notebook_words: notebookWords(input.blueprint),
     }),
     // A known outcome has one budget; a judged one states both.
@@ -418,19 +442,19 @@ const REGISTRY: Record<RoleRequestName, any> = {
   graph_accusation: {
     kind: "template",
     context: (input: InputFor<"graph_accusation">) => buildGraphAccusationAIContext(input),
-    vars: (input: InputFor<"graph_accusation">) => ({ player_input: input.player_input }),
+    vars: () => ({}),
   } satisfies TemplateRoleSpec<"graph_accusation">,
 
   graph_accusation_round: {
     kind: "template",
     context: (input: InputFor<"graph_accusation_round">) => buildGraphVerdictAIContext(input),
-    vars: (input: InputFor<"graph_accusation_round">) => ({ player_input: input.player_input }),
+    vars: () => ({}),
   } satisfies TemplateRoleSpec<"graph_accusation_round">,
 
   graph_ending: {
     kind: "template",
     context: (input: InputFor<"graph_ending">) => buildGraphVerdictAIContext(input),
-    vars: (input: InputFor<"graph_ending">) => ({ player_input: input.player_input }),
+    vars: () => ({}),
   } satisfies TemplateRoleSpec<"graph_ending">,
 
   accusation_judge: {
@@ -443,7 +467,8 @@ const REGISTRY: Record<RoleRequestName, any> = {
         session: input.session,
         blueprint: input.blueprint,
         player_input: input.player_input,
-        round: input.round,
+        last_accusation: input.last_accusation,
+        forced_by_timeout: input.forced_by_timeout,
         conversation_history: input.conversation_history,
         history_mode: input.history_mode,
       });
@@ -475,13 +500,11 @@ function searchVars(input: SearchInput) {
   return {
     location_name: locationNameFor(input.blueprint, input.location_id),
     target_age: input.blueprint.metadata.target_age,
-    search_query: input.search_query ?? "",
   };
 }
 
 /** The extra guidance a case format adds to a shared role's prompt. */
 function roleGuidance(blueprint: BlueprintContext, role: AIPromptKey): string {
-  if (blueprint.msf) return `\n\n${msfRoleGuidance(role)}`;
   const guidance = blueprint.clue_graph ? clueGraphRoleGuidance(role) : "";
   return guidance ? `\n\n${guidance}` : "";
 }
@@ -536,7 +559,7 @@ export async function buildRoleRequest(input: TemplateRoleInput): Promise<RoleRe
     input.blueprint.metadata.target_age,
     {
       interaction: spec.interaction?.(input as never),
-      narrationStyle: input.blueprint.metadata.narration_style ?? null,
+      narrationStyle: narrationStyleOf(input.blueprint),
       talkProfile: character ? talkPromptProfile(character) : undefined,
       clueGraph: input.blueprint.clue_graph !== undefined,
     },

@@ -36,13 +36,15 @@ export function planAction(action: GameAction, session: PlanSession): PlannedAct
     case "ask":
       // In the accusation every line is reasoning, said to the narrator.
       return session.mode === "accuse"
-        ? { kind: "accuse_round", reasoning: action.question }
+        ? { kind: "accusation", reasoning: action.question }
         : { kind: "ask", question: action.question, character_id: talkingTo(session, "Not talking to anyone") };
     case "end_talk":
       return { kind: "end_talk", character_id: talkingTo(session, "No active conversation to end") };
     case "accuse":
       return action.reasoning === null
         ? { kind: "accuse_start" }
-        : { kind: "accuse_round", reasoning: action.reasoning };
+        : { kind: "accusation", reasoning: action.reasoning };
+    case "back":
+      return { kind: "accuse_back" };
   }
 }

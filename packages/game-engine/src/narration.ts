@@ -6,6 +6,7 @@ import {
 } from "./speaker.ts";
 import type { LogWriter } from "./logging.ts";
 import type { SaveEvent } from "./context.ts";
+import { ACCUSE_FAILED, ACCUSE_RESOLVED } from "./accusations.ts";
 
 export interface NarrationPart {
   text: string;
@@ -173,7 +174,7 @@ function extractPlayerInput(row: EventRow): string | null {
   if (eventType === "ask") {
     return readString(row.payload.player_input);
   }
-  if (eventType === "accuse_round" || eventType === "accuse_resolved") {
+  if (eventType === ACCUSE_FAILED || eventType === ACCUSE_RESOLVED) {
     return readString(row.payload.player_reasoning);
   }
   if (eventType === "move") {

@@ -1,20 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { BlueprintScenesResponseSchema } from "../../../packages/shared/src/mystery-api-contracts";
+import { clueGraphCaseId } from "../../../packages/shared/src/clue-graph-case";
 import { API_URL, MOCK_BLUEPRINT_ID } from "./helpers";
 
 describe("public scene artwork", () => {
   it("serves validated recipes without a profile and leaves private blueprint data on the server", async () => {
-    const id = "7c3e9a52-4f1b-4d8e-9a6c-2b5f1e8d3a47";
     const response = await fetch(
-      `${API_URL}/blueprint-scenes?blueprint_id=${id}`,
+      `${API_URL}/blueprint-scenes?blueprint_id=${MOCK_BLUEPRINT_ID}`,
     );
     expect(response.status).toBe(200);
     const data = BlueprintScenesResponseSchema.parse(await response.json());
     expect(data.scenes.map((scene) => scene.location_id)).toEqual([
-      "lantern_room",
-      "keepers_cottage",
-      "village_quay",
+      "loc-kitchen",
+      "loc-living-room",
     ]);
+    expect(data.scenes.every((scene) => scene.kind === "procedural")).toBe(true);
     expect(Object.keys(data).sort()).toEqual([
       "blueprint_id",
       "scenes",
@@ -41,12 +41,12 @@ describe("public scene artwork", () => {
         )
       ).status,
     ).toBe(404);
-    const response = await fetch(
-      `${API_URL}/blueprint-scenes?blueprint_id=${MOCK_BLUEPRINT_ID}`,
+    const absent = await fetch(
+      `${API_URL}/blueprint-scenes?blueprint_id=${clueGraphCaseId("greenhouse-prizewinner")}`,
     );
-    expect(response.status).toBe(200);
+    expect(absent.status).toBe(200);
     expect(
-      BlueprintScenesResponseSchema.parse(await response.json()).scenes,
+      BlueprintScenesResponseSchema.parse(await absent.json()).scenes,
     ).toEqual([]);
     expect(
       (await fetch(`${API_URL}/blueprint-scenes`, { method: "POST" })).status,

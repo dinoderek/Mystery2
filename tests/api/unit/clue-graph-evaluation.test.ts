@@ -21,13 +21,12 @@ import { readBlueprint, type TurnCase } from "../../../evaluation/runtime/lib/ca
 import { outputSays } from "../../../evaluation/runtime/lib/expect.ts";
 import { casesFromTrace } from "../../../evaluation/runtime/cases.ts";
 import { buildRoleRequest } from "../../../evaluation/runtime/lib/prompt-build.ts";
-import { getAction, isAccusationRole, normalizeHistory, resolveRoleName } from "../../../evaluation/runtime/lib/roles.ts";
+import { getAction, normalizeHistory, resolveRoleName } from "../../../evaluation/runtime/lib/roles.ts";
 import { seedSessionWithHistory } from "../../../evaluation/runtime/lib/seed.ts";
 import { createLocalTraceSource, extractSessionTrace } from "../../../evaluation/trace/lib/datasource.ts";
 import { runTraceMechanicalChecks } from "../../../evaluation/trace/lib/mechanical.ts";
 import { reconstructTrace } from "../../../evaluation/trace/lib/reconstruct.ts";
 import type { RawTrace } from "../../../evaluation/trace/lib/normalize.ts";
-import { makeBlueprint } from "./trace-fixtures.ts";
 
 const ROOT = process.cwd();
 const GREENHOUSE_FILE = "blueprints/clue-graph/greenhouse-prizewinner.json";
@@ -45,7 +44,7 @@ const WIN = [
   "bye",
   "accuse",
   "It was Toby.",
-  "Toby did it: his welly prints are in the pumpkin.",
+  "accuse Toby did it: his welly prints are in the pumpkin.",
 ];
 
 describe("a clue-graph game, extracted and judged", () => {
@@ -95,7 +94,7 @@ describe("a clue-graph game, extracted and judged", () => {
     expect(trace.clue_graph?.progress.supported_conclusions.length).toBeGreaterThan(0);
     expect(trace.blueprint.clue_graph?.metadata.id).toBe("greenhouse-prizewinner");
     // The case is the private snapshot: its world view carries no V2 reasoning paths.
-    expect(trace.blueprint.solution_paths).toEqual([]);
+    expect(trace.blueprint).not.toHaveProperty("solution_paths");
     expect(trace.events.some((event) => event.payload?.clue_graph)).toBe(true);
   });
 
@@ -180,8 +179,8 @@ describe("what the game-master judges are told", () => {
     expect(says("gm_roleplay")).toContain("demeanor");
   });
 
-  it("leaves every other blueprint and every other judge's message as it was", () => {
-    const blueprint = makeBlueprint();
+  it("leaves a blueprint with no graph and every other judge's message as it was", () => {
+    const blueprint = { metadata: { title: "No graph" } };
     for (const id of GM) {
       expect(JSON.parse(composeJudgeUserMessage(id, null, { blueprint, subject: {} }))).not.toHaveProperty("format_guidance");
     }
@@ -203,20 +202,32 @@ describe("the runtime harness on a clue-graph case", () => {
     expect(resolveRoleName("talk", given, { type: "talk", character_id: "toby" }, blueprint, [])).toBe("graph_talk");
     expect(resolveRoleName("ask", { ...given, mode: "talk", talk_character_id: "toby" }, { type: "ask", player_input: "Hi" }, blueprint, [])).toBe("graph_talk");
     expect(resolveRoleName("search", given, { type: "search", search_query: "the pegs" }, blueprint, [])).toBe("search");
-    // An accusation's one judgement is who was named and what was cited; an endgame role.
+    // An accusation's one judgement is who was named and what was cited.
     const accusing = { ...given, mode: "accuse" };
-    const accused = resolveRoleName("accuse", accusing, { type: "accuse", player_reasoning: "It was Toby." }, blueprint, []);
-    expect(accused).toBe("graph_accusation");
-    expect(isAccusationRole(accused)).toBe(true);
+    expect(resolveRoleName("accuse", accusing, { type: "accuse", player_reasoning: "It was Toby." }, blueprint, [])).toBe("graph_accusation");
     expect(resolveRoleName("accuse", accusing, { type: "accuse" }, blueprint, [])).toBe("accusation_start");
   });
 
-  it("reads what a clue-graph talk reply opened and answered", () => {
+  it("reads what a clue-graph talk reply opened and answered, and the line it wrote for each", () => {
+    const notebook = [{ id: "toby_blames_mia", line: "Toby says it could have been Mia." }, { id: "toby_no_key", line: "Toby says he has not seen the key." }];
     const turn = {
       action: { type: "ask" },
-      response: { raw: { narration: "Hm.", opened: ["toby_blames_mia"], answered: ["toby_no_key"], input_understood: true } },
+      response: { output_role: "graph_talk", raw: { narration: "Hm.", opened: ["toby_blames_mia"], answered: ["toby_no_key"], notebook, input_understood: true } },
     } as unknown as Parameters<typeof outputSays>[0];
-    expect(outputSays(turn)).toEqual({ revealed: ["toby_blames_mia", "toby_no_key"], used: [], understood: true });
+    expect(outputSays(turn)).toEqual({
+      revealed: ["toby_blames_mia", "toby_no_key"],
+      used: [],
+      understood: true,
+      lines: { toby_blames_mia: "Toby says it could have been Mia.", toby_no_key: "Toby says he has not seen the key." },
+    });
+  });
+
+  it("reads a clue-graph search reply's find and its line", () => {
+    const turn = {
+      action: { type: "search" },
+      response: { output_role: "graph_search", raw: { narration: "Glass.", revealed_clue_id: "clue_glass_outside", costs_turn: true, input_understood: true, notebook: [{ id: "clue_glass_outside", line: "The glass is outside." }] } },
+    } as unknown as Parameters<typeof outputSays>[0];
+    expect(outputSays(turn)).toEqual({ revealed: ["clue_glass_outside"], used: [], understood: true, lines: { clue_glass_outside: "The glass is outside." } });
   });
 
   it("seeds the private snapshot beside the session, so the server plays the case and not the file", async () => {
@@ -236,10 +247,9 @@ describe("the runtime harness on a clue-graph case", () => {
         playerName: "seeded",
       });
       const read = openDatabase({ path: databaseFile, readonly: true });
-      const row = read.prepare("select blueprint_id, clue_graph_snapshot, msf_snapshot from game_sessions where id = ?").get(gameId) as Record<string, string | null>;
+      const row = read.prepare("select blueprint_id, clue_graph_snapshot from game_sessions where id = ?").get(gameId) as Record<string, string | null>;
       read.close();
       expect(row.blueprint_id).toBe(GREENHOUSE_ID);
-      expect(row.msf_snapshot).toBeNull();
       expect(JSON.parse(row.clue_graph_snapshot as string)).toEqual(blueprint.clue_graph);
     } finally {
       fs.rmSync(scratch, { recursive: true, force: true });

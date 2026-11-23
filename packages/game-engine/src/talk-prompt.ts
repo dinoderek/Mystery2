@@ -60,7 +60,7 @@ const HEADER = `You are {{character_name}}, talking with the investigator in a c
 {{age_guidance}}
 {{style_guidance}}
 
-The investigator says: {{player_input}}
+The investigator's current line is in player_input.
 - Answer what they asked, in step with the conversation so far. Never volunteer clues, backstory or commentary they did not ask for; flavor_knowledge is a touch of color.
 - Keep to actual_actions, the parts of your day you will speak of. Never reveal the solution.`;
 

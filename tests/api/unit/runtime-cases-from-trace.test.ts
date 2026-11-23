@@ -1,11 +1,22 @@
-import { describe, expect, it } from "vitest";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 
+import { afterEach, describe, expect, it } from "vitest";
+
+import { readBlueprint } from "../../../evaluation/runtime/lib/case.ts";
+import { played, readGraph } from "../../../evaluation/runtime/cases/clue-graph/support/play.ts";
+import { getAction, normalizeHistory } from "../../../evaluation/runtime/lib/roles.ts";
+import { buildRoleRequest } from "../../../evaluation/runtime/lib/prompt-build.ts";
+import type { TemplateRoleInput } from "../../../packages/game-engine/src/role-request.ts";
 import {
   actionForEvent,
+  casesCommand,
   buildCase,
   historyPayload,
   sampleEvenly,
 } from "../../../evaluation/runtime/cases.ts";
+import { makeRawTrace } from "./trace-fixtures";
 
 // These helpers turn a collected game-master trace into deterministic
 // single-event runtime-eval cases. They run without a database or LLM, so we
@@ -39,6 +50,10 @@ describe("sampleEvenly", () => {
 });
 
 describe("actionForEvent", () => {
+  it("retains a targeted search query and an accusation's reasoning", () => {
+    expect(actionForEvent({ event_type: "search", payload: { search_query: "the water butt" } })).toEqual({ type: "search", search_query: "the water butt" });
+    expect(actionForEvent({ event_type: "accuse_failed", payload: { player_reasoning: "It was Toby." } })).toEqual({ type: "accuse", player_reasoning: "It was Toby." });
+  });
   it("maps an ask event to an ask action carrying the player input", () => {
     expect(
       actionForEvent({ event_type: "ask", payload: { player_input: "who did it?" } }),
@@ -69,37 +84,30 @@ describe("actionForEvent", () => {
   });
 
   it("returns null for unsupported event types", () => {
-    expect(actionForEvent({ event_type: "end_talk", payload: {} })).toBeNull();
+    expect(actionForEvent({ event_type: "end_talk", payload: {} })).toEqual({ type: "end_talk" });
     expect(actionForEvent({ event_type: "clue_revealed", payload: {} })).toBeNull();
   });
 });
 
+it("reconstructs identical messages from engine-folded clue-graph history", async () => {
+  const file = "blueprints/clue-graph/greenhouse-prizewinner.json";
+  const graph = readGraph(file);
+  const before = played(graph, [{ search: "the broken side window" }, { move: "potting_shed" }, { talk: "toby", narration: "Toby says he was at home." }, { say: "The glass fell outside, so nobody climbed in.", reply: "Toby drops the burglar story.", opened: ["toby_drops_burglar"] }]);
+  const time = graph.metadata.time_budget - before.play.turns;
+  const source = { mode: "talk", location_id: before.play.at, talk_character_id: "toby", time_remaining: time, history: before.history };
+  const action = { type: "ask", player_input: "What happened next?" };
+  const exported = buildCase({ sequence: 99, event_type: "ask", payload: { role: "graph_talk", character_id: "toby", location_id: before.play.at, player_input: action.player_input, diagnostics: { mode: "talk", time_before: time } } }, before.history.map((row, i) => ({ ...row, sequence: i + 1 })), file, []);
+  const { blueprint } = await readBlueprint(file, process.cwd());
+  const messages = (given: typeof exported.given) => buildRoleRequest(getAction("ask").roleInput(given, action, blueprint, normalizeHistory(given.history)) as unknown as TemplateRoleInput);
+  // Compare the request after export with the original recorded state, including sequence.
+  source.history = source.history.map((row, i) => ({ ...row, sequence: i + 1 }));
+  expect(await messages(exported.given)).toEqual(await messages(source));
+});
+
 describe("historyPayload", () => {
-  it("keeps only the whitelisted history fields and drops everything else", () => {
-    const kept = historyPayload({
-      player_input: "hi",
-      character_id: "c1",
-      character_name: "Ann",
-      location_id: "l1",
-      location_name: "Hall",
-      destination: "l2",
-      revealed_clue_ids: ["x"],
-      revealed_clue_id: "y",
-      diagnostics: { mode: "talk" }, // not on the whitelist
-      other_field: "drop me",
-    });
-    expect(kept).toEqual({
-      player_input: "hi",
-      character_id: "c1",
-      character_name: "Ann",
-      location_id: "l1",
-      location_name: "Hall",
-      destination: "l2",
-      revealed_clue_ids: ["x"],
-      revealed_clue_id: "y",
-    });
-    expect(kept).not.toHaveProperty("diagnostics");
-    expect(kept).not.toHaveProperty("other_field");
+  it("preserves the engine payload, including earned state and notebook lines", () => {
+    const payload = { used_clue_ids: ["x"], used_quote: "the red marks", new_commitments: ["I saw it"], role: "graph_talk", clue_graph: { type: "line" }, notebook: { x: "Red marks." }, diagnostics: { mode: "talk" } };
+    expect(historyPayload(payload)).toEqual(payload);
   });
 
   it("returns an empty object for an empty or nullish payload", () => {
@@ -151,8 +159,8 @@ describe("buildCase", () => {
             event_type: "talk",
             actor: "player",
             narration: "t",
-            // The stray field is stripped by the history-payload whitelist.
-            payload: { character_id: "c1" },
+            // The entire recorded payload survives the export.
+            payload: { character_id: "c1", stray_field: "drop me" },
           },
         ],
       },
@@ -188,5 +196,51 @@ describe("buildCase", () => {
     const { given } = buildCase(target, [], blueprintPath, ["flesch"]);
     expect(given.time_remaining).toBe(99);
     expect(given.talk_character_id).toBe("c2");
+  });
+});
+
+describe("the cases command", () => {
+  let scratch = "";
+  afterEach(() => {
+    if (scratch) fs.rmSync(scratch, { recursive: true, force: true });
+    scratch = "";
+  });
+
+  const run = (tracePath: string, out: string) =>
+    casesCommand.run([tracePath, "--out", out], { root: process.cwd(), out: () => {}, err: () => {}, env: {} });
+
+  it("writes the trace's clue-graph case, which the harness reads back, beside the cases", async () => {
+    scratch = fs.mkdtempSync(path.join(os.tmpdir(), "mystery-cases-command-"));
+    const tracePath = path.join(scratch, "trace.json");
+    fs.writeFileSync(tracePath, JSON.stringify(makeRawTrace()));
+    expect(await run(tracePath, path.join(scratch, "out"))).toBe(0);
+
+    const cases = JSON.parse(fs.readFileSync(path.join(scratch, "out", "trace.cases.json"), "utf8"));
+    expect(cases.length).toBeGreaterThan(0);
+    const { blueprint } = await readBlueprint(cases[0].blueprint.path, process.cwd());
+    expect(blueprint.clue_graph.metadata.id).toBe("mock-case");
+  });
+
+  it("writes the case at the age the game was played, which the trace's world view carries", async () => {
+    scratch = fs.mkdtempSync(path.join(os.tmpdir(), "mystery-cases-command-"));
+    const tracePath = path.join(scratch, "trace.json");
+    const trace = makeRawTrace();
+    const authored = trace.blueprint.clue_graph!.metadata.target_age;
+    const played = authored === 7 ? 8 : 7;
+    fs.writeFileSync(tracePath, JSON.stringify({ ...trace, blueprint: { ...trace.blueprint, metadata: { ...trace.blueprint.metadata, target_age: played } } }));
+    expect(await run(tracePath, path.join(scratch, "out"))).toBe(0);
+
+    const cases = JSON.parse(fs.readFileSync(path.join(scratch, "out", "trace.cases.json"), "utf8"));
+    const { blueprint } = await readBlueprint(cases[0].blueprint.path, process.cwd());
+    expect(blueprint.clue_graph.metadata.target_age).toBe(played);
+  });
+
+  it("refuses a trace of a blueprint that is not a clue graph, by name, and writes nothing", async () => {
+    scratch = fs.mkdtempSync(path.join(os.tmpdir(), "mystery-cases-command-"));
+    const tracePath = path.join(scratch, "trace.json");
+    fs.writeFileSync(tracePath, JSON.stringify({ blueprint: { id: "the-missing-heartwood", world: {} }, events: [] }));
+
+    await expect(run(tracePath, path.join(scratch, "out"))).rejects.toThrow(/blueprint the-missing-heartwood, which is not a clue-graph case/);
+    expect(fs.existsSync(path.join(scratch, "out"))).toBe(false);
   });
 });

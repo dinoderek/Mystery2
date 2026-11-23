@@ -1,6 +1,6 @@
 // The shapes a turn passes between its steps.
 
-import type { PlayableBlueprint } from "../../../shared/src/msf-case.ts";
+import type { PlayableCase } from "../../../shared/src/playable-case.ts";
 import type { RevealedClue } from "../../../shared/src/mystery-api-contracts.ts";
 import type { AIProvider } from "../ai-provider.ts";
 import type { GameEventRow, GameSessionPatch, GameSessionRow } from "../context.ts";
@@ -12,7 +12,7 @@ import type { GameMode } from "../state-machine.ts";
 export interface TurnGame {
   game_id: string;
   session: GameSessionRow;
-  blueprint: PlayableBlueprint;
+  blueprint: PlayableCase;
   /** The events the game master took part in so far, in sequence order. */
   history: GameEventRow[];
   /** The sequence the next saved event takes, counting every event saved. */
@@ -36,7 +36,8 @@ export type PlannedAction =
   | { kind: "ask"; question: string; character_id: string }
   | { kind: "end_talk"; character_id: string }
   | { kind: "accuse_start" }
-  | { kind: "accuse_round"; reasoning: string };
+  | { kind: "accuse_back" }
+  | { kind: "accusation"; reasoning: string };
 
 /** How the narrator sets the accusation scene when this action spends the last turn. */
 export interface EndgameScene {

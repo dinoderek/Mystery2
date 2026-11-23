@@ -1,5 +1,5 @@
 import { GameStartRequestSchema } from "../../../shared/src/mystery-api-contracts.ts";
-import type { PlayableBlueprint } from "../../../shared/src/msf-case.ts";
+import type { PlayableCase } from "../../../shared/src/playable-case.ts";
 import {
   DEFAULT_AI_PROFILE_ID,
   type EngineAIProfile,
@@ -17,6 +17,7 @@ import {
   createAIRequestMetadata,
   createAIProviderFromProfile,
 } from "../ai-provider.ts";
+import { ACCUSATIONS } from "../accusations.ts";
 import { notebookMarks } from "../clue-graph/notebook-view.ts";
 import { buildGameState } from "../game-state-view.ts";
 import { buildNarrationPrompt } from "../role-request.ts";
@@ -40,6 +41,8 @@ import {
 const NOTEBOOK_GUIDANCE =
   'Tip: type "notebook" (or "n") to open your case notebook. ' +
   "It holds what you know, who you have met, and every clue you have found. " +
+  `You have ${ACCUSATIONS} accusations. Each one you try uses one up. ` +
+  'Type "accuse" when you are ready, and "back" if you change your mind: that is free. ' +
   'Type "help" to see what else you can do.';
 
 const JSON_HEADERS = { "Content-Type": "application/json" };
@@ -75,7 +78,7 @@ async function resolveProfile(
 }
 
 /** The opening diagnostics; the response carries them with the sequence they relate to. */
-function startDiagnostics(blueprint: PlayableBlueprint, relatedSequence?: number) {
+function startDiagnostics(blueprint: PlayableCase, relatedSequence?: number) {
   return createNarrationDiagnostics({
     action: "start",
     event_category: "start",
@@ -90,9 +93,8 @@ function startDiagnostics(blueprint: PlayableBlueprint, relatedSequence?: number
   });
 }
 
-function startPayload(blueprint: PlayableBlueprint) {
+function startPayload(blueprint: PlayableCase) {
   return {
-    ...(blueprint.msf ? { case_format: "msf/0.1.0", case_revision: blueprint.msf.structure.metadata.revision } : {}),
     ...(blueprint.clue_graph ? { case_format: blueprint.clue_graph.format } : {}),
     speaker: NARRATOR_SPEAKER,
     blueprint_image_id: blueprint.metadata.image_id ?? null,
@@ -105,7 +107,7 @@ async function openCase(
   req: Request,
   ctx: EngineContext,
   logger: ReturnType<typeof createRequestLogger>,
-  blueprint: PlayableBlueprint,
+  blueprint: PlayableCase,
   profile: EngineAIProfile,
 ) {
   // The id exists before the session does: nothing is written until the
@@ -152,7 +154,6 @@ async function openCase(
         current_location_id: blueprint.world.starting_location_id,
         time_remaining: blueprint.metadata.time_budget,
         reading_age: blueprint.metadata.target_age,
-        ...(blueprint.msf ? { msf_snapshot: blueprint.msf } : {}),
         ...(blueprint.clue_graph ? { clue_graph_snapshot: blueprint.clue_graph } : {}),
       },
       events: [buildNarrationEvent(startEvent, 1)],
@@ -172,7 +173,7 @@ async function openCase(
 }
 
 function startResponse(
-  blueprint: PlayableBlueprint,
+  blueprint: PlayableCase,
   opened: { gameId: string; narrationParts: ReturnType<typeof createNarrationPart>[] },
 ): Response {
   const state = buildGameState(blueprint, {
@@ -180,6 +181,7 @@ function startResponse(
     // Before anything is played, every lead is new.
     ...(blueprint.clue_graph ? { leads: notebookMarks(blueprint.clue_graph, []).leads } : {}),
     time_remaining: blueprint.metadata.time_budget,
+    accusations_left: ACCUSATIONS,
     location: blueprint.world.starting_location_id,
     mode: "explore",
     current_talk_character: null,

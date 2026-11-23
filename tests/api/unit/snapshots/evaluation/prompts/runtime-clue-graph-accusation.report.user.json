@@ -1,0 +1,131 @@
+{
+  "prompt": "You read an accusation in a children's mystery game. You do not answer it and you decide nothing: the game does. You report two things.\n\nRead the investigator's accusation in player_input.\n\ngraph_accusation_context.people is everyone in the case. graph_accusation_context.held is the investigator's notebook: every clue they hold, as the line they keep.\n- accused_character_id: the id of the one person this line accuses, however it is put or spelled. null when it accuses nobody, or several without choosing.\n- cited_clue_ids: the ids of held clues the investigator uses as evidence in this line: they state its substance or make its point, in their own words. Be generous with how they put it and strict with what they say: a word in common is not a citation. A clue not in held is never cited.\n\nReturn JSON:\n{\n  \"accused_character_id\": \"an id from people, or null\",\n  \"cited_clue_ids\": [\"ids from held\"]\n}",
+  "context": {
+    "game_id": "case",
+    "role_name": "graph_accusation",
+    "mode": "accuse",
+    "forced_by_timeout": false,
+    "location_id": "potting_shed",
+    "character_id": null,
+    "player_input": "It was Mia! She wrote her name over Toby's on the rota in sparkly purple pen so she could have all the shifts.",
+    "conversation_history": [
+      {
+        "sequence": 12,
+        "event_type": "accuse_start",
+        "actor": "player",
+        "narration": "Everyone gathers round to hear what you have worked out. Who do you think did it, and why?\n\nYou have 3 accusations left. This one uses one. Type \"back\" to go back: that is free."
+      }
+    ],
+    "shared_mystery_context": {
+      "target_age": 10
+    },
+    "move_context": null,
+    "search_context": null,
+    "talk_context": null,
+    "accusation_start_context": null,
+    "accusation_judge_context": null,
+    "graph_accusation_context": {
+      "people": [
+        {
+          "id": "hale",
+          "name": "Ms. Hale"
+        },
+        {
+          "id": "toby",
+          "name": "Toby"
+        },
+        {
+          "id": "mia",
+          "name": "Mia"
+        },
+        {
+          "id": "dobbs",
+          "name": "Mr. Dobbs"
+        },
+        {
+          "id": "thorne",
+          "name": "Mr. Thorne"
+        }
+      ],
+      "held": [
+        {
+          "id": "clue_glass_outside",
+          "kind": "evidence",
+          "text": "The broken glass from the side window lies outside on the brick path, not inside. The window was knocked out from inside the greenhouse, so nobody climbed in through it.",
+          "from": "The Greenhouse: the broken side window",
+          "taken_back": false
+        },
+        {
+          "id": "clue_welly_prints",
+          "kind": "evidence",
+          "text": "Small welly prints with a leaf pattern are squished into the pumpkin mush. Only the club's two pupils, Toby and Mia, have leaf-pattern wellies.",
+          "from": "The Greenhouse: the smashed pumpkin",
+          "taken_back": false
+        },
+        {
+          "id": "clue_boot_prints",
+          "kind": "evidence",
+          "text": "Huge boot prints sink deep into the flower bed outside the broken window, near Mr. Thorne's fence. They are far too big for a child.",
+          "from": "The Greenhouse",
+          "taken_back": false
+        },
+        {
+          "id": "dobbs_rounds",
+          "kind": "statement",
+          "text": "Mr. Dobbs says that on his eight o'clock rounds he shone his torch into the greenhouse. Bertha was whole, and the door was locked.",
+          "from": "Mr. Dobbs",
+          "taken_back": false
+        },
+        {
+          "id": "react_dobbs_slippers",
+          "kind": "tell",
+          "text": "Mr. Dobbs rubs the back of his neck, glances at the garden window, and says he should have gone out last night, slippers or no slippers.",
+          "from": "Mr. Dobbs",
+          "taken_back": false
+        },
+        {
+          "id": "clue_dobbs_crash_time",
+          "kind": "statement",
+          "text": "Mr. Dobbs says that at about ten to nine last night he heard a big thud from the garden, then smashing glass. He thought it was the fox at his bins again.",
+          "from": "Mr. Dobbs",
+          "taken_back": false
+        },
+        {
+          "id": "thorne_alibi",
+          "kind": "statement",
+          "text": "Mr. Thorne says he was at the fair all evening with Goliath, at the growers' barbecue from seven till eleven.",
+          "from": "Mr. Thorne",
+          "taken_back": false
+        },
+        {
+          "id": "clue_thorne_mia_cake",
+          "kind": "statement",
+          "text": "Mr. Thorne says that at nine o'clock he bought carrot cake from young Mia at the fair's cake tent, across town. She was serving there from six till ten.",
+          "from": "Mr. Thorne",
+          "taken_back": false
+        },
+        {
+          "id": "thorne_never_set_foot",
+          "kind": "statement",
+          "text": "Mr. Thorne says he has never set foot in the school garden.",
+          "from": "Mr. Thorne",
+          "taken_back": false
+        },
+        {
+          "id": "react_thorne_boot",
+          "kind": "tell",
+          "text": "Mr. Thorne's ears turn red and he scuffs one huge boot on the grass.",
+          "from": "Mr. Thorne",
+          "taken_back": false
+        },
+        {
+          "id": "clue_rota_purple_ink",
+          "kind": "evidence",
+          "text": "On the watering rota, Toby's name is crossed out for Thursday, Friday and Saturday, and 'MIA' is written over it in sparkly purple pen.",
+          "from": "The Potting Shed: the watering rota on the door",
+          "taken_back": false
+        }
+      ]
+    }
+  }
+}

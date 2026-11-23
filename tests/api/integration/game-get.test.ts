@@ -9,6 +9,9 @@ import {
   type ApiAuthContext,
 } from "./helpers";
 
+const MOCK_PREMISE =
+  "The cookies vanished from the kitchen at noon. Alice baked the cookies this morning. Bob is a weekend guest who spent the morning in the living room.";
+
 describe("game-get endpoint", () => {
   let auth: ApiAuthContext;
 
@@ -53,12 +56,12 @@ describe("game-get endpoint", () => {
     expect(getData.state.characters).toContainEqual({
       id: "char-alice",
       first_name: "Alice",
-      last_name: "Smith",
+      last_name: "",
       location_id: "loc-kitchen",
       sex: "female",
-      summary: "The resident baker; she baked the missing cookies.",
+      summary: null,
     });
-    expect(getData.state.premise).toBe("Someone stole the cookies.");
+    expect(getData.state.premise).toBe(MOCK_PREMISE);
     expect(getData.state.mystery_summary).toContain("The cookies vanished");
     expect(Array.isArray(getData.state.discovered_clues)).toBe(true);
     expect(getData.narration_events.length).toBeGreaterThanOrEqual(3);

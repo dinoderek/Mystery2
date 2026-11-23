@@ -1,63 +1,65 @@
 # AI Runtime
 
-Narrator inputs, contracts and validation before saving a turn. Other formats:
-[MSF](msf-gameplay.md), [clue graph](clue-graph.md). Profiles and providers are
+Narrator contracts and validation before saving. Formats:
+[Clue graph](clue-graph.md). Profiles and providers are
 `docs/ai-configuration.md`; which blueprint fields reach which output is
 `docs/blueprint-generation-flows.md`.
 
 ## How a request is assembled
 
-Every narrator request goes through `packages/game-engine/src/role-request.ts`:
-`buildRoleRequest` for roles with an output contract, `buildNarrationPrompt`
-for plain narration (`intro`, `ambience`). It picks the role from the action
-and state (`resolveSearchRole`, `resolveAccusationRole`), builds the role's
-context (`ai-context.ts`), and renders its prompt (`ai-prompts.ts`) with the
-blueprint's `target_age` and `narration_style`. It is the only place those two
-are applied and imports no database, so the eval harness calls it too
-(`tests/api/unit/role-request.test.ts`).
+Pure `packages/game-engine/src/role-request.ts` selects roles, builds authorised
+context and renders prompts with the game's age and style. `buildRoleMessages`
+and `buildNarrationMessages` construct the system/user pair for live OpenRouter,
+live Claude CLI and replay, including plain `intro` and `ambience`. Search
+prompt keys map to the `search` output contract. Provider schemas and calls,
+including both clue-graph accusation stages, remain distinct from messages.
+The system message carries the output instruction and grounding policy.
+The user message carries the role task and its data. Structured calls read
+player words and history from context, with any current-visit excerpt labelled
+as data. Openings and arrivals label and quote case facts and previous prose.
+Tests compare live and replay messages byte for byte.
 
-**Lean prompts.** Each rule is stated once and no two conflict
-(`tests/api/unit/talk-prompt.test.ts`). Voice, reading level and grounding
-(only given facts, pronouns from `sex`) live in the shared layer alone.
-`talk-prompt.ts` builds `talk_conversation` from sections the character needs:
-its agenda types and conditions, lock kinds, tell kinds, an open fallback.
-Recorded state replaces refereeing; the one judgement left is whether a clue
-was used this turn.
+Voice and reading level are shared. `talk-prompt.ts` selects the character's
+agendas, locks, tells and open fallback. Recorded state leaves the narrator
+to judge whether a clue was used.
+
+## Grounding policy
+
+The [runtime text](../packages/game-engine/src/narrator-grounding.ts) helps a
+child reason from dependable facts and receive the clues their work earns.
+Authored facts and current game state take precedence over conflicting earlier
+narration. A visible correction uses existing reveal permission. Otherwise
+the narrator drops the disputed detail and preserves compatible scenery.
+Authored lies remain character accounts. A valid bluff can open its gate while
+the player's claim remains unverified.
+
+Within each existing call, the narrator finds support in its permitted material,
+admits uncertainty, checks its claims and includes earned details in the existing
+output. This also applies to the IDs reported in the first accusation stage.
+Ordinary knowledge helps interpret words and actions. Repeated samples are an
+offline stability measure, and agreement alone cannot establish truth.
+
+Anthropic sources reviewed 23 November 2026.
+[Reduce hallucinations](https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations)
+and [Prompting best practices](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices).
 
 ## Roles
 
-The roles and their output contracts are `ai-contracts.ts`. `search` is one
-contract; V2 uses two prompts: `search_bare` uses the `search_find` word budget
-when the backend already knows a clue will be revealed, else `search_empty`;
-`search_targeted` carries both, because the model decides the outcome
-(`OUTCOME_LENGTH_BY_ROLE` in `ai-prompts.ts`). `accusation_judge` answers each
-round `continue`, `win` or `lose` by the rule in "The accusation" in
-`docs/game.md`. `talk_start` and `talk_end` move nobody; `gm_fabrication`
-reports invented movement. A clue-graph case's `graph_talk` and `graph_search`
-also return a notebook line per clue revealed, and its accusation has three
-roles of its own (`docs/clue-graph.md`).
+`ai-contracts.ts` owns the role contracts. The legacy `search` contract has
+two prompts. A bare search gets the budget for its known outcome. A targeted
+search gets both budgets because the model judges it. The legacy accusation
+rules are in [The game](game.md#the-accusation). Talk greetings and farewells
+move nobody. Clue-graph role mechanics are in [Clue Graph](clue-graph.md#in-play).
 
 ## Narration style
-<!-- extract:narration-style -->
 
-Every prompt's `{{style_guidance}}` slot is filled by `buildStyleGuidance`:
-
-- The **standard narrator style** applies to every role: second person,
-  present tense; warm, cozy, never scary; concrete sensory detail; characters
-  speak in the first person with action beats; no meta-commentary.
-- A blueprint may add `metadata.narration_style`, one sentence of voice or tone
-  direction, layered on top. It can flavour the voice; it cannot override the
-  point of view or the safety rules.
-- Style is **subordinate to the reading level**. "Wry, gothic, faintly archaic"
-  is a legitimate voice and no licence to raise vocabulary or sentence length,
-  so the prompt says the reading level wins where they pull apart. The
-  generator prompt holds the same line when authoring: `narration_style` may
-  direct tone, mood and imagery only, never archaic, ornate, technical or
-  heavily figurative diction.
-<!-- /extract:narration-style -->
+`buildStyleGuidance` gives the narrator a warm, cozy voice in second person
+and present tense. Characters speak in first person with brief action beats.
+The narrator alone speaks after a failed clue-graph accusation or at the
+ending, which may quote a character. `metadata.narration_style` can flavour
+tone, mood and imagery within the reading level, point of view and safety rules.
 
 ## What each role sees
-<!-- extract:context-boundaries -->
 
 Which blueprint fields reach which role is the "Narration at play" table in
 `docs/blueprint-generation-flows.md`. The rules and reasons behind it:
@@ -86,8 +88,6 @@ Which blueprint fields reach which role is the "Narration at play" table in
   motive, alibi, action, background, flavour or `condition` tell (each awaits
   the investigator's words). It steers toward people, never things: any could
   be a hiding place. A return gets the last arrival's narration.
-  `role-request.ts` derives it from history
-  (`tests/api/unit/arrival-prompt.test.ts`).
 - **Search never sees a locked clue**, nor a spot whose clues are all locked,
   so no search or arrival weaves in, advertises or narrates "nothing here" for
   either. A targeted search naming that spot (`search-target.ts`) shows it and
@@ -99,16 +99,14 @@ Which blueprint fields reach which role is the "Narration at play" table in
   found and missing clue ids). Without them it cannot tell an earned case from
   a lucky one. Both are rebuilt from event history, and `path_coverage` is
   precomputed so the model does not intersect sets across a long context.
-- Every character summary carries `sex`, and every prompt tells the model to use
-  it for pronouns rather than guess.
-<!-- /extract:context-boundaries -->
+- Character summaries carry `sex` for the shared pronoun rule.
 
 ## Trusting the output
 
-Each role's output contract is a Zod schema in `ai-contracts.ts`, the source of
-the parser and of the JSON Schema a provider hands the model
-(`roleOutputJsonSchema`). Output is validated before anything is written;
-invalid output is retriable.
+`ai-contracts.ts` supplies each role's parser and provider JSON Schema
+(`roleOutputJsonSchema`). Validation precedes writes;
+invalid output is retriable. Replay dispatches the same parser by requested
+role, never by answer shape; parser acceptance does not imply engine admissibility.
 
 - The parser forgives noise (missing flags default, junk ids drop, doubled
   quote escapes go); the JSON Schema asks for the clean shape, all fields
@@ -122,7 +120,6 @@ invalid output is retriable.
 - Rules that span fields are the parser's, never asked of the model.
 
 ## Clue discovery and gating
-<!-- extract:clue-gating -->
 
 Discovery is event-sourced: a clue is discovered once a `search` or `ask`
 event records its id. `packages/game-engine/src/clue-discovery.ts` is the only
@@ -161,7 +158,6 @@ The notebook's records (`DiscoveredClueRecord`: `origin`, `source`,
 client groups by origin. `mapClueToThreads` exists but no player-facing path
 may use it before the case resolves: its labels ("Red herring: …") name the
 answer.
-<!-- /extract:clue-gating -->
 
 ## Earned, not free
 
@@ -201,7 +197,6 @@ Case facts and revealed clues reach the browser as structured fields, never
 parsed from narration.
 
 ## Entering the first location
-<!-- extract:game-enter -->
 
 `game-enter` narrates arrival at the starting location once, after the player
 confirms the opening: the same `ambience` call a move makes, as a first visit
@@ -209,13 +204,12 @@ with no clues held. It is refused unless the session's only event is `start`,
 so a double confirmation cannot narrate twice. It costs no turn, and its
 `move` event carries `role: "enter"` so a replayed transcript does not invent a
 `move to …` line the player never typed.
-<!-- /extract:game-enter -->
 
 ## The mock provider
 
-The default for `npm run dev` and every automated suite: a live model's paths,
-deterministically, at the target reading age. Changing a contract, prompt,
-context or provider selection changes the mock and its tests with it.
+The deterministic default for `npm run dev` and automated suites. It decodes
+the same labelled opening and arrival data and voices only those facts and
+visible names. Contract, prompt, context and provider changes update its tests.
 
 ## Failures, logs and attribution
 

@@ -12,8 +12,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readAIConfig } from '../../../packages/game-engine/src/ai-config.ts';
 import { runEval } from '../../../evaluation/core/dispatch.ts';
 import { parseReply } from '../../../evaluation/playtest/lib/investigator.ts';
-import { createPlayCommand } from '../../../evaluation/playtest/play.ts';
+import { createPlayCommand, findBlueprint } from '../../../evaluation/playtest/play.ts';
 import { reportCommand } from '../../../evaluation/playtest/report.ts';
+import { MOCK_CASE_ID, MOCK_CASE_SLUG } from '../../testkit/src/mock-case.ts';
 
 const REPO_ROOT = process.cwd();
 const FIXTURE_RUN = path.join(REPO_ROOT, 'tests', 'api', 'unit', 'fixtures', 'playtest-run');
@@ -36,15 +37,52 @@ function writeConfig(bindings: Record<string, unknown>): string {
 }
 
 /** Runs a command with the options, and says what it printed and returned. */
-async function run(command: Parameters<typeof runEval>[2][number], argv: string[]) {
+async function run(command: Parameters<typeof runEval>[2][number], argv: string[], env: NodeJS.ProcessEnv = {}) {
 	const lines: string[] = [];
 	const code = await runEval(
 		argv,
-		{ root: REPO_ROOT, out: (text) => lines.push(text), err: (text) => lines.push(text), env: {} },
+		{ root: REPO_ROOT, out: (text) => lines.push(text), err: (text) => lines.push(text), env },
 		[command]
 	);
 	return { code, output: lines.join('\n') };
 }
+
+describe("self-play's case lookup loads clue graphs only", () => {
+	const roots = path.join(REPO_ROOT, 'blueprints');
+	/** A case file of the retired format, in a blueprints folder of its own beside a clue-graph case. */
+	function retiredRoot(): { root: string; file: string } {
+		const root = path.join(scratch, 'blueprints');
+		fs.mkdirSync(path.join(root, 'clue-graph'), { recursive: true });
+		fs.copyFileSync(path.join(roots, 'clue-graph', 'mock-case.json'), path.join(root, 'clue-graph', 'mock-case.json'));
+		const file = path.join(root, 'the-missing-heartwood.json');
+		fs.writeFileSync(file, JSON.stringify({ schema_version: 'v2', id: 'the-missing-heartwood', world: {} }));
+		return { root, file };
+	}
+
+	it('finds a clue-graph case by path and by ID', () => {
+		const byPath = findBlueprint(path.join(roots, 'clue-graph', 'mock-case.json'), roots, '');
+		expect(byPath.blueprint.id).toBe(MOCK_CASE_ID);
+		expect(findBlueprint(MOCK_CASE_ID, roots, '').blueprint.clue_graph.metadata.id).toBe(MOCK_CASE_SLUG);
+	});
+
+	it('refuses a file of another format by name, given as a path', () => {
+		const { root, file } = retiredRoot();
+		expect(() => findBlueprint(file, root, '')).toThrow(`${file} is not a clue-graph case (v2)`);
+	});
+
+	it('refuses a case of another format that the query names, rather than not finding it', () => {
+		const { root, file } = retiredRoot();
+		expect(() => findBlueprint('the-missing-heartwood', root, '')).toThrow(`${file} is not a clue-graph case (v2)`);
+		expect(() => findBlueprint('no-such-case', root, '')).toThrow('No blueprint matches "no-such-case"');
+	});
+
+	it('refuses a case of another format by its id when the file is named otherwise', () => {
+		const { root, file } = retiredRoot();
+		const renamed = path.join(root, 'old-story.json');
+		fs.renameSync(file, renamed);
+		expect(() => findBlueprint('the-missing-heartwood', root, '')).toThrow(`${renamed} is not a clue-graph case (v2)`);
+	});
+});
 
 describe('play refuses what it cannot run, before it starts a server', () => {
 	const startServer = vi.fn();
@@ -54,9 +92,9 @@ describe('play refuses what it cannot run, before it starts a server', () => {
 
 	it.each([
 		[[], '--blueprint or --replay is required'],
-		[['--blueprint', 'mock-blueprint', '--narrator', 'loud'], '--narrator must be claude or mock'],
-		[['--blueprint', 'mock-blueprint', '--games', '0'], '--games needs a positive integer'],
-		[['--blueprint', 'mock-blueprint', '--persona', 'pirate'], 'Unknown persona "pirate". Known: detective, kid-7'],
+		[['--blueprint', 'mock-case', '--narrator', 'loud'], '--narrator must be claude or mock'],
+		[['--blueprint', 'mock-case', '--games', '0'], '--games needs a positive integer'],
+		[['--blueprint', 'mock-case', '--persona', 'pirate'], 'Unknown persona "pirate". Known: detective, kid-7'],
 		[['--blueprint', 'no-such-blueprint'], 'No blueprint matches "no-such-blueprint"'],
 		[['--replay', 'script.json', '--persona', 'detective'], 'drop --persona'],
 		[['--replay', 'script.json', '--model-override', 'investigator=opus'], 'calls no investigator'],
@@ -70,7 +108,7 @@ describe('play refuses what it cannot run, before it starts a server', () => {
 
 	it('stops for a binding that cannot run, instead of playing without it', async () => {
 		const outputRoot = path.join(scratch, 'out');
-		const base = ['--blueprint', 'mock-blueprint', '--output-root', outputRoot];
+		const base = ['--blueprint', 'mock-case', '--output-root', outputRoot];
 
 		const noInvestigator = await play(...base, '--config', writeConfig({ 'game-judge': STUB_BINDING }));
 		expect(noInvestigator.code).toBe(1);
@@ -101,7 +139,7 @@ describe('play refuses what it cannot run, before it starts a server', () => {
 		const outputRoot = path.join(scratch, 'out');
 		const { code, output } = await play(
 			'--blueprint',
-			'mock-blueprint',
+			'mock-case',
 			'--output-root',
 			outputRoot,
 			'--config',
@@ -122,7 +160,7 @@ describe('play refuses what it cannot run, before it starts a server', () => {
 	it('starts a mock narrator by naming mock, with no ai.json and no way to reach a model', async () => {
 		startServer.mockRejectedValue(new Error('no server in this test'));
 		const config = writeConfig({ investigator: STUB_BINDING });
-		await play('--blueprint', 'mock-blueprint', '--narrator', 'mock', '--output-root', path.join(scratch, 'out'), '--config', config);
+		await play('--blueprint', 'mock-case', '--narrator', 'mock', '--output-root', path.join(scratch, 'out'), '--config', config);
 
 		const [options] = startServer.mock.calls[0];
 		expect(options.env).toMatchObject({
@@ -140,7 +178,7 @@ describe('play refuses what it cannot run, before it starts a server', () => {
 		const config = writeConfig({ investigator: STUB_BINDING });
 		await play(
 			'--blueprint',
-			'mock-blueprint',
+			'mock-case',
 			'--narrator',
 			'claude',
 			'--narrator-model',
@@ -160,10 +198,26 @@ describe('play refuses what it cannot run, before it starts a server', () => {
 		expect(readAIConfig(path.join(root, 'ai.json'))).toEqual({ ais: { narrator: { backend: 'claude-cli', model: 'opus' } } });
 	});
 
+	it('seeds only the named OpenRouter profile and refuses conflicting narrator flags', async () => {
+		fs.writeFileSync(path.join(scratch, 'ai.json'), JSON.stringify({ ais: { measured: { backend: 'openrouter', model: 'test-model', key: 'test-key' }, unused: { backend: 'openrouter', model: 'other', key: 'other-key' } } }));
+		startServer.mockRejectedValue(new Error('no server in this test'));
+		const command = createPlayCommand({ startServer });
+		const args = ['play', '--blueprint', MOCK_CASE_SLUG, '--ai-profile', 'measured', '--config', writeConfig({ investigator: STUB_BINDING }), '--output-root', path.join(scratch, 'out')];
+		await run(command, args, { MYSTERY_CONFIG_ROOT: scratch });
+		const [options] = startServer.mock.calls[0];
+		expect(options.env.AI_PROFILE).toBe('measured');
+		const seeded = fs.mkdtempSync(path.join(scratch, 'seeded-'));
+		options.seed(seeded);
+		expect(readAIConfig(path.join(seeded, 'ai.json'))).toEqual({ ais: { measured: { backend: 'openrouter', model: 'test-model', key: 'test-key' } } });
+		startServer.mockClear();
+		expect((await run(command, [...args, '--narrator', 'mock'])).output).toContain('--ai-profile replaces');
+		expect(startServer).not.toHaveBeenCalled();
+	});
+
 	it('does not need an investigator to replay, only the script it names', async () => {
 		const script = path.join(scratch, 'script.json');
 		fs.writeFileSync(script, JSON.stringify({ blueprint_id: 'someone-else', inputs: ['search'] }));
-		const { code, output } = await play('--replay', script, '--blueprint', 'mock-blueprint', '--config', writeConfig({}));
+		const { code, output } = await play('--replay', script, '--blueprint', 'mock-case', '--config', writeConfig({}));
 		expect(code).toBe(1);
 		expect(output).toContain('The script was played on "someone-else"');
 		expect(startServer).not.toHaveBeenCalled();
@@ -215,18 +269,20 @@ describe('report on a committed run folder', () => {
 		expect(output).toContain('report.html');
 
 		const { html, data } = pageData(runDir);
-		expect(html).toContain('<title>The Missing Cookies Playtest</title>');
+		expect(html).toContain('<title>Mock Case — clue graph Playtest</title>');
 		expect(html).not.toContain('__REPORT_');
 		// Nothing a judge quoted can close the script the data sits in.
 		expect(html).not.toContain('</script><b>');
-		expect(data).toMatchObject({ title: 'The Missing Cookies', persona: 'detective', narratorModel: 'mock', investigatorModel: 'stub-model' });
+		expect(data).toMatchObject({ title: 'Mock Case — clue graph', persona: 'detective', narratorModel: 'mock', investigatorModel: 'stub-model' });
+		// The run has no trace.json, so the case is found by its id among the repo's clue-graph cases.
+		expect(data.targetAge).toBe(10);
 
 		const [game] = data.games;
 		expect(game).toMatchObject({
 			number: 1,
 			outcome: 'win',
 			cluesFound: 1,
-			cluesTotal: 2,
+			cluesTotal: 12,
 			cost: { narrator: null, investigator: 0.03, judges: 0.5 },
 			judges: { gm_spoiler: { status: 'fail', major: 1, minor: 0 } }
 		});
@@ -243,12 +299,12 @@ describe('report on a committed run folder', () => {
 			[5, 'ask', 'accuse Alice because of the crumbs']
 		]);
 		expect(game.turns[1]).toMatchObject({
-			clues: [{ id: 'clue-crumb', text: 'A crumb on the floor.' }],
+			clues: [{ id: 'clue_crumbs', text: '[Mock] A trail of cookie crumbs runs from the pantry to the back of the kitchen, not towards the living room.' }],
 			grade: { value: 8, pass: false },
 			turnsLeft: 5
 		});
 		expect(game.turns[2].note).toEqual({ kind: 'feedback', text: 'Try: search' });
-		expect(game.turns[3]).toMatchObject({ asDialogue: true, parts: [{ speaker: 'Alice Smith', character: true }] });
+		expect(game.turns[3]).toMatchObject({ asDialogue: true, parts: [{ speaker: 'Alice', character: true }] });
 
 		// A game that never started is named, with why.
 		expect(data.failed).toEqual([{ number: 2, error: 'game-start failed: signed out' }]);

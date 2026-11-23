@@ -106,7 +106,7 @@ export type Subject = z.infer<typeof SubjectSchema>;
 export const VerdictSchema = z
   .object({
     id: z.string().min(1),
-    tier: z.enum(["mechanical", "analyzer", "judge"]),
+    tier: z.enum(["mechanical", "judge"]),
     status: StatusSchema,
     findings: z.array(z.unknown()).optional(),
     details: z.unknown().optional(),

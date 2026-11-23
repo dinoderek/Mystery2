@@ -5,8 +5,7 @@
  * `judge-versions.json` lists, for every judge in the registry, the hash of
  * each of its versions in order: version 1 is the first hash, version N the
  * Nth. A judge's hash covers what its registry entry names: the brief, schema
- * and preamble (or the file its prompt is built in), the analyzer, the
- * context, the id checks and the verdict rule, and for a clue-graph judge its
+ * and preamble (or the file its prompt is built in), the context, the id checks and the verdict rule, and for a clue-graph judge its
  * format and, when it is sent the player's view, the code that derives it.
  *
  * A change to any of those is a new version: append the judge's new hash. The
@@ -53,7 +52,8 @@ export function judgeHash(entry: JudgeEntry): string {
       : { built: read(entry.prompt.source) };
   const identity = {
     prompt,
-    analyzer: entry.analyzer ? { ...entry.analyzer, source: read(entry.analyzer.module) } : null,
+    // No judge has an analyzer any more; the key stays so recorded versions keep their hashes.
+    analyzer: null,
     context: entry.context ?? null,
     id_checks: entry.idChecks ?? null,
     verdict: entry.verdict,

@@ -7,25 +7,22 @@
 import { ruleMet } from "../../../shared/src/clue-graph-reach.ts";
 import { relevantClues } from "../../../shared/src/clue-graph-route.ts";
 import type { ClueGraphCase, ClueGraphRule } from "../../../shared/src/clue-graph-schema.ts";
+import { isLastAccusation } from "../accusations.ts";
 import { currentLeads, notebook, type NotebookEntry } from "./leads.ts";
 import { isLive, searchKey, sourceCharacter, supportedConclusions, type ClueGraphPlay } from "./play.ts";
 
-/** The rounds after which a failing accusation ends the case, as V2's judge counts them. */
-export const LAST_ROUND = 3;
-
-/** What the narrator reports of one round: who was named, and which held clues were cited. */
+/** What the narrator reports of one accusation: who was named, and which held clues were cited. */
 export interface AccusationReport {
   accused: string | null;
   cited: string[];
 }
 
 /**
- * What the engine decided: `win`; `question`, the one question a right name
- * without support earns, a round even at the limit; `not_yet`, any other
- * failing round; `lose`, a failing round at the limit. The narrator words
- * `question` and `not_yet` alike.
+ * What the engine decided: `win`; `not_yet`, a failure that spends one
+ * accusation; `lose`, a failure on the last one.
  */
-export type AccusationVerdict = "win" | "question" | "not_yet" | "lose";
+export const ACCUSATION_VERDICTS = ["win", "not_yet", "lose"] as const;
+export type AccusationVerdict = (typeof ACCUSATION_VERDICTS)[number];
 
 /** What an accusation event saves, beside the player's reasoning. */
 export interface SavedAccusation extends AccusationReport {
@@ -79,20 +76,11 @@ export function confessionClues(graph: ClueGraphCase): string[] {
   });
 }
 
-/** The rounds so far and whether the one question was already asked. */
-function roundsSoFar(history: HistoryRow[]): { round: number; questioned: boolean } {
-  const rounds = history.filter((row) => row.event_type === "accuse_round");
-  const questioned = rounds.some(
-    (row) => (row.payload?.clue_graph_accusation as SavedAccusation | undefined)?.verdict === "question",
-  );
-  return { round: rounds.length, questioned };
-}
-
 /**
  * The rule. The true culprit named wins when the player holds the confession,
- * or a culprit conclusion holds and they cited one of its clues. The first
- * time the right name falls short, it earns the question; anything else keeps
- * V2's rounds: go on, and lose from round `LAST_ROUND`.
+ * or a culprit conclusion holds and they cited one of its clues. Anything else,
+ * a right name without support included, is a failure, which loses on the last
+ * accusation.
  */
 export function decideAccusation(
   graph: ClueGraphCase,
@@ -100,15 +88,35 @@ export function decideAccusation(
   history: HistoryRow[],
   report: AccusationReport,
 ): AccusationVerdict {
-  const rightName = report.accused === culpritOf(graph).character;
-  if (rightName) {
+  if (report.accused === culpritOf(graph).character) {
     if (confessionClues(graph).some((id) => isLive(play, id))) return "win";
     const support = new Set(supportingClues(graph, play));
     if (report.cited.some((id) => support.has(id))) return "win";
   }
-  const { round, questioned } = roundsSoFar(history);
-  if (rightName && !questioned) return "question";
-  return round >= LAST_ROUND ? "lose" : "not_yet";
+  return isLastAccusation(history) ? "lose" : "not_yet";
+}
+
+/** What the engine makes of the narrator's report: the accusation it saves, and the cited clues it dropped as not held. */
+export interface SettledAccusation {
+  saved: SavedAccusation;
+  notHeld: string[];
+}
+
+/**
+ * Settles a report the game accepted (its accused is in the case, or null): a
+ * clue the player does not hold cannot be cited, so it is dropped, and the
+ * engine decides on what is left.
+ */
+export function settleAccusation(
+  graph: ClueGraphCase,
+  play: ClueGraphPlay,
+  history: HistoryRow[],
+  report: AccusationReport,
+): SettledAccusation {
+  const cited = report.cited.filter((id) => play.held.includes(id));
+  const notHeld = report.cited.filter((id) => !play.held.includes(id));
+  const accusation = { accused: report.accused, cited };
+  return { saved: { ...accusation, verdict: decideAccusation(graph, play, history, accusation) }, notHeld };
 }
 
 /** The clues a lead is about: the character's, or the spot's. */
@@ -123,16 +131,17 @@ function leadClues(graph: ClueGraphCase, key: string): string[] {
 }
 
 /**
- * The lead the question points at: of the notebook's leads, the first whose
+ * The lead a failed accusation points at: of the notebook's leads, the first whose
  * person or spot holds a clue not yet held on a way to the culprit other than
  * the confession, else the first lead; null when there is none. It names who
  * or where, as every lead does.
  */
-export function questionLead(graph: ClueGraphCase, play: ClueGraphPlay): string | null {
-  const leads = currentLeads(graph, play);
-  const { conclusion } = culpritOf(graph);
+export function questionLead(graph: ClueGraphCase, play: ClueGraphPlay, towardClues?: Set<string>, excluded: string[] = []): string | null {
+  const { conclusion, character } = culpritOf(graph);
+  const blocked = new Set([character, ...excluded].flatMap((id) => [`meet:${id}`, `talk:${id}`]));
+  const leads = currentLeads(graph, play).filter((lead) => !blocked.has(lead.key));
   // The confession's way runs through the culprit, so pointing there would say who did it.
-  const onTheWay = relevantClues(graph, graph.conclusions[conclusion].rule, new Set(confessionClues(graph)));
+  const onTheWay = towardClues ?? relevantClues(graph, graph.conclusions[conclusion].rule, new Set(confessionClues(graph)));
   const toward = leads.find((lead) =>
     leadClues(graph, lead.key).some((id) => onTheWay.has(id) && !play.held.includes(id)),
   );
@@ -145,13 +154,98 @@ export interface AccusablePerson {
   name: string;
 }
 
+/** The kinds of reply a failed accusation gets, saved as its `reply_kind`. */
+export const REPLY_KINDS = ["flaw", "alternative", "missing"] as const;
+
+/** Only the material needed to explain this failed case, never a correctness flag. */
+export type AccusationReply =
+  | { kind: "flaw"; cleared_by: NotebookEntry[] }
+  | { kind: "flaw"; retracted: Array<{ statement: NotebookEntry; taken_back_by: string }> }
+  | { kind: "alternative"; people: AccusablePerson[]; lead: string | null }
+  | { kind: "missing"; fact_kind: string; lead: string | null };
+
+/** Choose the closest unfinished non-confession branch, preserving authored order on ties. */
+function missingOnRoute(graph: ClueGraphCase, play: ClueGraphPlay, rule: ClueGraphRule): string[] {
+  if (typeof rule === "string") {
+    if (Object.hasOwn(graph.conclusions, rule)) return missingOnRoute(graph, play, graph.conclusions[rule].rule);
+    return isLive(play, rule) ? [] : [rule];
+  }
+  const branches = ("all" in rule ? rule.all : rule.any).map((part) => missingOnRoute(graph, play, part));
+  if ("all" in rule) return [...new Set(branches.flat())];
+  const confessions = new Set(confessionClues(graph));
+  const ordinary = branches.filter((branch) => !branch.some((id) => confessions.has(id)));
+  return (ordinary.length ? ordinary : branches).reduce((best, branch) => branch.length < best.length ? branch : best);
+}
+
+function missingReply(graph: ClueGraphCase, play: ClueGraphPlay): AccusationReply {
+  const missing = missingOnRoute(graph, play, graph.conclusions[culpritOf(graph).conclusion].rule);
+  const kind = missing.length ? graph.clues[missing[0]].kind : null;
+  const fact_kind = kind === "evidence" ? "something you can see or touch that links someone to what happened"
+    : kind === "statement" ? "an account of who was where when it happened"
+    : kind === "tell" ? "an observed detail that connects someone to what happened"
+    : "a link between the clues you hold and the person you accuse";
+  return { kind: "missing", fact_kind, lead: questionLead(graph, play) };
+}
+
+interface AccusationRoute {
+  clues: string[];
+  clears: string[];
+}
+
+/** Keep clearing conclusions as exclusions: the other clues on that route alone leave those people possible. */
+function accusationRoutes(graph: ClueGraphCase, rule: ClueGraphRule): AccusationRoute[] {
+  if (typeof rule === "string") {
+    const conclusion = graph.conclusions[rule];
+    if (!conclusion) return [{ clues: [rule], clears: [] }];
+    if (conclusion.clears) return [{ clues: [], clears: [conclusion.clears] }];
+    return accusationRoutes(graph, conclusion.rule);
+  }
+  if ("any" in rule) return rule.any.flatMap((part) => accusationRoutes(graph, part));
+  return rule.all.reduce<AccusationRoute[]>((routes, part) => routes.flatMap((route) =>
+    accusationRoutes(graph, part).map((more) => ({ clues: [...route.clues, ...more.clues], clears: [...route.clears, ...more.clears] }))),
+  [{ clues: [], clears: [] }]);
+}
+
+/** Other people the cited route still needs to exclude, never names guessed from prose. */
+function alternativePeople(graph: ClueGraphCase, play: ClueGraphPlay, report: AccusationReport): AccusablePerson[] {
+  const { conclusion, character } = culpritOf(graph);
+  const routes = accusationRoutes(graph, graph.conclusions[conclusion].rule);
+  const fits = new Set(routes.filter((route) => route.clues.some((id) => report.cited.includes(id))).flatMap((route) => route.clears));
+  const cleared = new Set(supportedConclusions(graph, play).map((id) => graph.conclusions[id].clears));
+  return Object.entries(graph.characters)
+    .filter(([id]) => fits.has(id) && !cleared.has(id) && id !== report.accused && id !== character)
+    .map(([id, person]) => ({ id, name: person.name }));
+}
+
+/** Flaws take priority; alternatives follow the graph's elimination routes. */
+export function accusationReply(graph: ClueGraphCase, play: ClueGraphPlay, report: AccusationReport): AccusationReply {
+  const entries = notebook(graph, play);
+  const cited = report.cited.filter((id) => play.held.includes(id));
+  const retracted = entries.filter((entry) => entry.taken_back && cited.includes(entry.id))
+    .map((statement) => ({ statement, taken_back_by: statement.from }));
+  if (retracted.length) return { kind: "flaw", retracted };
+
+  const clearing = new Set<string>();
+  for (const conclusion of Object.values(graph.conclusions)) {
+    if (conclusion.clears === report.accused && ruleMet(graph, conclusion.rule, (id) => isLive(play, id)))
+      supportOf(graph, conclusion.rule, (id) => isLive(play, id), clearing);
+  }
+  if (clearing.size) return { kind: "flaw", cleared_by: entries.filter((entry) => clearing.has(entry.id)) };
+
+  if (report.accused !== null && report.accused !== culpritOf(graph).character && cited.length) {
+    const people = alternativePeople(graph, play, { ...report, cited });
+    const toward = new Set(Object.values(graph.conclusions).filter((conclusion) => people.some((person) => person.id === conclusion.clears))
+      .flatMap((conclusion) => [...relevantClues(graph, conclusion.rule)]));
+    if (people.length) return { kind: "alternative", people, lead: questionLead(graph, play, toward, [report.accused]) };
+  }
+  return missingReply(graph, play);
+}
+
 /** What the narrator reads before the case is resolved: only what the player holds. */
 export interface GraphAccusationContext {
   people: AccusablePerson[];
   /** The notebook: every held clue as its saved line. */
   held: NotebookEntry[];
-  /** What the investigator said in this accusation's earlier rounds. */
-  earlier_reasoning?: string[];
 }
 
 /** The closing scene's truth: the whole account. */
@@ -167,14 +261,15 @@ export interface GraphEnding {
 }
 
 /**
- * What the narrator words a round from. Before the case is resolved it never
+ * What the narrator words an accusation from. Before the case is resolved it never
  * says what the engine decided, so a right name and a wrong one read the same:
- * the case is not proven, with a lead to think about unless support is held.
+ * the case is not proven, with only its selected reply material.
  * Once resolved, it carries the ending.
  */
 export interface GraphVerdictContext extends GraphAccusationContext {
-  /** Before resolution: the lead to point at, or null. */
-  lead?: string | null;
+  /** Before resolution: the reported name and the engine's reply material. Held contains only citations. */
+  accused?: string | null;
+  reply?: AccusationReply;
   /** Set only once the case is resolved. */
   ending?: GraphEnding;
 }
@@ -190,11 +285,21 @@ export function verdictContext(
   graph: ClueGraphCase,
   play: ClueGraphPlay,
   verdict: AccusationVerdict,
-  cited: string[] = [],
+  report: AccusationReport = { accused: null, cited: [] },
+  turnsSpent = false,
 ): GraphVerdictContext {
+  const { accused, cited } = report;
   const base = accusationContext(graph, play);
-  if (!resolves(verdict))
-    return { ...base, lead: supportingClues(graph, play).length > 0 ? null : questionLead(graph, play) };
+  if (!resolves(verdict)) {
+    const reply = accusationReply(graph, play, { accused, cited });
+    return {
+      people: base.people.filter((person) => person.id === accused),
+      held: base.held.filter((entry) => cited.includes(entry.id)),
+      accused,
+      // Out of turns there is no more looking, so a lead could not be followed.
+      reply: turnsSpent && "lead" in reply ? { ...reply, lead: null } : reply,
+    };
+  }
   const { conclusion, character } = culpritOf(graph);
   const confession = confessionClues(graph).filter((id) => isLive(play, id));
   const support = new Set(supportingClues(graph, play));
@@ -215,4 +320,16 @@ export function verdictContext(
 /** Whether a verdict ends the case. */
 export function resolves(verdict: AccusationVerdict): verdict is "win" | "lose" {
   return verdict === "win" || verdict === "lose";
+}
+
+/** The role that words a decided accusation: the closing scene, or the failure's reply. */
+export function accusationRole(verdict: AccusationVerdict): "graph_ending" | "graph_accusation_round" {
+  return resolves(verdict) ? "graph_ending" : "graph_accusation_round";
+}
+
+/** The kind of reply a failure's context hands the narrator, as its event saves it. */
+export function replyKindOf(context: { graph_accusation_context?: unknown }): AccusationReply["kind"] {
+  const reply = (context.graph_accusation_context as GraphVerdictContext | undefined)?.reply;
+  if (!reply) throw new Error("a failed accusation's context carries no reply");
+  return reply.kind;
 }

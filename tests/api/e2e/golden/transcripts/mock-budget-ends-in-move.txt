@@ -1,5 +1,5 @@
 game: mock-budget-ends-in-move
-blueprint: mock-blueprint
+blueprint: mock-case
 
 steps
   0  (start)  mode=explore turns=10
@@ -16,52 +16,53 @@ steps
   11  "move to kitchen"  mode=accuse turns=0
   12  "n"  mode=accuse turns=0 opens=notebook
   13  "I do not know"  mode=accuse turns=0
-  14  "Bob took it"  mode=accuse turns=0
-  15  "Bob again"  mode=accuse turns=0
-  16  "Bob, Bob, Bob"  mode=ended turns=0 result=lose
+  14  "never mind"  mode=accuse turns=0
+  15  "Bob took it"  mode=accuse turns=0
+  16  "Bob again"  mode=ended turns=0 result=lose
 
 pages
-  page 0 opening "Mock Blueprint"
-    step 0 | Narrator (narrator): "[Mock] Narration for: You are the narrator for a children's mystery game.\nThe reader is 10 y..."
-    step 0 | Narrator (narrator): "Tip: type \"notebook\" (or \"n\") to open your case notebook. It holds what you know, who you have met, and every clue you have found. Type \"help\" to see what else you can do."
+  page 0 opening "Mock Case — clue graph"
+    step 0 | Narrator (narrator): "[Mock] The cookies vanished from the kitchen at noon. Alice baked the cookies this morning. Bob is a weekend guest who spent the morning in the living room."
+    step 0 | Narrator (narrator): "Tip: type \"notebook\" (or \"n\") to open your case notebook. It holds what you know, who you have met, and every clue you have found. You have 3 accusations. Each one you try uses one up. Type \"accuse\" when you are ready, and \"back\" if you change your mind: that is free. Type \"help\" to see what else you can do."
   page 1 location "Kitchen"
-    step 1 | Narrator (narrator): "[Mock] You arrive at Kitchen. Alice is here."
+    step 1 | Narrator (narrator): "[Mock] You arrive at Kitchen. The kitchen is warm and smells of baking. Flour dusts the counter beside an empty baking tray. Alice is here."
   page 2 location "Living Room"
     step 2 | You (investigator): "move living room"
-    step 2 | Narrator (narrator): "[Mock] You arrive at Living Room. Bob is here."
+    step 2 | Narrator (narrator): "[Mock] You arrive at Living Room. The living room is cosy, with a sofa and a tall bookshelf. A board game is laid out on the low table. Bob is here."
   page 3 location "Kitchen"
     step 3 | You (investigator): "move to kitchen"
-    step 3 | Narrator (narrator): "[Mock] You arrive at Kitchen. Alice is here."
+    step 3 | Narrator (narrator): "[Mock] You arrive at Kitchen. The kitchen is warm and smells of baking. Flour dusts the counter beside an empty baking tray. Alice is here."
   page 4 location "Living Room"
     step 4 | You (investigator): "move to living room"
-    step 4 | Narrator (narrator): "[Mock] You arrive at Living Room. Bob is here."
+    step 4 | Narrator (narrator): "[Mock] You arrive at Living Room. The living room is cosy, with a sofa and a tall bookshelf. A board game is laid out on the low table. Bob is here."
   page 5 location "Kitchen"
     step 5 | You (investigator): "move to kitchen"
-    step 5 | Narrator (narrator): "[Mock] You arrive at Kitchen. Alice is here."
+    step 5 | Narrator (narrator): "[Mock] You arrive at Kitchen. The kitchen is warm and smells of baking. Flour dusts the counter beside an empty baking tray. Alice is here."
   page 6 location "Living Room"
     step 6 | You (investigator): "move to living room"
-    step 6 | Narrator (narrator): "[Mock] You arrive at Living Room. Bob is here."
+    step 6 | Narrator (narrator): "[Mock] You arrive at Living Room. The living room is cosy, with a sofa and a tall bookshelf. A board game is laid out on the low table. Bob is here."
   page 7 location "Kitchen"
     step 7 | You (investigator): "move to kitchen"
-    step 7 | Narrator (narrator): "[Mock] You arrive at Kitchen. Alice is here."
+    step 7 | Narrator (narrator): "[Mock] You arrive at Kitchen. The kitchen is warm and smells of baking. Flour dusts the counter beside an empty baking tray. Alice is here."
   page 8 location "Living Room"
     step 8 | You (investigator): "move to living room"
-    step 8 | Narrator (narrator): "[Mock] You arrive at Living Room. Bob is here."
+    step 8 | Narrator (narrator): "[Mock] You arrive at Living Room. The living room is cosy, with a sofa and a tall bookshelf. A board game is laid out on the low table. Bob is here."
   page 9 location "Kitchen"
     step 9 | You (investigator): "move to kitchen"
-    step 9 | Narrator (narrator): "[Mock] You arrive at Kitchen. Alice is here."
+    step 9 | Narrator (narrator): "[Mock] You arrive at Kitchen. The kitchen is warm and smells of baking. Flour dusts the counter beside an empty baking tray. Alice is here."
   page 10 location "Living Room"
     step 10 | You (investigator): "move to living room"
-    step 10 | Narrator (narrator): "[Mock] You arrive at Living Room. Bob is here."
+    step 10 | Narrator (narrator): "[Mock] You arrive at Living Room. The living room is cosy, with a sofa and a tall bookshelf. A board game is laid out on the low table. Bob is here."
   page 11 location "Kitchen"
     step 11 | You (investigator): "move to kitchen"
-    step 11 | Narrator (narrator): "[Mock] You arrive at Kitchen. Alice is here."
+    step 11 | Narrator (narrator): "[Mock] You arrive at Kitchen. The kitchen is warm and smells of baking. Flour dusts the counter beside an empty baking tray. Alice is here."
     step 11 | Narrator (narrator): "[Mock] Time is up. You must make your accusation now. Who did it, and how do you know?"
+    step 11 | System (system): "You have 3 accusations left. This one uses one. Time is up, so there is no going back."
     step 13 | You (investigator): "I do not know"
-    step 13 | Narrator (narrator): "[Mock] I am not sure yet. Who do you think did it, and what clue shows it?"
-    step 14 | You (investigator): "Bob took it"
-    step 14 | Narrator (narrator): "[Mock] Not yet. There is more to know about Crumbs in the kitchen and Alice's motive point to her as the culprit.. What clue shows it was them?"
-    step 15 | You (investigator): "Bob again"
-    step 15 | Narrator (narrator): "[Mock] Not yet. There is more to know about Crumbs in the kitchen and Alice's motive point to her as the culprit.. What clue shows it was them?"
-    step 16 | You (investigator): "Bob, Bob, Bob"
-    step 16 | Narrator (narrator): "[Mock] The case ends here. This time the answer got away."
+    step 13 | Narrator (narrator): "[Mock] Not proven yet. Your case needs something you can see or touch that links someone to what happened. Try your accusation again."
+    step 14 | You (investigator): "never mind"
+    step 14 | System (system): "Time is up, so there is no going back now. Who did it, and how do you know?"
+    step 15 | You (investigator): "Bob took it"
+    step 15 | Narrator (narrator): "[Mock] Not proven yet. Your case needs something you can see or touch that links someone to what happened. Try your accusation again."
+    step 16 | You (investigator): "Bob again"
+    step 16 | Narrator (narrator): "[Mock] The case ends here. This time the answer got away. Alice did it. Alice ate the cookies and blamed Bob. 11:00: Alice bakes a batch of cookies and puts them in the jar on the pantry shelf. 11:30: Bob starts a board game against himself in the living room and writes down every move. Noon: Alice eats every cookie in the pantry and leaves floury fingerprints on the empty jar. Just after noon: Alice stuffs her crumby apron into the laundry basket, and Bob sees her through the doorway. Why: Alice was hungry after baking all morning and could not resist the cookies. She blamed Bob because she was embarrassed."

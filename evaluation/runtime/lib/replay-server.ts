@@ -101,15 +101,14 @@ export class ServerNarrator {
     return this.server;
   }
 
-  /** Makes the case's blueprint available to the server, if it is not the repo's. */
+  /** Makes the case's blueprint available to the server, if it is not the repo's (in `blueprints/` or `blueprints/clue-graph/`). */
   private prepare(server: ThrowawayServer, request: ServerReplayRequest): void {
     const repoBlueprints = path.join(this.repoRoot, "blueprints");
-    if (path.dirname(request.blueprintPath) !== repoBlueprints) {
+    if (![repoBlueprints, path.join(repoBlueprints, "clue-graph")].includes(path.dirname(request.blueprintPath))) {
       const dir = path.join(server.configRoot, "blueprints");
       fs.mkdirSync(dir, { recursive: true });
       const target = path.join(dir, path.basename(request.blueprintPath));
-      if (request.blueprint.msf) fs.writeFileSync(target, JSON.stringify(request.blueprint.msf));
-      else fs.copyFileSync(request.blueprintPath, target);
+      fs.copyFileSync(request.blueprintPath, target);
     }
   }
 
@@ -144,7 +143,7 @@ export class ServerNarrator {
       parts: extractNarrationParts(testCase.action.type, answer.body),
       raw: answer.body,
     });
-    return { response, model: aiProfile, call: null };
+    return { response, model: aiProfile, calls: [] };
   }
 
   /** Stops the server, if one was started, and removes its config root. */

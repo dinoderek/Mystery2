@@ -10,7 +10,11 @@
 // Sibling of evaluation/lib/readability.ts — the other module shared across
 // harnesses.
 
+import { ACCUSE_FAILED, ACCUSE_RESOLVED } from "../../packages/game-engine/src/accusations.ts";
 import { NO_TURN_EVENT_TYPE } from "../../packages/shared/src/mystery-api-contracts.ts";
+
+/** A round inside the accusation, in games recorded before each accusation was one shot. */
+export const LEGACY_ACCUSE_ROUND = "accuse_round";
 
 // A refused line and `help` are saved as events of their own, so a resumed game
 // shows them. They are not something the game master did: every reader that
@@ -43,19 +47,16 @@ export const EVENT_ROLE: Readonly<Record<string, string>> = {
   ask: "talk_conversation",
   end_talk: "talk_end",
   accuse_start: "accusation_start",
-  accuse_round: "accusation_judge",
-  accuse_resolved: "accusation_judge",
+  [ACCUSE_FAILED]: "accusation_judge",
+  [LEGACY_ACCUSE_ROUND]: "accusation_judge",
+  [ACCUSE_RESOLVED]: "accusation_judge",
   forced_endgame: "accusation_start",
 };
 
-// The accusation phase is where the truth is legitimately revealed, so
-// spoiler-sensitive checks stop at its first event.
-export const ACCUSATION_EVENT_TYPES = new Set([
-  "accuse_start",
-  "accuse_round",
-  "accuse_resolved",
-  "forced_endgame",
-]);
+// Only the closing scene tells the truth. Opening the accusation, and a failed
+// accusation's reply, come before it, so spoiler-sensitive checks judge them
+// like any other turn.
+export const CLOSING_SCENE_EVENT_TYPES: ReadonlySet<string> = new Set([ACCUSE_RESOLVED]);
 
 export function readField(payload: Record<string, unknown> | null | undefined, key: string): string | null {
   if (!payload || typeof payload !== "object") return null;

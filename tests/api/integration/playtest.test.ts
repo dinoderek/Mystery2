@@ -17,11 +17,11 @@ import { signIn } from '../../../evaluation/playtest/lib/api.ts';
 import { scriptedInvestigator } from '../../../evaluation/playtest/lib/investigator.ts';
 import { writeGameFolder } from '../../../evaluation/playtest/lib/output.ts';
 import { playGame } from '../../../evaluation/playtest/lib/game.ts';
+import { readMockCase } from '../../testkit/src/mock-case';
 import { BASE_URL, MOCK_BLUEPRINT_ID } from './helpers';
 
-const MOCK_BLUEPRINT = JSON.parse(
-	fs.readFileSync(path.join(process.cwd(), 'blueprints', 'mock-blueprint.json'), 'utf8')
-);
+const MOCK_BLUEPRINT = readMockCase();
+const MOCK_TITLE = MOCK_BLUEPRINT.metadata.title;
 
 const INPUTS = [
 	'search',
@@ -35,9 +35,10 @@ const INPUTS = [
 	'bye',
 	'go to living room',
 	'accuse',
-	'Alice did it, the crumbs lead to her.',
-	// The mock judge asks for more on the first round, then rules.
-	'Alice took the cookies: the crumbs and the empty jar both point to her.',
+	// A failed accusation returns to exploring; the next is made in one line.
+	'Bob did it, he was in the living room.',
+	'search',
+	'accuse Alice took the cookies: the cookie crumbs and the empty cookie jar both point to her.',
 	'this line is never reached'
 ];
 // The game ends on the line before the last, which is never sent.
@@ -54,7 +55,7 @@ describe('playtest loop', () => {
 	it('stops when the investigator quits, and the game is left as it was', async () => {
 		const game = await playGame({
 			api: await signIn(BASE_URL, 'playtest-quit'),
-			blueprint: { id: MOCK_BLUEPRINT_ID, title: 'Mock Blueprint' },
+			blueprint: { id: MOCK_BLUEPRINT_ID, title: MOCK_TITLE },
 			investigator: scriptedInvestigator(['quit', 'search'])
 		});
 		expect(game.stopReason).toBe('quit');
@@ -70,7 +71,7 @@ describe('playtest loop', () => {
 
 		const game = await playGame({
 			api,
-			blueprint: { id: MOCK_BLUEPRINT_ID, title: 'Mock Blueprint' },
+			blueprint: { id: MOCK_BLUEPRINT_ID, title: MOCK_TITLE },
 			investigator: scriptedInvestigator(INPUTS)
 		});
 
@@ -87,7 +88,7 @@ describe('playtest loop', () => {
 		expect(byInput['talk to Zed'].action).toEqual({
 			kind: 'refused',
 			reason: 'invalid-target',
-			text: expect.stringContaining('"zed" is not a valid character. Try: Alice Smith'),
+			text: expect.stringContaining('"zed" is not a valid character. Try: Alice'),
 		});
 
 		// `help` is a view: the investigator is told it opened, as the browser says.
@@ -107,19 +108,28 @@ describe('playtest loop', () => {
 		expect(played('go to living room')).toEqual({ kind: 'turn', event_type: 'move' });
 		expect(played('accuse')).toEqual({ kind: 'turn', event_type: 'accuse_start' });
 		// Free text in accuse mode is reasoning.
-		expect(played('Alice did it, the crumbs lead to her.')).toEqual({
+		expect(played('Bob did it, he was in the living room.')).toEqual({
 			kind: 'turn',
-			event_type: 'accuse_round'
+			event_type: 'accuse_failed'
 		});
-		expect(played('Alice took the cookies: the crumbs and the empty jar both point to her.')).toEqual({
+		expect(played('accuse Alice took the cookies: the cookie crumbs and the empty cookie jar both point to her.')).toEqual({
 			kind: 'turn',
 			event_type: 'accuse_resolved'
 		});
+		// The failed accusation left the game exploring with two accusations; the view says so,
+		// and the next line is a turn played in explore mode.
+		const afterFailure = steps[PLAYED.indexOf('Bob did it, he was in the living room.') + 1];
+		expect(afterFailure.mode_before).toBe('explore');
+		expect(afterFailure.action).toEqual({ kind: 'turn', event_type: 'search' });
+		expect(afterFailure.view).toContain('Mode: Exploring');
+		expect(afterFailure.view).toContain('Accusations left: 2 of 3');
+		expect(steps[PLAYED.indexOf('accuse')].view).toContain('Accusations left: 3 of 3');
+		expect(steps[PLAYED.indexOf('Bob did it, he was in the living room.')].view).toContain('`back` returns to exploring');
 		// Every line was posted as typed.
 		expect(steps.map((step) => step.input)).toEqual(PLAYED);
 
 		// It opened as the browser does: the premise, then the arrival.
-		expect(game.steps[0].view).toMatch(/Narrator: \[Mock\] Narration for:/);
+		expect(game.steps[0].view).toMatch(/Narrator: \[Mock\] The cookies vanished from the kitchen at noon\./);
 		// `notebook` opens a screen in the browser: no echo, no turn. `help` is echoed.
 		expect(game.transcript.some((entry: { text: string }) => entry.text === 'help')).toBe(true);
 		expect(byInput['notebook'].action).toMatchObject({ kind: 'view', view: 'notebook' });
@@ -136,7 +146,7 @@ describe('playtest loop', () => {
 		const api = await signIn(BASE_URL, 'playtest-smoke-folder');
 		const game = await playGame({
 			api,
-			blueprint: { id: MOCK_BLUEPRINT_ID, title: 'Mock Blueprint' },
+			blueprint: { id: MOCK_BLUEPRINT_ID, title: MOCK_TITLE },
 			investigator: scriptedInvestigator(INPUTS)
 		});
 
@@ -159,6 +169,9 @@ describe('playtest loop', () => {
 			parser_rejections: 4,
 			failed_calls: 0,
 			time_budget: MOCK_BLUEPRINT.metadata.time_budget,
+			// One accusation failed, the player explored again and then won.
+			accusations_spent: 1,
+			won_on_third_accusation: false,
 			narrator_cost_usd: null,
 			investigator_cost_usd: null
 		});
@@ -173,12 +186,14 @@ describe('playtest loop', () => {
 		const transcript = fs.readFileSync(path.join(dir, 'transcript.md'), 'utf8');
 		expect(transcript).toContain('**> talk to alice**');
 		expect(transcript).toContain('- Outcome: win (stopped: ended)');
+		expect(transcript).toContain('- Accusations spent: 1 of 3');
+		expect(JSON.parse(fs.readFileSync(path.join(dir, 'summary.json'), 'utf8'))).toMatchObject({ accusations_spent: 1 });
 	});
 
 	it('replays a recorded game, and stops where the game no longer matches', async () => {
 		const original = await playGame({
 			api: await signIn(BASE_URL, 'playtest-replay-original'),
-			blueprint: { id: MOCK_BLUEPRINT_ID, title: 'Mock Blueprint' },
+			blueprint: { id: MOCK_BLUEPRINT_ID, title: MOCK_TITLE },
 			investigator: scriptedInvestigator(INPUTS)
 		});
 
@@ -188,7 +203,7 @@ describe('playtest loop', () => {
 		});
 		const replay = await playGame({
 			api: await signIn(BASE_URL, 'playtest-replay-same'),
-			blueprint: { id: MOCK_BLUEPRINT_ID, title: 'Mock Blueprint' },
+			blueprint: { id: MOCK_BLUEPRINT_ID, title: MOCK_TITLE },
 			investigator: replayer
 		});
 		expect(replay).toMatchObject({ stopReason: 'ended', result: 'win', divergence: null });
@@ -204,7 +219,7 @@ describe('playtest loop', () => {
 		);
 		const diverged = await playGame({
 			api: await signIn(BASE_URL, 'playtest-replay-diverged'),
-			blueprint: { id: MOCK_BLUEPRINT_ID, title: 'Mock Blueprint' },
+			blueprint: { id: MOCK_BLUEPRINT_ID, title: MOCK_TITLE },
 			investigator: scriptedInvestigator(original.script, { checkpoints: tampered })
 		});
 		expect(diverged.stopReason).toBe('diverged');
@@ -218,7 +233,7 @@ describe('playtest loop', () => {
 		// The game is settled while the script has more to say...
 		const endedEarly = await playGame({
 			api: await signIn(BASE_URL, 'playtest-replay-ended-early'),
-			blueprint: { id: MOCK_BLUEPRINT_ID, title: 'Mock Blueprint' },
+			blueprint: { id: MOCK_BLUEPRINT_ID, title: MOCK_TITLE },
 			investigator: scriptedInvestigator([...original.script, 'Bob helped her.'], {
 				checkpoints: [...original.checkpoints, { ...original.endCheckpoint, mode: 'accuse' }]
 			})
@@ -230,11 +245,11 @@ describe('playtest loop', () => {
 			differences: { mode: { expected: 'accuse', actual: 'ended' } }
 		});
 
-		// ...or the script runs out before the game is settled.
+		// ...or the script runs out before the game is settled: after a failed accusation, exploring again.
 		const accusing = original.script.length - 1;
 		const unsettled = await playGame({
 			api: await signIn(BASE_URL, 'playtest-replay-unsettled'),
-			blueprint: { id: MOCK_BLUEPRINT_ID, title: 'Mock Blueprint' },
+			blueprint: { id: MOCK_BLUEPRINT_ID, title: MOCK_TITLE },
 			investigator: scriptedInvestigator(original.script.slice(0, accusing), {
 				checkpoints: original.checkpoints.slice(0, accusing),
 				end: original.endCheckpoint
@@ -244,7 +259,7 @@ describe('playtest loop', () => {
 		expect(unsettled.divergence).toEqual({
 			step: accusing + 1,
 			input: null,
-			differences: { mode: { expected: 'ended', actual: 'accuse' } }
+			differences: { mode: { expected: 'ended', actual: 'explore' } }
 		});
 
 		scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'mystery-playtest-'));

@@ -1,0 +1,1091 @@
+{
+  "format": "clue-graph/2",
+  "metadata": {
+    "id": "the-stopped-clock",
+    "title": "The Stopped Clock",
+    "target_age": 10,
+    "time_budget": 16,
+    "size": "large"
+  },
+  "opening": {
+    "location": "town_square",
+    "facts": [
+      "Today is the hundredth birthday fair of the town of Fairbridge.",
+      "The fair opens at noon, when the clock tower strikes twelve. Right after that, Mayor Bramble cuts the town's birthday cake from Okafor's Bakery in the square.",
+      "The clock in the old clock tower has stopped. Its hands point to ten past six.",
+      "The brass winding key is missing from its hook in the clock room at the top of the tower. Without the key, nobody can wind the clock to strike noon.",
+      "Mr. Hobbs is the clockkeeper. He raised the alarm at half past six this morning.",
+      "The fair is being set up across the town square, the clock tower, Okafor's Bakery, the bandstand, the library and the river path."
+    ]
+  },
+  "truth": {
+    "timeline": [
+      "Friday evening: Mrs. Okafor writes in her order book that Sam will carry forty rolls to the bandstand for the band's breakfast at six o'clock on Saturday morning.",
+      "Saturday 5:30am: Mr. Hobbs unlocks the clock tower door and climbs to the clock room to polish the brass for the fair. The brass winding key hangs on its hook and the clock is ticking.",
+      "5:45am: At Okafor's Bakery, Sam slips on spilled flour while carrying the top tier of the birthday cake, and it smashes. Mrs. Okafor puts the smashed tier in the bin by the back door and puts a new tier in the oven, but it cannot be iced and ready until two o'clock. Sam cries and says it is all his fault.",
+      "5:50am: Ms. Fenn, the librarian, finds the tower door unlocked and slips in to put the 1925 clock logbook back on the shelf on the stair landing. She had borrowed it a week earlier for the library's centenary display without asking Mr. Hobbs. She hears Mr. Hobbs whistling upstairs and does not go up.",
+      "5:55am: Mr. Pike, the bandleader, crossing the square to the bandstand, sees Ms. Fenn hurry out of the tower and into the library.",
+      "6:00am: Mayor Bramble checks her watch against the tower clock; both say six o'clock and the clock is ticking. Ms. Fenn comes out to help her hang bunting along the library front, facing the library wall, and holds the ladder beside her until half past six.",
+      "6:01am: Mr. Hobbs comes down, wedges the tower door open with a brick so he will not need his keys, and walks off toward Okafor's Bakery for breakfast. As he goes he sees Ms. Fenn holding Mayor Bramble's ladder outside the library. Mayor Bramble sees him go.",
+      "6:02am: Sam leaves the bakery with the basket of forty rolls. He is late, so he cuts across the town square instead of taking the river path.",
+      "6:05am to 6:25am: Mr. Hobbs eats a currant bun and drinks tea at the bakery counter, chatting with Mrs. Okafor the whole time. Sam is not in the bakery.",
+      "6:06am: Sam sees the tower door propped open. He thinks that if the clock cannot strike noon, the fair cannot open until his mum's new cake is ready. He runs up the stone stairs in his floury trainers, leaving small star-pattern footprints.",
+      "6:10am: In the clock room, Sam turns the brass key backwards to let the great weight down, and the clock stops at ten past six. He takes the key, leaving a smudge of flour on the hook, and hides it at the bottom of his basket under the rolls.",
+      "6:15am: Sam brings the rolls to the bandstand, out of breath, running down from the square past the tower. He takes the rolls out himself so Mr. Pike will not tip the basket, and something metal clinks at the bottom.",
+      "6:20am: Going home along the river path, Sam wraps the key in an Okafor's Bakery paper bag and pushes it into the hollow of the old willow. Mrs. Reed, who has been feeding the ducks there since quarter to six, sees him. Nobody else came along the river path that morning.",
+      "6:25am: Mr. Hobbs walks back to the tower and finds the clock stopped at ten past six and the key gone. At half past six he tells Mayor Bramble. At half past six Sam gets back to the bakery, red in the face.",
+      "6:40am: The news spreads. Mrs. Okafor, scared Sam will be blamed because he was out, decides to say he never left the bakery, and to say the cake is perfect. Mr. Hobbs, afraid the council will retire him at once for leaving the tower open, decides to say he never left it."
+    ],
+    "motive": "Sam smashed the top tier of the town's birthday cake by accident. The cake was meant to be cut right after the clock struck noon, but the new tier could not be ready until two o'clock. Sam felt it was all his fault and did not want his mum shamed in front of the whole town, so he stopped the clock and hid its key to make the fair wait. He meant to put the key back once the cake was ready."
+  },
+  "locations": {
+    "town_square": {
+      "name": "Fairbridge Town Square",
+      "facts": [
+        "The town square is cobbled and busy with people setting up stalls for the fair.",
+        "Bunting is strung half the way along the front of the library.",
+        "The clock tower stands on one side of the square, and the library faces it across the cobbles.",
+        "Okafor's Bakery is on the corner of the square."
+      ],
+      "spots": [
+        {
+          "name": "the cake table"
+        }
+      ]
+    },
+    "clock_tower": {
+      "name": "The Clock Tower",
+      "facts": [
+        "The clock tower is tall and made of old grey stone.",
+        "A small window beside the tower door looks across the square at the front of the library.",
+        "Stone stairs wind up from the tower door, past a small landing, to the clock room at the top.",
+        "The clock room is full of brass wheels and a long, still pendulum."
+      ],
+      "spots": [
+        {
+          "name": "the tower door"
+        },
+        {
+          "name": "the stone stairs"
+        },
+        {
+          "name": "the shelf on the stair landing"
+        },
+        {
+          "name": "the clock works"
+        },
+        {
+          "name": "the empty key hook"
+        }
+      ]
+    },
+    "bakery": {
+      "name": "Okafor's Bakery",
+      "facts": [
+        "Okafor's Bakery is warm and smells of fresh bread.",
+        "The oven is on, and a dusting of flour covers the floor by the cake table.",
+        "A back door leads out to the lane and the river path."
+      ],
+      "spots": [
+        {
+          "name": "the order book on the counter"
+        },
+        {
+          "name": "the till"
+        },
+        {
+          "name": "the bin by the back door",
+          "revealed_by": "okafor_tell_bin"
+        }
+      ]
+    },
+    "bandstand": {
+      "name": "The Bandstand",
+      "facts": [
+        "The bandstand is a round, roofed stage in the park by the river.",
+        "Music stands and brass instruments are set out ready for the fair.",
+        "From the bandstand you cannot see the clock tower door."
+      ],
+      "spots": [
+        {
+          "name": "the music stands"
+        }
+      ]
+    },
+    "library": {
+      "name": "Fairbridge Library",
+      "facts": [
+        "The library is quiet, with tall shelves and a big front window onto the square.",
+        "A display of old town treasures is set up for the hundredth birthday."
+      ],
+      "spots": [
+        {
+          "name": "the notice board"
+        },
+        {
+          "name": "the centenary display"
+        },
+        {
+          "name": "the storytime corner"
+        }
+      ]
+    },
+    "river_path": {
+      "name": "The River Path",
+      "facts": [
+        "The river path runs beside the slow green river, between willow trees.",
+        "Ducks paddle and quack along the bank.",
+        "An old willow with a hollow trunk leans over the path."
+      ],
+      "spots": [
+        {
+          "name": "the hollow in the old willow",
+          "revealed_by": "reed_sam_willow"
+        }
+      ]
+    }
+  },
+  "characters": {
+    "bramble": {
+      "name": "Mayor Bramble",
+      "location": "town_square",
+      "role": "witness",
+      "sex": "female",
+      "personality": "Bustling, cheerful and a little flustered. She loves Fairbridge and wants the birthday fair to be perfect. She is honest and likes exact times.",
+      "demeanor": {
+        "open": "Flustered but friendly. She keeps looking at the stopped clock and at her watch, and answers clearly."
+      },
+      "knows": [
+        {
+          "fact": "Mayor Bramble has been mayor of Fairbridge for six years."
+        },
+        {
+          "fact": "Mr. Hobbs has looked after the tower clock for as long as anyone in Fairbridge can remember.",
+          "points_at": {
+            "character": "hobbs"
+          }
+        },
+        {
+          "fact": "Ms. Fenn runs the library and has set up a display of old town treasures for the birthday.",
+          "points_at": {
+            "location": "library"
+          }
+        }
+      ],
+      "appearance": [
+        "Mayor Bramble is a round, rosy-cheeked woman with silver curls.",
+        "She wears a gold chain of office over a bright red coat."
+      ]
+    },
+    "hobbs": {
+      "name": "Mr. Hobbs",
+      "location": "clock_tower",
+      "role": "suspect",
+      "sex": "male",
+      "personality": "Old, proud and stubborn. He has wound the clock every morning for forty years and loves it like a friend. He is ashamed of having left his post, and he hides it by being gruff.",
+      "demeanor": {
+        "guarded": "Gruff and stiff. He insists he never left his tower and gets cross at any hint that he did.",
+        "shaken": "Red in the face and mumbling. He brushes at his waistcoat and avoids your eyes.",
+        "cleared": "Sheepish and grateful. He just wants his clock ticking again for the fair."
+      },
+      "knows": [
+        {
+          "fact": "Mr. Hobbs has been the Fairbridge clockkeeper for forty years."
+        },
+        {
+          "fact": "The clock is wound by turning the brass key in the winding hole, which lifts the great iron weight."
+        },
+        {
+          "fact": "Old logbooks of the clock are kept on the shelf on the stair landing.",
+          "points_at": {
+            "location": "clock_tower"
+          }
+        }
+      ],
+      "appearance": [
+        "Mr. Hobbs is a stooped old man with a white moustache.",
+        "He wears a tweed waistcoat with a pocket watch on a chain, and big heavy boots."
+      ]
+    },
+    "okafor": {
+      "name": "Mrs. Okafor",
+      "location": "bakery",
+      "role": "suspect",
+      "sex": "female",
+      "personality": "Warm, hard-working and proud of her baking. She loves her son Sam fiercely and will stretch the truth to keep him out of trouble, but she is honest at heart and cannot keep up a lie for long.",
+      "demeanor": {
+        "guarded": "Busy and bright, a bit too cheerful. She answers for Sam before he can speak.",
+        "shaken": "Her smile slips. She keeps wiping her hands on her apron and glancing at the oven.",
+        "cleared": "Tired and honest. She wants Sam treated kindly."
+      },
+      "knows": [
+        {
+          "fact": "Mrs. Okafor has run Okafor's Bakery on the corner of the square for twelve years."
+        },
+        {
+          "fact": "Okafor's Bakery is baking the town's birthday cake for the fair.",
+          "points_at": {
+            "location": "town_square"
+          }
+        },
+        {
+          "fact": "The bakery's back door opens onto the lane that leads to the river path.",
+          "points_at": {
+            "location": "river_path"
+          }
+        }
+      ],
+      "appearance": [
+        "Mrs. Okafor is a tall woman with her hair wrapped in a bright yellow headscarf.",
+        "She wears a white apron covered in flour and wooden clogs."
+      ]
+    },
+    "sam": {
+      "name": "Sam",
+      "location": "bakery",
+      "role": "culprit",
+      "sex": "male",
+      "personality": "Eleven years old, kind and eager to help his mum. He is not used to lying, so he talks too fast and changes the subject. Underneath he feels terrible.",
+      "demeanor": {
+        "guarded": "Chatty and jumpy. He keeps busy stacking buns and talks quickly about anything except the tower.",
+        "shaken": "Quiet. He stares at the floor and twists the corner of his apron.",
+        "cornered": "Close to tears. He has run out of stories.",
+        "cleared": "Crying, then relieved. He wants to give the key back and say sorry to everyone."
+      },
+      "knows": [
+        {
+          "fact": "Sam is Mrs. Okafor's son and helps in the bakery on Saturdays.",
+          "points_at": {
+            "character": "okafor"
+          }
+        },
+        {
+          "fact": "The band plays a birthday song for the town right after the clock strikes noon.",
+          "points_at": {
+            "location": "bandstand"
+          }
+        }
+      ],
+      "appearance": [
+        "Sam is a boy with short curly black hair and a gap in his front teeth.",
+        "He wears a little white baker's apron like his mum's."
+      ]
+    },
+    "fenn": {
+      "name": "Ms. Fenn",
+      "location": "library",
+      "role": "suspect",
+      "sex": "female",
+      "personality": "Prim, precise and a little shy. She cares about rules, so she is deeply embarrassed to have broken one, and she goes stiff and formal when she is hiding something.",
+      "demeanor": {
+        "guarded": "Stiff and formal. She speaks in a very proper voice and keeps straightening her cardigan.",
+        "shaken": "Flustered and pink. She talks in a rush.",
+        "cleared": "Relieved and kind. She offers to help find the key."
+      },
+      "knows": [
+        {
+          "fact": "Ms. Fenn has been Fairbridge's librarian for twenty years."
+        },
+        {
+          "fact": "The library has set up a display called '100 Years of Fairbridge' with old town treasures.",
+          "points_at": {
+            "location": "library"
+          }
+        }
+      ],
+      "appearance": [
+        "Ms. Fenn is a thin woman with neat grey hair in a bun and half-moon glasses.",
+        "She wears a lilac cardigan with a pencil tucked behind one ear."
+      ]
+    },
+    "pike": {
+      "name": "Mr. Pike",
+      "location": "bandstand",
+      "role": "witness",
+      "sex": "male",
+      "personality": "Loud, jolly and fond of his breakfast. He notices anything to do with food and time, because his band runs on both.",
+      "demeanor": {
+        "open": "Booming and friendly. He waves his conducting stick as he talks."
+      },
+      "knows": [
+        {
+          "fact": "Mr. Pike leads the Fairbridge Brass Band."
+        },
+        {
+          "fact": "The band was setting up at the bandstand from just before six this morning.",
+          "points_at": {
+            "location": "bandstand"
+          }
+        }
+      ],
+      "appearance": [
+        "Mr. Pike is a big man with a curly ginger beard.",
+        "He wears a red band jacket with shiny gold buttons."
+      ]
+    },
+    "reed": {
+      "name": "Mrs. Reed",
+      "location": "river_path",
+      "role": "witness",
+      "sex": "female",
+      "personality": "A calm, sharp-eyed old lady who feeds the ducks every morning and notices everyone who passes.",
+      "demeanor": {
+        "open": "Calm and kind. She scatters duck food as she talks and chooses her words carefully."
+      },
+      "knows": [
+        {
+          "fact": "Mrs. Reed feeds the ducks on the river path every morning."
+        },
+        {
+          "fact": "The river path runs from the lane behind Okafor's Bakery to the bandstand.",
+          "points_at": {
+            "location": "bandstand"
+          }
+        }
+      ],
+      "appearance": [
+        "Mrs. Reed is a small old lady in a green raincoat and a woolly hat.",
+        "She carries a paper bag of duck food."
+      ]
+    }
+  },
+  "clues": {
+    "cake_table_sign": {
+      "kind": "evidence",
+      "fact": "The cake table in the middle of the town square is empty. A sign on it says: 'Birthday cake from Okafor's Bakery, cut by Mayor Bramble at twelve noon.'",
+      "source": {
+        "location": "town_square",
+        "spot": "the cake table"
+      },
+      "colour": true
+    },
+    "council_letter": {
+      "kind": "evidence",
+      "fact": "A letter from the town council is pinned inside the tower door. It says that after the fair an electric motor will wind the clock, and Mr. Hobbs will no longer be needed as clockkeeper.",
+      "source": {
+        "location": "clock_tower"
+      }
+    },
+    "brick_door": {
+      "kind": "evidence",
+      "fact": "A brick sits beside the tower door, and fresh scrape marks on the step show it was used to wedge the door wide open this morning.",
+      "source": {
+        "location": "clock_tower",
+        "spot": "the tower door"
+      }
+    },
+    "star_prints": {
+      "kind": "evidence",
+      "fact": "Small white floury footprints go up the stone stairs of the clock tower to the clock room and back down. They are child-sized, far too small for Mr. Hobbs's big boots or any grown-up's shoes, and every print has a star pattern on the sole.",
+      "source": {
+        "location": "clock_tower",
+        "spot": "the stone stairs"
+      }
+    },
+    "logbook_landing": {
+      "kind": "evidence",
+      "fact": "On the shelf on the tower's stair landing is the old clock logbook from 1925. Tucked inside it is a Fairbridge Library bookmark stamped 'Centenary Display'.",
+      "source": {
+        "location": "clock_tower",
+        "spot": "the shelf on the stair landing"
+      }
+    },
+    "clock_weight": {
+      "kind": "evidence",
+      "fact": "In the clock room, the great iron weight has been let all the way down to the floor, and the pendulum hangs still. The weight only comes down like that if someone turns the brass key backwards in the winding hole, and the clock stopped the moment it reached the floor. So whoever stopped the clock was standing in the clock room with the key at ten past six.",
+      "source": {
+        "location": "clock_tower",
+        "spot": "the clock works"
+      }
+    },
+    "key_hook_flour": {
+      "kind": "evidence",
+      "fact": "On the empty brass key hook in the clock room there is a fresh smudge of white flour, as if floury fingers took the key.",
+      "source": {
+        "location": "clock_tower",
+        "spot": "the empty key hook"
+      }
+    },
+    "order_book": {
+      "kind": "evidence",
+      "fact": "Mrs. Okafor's order book on the bakery counter says, for Saturday: 'Band breakfast, 40 rolls, to the bandstand at 6 o'clock. Sam to carry.'",
+      "source": {
+        "location": "bakery",
+        "spot": "the order book on the counter"
+      }
+    },
+    "till_roll": {
+      "kind": "evidence",
+      "fact": "The bakery till roll shows the first sale of the day at 6:06am, one currant bun and one cup of tea, and a second cup of tea at 6:20am.",
+      "source": {
+        "location": "bakery",
+        "spot": "the till"
+      },
+      "colour": true
+    },
+    "smashed_tier": {
+      "kind": "evidence",
+      "fact": "In the bin by the bakery's back door lies a smashed cake tier covered in pink sugar roses, with '100' piped in icing. A note on the oven says the new tier will not be iced and ready until two o'clock.",
+      "source": {
+        "location": "bakery",
+        "spot": "the bin by the back door"
+      }
+    },
+    "band_programme": {
+      "kind": "evidence",
+      "fact": "The band's programme on the music stands says: 'When the clock strikes twelve, the band plays Happy Birthday Fairbridge, then the mayor cuts the cake.'",
+      "source": {
+        "location": "bandstand",
+        "spot": "the music stands"
+      },
+      "colour": true
+    },
+    "fenn_bell_letter": {
+      "kind": "evidence",
+      "fact": "Pinned on the library notice board is Ms. Fenn's letter from the Fairbridge News: 'The noon bell is so loud it drowns out Saturday storytime. I wish it would stop!'",
+      "source": {
+        "location": "library",
+        "spot": "the notice board"
+      }
+    },
+    "empty_display": {
+      "kind": "evidence",
+      "fact": "In the library's '100 Years of Fairbridge' display, a card reads 'The Clock Tower Logbook, 1925', but the stand above it is empty.",
+      "source": {
+        "location": "library",
+        "spot": "the centenary display"
+      }
+    },
+    "storytime_sign": {
+      "kind": "evidence",
+      "fact": "A sign in the library's storytime corner says: 'Because of the birthday fair, storytime today is at two o'clock, not noon.'",
+      "source": {
+        "location": "library",
+        "spot": "the storytime corner"
+      }
+    },
+    "river_signpost": {
+      "kind": "evidence",
+      "fact": "A signpost on the river path points one way to the bandstand and the other way to the lane behind Okafor's Bakery.",
+      "source": {
+        "location": "river_path"
+      },
+      "colour": true
+    },
+    "key_in_willow": {
+      "kind": "evidence",
+      "fact": "Inside the hollow of the old willow on the river path is the clock tower's brass winding key, wrapped in an Okafor's Bakery paper bag dusted with flour.",
+      "source": {
+        "location": "river_path",
+        "spot": "the hollow in the old willow"
+      }
+    },
+    "bramble_clock_six": {
+      "kind": "statement",
+      "fact": "Mayor Bramble says that at six o'clock this morning she checked her watch against the tower clock. Both said exactly six, and the clock was ticking.",
+      "source": {
+        "character": "bramble"
+      },
+      "truth": true,
+      "reached": {
+        "by": "first_meeting"
+      }
+    },
+    "bramble_fenn_bunting": {
+      "kind": "statement",
+      "fact": "Mayor Bramble says Ms. Fenn helped her hang bunting along the front of the library from six o'clock until half past six, holding the ladder beside her the whole time. They were facing the library wall.",
+      "source": {
+        "character": "bramble"
+      },
+      "truth": true,
+      "reached": {
+        "by": "first_meeting"
+      }
+    },
+    "bramble_door_brick": {
+      "kind": "statement",
+      "fact": "Mayor Bramble says that at about one minute past six she saw Mr. Hobbs come out of the clock tower, wedge the door open with a brick and walk off toward Okafor's Bakery.",
+      "source": {
+        "character": "bramble"
+      },
+      "truth": true,
+      "reached": {
+        "by": "asked",
+        "about": "Mr. Hobbs and the tower door this morning",
+        "prompted_by": [
+          "hobbs_never_left",
+          "brick_door"
+        ]
+      }
+    },
+    "hobbs_never_left": {
+      "kind": "statement",
+      "fact": "Mr. Hobbs says he was inside the clock tower the whole morning from half past five, polishing the brass at the bottom of the stairs, with the door shut. He says nobody came in or went up the stairs. He says Ms. Fenn cannot have stopped the clock, because through the window beside the tower door he watched her holding Mayor Bramble's ladder outside the library from six o'clock onward, ten past six included.",
+      "source": {
+        "character": "hobbs"
+      },
+      "truth": false,
+      "why": "He left the tower door propped open while he went for breakfast, and he is afraid the council will retire him at once if they find out. He only glimpsed Ms. Fenn on the ladder as he left at one minute past six, and says he watched her the whole time to make his story sound solid.",
+      "reached": {
+        "by": "first_meeting"
+      }
+    },
+    "hobbs_crumbs": {
+      "kind": "tell",
+      "fact": "There are currant bun crumbs on Mr. Hobbs's waistcoat. When he notices them he brushes them off quickly and clears his throat.",
+      "source": {
+        "character": "hobbs"
+      },
+      "reached": {
+        "by": "seen",
+        "with": "hobbs_never_left"
+      }
+    },
+    "hobbs_admits_bun": {
+      "kind": "statement",
+      "fact": "Mr. Hobbs admits that at one minute past six he wedged the tower door open with a brick and went to Okafor's Bakery for a currant bun and tea. He only glimpsed Ms. Fenn on Mayor Bramble's ladder as he left, and did not watch her after that. He sat at the bakery counter from five past six until twenty-five past six, and Mrs. Okafor served him and chatted with him the whole time. When he got back to the tower, the clock had stopped at ten past six and the key was gone. He said he never left because he was afraid the council would retire him at once for leaving the tower open.",
+      "source": {
+        "character": "hobbs"
+      },
+      "truth": true,
+      "reached": {
+        "by": "gated",
+        "gate": {
+          "after": [
+            "hobbs_never_left"
+          ],
+          "use": {
+            "any": [
+              "okafor_hobbs_bun",
+              "bramble_door_brick",
+              "brick_door"
+            ]
+          },
+          "line": {
+            "text": "They ask Mr. Hobbs whether he went out for breakfast, or point out the bun crumbs on his waistcoat.",
+            "hinted_by": "hobbs_crumbs"
+          }
+        }
+      },
+      "takes_back": [
+        "hobbs_never_left"
+      ]
+    },
+    "hobbs_no_sam": {
+      "kind": "statement",
+      "fact": "Mr. Hobbs says that while he sat at the bakery counter from five past six until twenty-five past six, Sam was not in the bakery. Only Mrs. Okafor was there.",
+      "source": {
+        "character": "hobbs"
+      },
+      "truth": true,
+      "reached": {
+        "by": "gated",
+        "gate": {
+          "after": [
+            "hobbs_admits_bun"
+          ]
+        }
+      }
+    },
+    "hobbs_motor": {
+      "kind": "statement",
+      "fact": "Mr. Hobbs says he is sad about the electric motor, but he has wound the clock every morning for forty years and would never stop it, least of all on the town's hundredth birthday.",
+      "source": {
+        "character": "hobbs"
+      },
+      "truth": true,
+      "reached": {
+        "by": "gated",
+        "gate": {
+          "use": {
+            "any": [
+              "council_letter"
+            ]
+          }
+        }
+      },
+      "colour": true
+    },
+    "okafor_sam_alibi": {
+      "kind": "statement",
+      "fact": "Mrs. Okafor says Sam was here in the bakery with her all morning from five o'clock, icing buns, and never left.",
+      "source": {
+        "character": "okafor"
+      },
+      "truth": false,
+      "why": "She knows Sam went out with the band's rolls from six until half past six, and she is scared he will be blamed for the clock.",
+      "reached": {
+        "by": "first_meeting"
+      }
+    },
+    "okafor_tell_sam": {
+      "kind": "tell",
+      "fact": "Mrs. Okafor puts a floury hand on Sam's shoulder and answers every question about him before he can open his mouth.",
+      "source": {
+        "character": "okafor"
+      },
+      "reached": {
+        "by": "seen",
+        "with": "okafor_sam_alibi"
+      }
+    },
+    "okafor_cake_fine": {
+      "kind": "statement",
+      "fact": "Mrs. Okafor says the town's birthday cake is finished and perfect, ready to be cut at noon.",
+      "source": {
+        "character": "okafor"
+      },
+      "truth": false,
+      "why": "She is proud of her baking and embarrassed that the top tier smashed and the cake will not be ready until two o'clock.",
+      "reached": {
+        "by": "first_meeting"
+      }
+    },
+    "okafor_tell_bin": {
+      "kind": "tell",
+      "fact": "Mrs. Okafor says 'perfect' a little too loudly, and her eyes dart to the bin by the back door.",
+      "source": {
+        "character": "okafor"
+      },
+      "reached": {
+        "by": "seen",
+        "with": "okafor_cake_fine"
+      }
+    },
+    "okafor_hobbs_bun": {
+      "kind": "statement",
+      "fact": "Mrs. Okafor says Mr. Hobbs came into the bakery at five past six this morning for a currant bun and a cup of tea. He sat at her counter chatting with her until twenty-five past six, and she never left the counter while he was there.",
+      "source": {
+        "character": "okafor"
+      },
+      "truth": true,
+      "reached": {
+        "by": "asked",
+        "about": "Mr. Hobbs this morning",
+        "prompted_by": [
+          "hobbs_never_left",
+          "hobbs_crumbs",
+          "bramble_door_brick"
+        ]
+      }
+    },
+    "okafor_admits_sam_out": {
+      "kind": "statement",
+      "fact": "Mrs. Okafor admits Sam was not in the bakery all morning. He went out at about two minutes past six with the basket of forty rolls for the band's breakfast and came back at half past six, red in the face. She said he never left because she was scared he would be blamed.",
+      "source": {
+        "character": "okafor"
+      },
+      "truth": true,
+      "reached": {
+        "by": "gated",
+        "gate": {
+          "after": [
+            "okafor_sam_alibi"
+          ],
+          "use": {
+            "any": [
+              "order_book",
+              "hobbs_no_sam",
+              "pike_sam_late"
+            ]
+          },
+          "line": {
+            "text": "They ask Mrs. Okafor whether Sam went out to deliver anything this morning, or ask to hear from Sam himself.",
+            "hinted_by": "okafor_tell_sam"
+          }
+        }
+      },
+      "takes_back": [
+        "okafor_sam_alibi"
+      ]
+    },
+    "okafor_cake_fell": {
+      "kind": "statement",
+      "fact": "Mrs. Okafor admits that at quarter to six this morning Sam slipped on spilled flour while carrying the top tier of the birthday cake, and it smashed. The new tier will not be iced and ready until two o'clock, two hours after the cake is meant to be cut at noon. Sam cried and said it was all his fault.",
+      "source": {
+        "character": "okafor"
+      },
+      "truth": true,
+      "reached": {
+        "by": "gated",
+        "gate": {
+          "after": [
+            "okafor_cake_fine"
+          ],
+          "use": {
+            "any": [
+              "smashed_tier"
+            ]
+          },
+          "line": {
+            "text": "They gently ask Mrs. Okafor whether something went wrong with the cake, or what is in the bin by the back door.",
+            "hinted_by": "okafor_tell_bin"
+          }
+        }
+      },
+      "takes_back": [
+        "okafor_cake_fine"
+      ]
+    },
+    "sam_route": {
+      "kind": "statement",
+      "fact": "Sam says he carried the band's rolls to the bandstand along the river path at six o'clock and came straight back the same way. He says he never went into the town square or near the clock tower.",
+      "source": {
+        "character": "sam"
+      },
+      "truth": false,
+      "why": "He went across the square and into the clock tower to stop the clock, and he does not want anyone to know.",
+      "reached": {
+        "by": "first_meeting"
+      }
+    },
+    "sam_trainers": {
+      "kind": "tell",
+      "fact": "Sam's trainers are white with flour, and when he swings his feet the soles show a star pattern. He quickly tucks his feet under the stool.",
+      "source": {
+        "character": "sam"
+      },
+      "reached": {
+        "by": "seen",
+        "with": "sam_route"
+      }
+    },
+    "sam_admits_square": {
+      "kind": "statement",
+      "fact": "Sam admits he cut across the town square past the clock tower because he was late with the rolls, but says he never went inside the tower.",
+      "source": {
+        "character": "sam"
+      },
+      "truth": false,
+      "why": "He still hopes to hide that he went up to the clock room and took the key.",
+      "reached": {
+        "by": "gated",
+        "gate": {
+          "after": [
+            "sam_route"
+          ],
+          "use": {
+            "any": [
+              "pike_sam_late",
+              "reed_no_one"
+            ]
+          }
+        }
+      },
+      "takes_back": [
+        "sam_route"
+      ]
+    },
+    "sam_confession": {
+      "kind": "statement",
+      "fact": "Sam confesses that at six minutes past six he saw the tower door propped open and ran up to the clock room. He turned the brass key backwards to let the weight down, so the clock stopped at ten past six, and he hid the key under the rolls in his basket. At twenty past six he pushed it, wrapped in a bakery bag, into the hollow of the old willow on the river path. He smashed the cake tier by accident and wanted the fair to wait until two o'clock so his mum's new cake would be ready. He meant to put the key back afterwards.",
+      "source": {
+        "character": "sam"
+      },
+      "truth": true,
+      "reached": {
+        "by": "gated",
+        "gate": {
+          "after": [
+            "sam_admits_square"
+          ],
+          "use": {
+            "any": [
+              "key_in_willow",
+              "pike_basket_clink",
+              "star_prints"
+            ]
+          }
+        }
+      },
+      "takes_back": [
+        "sam_admits_square"
+      ]
+    },
+    "fenn_not_tower": {
+      "kind": "statement",
+      "fact": "Ms. Fenn says she has not set foot in the clock tower for months. She says she was in the library getting storytime ready from half past five.",
+      "source": {
+        "character": "fenn"
+      },
+      "truth": false,
+      "why": "She slipped into the tower at ten to six to put back the logbook she borrowed without asking, and she is embarrassed to have broken a rule.",
+      "reached": {
+        "by": "first_meeting"
+      }
+    },
+    "fenn_tell_display": {
+      "kind": "tell",
+      "fact": "Ms. Fenn's eyes flick to the empty stand in the centenary display, and she straightens her cardigan twice.",
+      "source": {
+        "character": "fenn"
+      },
+      "reached": {
+        "by": "seen",
+        "with": "fenn_not_tower"
+      }
+    },
+    "fenn_admits_logbook": {
+      "kind": "statement",
+      "fact": "Ms. Fenn admits she borrowed the 1925 clock logbook from the tower's landing shelf a week ago for the library's display, without asking Mr. Hobbs. At ten to six this morning she found the tower door unlocked, slipped in and put the logbook back on the landing shelf. She heard Mr. Hobbs whistling upstairs, never went up to the clock room, and left at five to six.",
+      "source": {
+        "character": "fenn"
+      },
+      "truth": true,
+      "reached": {
+        "by": "gated",
+        "gate": {
+          "after": [
+            "fenn_not_tower"
+          ],
+          "use": {
+            "any": [
+              "pike_fenn_tower",
+              "logbook_landing",
+              "empty_display"
+            ]
+          },
+          "line": {
+            "text": "They ask Ms. Fenn what used to be on the empty stand in the display.",
+            "hinted_by": "fenn_tell_display"
+          }
+        }
+      },
+      "takes_back": [
+        "fenn_not_tower"
+      ]
+    },
+    "fenn_explains_letter": {
+      "kind": "statement",
+      "fact": "Ms. Fenn says her letter only asked for the noon bell to be quieter on Saturdays. She says today storytime has been moved to two o'clock because of the fair, so the noon bell would not bother her at all.",
+      "source": {
+        "character": "fenn"
+      },
+      "truth": true,
+      "reached": {
+        "by": "asked",
+        "about": "her letter about the noon bell",
+        "prompted_by": [
+          "fenn_bell_letter"
+        ]
+      }
+    },
+    "pike_fenn_tower": {
+      "kind": "statement",
+      "fact": "Mr. Pike says that at five to six this morning, as he crossed the square to the bandstand, he saw Ms. Fenn hurry out of the clock tower door and into the library.",
+      "source": {
+        "character": "pike"
+      },
+      "truth": true,
+      "reached": {
+        "by": "first_meeting"
+      }
+    },
+    "pike_sam_late": {
+      "kind": "statement",
+      "fact": "Mr. Pike says the band's breakfast rolls were due at six, but Sam brought them at quarter past six, out of breath. Sam came running down the hill from the town square, not along the river path.",
+      "source": {
+        "character": "pike"
+      },
+      "truth": true,
+      "reached": {
+        "by": "asked",
+        "about": "the band's breakfast rolls and when Sam brought them",
+        "prompted_by": [
+          "sam_route",
+          "order_book",
+          "okafor_admits_sam_out"
+        ]
+      }
+    },
+    "pike_basket_clink": {
+      "kind": "statement",
+      "fact": "Mr. Pike says that when he went to tip out Sam's basket of rolls, Sam snatched it back and took the rolls out one by one himself. Something metal clinked at the bottom of the basket under the cloth.",
+      "source": {
+        "character": "pike"
+      },
+      "truth": true,
+      "reached": {
+        "by": "gated",
+        "gate": {
+          "after": [
+            "pike_sam_late"
+          ]
+        }
+      }
+    },
+    "reed_no_one": {
+      "kind": "statement",
+      "fact": "Mrs. Reed says she has been feeding the ducks on the river path since quarter to six, and nobody at all came along the path between quarter to six and twenty past six.",
+      "source": {
+        "character": "reed"
+      },
+      "truth": true,
+      "reached": {
+        "by": "first_meeting"
+      }
+    },
+    "reed_sam_willow": {
+      "kind": "statement",
+      "fact": "Mrs. Reed says that at about twenty past six she saw Sam, the baker's boy, come along the river path from the bandstand with an empty basket. He stopped at the old willow, pushed something wrapped in a paper bag into the hollow in its trunk, and ran off toward the bakery.",
+      "source": {
+        "character": "reed"
+      },
+      "truth": true,
+      "reached": {
+        "by": "asked",
+        "about": "Sam, the baker's boy, on the river path",
+        "prompted_by": [
+          "sam_route",
+          "okafor_admits_sam_out",
+          "pike_sam_late"
+        ]
+      }
+    }
+  },
+  "conclusions": {
+    "clock_stop_time": {
+      "text": "The clock was ticking at six o'clock and was stopped by hand at ten past six, so whoever stopped it was in the clock room with the key at ten past six.",
+      "rule": {
+        "all": [
+          "clock_weight",
+          "bramble_clock_six"
+        ]
+      }
+    },
+    "hobbs_cleared": {
+      "text": "Mr. Hobbs is cleared: at ten past six, when the clock was stopped, he was eating a currant bun at the bakery counter with Mrs. Okafor.",
+      "clears": "hobbs",
+      "rule": {
+        "all": [
+          "clock_stop_time",
+          "okafor_hobbs_bun"
+        ]
+      }
+    },
+    "okafor_cleared": {
+      "text": "Mrs. Okafor is cleared: at ten past six she was behind her bakery counter serving Mr. Hobbs.",
+      "clears": "okafor",
+      "rule": {
+        "all": [
+          "clock_stop_time",
+          "hobbs_admits_bun"
+        ]
+      }
+    },
+    "fenn_cleared": {
+      "text": "Ms. Fenn is cleared: at ten past six she was holding Mayor Bramble's ladder outside the library.",
+      "clears": "fenn",
+      "rule": {
+        "any": [
+          {
+            "all": [
+              "clock_stop_time",
+              "bramble_fenn_bunting"
+            ]
+          },
+          {
+            "all": [
+              "clock_stop_time",
+              "hobbs_never_left"
+            ]
+          }
+        ]
+      }
+    },
+    "open_door_explained": {
+      "text": "The tower door was open because Mr. Hobbs wedged it with a brick while he went for breakfast. He lied about it to keep his job, not because he stopped the clock.",
+      "resolves": "red herring: the keeper who never left",
+      "rule": {
+        "all": [
+          "hobbs_admits_bun"
+        ]
+      }
+    },
+    "motor_explained": {
+      "text": "Mr. Hobbs was upset about the electric motor, but he was at the bakery when the clock was stopped.",
+      "resolves": "red herring: the clockkeeper being replaced",
+      "rule": {
+        "all": [
+          "council_letter",
+          "hobbs_cleared"
+        ]
+      }
+    },
+    "fenn_tower_explained": {
+      "text": "Ms. Fenn was seen leaving the tower because she sneaked the borrowed logbook back onto the landing shelf at ten to six. She never went up to the clock room.",
+      "resolves": "red herring: the librarian at the tower",
+      "rule": {
+        "all": [
+          "fenn_admits_logbook"
+        ]
+      }
+    },
+    "fenn_letter_explained": {
+      "text": "Ms. Fenn's letter about the noon bell is no reason to stop the clock today: storytime is at two o'clock, so the noon bell would not bother her.",
+      "resolves": "red herring: the letter about the bell",
+      "rule": {
+        "all": [
+          "fenn_bell_letter",
+          {
+            "any": [
+              "fenn_explains_letter",
+              "storytime_sign"
+            ]
+          }
+        ]
+      }
+    },
+    "culprit_sam": {
+      "text": "Sam went up to the clock room, stopped the clock at ten past six and took the brass winding key.",
+      "culprit": "sam",
+      "rule": {
+        "any": [
+          {
+            "all": [
+              "star_prints",
+              "sam_trainers",
+              "pike_sam_late",
+              "hobbs_cleared"
+            ]
+          },
+          {
+            "all": [
+              "key_in_willow",
+              "reed_sam_willow",
+              "okafor_admits_sam_out",
+              "hobbs_cleared"
+            ]
+          },
+          {
+            "all": [
+              "key_hook_flour",
+              "okafor_cleared",
+              "okafor_admits_sam_out",
+              "hobbs_cleared"
+            ]
+          },
+          {
+            "all": [
+              "sam_confession"
+            ]
+          }
+        ]
+      }
+    },
+    "motive": {
+      "text": "Sam smashed the birthday cake's top tier by accident and stopped the clock so the fair would wait until his mum's new cake was ready.",
+      "rule": {
+        "any": [
+          {
+            "all": [
+              "okafor_cake_fell",
+              "culprit_sam"
+            ]
+          },
+          "sam_confession"
+        ]
+      }
+    }
+  }
+}

@@ -1,5 +1,6 @@
 import type { AIRoleName, AccusationResolution } from "./ai-contracts.ts";
 import { withCallLog } from "./ai-call-log.ts";
+import { buildNarrationMessages, buildRoleMessages } from "./role-request.ts";
 import { readArrivalPrompt, readOpeningFacts } from "./ai-prompts.ts";
 import {
   ClaudeCliProvider,
@@ -100,19 +101,6 @@ function requireContextString(
   return value.trim();
 }
 
-function requireContextNumber(
-  role: AIRoleName,
-  context: Record<string, unknown>,
-  key: string,
-): number {
-  const value = context[key];
-  if (typeof value !== "number" || Number.isNaN(value)) {
-    throw new Error(`Missing required ${role} numeric context field: ${key}`);
-  }
-
-  return value;
-}
-
 function readOptionalContextString(
   context: Record<string, unknown>,
   key: string,
@@ -175,8 +163,8 @@ function mockWords(text: string): Set<string> {
 
 /**
  * The mock's reading of an accusation: the person named earliest in the line,
- * and the held clues the investigator cited, in this line or an earlier one:
- * named by ID, or sharing two telling words with the clue's line.
+ * and the held clues the investigator cited: named by ID, or sharing two
+ * telling words with the clue's line.
  */
 function mockGraphAccusation(context: GraphAccusationContext, playerInput: string): Record<string, unknown> {
   const line = playerInput.toLowerCase();
@@ -189,7 +177,7 @@ function mockGraphAccusation(context: GraphAccusationContext, playerInput: strin
     .filter((person) => Number.isFinite(person.at))
     .sort((a, b) => a.at - b.at);
   const names = new Set(context.people.flatMap((person) => nameWords(person.name)));
-  const said = [playerInput, ...(context.earlier_reasoning ?? [])].join(" ");
+  const said = playerInput;
   const saidWords = mockWords(said);
   const cited = context.held
     .filter((entry) => {
@@ -201,14 +189,26 @@ function mockGraphAccusation(context: GraphAccusationContext, playerInput: strin
   return { accused_character_id: named[0]?.id ?? null, cited_clue_ids: cited };
 }
 
-/** The mock's wording of what the engine decided: a round, or the whole account at the end. */
-function mockGraphVerdict(context: GraphVerdictContext): string {
+/** The mock's wording of what the engine decided: a failed accusation, or the whole account at the end. */
+function mockGraphVerdict(context: GraphVerdictContext, turnsSpent = false): string {
   if (context.ending) {
     const { outcome, culprit, what_happened, timeline, motive } = context.ending;
     const opening = outcome === "win" ? "You solved it!" : "The case ends here. This time the answer got away.";
     return `[Mock] ${opening} ${culprit} did it. ${what_happened} ${timeline.join(" ")} Why: ${motive}`;
   }
-  return `[Mock] Not proven yet. ${context.lead ? `Think about this: ${context.lead} ` : ""}Who did it, and which of your clues shows it?`;
+  const reply = context.reply;
+  if (!reply) throw new Error("Mock AI failed accusation requires reply material");
+  const close = turnsSpent ? "Try your accusation again." : "What could you check next?";
+  if (reply.kind === "flaw") {
+    const flaw = "cleared_by" in reply
+      ? `These clues conflict with that case: ${reply.cleared_by.map((entry) => entry.text).join(" ")}`
+      : reply.retracted.map(({ statement, taken_back_by }) => `${taken_back_by} took back this statement: ${statement.text}`).join(" ");
+    return `[Mock] Not proven yet. ${flaw} ${close}`;
+  }
+  const explanation = reply.kind === "alternative"
+    ? `Those clues also fit ${reply.people.map((person) => person.name).join(" and ")}; they do not settle who did it.`
+    : `Your case needs ${reply.fact_kind}.`;
+  return `[Mock] Not proven yet. ${explanation} ${reply.lead ? `Think about this: ${reply.lead} ` : ""}${close}`;
 }
 
 /** The mock's notebook line for a clue: its wording, marked as the narrator's, so a test can tell it from the fact. */
@@ -642,7 +642,7 @@ class MockAIProvider implements AIProvider {
       case "graph_ending": {
         const verdict = context.graph_accusation_context as GraphVerdictContext | undefined;
         if (!verdict) throw new Error(`Mock AI ${role} requires graph_accusation_context`);
-        return { narration: mockGraphVerdict(verdict) };
+        return { narration: mockGraphVerdict(verdict, context.forced_by_timeout === true) };
       }
       case "search": {
         const searchContext = context.search_context as
@@ -727,20 +727,20 @@ class MockAIProvider implements AIProvider {
       case "accusation_judge": {
         const accusationJudgeContext = context.accusation_judge_context as
           | {
-            round?: number;
+            last_accusation?: boolean;
             full_blueprint?: { world?: { characters?: Array<Record<string, unknown>> } };
             path_coverage?: Array<{ kind?: string; summary?: string; missing_clue_ids?: string[] }>;
-            msf_progress?: { solution_supported: boolean };
           }
           | undefined;
-        const round = accusationJudgeContext?.round ??
-          requireContextNumber(role, context, "round");
+        const last = accusationJudgeContext?.last_accusation === true;
         const mentionedCharacter = inferMentionedCharacter(context);
         if (!mentionedCharacter) {
-          return {
-            narration: "[Mock] I am not sure yet. Who do you think did it, and what clue shows it?",
-            accusation_resolution: "continue",
-          };
+          return last
+            ? { narration: "[Mock] The case ends here. This time the answer got away.", accusation_resolution: "lose" }
+            : {
+              narration: "[Mock] I am not sure yet. Who do you think did it, and what clue shows it?",
+              accusation_resolution: "continue",
+            };
         }
 
         const normalizedCharacter = mentionedCharacter.toLowerCase();
@@ -754,17 +754,12 @@ class MockAIProvider implements AIProvider {
         const isCulprit = typeof culpritFirstName === "string"
           ? culpritFirstName.trim().toLowerCase() === normalizedCharacter
           : normalizedCharacter !== "bob";
-        // Mirrors the live judge semantics: a wrong or unsupported accusation
-        // is rejected with encouragement ("continue") until round 3, when the
-        // case finally resolves "lose". A correct culprit wins from round 1.
-        // This paired-case mock recognizes a full reconstruction as well as graph-earned evidence.
-        const msfSupported = !accusationJudgeContext?.msf_progress || accusationJudgeContext.msf_progress.solution_supported ||
-          (/\blens\b/i.test(String(context.player_input)) && /\b(tide|causeway)\b/i.test(String(context.player_input)) && /\b(beacon|vote)\b/i.test(String(context.player_input)));
-        const accusationResolution: AccusationResolution = round < 1
-          ? "continue"
-          : isCulprit && msfSupported
+        // Mirrors the live judge semantics: the true culprit with support
+        // wins; anything else spends the accusation ("continue"), and on the
+        // last one ends the case ("lose").
+        const accusationResolution: AccusationResolution = isCulprit
           ? "win"
-          : round >= 3
+          : last
           ? "lose"
           : "continue";
 
@@ -782,8 +777,6 @@ class MockAIProvider implements AIProvider {
               ? "[Mock] The clues all fit. You got it right!"
               : accusationResolution === "lose"
               ? "[Mock] The case ends here. This time the answer got away."
-              : round < 1
-              ? "[Mock] I need one more clue before I can be sure. What else do you know?"
               : unfinishedSolutionPath?.summary
               ? `[Mock] Not yet. There is more to know about ${unfinishedSolutionPath.summary}. What clue shows it was them?`
               : "[Mock] Not yet. Look at your clues again. Do you want to have another go?",
@@ -826,31 +819,26 @@ class OpenRouterProvider implements AIProvider {
     prompt: string,
     metadata?: AIRequestMetadata,
   ): Promise<string> {
+    const { system, user } = buildNarrationMessages(prompt);
     const content = await this.callOpenRouter([
-      {
-        role: "system",
-        content:
-          "You are the narrator for a kids mystery game. Return plain text only.",
-      },
-      { role: "user", content: prompt },
+      { role: "system", content: system },
+      { role: "user", content: user },
     ], undefined, metadata, "narration");
 
     return content.trim();
   }
 
   async generateRoleOutput<T>(request: AIRoleOutputRequest<T>): Promise<T> {
+    const { system, user } = buildRoleMessages(request);
     const content = await this.callOpenRouter(
       [
         {
           role: "system",
-          content: `You are a strict JSON API for role "${request.role}". Output JSON only.`,
+          content: system,
         },
         {
           role: "user",
-          content: JSON.stringify({
-            prompt: request.prompt,
-            context: request.context,
-          }),
+          content: user,
         },
       ],
       { type: "json_object" },

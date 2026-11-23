@@ -14,9 +14,10 @@ import { readRunIndex } from "../../../evaluation/core/run-folder.ts";
 import type { Result } from "../../../evaluation/core/result.ts";
 import { createJudgeTurnCommand, judgeTurnCommand } from "../../../evaluation/runtime/judge-turn.ts";
 import { makeTurn } from "./runtime-turn-helpers.ts";
+import { MOCK_CASE_PATH } from "../../testkit/src/mock-case.ts";
 
 const REPO_ROOT = process.cwd();
-const CASES = "evaluation/runtime/cases/age-readability.ts";
+const CASES = "evaluation/runtime/cases/clue-graph/mock-case/readability.ts";
 const STUB_NARRATOR = {
   cmd: "evaluation/runtime/config/wrappers/stub-runtime.sh",
   args: ["{{user_message_file}}"],
@@ -131,7 +132,8 @@ describe("judge turn over a case set", () => {
     expect(code).toBe(1);
     const [dir] = subjectDirs(runDir);
     const result: Result = await readResult(path.join(dir, "result.json"));
-    expect(result.run_error).toMatchObject({ stage: "replay" });
+    expect(result.run_error).toMatchObject({ stage: "transport" });
+    expect(result.production?.calls[0].attempts[0].outcome).toBe("exit");
     expect(result.subject.path).toBeNull();
     expect(fs.existsSync(path.join(dir, "turn.json"))).toBe(false);
   });
@@ -168,7 +170,7 @@ describe("judge turn on a stored turn", () => {
 
   it("defaults to flesch when there is no earlier result", async () => {
     const lone = path.join(scratch, "lone-turn.json");
-    fs.writeFileSync(lone, JSON.stringify(makeTurn({ blueprint_path: path.resolve("blueprints/mock-blueprint.json") })));
+    fs.writeFileSync(lone, JSON.stringify(makeTurn({ blueprint_path: path.resolve(MOCK_CASE_PATH) })));
     const { code, runDir } = await run([lone]);
     expect(code).toBe(0);
     const [dir] = subjectDirs(runDir);
@@ -207,7 +209,7 @@ describe("judge turn refuses what it cannot run", () => {
 
   it.each([
     [["--judges", "nope"], "Unknown check or judge"],
-    [["--judges", "solve_depth"], "does not judge a turn"],
+    [["--judges", "cg_soundness"], "does not judge a turn"],
     [["--narrator", "claude"], "narrator binding"],
     [["--concurrency", "0"], "positive integer"],
     [["--judges", ","], "at least one"],

@@ -11,7 +11,7 @@
 // 7. Save once.
 // 8. Answer from what was saved.
 
-import type { PlayableBlueprint } from "../../../shared/src/msf-case.ts";
+import { lastNameOf, type PlayableCase } from "../../../shared/src/playable-case.ts";
 import { markClues, notebookMarks } from "../clue-graph/notebook-view.ts";
 import { sessionCase } from "../session-case.ts";
 import type { GameTurnResponse, TurnPlayedResponse } from "../../../shared/src/mystery-api-contracts.ts";
@@ -19,7 +19,7 @@ import { AIConfigError } from "../ai-config.ts";
 import { createAIProviderFromProfile, type AIProvider } from "../ai-provider.ts";
 import { HELP_NOTE, interpretLine, type GrammarState, type Interpretation } from "../command-grammar.ts";
 import type { EngineAIProfile, EngineContext, GameSessionRow } from "../context.ts";
-import { RequestRejectedError } from "../errors.ts";
+import { RequestRejectedError, SaveConflictError } from "../errors.ts";
 import { logTimeoutTransition } from "../forced-endgame.ts";
 import type { LogWriter } from "../logging.ts";
 import { logNarrationEventSaved } from "../narration.ts";
@@ -27,7 +27,8 @@ import { spendTurn, turnEffect, type TurnEffect } from "./effect.ts";
 import { narrateForcedEndgame } from "./narrator.ts";
 import { nextSequenceAfter, noTurnEvent, playedEvents } from "./no-turn.ts";
 import { planAction } from "./plan.ts";
-import { resolveAccuseRound, resolveAccuseStart } from "./resolve-accuse.ts";
+import { accusationForced } from "../accusations.ts";
+import { resolveAccusation, resolveAccuseBack, resolveAccuseStart } from "./resolve-accuse.ts";
 import { resolveMove } from "./resolve-move.ts";
 import { resolveSearch } from "./resolve-search.ts";
 import { resolveGraphLine, resolveGraphSearch, resolveGraphTalk } from "./resolve-clue-graph.ts";
@@ -52,15 +53,16 @@ function defaultProvider(profile: EngineAIProfile): AIProvider {
 }
 
 /** What the line means here: the places, and everyone with where they stand. */
-export function grammarStateOf(session: GameSessionRow, blueprint: PlayableBlueprint): GrammarState {
+export function grammarStateOf(session: GameSessionRow, blueprint: PlayableCase): GrammarState {
   return {
     mode: session.mode,
+    accusation_forced: accusationForced(session),
     location: session.current_location_id,
     locations: blueprint.world.locations.map((location) => ({ id: location.id, name: location.name })),
     characters: blueprint.world.characters.map((character) => ({
       id: character.id,
       first_name: character.first_name,
-      last_name: character.last_name,
+      last_name: lastNameOf(character),
       location_name: character.location_id,
     })),
   };
@@ -89,13 +91,17 @@ export function answerWithoutPlaying(meaning: Interpretation): GameTurnResponse 
  * The history is read before the session. The save expects the sequence after
  * the last event read here, so a turn saved after that read, before or after
  * the session is read, makes this one's save conflict rather than land on a
- * stale session. The narrator is shown the events the game master took part
+ * stale session. One saved between the two reads conflicts here, before a
+ * format that checks the session against its history (the clue graph) finds
+ * them disagreeing. The narrator is shown the events the game master took part
  * in; the sequence counts every saved one.
  */
 async function loadGame(ctx: EngineContext, gameId: string, logger: LogWriter): Promise<TurnGame> {
   const history = await ctx.events.listBySession(gameId);
   const session = await ctx.sessions.getById(gameId);
   if (!session) throw new RequestRejectedError(404, "Game session not found", "session_not_found");
+  const nextSequence = nextSequenceAfter(history);
+  if ((await ctx.events.nextSequence(gameId)) !== nextSequence) throw new SaveConflictError(gameId, nextSequence);
   const blueprint = await sessionCase(ctx.content, session, logger);
   if (!blueprint) throw new RequestRejectedError(500, "Blueprint missing", "blueprint_missing");
   return {
@@ -103,7 +109,7 @@ async function loadGame(ctx: EngineContext, gameId: string, logger: LogWriter): 
     session,
     blueprint,
     history: playedEvents(history),
-    next_sequence: nextSequenceAfter(history),
+    next_sequence: nextSequence,
   };
 }
 
@@ -136,8 +142,10 @@ function resolveAction(game: TurnGame, runtime: TurnRuntime, action: PlannedActi
       return resolveEndTalk(game, runtime, action.character_id);
     case "accuse_start":
       return resolveAccuseStart(game, runtime);
-    case "accuse_round":
-      return resolveAccuseRound(game, runtime, action.reasoning);
+    case "accuse_back":
+      return Promise.resolve(resolveAccuseBack());
+    case "accusation":
+      return resolveAccusation(game, runtime, action.reasoning);
   }
 }
 
@@ -250,6 +258,7 @@ export async function playTurn(
   const effect = turnEffect({
     game_id: request.game_id,
     session,
+    history: game.history,
     outcome,
     cost,
     forced,

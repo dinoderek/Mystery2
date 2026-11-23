@@ -10,6 +10,8 @@ export type NotebookSection = "story" | "places" | "people" | "clues";
 /** The part of a game's state that decides what a line means. */
 export interface GrammarState {
   mode: GameMode;
+  /** Out of turns, the accusation is forced and `back` is refused. */
+  accusation_forced?: boolean;
   /** The current place, as a name or an id. */
   location: string;
   locations: Array<{ id: string; name: string }>;
@@ -27,9 +29,10 @@ export type GameAction =
   | { type: "talk"; character_id: string }
   | { type: "ask"; question: string }
   | { type: "accuse"; reasoning: string | null }
+  | { type: "back" }
   | { type: "end_talk" };
 
-export type RefusalKind = "missing-target" | "invalid-target" | "unrecognized";
+export type RefusalKind = "missing-target" | "invalid-target" | "unrecognized" | "no-way-back";
 
 export type GrammarView = "help" | "notebook" | "locations" | "characters";
 
@@ -50,12 +53,15 @@ const HELP_ALIASES = ["help"] as const;
 const QUIT_ALIASES = ["quit", "exit"] as const;
 const END_TALK_ALIASES = ["goodbye", "see you", "leave", "bye", "end"] as const;
 const NOTEBOOK_ALIASES = ["notebook", "n"] as const;
+// Leaving the accusation. None is a word the grammar gives another meaning:
+// the end-talk words and `go` are taken.
+const BACK_ALIASES = ["back", "cancel", "never mind", "nevermind"] as const;
 
 const MODE_HINTS: Record<GameMode, string> = {
   explore:
     "Commands: move to/go to <location>, talk to <character>, search, accuse [statement], locations, characters, notebook, help, quit. Type 'help' for details.",
   talk: "Commands: <question>, bye, notebook, help, quit. Type 'help' for details.",
-  accuse: "Commands: <reasoning>, notebook, help, quit. Type 'help' for details.",
+  accuse: "Commands: <who did it and why>, back, notebook, help, quit. Type 'help' for details.",
   ended: "Commands: notebook, help, quit. Type 'help' for details.",
 };
 
@@ -67,8 +73,15 @@ const WHITESPACE = /\s+/g;
 
 type Character = GrammarState["characters"][number];
 
+/** What a forced accusation offers: no way back. */
+const FORCED_ACCUSE_HINT = "Commands: <who did it and why>, notebook, help, quit. Type 'help' for details.";
+
+/** What `back` is told once the turns have run out. */
+export const NO_WAY_BACK_HINT = "Time is up, so there is no going back now. Who did it, and how do you know?";
+
 /** The command list a mode offers, as shown for an unrecognised line and in help. */
-export function commandHint(mode: GameMode): string {
+export function commandHint(mode: GameMode, accusationForced = false): string {
+  if (mode === "accuse" && accusationForced) return FORCED_ACCUSE_HINT;
   return MODE_HINTS[mode] ?? MODE_HINTS.explore;
 }
 
@@ -312,15 +325,18 @@ function interpretTalkMode(text: string, rawInput: string): Interpretation {
   return act({ type: "ask", question: rawInput.trim() });
 }
 
-function interpretAccuseMode(text: string, rawInput: string): Interpretation {
+function interpretAccuseMode(text: string, rawInput: string, forced: boolean): Interpretation {
   if (text === "") {
-    return unrecognized("accuse");
+    return refuse("unrecognized", commandHint("accuse", forced));
   }
   if (isAliasExact(text, HELP_ALIASES)) {
     return { kind: "view", view: "help", section: null };
   }
   if (isAliasExact(text, QUIT_ALIASES)) {
     return { kind: "quit" };
+  }
+  if (isAliasExact(text, BACK_ALIASES)) {
+    return forced ? refuse("no-way-back", NO_WAY_BACK_HINT) : act({ type: "back" });
   }
   return act({ type: "ask", question: rawInput.trim() });
 }
@@ -349,7 +365,7 @@ export function interpretLine(rawInput: string, state: GrammarState): Interpreta
     case "talk":
       return interpretTalkMode(text, rawInput);
     case "accuse":
-      return interpretAccuseMode(text, rawInput);
+      return interpretAccuseMode(text, rawInput, state.accusation_forced === true);
     case "ended":
       return interpretEnded(text);
     default:

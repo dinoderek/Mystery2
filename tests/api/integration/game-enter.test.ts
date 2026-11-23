@@ -9,7 +9,7 @@ import {
 } from "./helpers";
 
 const STARTING_LOCATION_ID = "loc-kitchen";
-const STARTING_LOCATION_IMAGE = "mock-blueprint.location-loc-kitchen.png";
+const STARTING_LOCATION_IMAGE = "mock-case.location-loc-kitchen.png";
 
 describe("game-enter endpoint", () => {
   let auth: ApiAuthContext;
@@ -59,7 +59,9 @@ describe("game-enter endpoint", () => {
     });
     // Alice is in the kitchen: the arrival names her, and the mock never
     // repeats her manner or tells.
-    expect(data.narration_parts[0].text).toBe("[Mock] You arrive at Kitchen. Alice is here.");
+    expect(data.narration_parts[0].text).toBe(
+      "[Mock] You arrive at Kitchen. The kitchen is warm and smells of baking. Flour dusts the counter beside an empty baking tray. Alice is here.",
+    );
   });
 
   it("persists the arrival as a move event the transcript can replay", async () => {

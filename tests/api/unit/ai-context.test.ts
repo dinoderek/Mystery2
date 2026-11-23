@@ -789,12 +789,12 @@ describe("ai-context guardrails", () => {
       session: { ...session, mode: "accuse" },
       blueprint,
       player_input: "Alice stole the pie.",
-      round: 1,
+      last_accusation: false,
       conversation_history: [],
     });
 
     expect(judgeContext.accusation_judge_context).toMatchObject({
-      round: 1,
+      last_accusation: false,
       full_blueprint: blueprint,
     });
     expect(judgeContext.accusation_judge_context?.full_blueprint.solution_paths).toHaveLength(1);
@@ -844,7 +844,7 @@ describe("ai-context guardrails", () => {
       session: { ...session, mode: "accuse" },
       blueprint,
       player_input: "Alice stole the pie.",
-      round: 1,
+      last_accusation: false,
       conversation_history: history,
     });
 
@@ -895,7 +895,7 @@ describe("ai-context guardrails", () => {
         talk_context: null,
         accusation_start_context: null,
         accusation_judge_context: {
-          round: 1,
+          last_accusation: false,
           full_blueprint: blueprint,
           player_known_clues: [],
           path_coverage: [],

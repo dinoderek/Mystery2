@@ -19,7 +19,7 @@ import { AIConfigError } from "../ai-config.ts";
 import { createAIProviderFromProfile, type AIProvider } from "../ai-provider.ts";
 import { HELP_NOTE, interpretLine, type GrammarState, type Interpretation } from "../command-grammar.ts";
 import type { EngineAIProfile, EngineContext, GameSessionRow } from "../context.ts";
-import { RequestRejectedError } from "../errors.ts";
+import { RequestRejectedError, SaveConflictError } from "../errors.ts";
 import { logTimeoutTransition } from "../forced-endgame.ts";
 import type { LogWriter } from "../logging.ts";
 import { logNarrationEventSaved } from "../narration.ts";
@@ -91,13 +91,17 @@ export function answerWithoutPlaying(meaning: Interpretation): GameTurnResponse 
  * The history is read before the session. The save expects the sequence after
  * the last event read here, so a turn saved after that read, before or after
  * the session is read, makes this one's save conflict rather than land on a
- * stale session. The narrator is shown the events the game master took part
+ * stale session. One saved between the two reads conflicts here, before a
+ * format that checks the session against its history (the clue graph) finds
+ * them disagreeing. The narrator is shown the events the game master took part
  * in; the sequence counts every saved one.
  */
 async function loadGame(ctx: EngineContext, gameId: string, logger: LogWriter): Promise<TurnGame> {
   const history = await ctx.events.listBySession(gameId);
   const session = await ctx.sessions.getById(gameId);
   if (!session) throw new RequestRejectedError(404, "Game session not found", "session_not_found");
+  const nextSequence = nextSequenceAfter(history);
+  if ((await ctx.events.nextSequence(gameId)) !== nextSequence) throw new SaveConflictError(gameId, nextSequence);
   const blueprint = await sessionCase(ctx.content, session, logger);
   if (!blueprint) throw new RequestRejectedError(500, "Blueprint missing", "blueprint_missing");
   return {
@@ -105,7 +109,7 @@ async function loadGame(ctx: EngineContext, gameId: string, logger: LogWriter): 
     session,
     blueprint,
     history: playedEvents(history),
-    next_sequence: nextSequenceAfter(history),
+    next_sequence: nextSequence,
   };
 }
 

@@ -5,7 +5,7 @@
     "command": "play",
     "argv": [
       "--blueprint",
-      "mock-blueprint",
+      "mock-case",
       "--judge"
     ],
     "started_at": "2026-01-02T03:04:05.000Z",

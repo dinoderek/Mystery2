@@ -1,0 +1,73 @@
+game: mock-aliases
+blueprint: mock-case
+
+steps
+  0  (start)  mode=explore turns=10
+  1  (enter)  mode=explore turns=10
+  2  "where can i go"  mode=explore turns=10 opens=notebook/places
+  3  "who is here"  mode=explore turns=10 opens=notebook/people
+  4  "look"  mode=explore turns=9 clues=clue_crumbs
+  5  "search the pantry shelf"  mode=explore turns=8 clues=clue_jar
+  6  "speak to Alice"  mode=talk turns=7 clues=alice_blames_bob,alice_flour
+  7  "Where were you at noon?"  mode=talk turns=7 clues=alice_noon
+  8  "see you"  mode=explore turns=7
+  9  "travel to the living room"  mode=explore turns=6
+  10  "inspect"  mode=explore turns=5 clues=clue_score_sheet
+  11  "speak with Bob"  mode=talk turns=4 clues=bob_alibi
+  12  "leave"  mode=explore turns=4
+  13  "talk to bob"  mode=talk turns=3
+  14  "end"  mode=explore turns=3
+  15  "go home"  mode=explore turns=3
+  16  "head towards the kitchen"  mode=explore turns=2
+  17  "talk to alice"  mode=talk turns=1
+  18  "bye"  mode=explore turns=1
+  19  "exit"  mode=ended turns=1
+
+pages
+  page 0 opening "Mock Case — clue graph"
+    step 0 | Narrator (narrator): "[Mock] The cookies vanished from the kitchen at noon. Alice baked the cookies this morning. Bob is a weekend guest who spent the morning in the living room."
+    step 0 | Narrator (narrator): "Tip: type \"notebook\" (or \"n\") to open your case notebook. It holds what you know, who you have met, and every clue you have found. You have 3 accusations. Each one you try uses one up. Type \"accuse\" when you are ready, and \"back\" if you change your mind: that is free. Type \"help\" to see what else you can do."
+  page 1 location "Kitchen"
+    step 1 | Narrator (narrator): "[Mock] You arrive at Kitchen. The kitchen is warm and smells of baking. Flour dusts the counter beside an empty baking tray. Alice is here."
+    step 4 | You (investigator): "look"
+    step 4 | Narrator (narrator): "[Mock] You search Kitchen and uncover a clue: A trail of cookie crumbs runs from the pantry to the laundry room door, not towards the living room."
+    step 5 | You (investigator): "search the pantry shelf"
+    step 5 | Narrator (narrator): "[Mock] You search the pantry shelf in Kitchen and uncover a clue: The cookie jar on the pantry shelf is empty, and its lid is covered in floury fingerprints."
+  page 2 conversation "Alice"
+    step 6 | You (investigator): "speak to Alice"
+    step 6 | Narrator (narrator): "[Mock] Alice is here in Kitchen. Alice is a tall girl with flour on her nose. She wears a striped T-shirt. Alice says: Alice says she saw Bob sneak into the kitchen at noon. (Alice brushes flour off her hands and will not meet your eyes.)"
+    step 7 | You (investigator): "Where were you at noon?"
+    step 7 | Alice (character): "[Mock] Alice says: Alice says she was tidying the pantry at noon."
+  page 3 location "Kitchen"
+    step 8 | You (investigator): "see you"
+    step 8 | Narrator (narrator): "[Mock] You say goodbye to Alice and look around again."
+  page 4 location "Living Room"
+    step 9 | You (investigator): "travel to the living room"
+    step 9 | Narrator (narrator): "[Mock] You arrive at Living Room. The living room is cosy, with a sofa and a tall bookshelf. A board game is laid out on the low table. Bob is here."
+    step 10 | You (investigator): "inspect"
+    step 10 | Narrator (narrator): "[Mock] You search Living Room and uncover a clue: The board game's score sheet shows a move written in Bob's handwriting every five minutes from half past eleven to half past twelve."
+  page 5 conversation "Bob"
+    step 11 | You (investigator): "speak with Bob"
+    step 11 | Narrator (narrator): "[Mock] Bob is here in Living Room. Bob is a small boy with round glasses. He wears a green jumper. Bob says: Bob says he was playing a board game in the living room all morning."
+  page 6 location "Living Room"
+    step 12 | You (investigator): "leave"
+    step 12 | Narrator (narrator): "[Mock] You say goodbye to Bob and look around again."
+  page 7 conversation "Bob"
+    step 13 | You (investigator): "talk to bob"
+    step 13 | Narrator (narrator): "[Mock] Bob is here in Living Room."
+  page 8 location "Living Room"
+    step 14 | You (investigator): "end"
+    step 14 | Narrator (narrator): "[Mock] You say goodbye to Bob and look around again."
+    step 15 | You (investigator): "go home"
+    step 15 | System (system): "\"home\" is not a valid destination. Try: Kitchen, Living Room, Bob."
+  page 9 location "Kitchen"
+    step 16 | You (investigator): "head towards the kitchen"
+    step 16 | Narrator (narrator): "[Mock] You arrive at Kitchen. The kitchen is warm and smells of baking. Flour dusts the counter beside an empty baking tray. Alice is here."
+  page 10 conversation "Alice"
+    step 17 | You (investigator): "talk to alice"
+    step 17 | Narrator (narrator): "[Mock] Alice is here in Kitchen."
+  page 11 location "Kitchen"
+    step 18 | You (investigator): "bye"
+    step 18 | Narrator (narrator): "[Mock] You say goodbye to Alice and look around again."
+    step 19 | You (investigator): "exit"
+    step 19 | System (system): "This case is over. Press Tab to review your notebook, or any other key to go back to the list of mysteries."

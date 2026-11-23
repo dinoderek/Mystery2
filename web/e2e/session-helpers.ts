@@ -6,6 +6,20 @@ import {
   createTurnPlayedResponse,
   createRevealedClue,
 } from '../../tests/testkit/src/fixtures';
+import { MOCK_CASE_ID } from '../../tests/testkit/src/mock-case';
+
+/**
+ * Lists only the mock case, the default fixture, so the first case listed is
+ * the one a spec against the real server starts.
+ */
+export async function listOnlyMockCase(page: Page) {
+  await page.route('**/api/blueprints-list*', async (route) => {
+    const answer = await route.fetch();
+    const body = await answer.json();
+    body.blueprints = body.blueprints.filter((entry: { id: string }) => entry.id === MOCK_CASE_ID);
+    await route.fulfill({ response: answer, json: body });
+  });
+}
 
 /**
  * A started case opens on the premise and waits for the player before stepping

@@ -10,7 +10,8 @@ import {
   resolveSearchRole,
   type RoleRequestName,
 } from "../../../packages/game-engine/src/role-request.ts";
-import { buildClueGraphWorld, validateClueGraph } from "@my2/shared";
+import { buildClueGraphWorld, validateClueGraph, type ClueGraphWorld } from "@my2/shared";
+import { readMockCase } from "../../testkit/src/mock-case.ts";
 
 // role-request.ts is the single assembly path for narrator prompts. These tests
 // exist because an earlier arrangement had two: the endpoint handlers,
@@ -21,7 +22,7 @@ import { buildClueGraphWorld, validateClueGraph } from "@my2/shared";
 // the model at all. Nothing failed. Hence the assertions below: for EVERY role,
 // the blueprint's age and voice must actually appear in the assembled prompt.
 
-const TARGET_AGE = 10; // mock-blueprint's target_age
+const TARGET_AGE = 10; // the target_age of the V2 mock, the greenhouse and the mock case
 const NARRATION_STYLE = "salty harbor air and gull cries";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -29,6 +30,8 @@ let blueprint: any;
 // The clue-graph roles play the greenhouse, also for a reader of 10.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let graphBlueprint: any;
+// The roles a clue graph shares with V2, on the default fixture.
+let mockCase: ClueGraphWorld;
 
 beforeAll(async () => {
   blueprint = JSON.parse(
@@ -38,6 +41,7 @@ beforeAll(async () => {
   graphBlueprint = buildClueGraphWorld(
     validateClueGraph(JSON.parse(await readFile("blueprints/clue-graph/greenhouse-prizewinner.json", "utf-8"))),
   );
+  mockCase = readMockCase();
 });
 
 function session(overrides: Record<string, unknown> = {}) {
@@ -206,6 +210,25 @@ describe("every assembled prompt carries the blueprint's age and voice", () => {
     expect(await promptFor(role)).toContain(NARRATION_STYLE);
   });
 
+  it.each(["intro", "ambience", "talk_end", "accusation_start"] as RoleRequestName[])(
+    "%s renders a clue graph's target_age too",
+    async (role) => {
+      const input = inputFor(role);
+      const onGraph = {
+        ...input,
+        blueprint: mockCase,
+        ...(input.session ? { session: { ...input.session, current_location_id: "loc-kitchen" } } : {}),
+        ...("destination_id" in input ? { destination_id: "loc-kitchen" } : {}),
+        ...("location_id" in input ? { location_id: "loc-kitchen" } : {}),
+        ...("character_id" in input ? { character_id: "char-alice" } : {}),
+      };
+      const prompt = role === "intro" || role === "ambience"
+        ? buildNarrationPrompt(onGraph)
+        : (await buildRoleRequest(onGraph)).prompt;
+      expect(prompt).toContain(`is ${TARGET_AGE} years old`);
+    },
+  );
+
   // A clue graph sets no voice of its own: its roles use the standard style alone.
   it.each(["graph_talk", "graph_search", "graph_accusation_round", "graph_ending"] as RoleRequestName[])(
     "%s narrates in the standard style",
@@ -311,6 +334,7 @@ describe("arrival (ambience) derives its inputs from the session history", () =>
   }
 
   it("sends each present character's arrival pack and nothing about absent ones", () => {
+    const blueprint = mockCase;
     const prompt = buildNarrationPrompt({
       role: "ambience",
       game_id: "case",
@@ -328,7 +352,7 @@ describe("arrival (ambience) derives its inputs from the session history", () =>
       blueprint.world.characters[0].initial_attitude_towards_investigator,
     );
     expect(prompt).not.toContain(blueprint.world.characters[0].clues[0].text);
-    expect(prompt).not.toContain(blueprint.world.characters[1].background);
+    expect(prompt).not.toContain(blueprint.world.characters[1].appearance);
     expect(prompt).toContain("## Characters present");
   });
 
@@ -336,16 +360,17 @@ describe("arrival (ambience) derives its inputs from the session history", () =>
     const prompt = buildNarrationPrompt({
       role: "ambience",
       game_id: "case",
-      blueprint: { ...blueprint, world: { ...blueprint.world, characters: [] } },
+      blueprint: { ...mockCase, world: { ...mockCase.world, characters: [] } },
       destination_id: "loc-kitchen",
       conversation_history: [],
     });
     expect(charactersIn(prompt)).toEqual([]);
     expect(prompt).not.toContain("## Characters present");
-    expect(prompt).toContain("never invent more");
+    expect(prompt).toContain("Use only the characters, places and facts you are given.");
   });
 
-  it("names the searchable areas and recognises a return visit", () => {
+  it("names the searchable areas, never a hidden one, and recognises a return visit", () => {
+    const blueprint = mockCase;
     const first = buildNarrationPrompt({
       role: "ambience",
       game_id: "case",
@@ -354,6 +379,7 @@ describe("arrival (ambience) derives its inputs from the session history", () =>
       conversation_history: [],
     });
     expect(first).toContain("the pantry shelf");
+    expect(first).not.toContain("the laundry basket");
     expect(first).toContain("arriving here for the first time");
 
     const back = buildNarrationPrompt({

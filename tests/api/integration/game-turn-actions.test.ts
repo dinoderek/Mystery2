@@ -14,16 +14,21 @@ import {
   setStoredTimeRemaining,
   setupApiTestAuth,
   startMockGame,
+  V2_MOCK_BLUEPRINT_ID,
   type ApiAuthContext,
 } from "./helpers";
 
-const mockBlueprint = JSON.parse(fs.readFileSync("blueprints/mock-blueprint.json", "utf8")) as Parameters<
+/** The V2 fixture, for V2 talk state alone. */
+const v2MockBlueprint = JSON.parse(fs.readFileSync("blueprints/mock-blueprint.json", "utf8")) as Parameters<
   typeof buildRoleRequest
 >[0]["blueprint"];
 
 // What each action does to the game, played as typed lines through `game-turn`
 // under the mock narrator. The request and answer shapes are in
 // `game-turn.test.ts`; the unit suites hold the grammar and the turn arithmetic.
+
+const SCORE_SHEET = "The board game's score sheet shows a move written in Bob's handwriting every five minutes from half past eleven to half past twelve.";
+const TOY_MOUSE = "A toy mouse is wedged behind the bookshelf, covered in dust.";
 
 describe("game-turn actions", () => {
   let auth: ApiAuthContext;
@@ -34,6 +39,13 @@ describe("game-turn actions", () => {
 
   const play = (gameId: string, input: string) => playLine(auth, gameId, input);
 
+  /** Gathers one route to the culprit: the empty jar, and the score sheet that clears Bob. */
+  async function gatherCase(gameId: string) {
+    await play(gameId, "search the pantry shelf");
+    await play(gameId, "go to the Living Room");
+    await play(gameId, "search");
+  }
+
   describe("moving", () => {
     it("moves the player, spends a turn, and narrates the arrival as the narrator", async () => {
       const gameId = await startMockGame(auth);
@@ -43,8 +55,8 @@ describe("game-turn actions", () => {
       expect(move.state).toMatchObject({ mode: "explore", location: "loc-living-room", time_remaining: 9 });
       expect(move.events).toHaveLength(1);
       expect(move.events[0].narration_parts[0]).toMatchObject({
-        text: "[Mock] You arrive at Living Room. Bob is here.",
-        image_id: "mock-blueprint.location-loc-living-room.png",
+        text: "[Mock] You arrive at Living Room. The living room is cosy, with a sofa and a tall bookshelf. A board game is laid out on the low table. Bob is here.",
+        image_id: "mock-case.location-loc-living-room.png",
         speaker: NARRATOR_SPEAKER,
       });
     });
@@ -94,12 +106,12 @@ describe("game-turn actions", () => {
 
       const first = await play(gameId, "search");
       expect(first.state).toMatchObject({ mode: "explore", time_remaining: 8 });
-      expect(first.events[0].narration_parts[0].text).toContain("A wrapper on the sofa.");
+      expect(first.events[0].narration_parts[0].text).toContain(SCORE_SHEET);
       expect(first.events[0].narration_parts[0].speaker).toMatchObject(NARRATOR_SPEAKER);
       expect(first.revealed_clues).toHaveLength(1);
       expect(first.revealed_clues[0]).toMatchObject({
-        id: "clue-wrapper",
-        text: "A wrapper on the sofa.",
+        id: "clue_score_sheet",
+        text: `[Mock] ${SCORE_SHEET}`,
         source: "search",
         origin: { kind: "location" },
         off_script: false,
@@ -109,28 +121,29 @@ describe("game-turn actions", () => {
 
       const second = await play(gameId, "search behind the bookshelf");
       expect(second.state.time_remaining).toBe(7);
-      expect(second.events[0].narration_parts[0].text).toContain("A half-eaten cookie.");
+      expect(second.events[0].narration_parts[0].text).toContain(TOY_MOUSE);
 
       const third = await play(gameId, "search");
       expect(third.state.time_remaining).toBe(6);
-      expect(third.events[0].narration_parts[0].text).toContain("discover no new clue");
+      expect(third.events[0].narration_parts[0].text).toContain("find nothing new");
       expect(third.revealed_clues).toEqual([]);
 
+      // Each search records what it found, and only that.
       const searches = readStoredEvents(gameId).filter((event) => event.event_type === "search");
       expect(searches[0].payload).toMatchObject({
-        revealed_clue_id: "clue-wrapper",
-        revealed_clue_text: "A wrapper on the sofa.",
-        revealed_clue_ids: ["clue-wrapper"],
+        revealed_clue_id: "clue_score_sheet",
+        revealed_clue_text: `[Mock] ${SCORE_SHEET}`,
+        revealed_clue_ids: ["clue_score_sheet"],
       });
       expect(searches[1].payload).toMatchObject({
-        revealed_clue_id: "clue-half-eaten",
-        revealed_clue_text: "A half-eaten cookie.",
-        revealed_clue_ids: ["clue-wrapper", "clue-half-eaten"],
+        revealed_clue_id: "clue_bookshelf_toy",
+        revealed_clue_text: `[Mock] ${TOY_MOUSE}`,
+        revealed_clue_ids: ["clue_bookshelf_toy"],
       });
       expect(searches[2].payload).toMatchObject({
         revealed_clue_id: null,
         revealed_clue_text: null,
-        revealed_clue_ids: ["clue-wrapper", "clue-half-eaten"],
+        revealed_clue_ids: [],
       });
     });
 
@@ -138,7 +151,7 @@ describe("game-turn actions", () => {
       const gameId = await startMockGame(auth);
 
       const pantry = await play(gameId, "search the pantry shelf");
-      expect(pantry.revealed_clues.map((clue) => clue.id)).toEqual(["clue-jar"]);
+      expect(pantry.revealed_clues.map((clue) => clue.id)).toEqual(["clue_jar"]);
 
       // The pantry's clue is found and the sink holds none: the search finds nothing.
       const empty = await play(gameId, "search the sink");
@@ -146,17 +159,18 @@ describe("game-turn actions", () => {
 
       // So the next search reveals the room's clue, and only that one.
       const next = await play(gameId, "search");
-      expect(next.revealed_clues.map((clue) => clue.id)).toEqual(["clue-crumb"]);
+      expect(next.revealed_clues.map((clue) => clue.id)).toEqual(["clue_crumbs"]);
 
       const searches = readStoredEvents(gameId).filter((event) => event.event_type === "search");
+      expect(searches[1].payload).toMatchObject({ revealed_clue_id: null, revealed_clue_ids: [] });
       expect(searches[2].payload).toMatchObject({
-        revealed_clue_id: "clue-crumb",
-        revealed_clue_ids: ["clue-jar", "clue-crumb"],
+        revealed_clue_id: "clue_crumbs",
+        revealed_clue_ids: ["clue_crumbs"],
       });
 
       const read = await fetch(`${API_URL}/game-get?game_id=${gameId}`, { headers: auth.headers });
       const { state } = SessionTranscriptResponseSchema.parse(await read.json());
-      expect(state.discovered_clues?.map((clue) => clue.id)).toEqual(["clue-jar", "clue-crumb"]);
+      expect(state.discovered_clues?.map((clue) => clue.id)).toEqual(["clue_jar", "clue_crumbs"]);
     });
 
     it("persists the forced accusation when the last turn is a search", async () => {
@@ -191,9 +205,11 @@ describe("game-turn actions", () => {
       const part = talk.events[0].narration_parts[0];
       expect(part.text).toContain("[Mock]");
       expect(part.text).toContain("she");
-      expect(part.text).not.toContain("because she was hungry");
+      // The greeting gives what she says first, never the truth of the case.
+      expect(part.text).toContain("Alice says she saw Bob sneak into the kitchen at noon.");
+      expect(part.text).not.toContain("could not resist");
       expect(part).toMatchObject({
-        image_id: "mock-blueprint.character-char-alice.png",
+        image_id: "mock-case.character-char-alice.png",
         speaker: NARRATOR_SPEAKER,
       });
     });
@@ -260,9 +276,9 @@ describe("game-turn actions", () => {
       const gameId = await startMockGame(auth);
       await play(gameId, "talk to Alice");
 
-      const first = (await play(gameId, "What did you see?")).revealed_clues.map((clue) => clue.id);
-      expect(first.length).toBeGreaterThan(0);
-      const second = (await play(gameId, "Where exactly did you see it?")).revealed_clues.map((clue) => clue.id);
+      const first = (await play(gameId, "Where were you at noon?")).revealed_clues.map((clue) => clue.id);
+      expect(first).toEqual(["alice_noon"]);
+      const second = (await play(gameId, "Where exactly were you at noon?")).revealed_clues.map((clue) => clue.id);
       expect(second.filter((id) => first.includes(id))).toEqual([]);
 
       const recorded = readStoredEvents(gameId)
@@ -271,8 +287,9 @@ describe("game-turn actions", () => {
       expect(new Set(recorded).size).toBe(recorded.length);
     });
 
+    // V2 talk state: it leaves with V2.
     it("keeps a reaction and a commitment from one visit in the next visit's context", async () => {
-      const gameId = await startMockGame(auth);
+      const gameId = await startMockGame(auth, V2_MOCK_BLUEPRINT_ID);
       await play(gameId, "search");
       await play(gameId, "talk to Alice");
       // The mock reads a line that names a gate clue's id as using it.
@@ -306,7 +323,7 @@ describe("game-turn actions", () => {
         role: "talk_conversation",
         game_id: gameId,
         session: { ...session, mode: "talk" },
-        blueprint: mockBlueprint,
+        blueprint: v2MockBlueprint,
         character_id: "char-alice",
         location_id: "loc-kitchen",
         player_input: "Where were you this afternoon?",
@@ -347,8 +364,9 @@ describe("game-turn actions", () => {
   describe("accusing", () => {
     it("judges a reasoned accusation at once and resolves to a win", async () => {
       const gameId = await startMockGame(auth);
+      await gatherCase(gameId);
 
-      const won = await play(gameId, "accuse Alice because she had crumbs and no alibi.");
+      const won = await play(gameId, "accuse Alice because the cookie jar was empty and Bob was playing his board game.");
       expect(won.state.mode).toBe("ended");
       expect(won.result).toBe("win");
       expect(won.events[0].narration_parts[0].speaker.kind).toBe("narrator");
@@ -358,7 +376,8 @@ describe("game-turn actions", () => {
 
     it("plays nothing once the case has ended, and only keeps the line", async () => {
       const gameId = await startMockGame(auth);
-      await play(gameId, "accuse Alice because she had crumbs and no alibi.");
+      await gatherCase(gameId);
+      await play(gameId, "accuse Alice because the cookie jar was empty and Bob was playing his board game.");
       const events = readStoredEvents(gameId).length;
 
       const res = await sendLine(auth, gameId, "accuse Bob because I changed my mind");
@@ -373,6 +392,7 @@ describe("game-turn actions", () => {
 
     it("opens accusation mode without reasoning, then judges the line typed there", async () => {
       const gameId = await startMockGame(auth);
+      await gatherCase(gameId);
 
       const open = await play(gameId, "accuse");
       expect(open.events[0].event_type).toBe("accuse_start");
@@ -380,8 +400,9 @@ describe("game-turn actions", () => {
       expect(open.result).toBeNull();
       expect(open.events[0].narration_parts[0].speaker.kind).toBe("narrator");
 
-      const won = await play(gameId, "I accuse Alice. She panicked when I asked about the cookies.");
+      const won = await play(gameId, "I accuse Alice. Her floury fingerprints are on the empty cookie jar.");
       expect(won.state.mode).toBe("ended");
+      expect(won.result).toBe("win");
       expect(won.events[0].narration_parts[0].speaker.kind).toBe("narrator");
     });
 

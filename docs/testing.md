@@ -107,7 +107,9 @@ prompt, so editing it changes every transcript. Re-record on purpose with
   `setupApiTestAuth(tag)` and scopes assertions to its own identifiers, with no
   unscoped global counts. Anything that opens a database gets an explicit path,
   never `resolveDatabasePath()`, which names your play database.
-- **Fixtures.** Use the factories in `tests/testkit/src/fixtures.ts`; never
+- **Fixtures.** A test that plays a case plays the mock case,
+  `blueprints/clue-graph/mock-case.json` (`tests/testkit/src/mock-case.ts`).
+  Use the factories in `tests/testkit/src/fixtures.ts`; never
   hand-write an object for a shape with a Zod schema in `packages/shared/src/`.
   Factories parse at creation: pass only the overrides that differ. A new
   response type needs its factory. For a TypeScript-only shape, annotate the

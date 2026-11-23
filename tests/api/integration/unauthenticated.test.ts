@@ -21,7 +21,7 @@ import {
 // A portrait rather than the cover: `blueprint-images.test.ts` deletes the
 // cover to prove a missing file 404s, and suites in a run share one image
 // directory. Nothing removes this one.
-const REFERENCED_IMAGE_ID = "mock-blueprint.character-char-alice.png";
+const REFERENCED_IMAGE_ID = "mock-case.character-char-alice.png";
 
 const NO_PROFILE_HEADERS = { "Content-Type": "application/json" };
 

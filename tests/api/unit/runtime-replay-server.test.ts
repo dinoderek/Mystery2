@@ -15,10 +15,11 @@ import type { TurnCase } from "../../../evaluation/runtime/lib/case.ts";
 import { ServerNarrator } from "../../../evaluation/runtime/lib/replay-server.ts";
 import type { StartServer, ThrowawayServer } from "../../../evaluation/runtime/lib/replay-server.ts";
 import { seedSessionWithHistory } from "../../../evaluation/runtime/lib/seed.ts";
+import { MOCK_CASE_PATH, readMockCase } from "../../testkit/src/mock-case.ts";
 
 const REPO_ROOT = process.cwd();
-const MOCK_BLUEPRINT = path.join(REPO_ROOT, "blueprints", "mock-blueprint.json");
-const blueprint = JSON.parse(fs.readFileSync(MOCK_BLUEPRINT, "utf8"));
+const MOCK_BLUEPRINT = path.join(REPO_ROOT, MOCK_CASE_PATH);
+const blueprint = readMockCase();
 
 let scratch = "";
 
@@ -90,13 +91,13 @@ function defaultAnswer(endpoint: string) {
 
 const askCase: TurnCase = {
   id: "ask-alice",
-  blueprint: { path: "blueprints/mock-blueprint.json" },
+  blueprint: { path: MOCK_CASE_PATH },
   given: {
     mode: "talk",
     location_id: "loc-kitchen",
     talk_character_id: "char-alice",
     time_remaining: 7,
-    discovered_clues: ["clue-crumb"],
+    discovered_clues: ["clue_crumbs"],
     history: [
       { event_type: "talk", narration: "You step closer.", payload: { character_id: "char-alice" } },
       { event_type: "ask", narration: '"Hm," says Alice.', payload: { player_input: "Hi" } },
@@ -142,6 +143,8 @@ describe("replaying through a throwaway server", () => {
       current_talk_character_id: "char-alice",
       time_remaining: 7,
     });
+    // The clue graph plays from its snapshot, seeded as game-start would save it.
+    expect(JSON.parse(String(session.clue_graph_snapshot))).toEqual(blueprint.clue_graph);
     const events = db.prepare("select sequence, event_type, narration from game_events order by sequence").all();
     expect(events).toEqual([
       { sequence: 1, event_type: "talk", narration: "You step closer." },

@@ -1,22 +1,15 @@
 import { expect, test } from '@playwright/test';
+import { listOnlyMockCase } from './session-helpers';
 import { signInAsTestProfile } from './test-profile';
 
 // A player sets the reading age on the settings page, against the real server,
 // and the next game they start is narrated for it.
 
-const MOCK_BLUEPRINT_ID = '123e4567-e89b-12d3-a456-426614174000';
-
 test.describe('Reading age', () => {
 	test('a player sets the age, and the next game reads at it', async ({ page }) => {
 		const profile = await signInAsTestProfile(page, 'reading-age');
 
-		// Only the mock case, so the first listed is the one started.
-		await page.route('**/api/blueprints-list*', async (route) => {
-			const answer = await route.fetch();
-			const body = await answer.json();
-			body.blueprints = body.blueprints.filter((entry: { id: string }) => entry.id === MOCK_BLUEPRINT_ID);
-			await route.fulfill({ response: answer, json: body });
-		});
+		await listOnlyMockCase(page);
 
 		await page.goto('/');
 		await page.getByTestId('settings-link').click();
@@ -46,8 +39,8 @@ test.describe('Reading age', () => {
 		await page.keyboard.press('1');
 		const answer = await (await started).json();
 
+		// That every narrator prompt is written for it is the unit suite's (`tests/api/unit/reading-age.test.ts`).
 		expect(answer.reading_age).toBe(7);
-		expect(answer.narration_events[0].narration_parts[0].text).toContain('The reader is 7 ');
 		await expect(page).toHaveURL(/\/session/);
 	});
 

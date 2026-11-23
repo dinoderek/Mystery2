@@ -1,0 +1,214 @@
+{
+  "format": "clue-graph/2",
+  "metadata": {
+    "id": "mock-case",
+    "title": "Mock Case",
+    "image_id": "mock-case.blueprint.png",
+    "target_age": 10,
+    "time_budget": 10
+  },
+  "opening": {
+    "location": "loc-kitchen",
+    "facts": [
+      "The cookies vanished from the kitchen at noon.",
+      "Alice baked the cookies this morning.",
+      "Bob is a weekend guest who spent the morning in the living room."
+    ]
+  },
+  "truth": {
+    "timeline": [
+      "11:00: Alice bakes a batch of cookies and puts them in the jar on the pantry shelf.",
+      "11:30: Bob starts a board game against himself in the living room and writes down every move.",
+      "Noon: Alice eats every cookie in the pantry and leaves floury fingerprints on the empty jar.",
+      "Just after noon: Alice stuffs her crumby apron into the laundry basket, and Bob sees her through the doorway."
+    ],
+    "motive": "Alice was hungry after baking all morning and could not resist the cookies. She blamed Bob because she was embarrassed."
+  },
+  "locations": {
+    "loc-kitchen": {
+      "name": "Kitchen",
+      "facts": [
+        "The kitchen is warm and smells of baking.",
+        "Flour dusts the counter beside an empty baking tray."
+      ],
+      "location_image_id": "mock-case.location-loc-kitchen.png",
+      "spots": [
+        { "name": "the pantry shelf" },
+        { "name": "under the kitchen sink" },
+        { "name": "the laundry basket", "revealed_by": "bob_saw_apron" }
+      ]
+    },
+    "loc-living-room": {
+      "name": "Living Room",
+      "facts": [
+        "The living room is cosy, with a sofa and a tall bookshelf.",
+        "A board game is laid out on the low table."
+      ],
+      "location_image_id": "mock-case.location-loc-living-room.png",
+      "spots": [
+        { "name": "behind the bookshelf" }
+      ]
+    }
+  },
+  "characters": {
+    "char-alice": {
+      "name": "Alice",
+      "location": "loc-kitchen",
+      "role": "culprit",
+      "sex": "female",
+      "personality": "Cheerful and chatty, but she talks too fast when she is nervous.",
+      "demeanor": {
+        "guarded": "Bright and helpful, and quick to point at Bob.",
+        "cornered": "Red-faced, staring at her floury hands.",
+        "cleared": "Sheepish and relieved to have owned up."
+      },
+      "knows": [
+        { "fact": "Alice bakes cookies every Saturday." },
+        { "fact": "Bob is staying for the weekend.", "points_at": { "character": "char-bob" } }
+      ],
+      "appearance": [
+        "Alice is a tall girl with flour on her nose.",
+        "She wears a striped T-shirt."
+      ],
+      "portrait_image_id": "mock-case.character-char-alice.png"
+    },
+    "char-bob": {
+      "name": "Bob",
+      "location": "loc-living-room",
+      "role": "suspect",
+      "sex": "male",
+      "personality": "Quiet and careful, with a love of board games.",
+      "demeanor": {
+        "open": "Polite and a little shy.",
+        "cleared": "Pleased to be believed."
+      },
+      "knows": [
+        { "fact": "Bob plays board games against himself when nobody else will play." }
+      ],
+      "appearance": [
+        "Bob is a small boy with round glasses.",
+        "He wears a green jumper."
+      ],
+      "portrait_image_id": "mock-case.character-char-bob.png"
+    }
+  },
+  "clues": {
+    "clue_crumbs": {
+      "kind": "evidence",
+      "fact": "A trail of cookie crumbs runs from the pantry to the laundry room door, not towards the living room.",
+      "source": { "location": "loc-kitchen" }
+    },
+    "clue_jar": {
+      "kind": "evidence",
+      "fact": "The cookie jar on the pantry shelf is empty, and its lid is covered in floury fingerprints.",
+      "source": { "location": "loc-kitchen", "spot": "the pantry shelf" }
+    },
+    "clue_apron": {
+      "kind": "evidence",
+      "fact": "Alice's apron is balled up in the laundry basket, and its pocket is full of cookie crumbs.",
+      "source": { "location": "loc-kitchen", "spot": "the laundry basket" }
+    },
+    "clue_score_sheet": {
+      "kind": "evidence",
+      "fact": "The board game's score sheet shows a move written in Bob's handwriting every five minutes from half past eleven to half past twelve.",
+      "source": { "location": "loc-living-room" }
+    },
+    "clue_bookshelf_toy": {
+      "kind": "evidence",
+      "fact": "A toy mouse is wedged behind the bookshelf, covered in dust.",
+      "source": { "location": "loc-living-room", "spot": "behind the bookshelf" },
+      "colour": true
+    },
+    "alice_blames_bob": {
+      "kind": "statement",
+      "fact": "Alice says she saw Bob sneak into the kitchen at noon.",
+      "source": { "character": "char-alice" },
+      "truth": false,
+      "why": "She wants the blame off herself.",
+      "reached": { "by": "first_meeting" }
+    },
+    "alice_flour": {
+      "kind": "tell",
+      "fact": "Alice brushes flour off her hands and will not meet your eyes.",
+      "source": { "character": "char-alice" },
+      "reached": { "by": "seen", "with": "alice_blames_bob" },
+      "colour": true
+    },
+    "alice_noon": {
+      "kind": "statement",
+      "fact": "Alice says she was tidying the pantry at noon.",
+      "source": { "character": "char-alice" },
+      "truth": true,
+      "reached": { "by": "asked", "about": "noon", "prompted_by": ["opening"] },
+      "colour": true
+    },
+    "alice_takes_back": {
+      "kind": "statement",
+      "fact": "Alice admits she never really saw Bob in the kitchen.",
+      "source": { "character": "char-alice" },
+      "truth": true,
+      "reached": {
+        "by": "gated",
+        "gate": { "after": ["alice_blames_bob"], "use": { "any": ["clue_score_sheet"] } }
+      },
+      "takes_back": ["alice_blames_bob"]
+    },
+    "alice_confession": {
+      "kind": "statement",
+      "fact": "Alice admits she ate all the cookies herself and hid her crumby apron in the laundry basket.",
+      "source": { "character": "char-alice" },
+      "truth": true,
+      "reached": {
+        "by": "gated",
+        "gate": { "after": ["alice_takes_back"], "use": { "any": ["clue_jar", "clue_apron"] } }
+      }
+    },
+    "bob_alibi": {
+      "kind": "statement",
+      "fact": "Bob says he was playing a board game in the living room all morning.",
+      "source": { "character": "char-bob" },
+      "truth": true,
+      "reached": { "by": "first_meeting" },
+      "colour": true
+    },
+    "bob_saw_apron": {
+      "kind": "statement",
+      "fact": "Bob says that just after noon he saw Alice stuff her apron into the laundry basket in the kitchen.",
+      "source": { "character": "char-bob" },
+      "truth": true,
+      "reached": { "by": "asked", "about": "Alice", "prompted_by": ["opening"] }
+    }
+  },
+  "conclusions": {
+    "bob_cleared": {
+      "text": "Bob is cleared: he was writing down board game moves in the living room all through noon.",
+      "clears": "char-bob",
+      "rule": { "all": ["clue_score_sheet"] }
+    },
+    "culprit_alice": {
+      "text": "Alice ate the cookies and blamed Bob.",
+      "culprit": "char-alice",
+      "rule": {
+        "any": [
+          { "all": ["clue_jar", "bob_cleared"] },
+          { "all": ["clue_apron", "clue_crumbs"] },
+          { "all": ["alice_confession"] }
+        ]
+      }
+    }
+  },
+  "visual_direction": {
+    "art_style": "storybook watercolor",
+    "color_palette": "warm creams and soft browns",
+    "mood": "cozy, kid-safe mystery",
+    "lighting": "warm morning light"
+  },
+  "cover": {
+    "facts": [
+      "An empty cookie jar sits on a flour-dusted counter.",
+      "A girl in a striped T-shirt stands by the counter while a boy in round glasses peers in from the living room."
+    ],
+    "locations": ["loc-kitchen"],
+    "characters": ["char-alice", "char-bob"]
+  }
+}

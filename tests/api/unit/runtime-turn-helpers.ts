@@ -5,6 +5,7 @@ import path from "node:path";
 
 import type { ResolvedBinding } from "../../../evaluation/core/config.ts";
 import type { StoredTurn } from "../../../evaluation/runtime/lib/turn.ts";
+import { MOCK_CASE_PATH } from "../../testkit/src/mock-case.ts";
 
 export const JUDGE_STUB = path.resolve("evaluation/runtime/config/wrappers/stub-judge.sh");
 
@@ -23,7 +24,7 @@ export function judgeStubBinding(overrides: Partial<ResolvedBinding> = {}): Reso
   };
 }
 
-/** A captured turn on the mock blueprint, with the fields a judge reads. */
+/** A captured turn on the mock case, with the fields a judge reads. */
 export function makeTurn(overrides: Record<string, unknown> = {}): StoredTurn {
   return {
     schema_version: "0.2",
@@ -33,7 +34,7 @@ export function makeTurn(overrides: Record<string, unknown> = {}): StoredTurn {
     case_id: "ask-alice-pressure",
     narrator: "narrator-stub",
     model: "narrator-stub",
-    blueprint_path: "blueprints/mock-blueprint.json",
+    blueprint_path: MOCK_CASE_PATH,
     target_age: 10,
     given: {
       mode: "talk",
@@ -48,7 +49,7 @@ export function makeTurn(overrides: Record<string, unknown> = {}): StoredTurn {
           payload: {
             character_id: "char-alice",
             player_input: "Did you take the cookies?",
-            revealed_clue_ids: ["clue-crumb"],
+            revealed_clue_ids: ["clue_crumbs"],
           },
         },
       ],

@@ -11,8 +11,9 @@ import type { EngineContext } from "../../../packages/game-engine/src/context.ts
 import { createLocalEngine, type LocalEngine } from "../../../packages/game-engine/src/context-local.ts";
 import { handle } from "../../../packages/game-engine/src/endpoints/game-turn.ts";
 import { NARRATOR_SPEAKER } from "../../testkit/src/fixtures.ts";
+import { MOCK_CASE_ID, readMockCaseGraph } from "../../testkit/src/mock-case.ts";
 
-const BLUEPRINT_ID = "123e4567-e89b-12d3-a456-426614174000";
+const BLUEPRINT_ID = MOCK_CASE_ID;
 
 let dir: string;
 let local: LocalEngine;
@@ -50,6 +51,7 @@ beforeEach(async () => {
       current_location_id: "loc-kitchen",
       time_remaining: 10,
       reading_age: 8,
+      clue_graph_snapshot: readMockCaseGraph(),
     },
     events: [
       {

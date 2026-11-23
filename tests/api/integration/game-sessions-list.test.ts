@@ -3,15 +3,16 @@ import {
   API_URL,
   MOCK_BLUEPRINT_ID,
   patchStoredSession,
+  V2_MOCK_BLUEPRINT_ID,
   setupApiTestAuth,
   type ApiAuthContext,
 } from './helpers';
 
-async function startSession(auth: ApiAuthContext): Promise<string> {
+async function startSession(auth: ApiAuthContext, blueprintId = MOCK_BLUEPRINT_ID): Promise<string> {
   const res = await fetch(`${API_URL}/game-start`, {
     method: 'POST',
     headers: auth.headers,
-    body: JSON.stringify({ blueprint_id: MOCK_BLUEPRINT_ID }),
+    body: JSON.stringify({ blueprint_id: blueprintId }),
   });
 
   expect(res.status).toBe(200);
@@ -140,8 +141,19 @@ describe('game-sessions-list endpoint', () => {
     });
   });
 
-  it('keeps sessions with missing blueprints visible but disabled', async () => {
+  it('keeps a clue-graph session listed and openable when its case file is gone: it plays from its snapshot', async () => {
     const gameId = await startSession(auth);
+    patchSession(gameId, { blueprint_id: crypto.randomUUID(), updated_at: '2026-03-12T09:00:00.000Z' });
+
+    const res = await fetch(`${API_URL}/game-sessions-list`, { method: 'GET', headers: auth.headers });
+    expect(res.status).toBe(200);
+    const row = (await res.json()).in_progress.find((entry: { game_id: string }) => entry.game_id === gameId);
+    expect(row).toMatchObject({ mystery_title: 'Mock Case — clue graph', mystery_available: true, can_open: true });
+  });
+
+  // A V2 session reads its title from the catalog: it leaves with V2.
+  it('keeps sessions with missing blueprints visible but disabled', async () => {
+    const gameId = await startSession(auth, V2_MOCK_BLUEPRINT_ID);
 
     patchSession(gameId, {
       blueprint_id: crypto.randomUUID(),

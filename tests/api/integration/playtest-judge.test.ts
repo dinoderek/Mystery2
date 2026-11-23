@@ -17,22 +17,24 @@ import { scriptedInvestigator } from '../../../evaluation/playtest/lib/investiga
 import { extractTrace, gradeGame, renderGrades } from '../../../evaluation/playtest/lib/judge.ts';
 import { writeGameFolder } from '../../../evaluation/playtest/lib/output.ts';
 import { playGame } from '../../../evaluation/playtest/lib/game.ts';
+import { readMockCase } from '../../testkit/src/mock-case';
 import { BASE_URL, MOCK_BLUEPRINT_ID, TEST_CONFIG_ROOT } from './helpers';
 
 const REPO_ROOT = process.cwd();
-const MOCK_BLUEPRINT = JSON.parse(
-	fs.readFileSync(path.join(REPO_ROOT, 'blueprints', 'mock-blueprint.json'), 'utf8')
-);
+const MOCK_BLUEPRINT = readMockCase();
 const MOCK_JUDGE = path.join(REPO_ROOT, 'tests', 'api', 'unit', 'trace-mock-judge.mjs');
 
 const INPUTS = [
 	'search',
+	'search the pantry shelf',
 	'talk to alice',
 	'Where were you last night?',
 	'bye',
+	'go to living room',
+	'search',
 	'accuse',
 	'Bob did it, he was in the living room.',
-	'accuse Alice took the cookies: the crumbs and the empty jar both point to her.'
+	'accuse Alice took the cookies: the cookie crumbs and the empty cookie jar both point to her.'
 ];
 
 let scratch: string | null = null;
@@ -47,7 +49,7 @@ describe('playtest grading', () => {
 		scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'mystery-playtest-judge-'));
 		const game = await playGame({
 			api: await signIn(BASE_URL, 'playtest-judge'),
-			blueprint: { id: MOCK_BLUEPRINT_ID, title: 'Mock Blueprint' },
+			blueprint: { id: MOCK_BLUEPRINT_ID, title: MOCK_BLUEPRINT.metadata.title },
 			investigator: scriptedInvestigator(INPUTS)
 		});
 		expect(game.result).toBe('win');

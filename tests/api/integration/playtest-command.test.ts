@@ -1,5 +1,5 @@
 // `./dev eval play`, end to end on stub bindings: a stub investigator plays the
-// mock blueprint through a server of the command's own on a temporary database,
+// mock case through a server of the command's own on a temporary database,
 // the mock narrator narrates, a stub judge grades. No model is called.
 //
 // It starts the build the suite already made, because building again would
@@ -143,7 +143,7 @@ describe('play on stub bindings', () => {
 
 	it('plays a short game, writes a valid result, grades it, and replays the same lines', async () => {
 		const before = repoDatabases();
-		const played = await play(['--blueprint', 'mock-blueprint', '--narrator', 'mock', '--judge']);
+		const played = await play(['--blueprint', 'mock-case', '--narrator', 'mock', '--judge']);
 		expect(played.code, played.output).toBe(0);
 		const runDir = played.runDir as string;
 
@@ -155,7 +155,7 @@ describe('play on stub bindings', () => {
 		expect(result.subject).toMatchObject({ kind: 'game', path: 'trace.json' });
 		expect(result.run_error).toBeNull();
 		expect(result.summary.passed).toBe(true);
-		expect(result.production?.calls).toHaveLength(7);
+		expect(result.production?.calls).toHaveLength(10);
 		expect(result.production?.calls[0]).toMatchObject({ binding: 'investigator', model: 'stub-model', cost_usd: 0.01 });
 		expect(result.verdicts.map((verdict) => verdict.id)).toEqual(
 			expect.arrayContaining(['clue_accounting', 'gm_roleplay', 'gm_clue_discipline', 'gm_fabrication', 'gm_spoiler'])
@@ -177,13 +177,13 @@ describe('play on stub bindings', () => {
 			.trim()
 			.split('\n')
 			.map((line) => JSON.parse(line));
-		expect(steps).toHaveLength(7);
+		expect(steps).toHaveLength(10);
 		expect(steps[0].investigator).toMatchObject({ model: 'stub-model', cost_usd: 0.01, attempts: 1 });
 		expect(fs.readdirSync(path.join(gameDir, 'logs'))).toContain('investigator-1.attempt-1.invocation.json');
 		expect(fs.readFileSync(path.join(gameDir, 'transcript.md'), 'utf8')).toContain('## Grades');
 		expect(fs.existsSync(path.join(gameDir, 'trace.json'))).toBe(true);
 		expect(fs.existsSync(path.join(runDir, 'game.db'))).toBe(true);
-		expect(fs.readFileSync(path.join(runDir, 'report.html'), 'utf8')).toContain('Mock Blueprint Playtest');
+		expect(fs.readFileSync(path.join(runDir, 'report.html'), 'utf8')).toContain('Mock Case — clue graph Playtest');
 		expect(readRunIndex(runDir).exit_code).toBe(0);
 
 		// The server was the command's own, on a temporary database, and is gone.
@@ -222,7 +222,7 @@ describe('play on stub bindings', () => {
 	}, 120_000);
 
 	it('exits 2 when a judge fails the game', async () => {
-		const played = await play(['--blueprint', 'mock-blueprint', '--narrator', 'mock', '--judge'], {
+		const played = await play(['--blueprint', 'mock-case', '--narrator', 'mock', '--judge'], {
 			MOCK_JUDGE_MODE: 'fail'
 		});
 		expect(played.code, played.output).toBe(2);
@@ -234,7 +234,7 @@ describe('play on stub bindings', () => {
 	}, 120_000);
 
 	it('exits 1 when the investigator cannot be called, keeping what it tried', async () => {
-		const played = await play(['--blueprint', 'mock-blueprint', '--narrator', 'mock'], {
+		const played = await play(['--blueprint', 'mock-case', '--narrator', 'mock'], {
 			STUB_INVESTIGATOR_MODE: 'crash'
 		});
 		expect(played.code, played.output).toBe(1);

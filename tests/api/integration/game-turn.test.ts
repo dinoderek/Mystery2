@@ -71,7 +71,7 @@ describe("game-turn endpoint", () => {
 
     const search = await played(gameId, "search");
     expect(search.state.time_remaining).toBe(8);
-    expect(search.revealed_clues.map((clue) => clue.id)).toEqual(["clue-wrapper"]);
+    expect(search.revealed_clues.map((clue) => clue.id)).toEqual(["clue_score_sheet"]);
 
     const talk = await played(gameId, "talk to Bob");
     expect(talk.state).toMatchObject({ mode: "talk", current_talk_character: "char-bob", time_remaining: 7 });
@@ -136,7 +136,7 @@ describe("game-turn endpoint", () => {
       ]);
       expect(readStoredEvents(gameId).at(-1)?.payload).toMatchObject({
         player_reasoning: "Bob because he was in the living room",
-        reply_kind: null,
+        reply_kind: "missing",
       });
       expect(readStoredSession(gameId)).toMatchObject({ mode: "explore", outcome: null });
     });

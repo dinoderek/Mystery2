@@ -10,6 +10,7 @@ import {
 import type { GameTurnResponse } from "../../../../packages/shared/src/mystery-api-contracts.ts";
 import {
   API_URL,
+  MOCK_BLUEPRINT_ID,
   setupApiTestAuth,
   type ApiAuthContext,
 } from "../helpers.ts";
@@ -36,7 +37,7 @@ runLive(getLiveSuiteTitle("live-ai integration: talk + search"), () => {
         headers,
         stepLabel: "game-start",
         body: {
-          blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
+          blueprint_id: MOCK_BLUEPRINT_ID,
           ai_profile: profile,
         },
       });

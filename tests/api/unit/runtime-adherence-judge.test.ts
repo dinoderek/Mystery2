@@ -10,6 +10,7 @@ import { judgesFor } from "../../../evaluation/core/registry.ts";
 import { buildJudgeUserMessage, judgeTurn } from "../../../evaluation/runtime/lib/judges.ts";
 import type { BlueprintLike } from "../../../evaluation/runtime/lib/case.ts";
 import { judgeStubBinding, makeTurn } from "./runtime-turn-helpers.ts";
+import { MOCK_CASE_PATH, readMockCase } from "../../testkit/src/mock-case.ts";
 
 // The gm_* judges run the SHARED briefs over one stored turn. These tests pin
 // the runtime binding (projection, verdict mapping, error paths) against the
@@ -17,7 +18,7 @@ import { judgeStubBinding, makeTurn } from "./runtime-turn-helpers.ts";
 // RUNTIME_JUDGE_STUB_VERDICT steers the stub's reply.
 
 const JUDGE_IDS: string[] = judgesFor("game").map((judge) => judge.id);
-const MOCK_BLUEPRINT = "blueprints/mock-blueprint.json";
+const MOCK_BLUEPRINT = MOCK_CASE_PATH;
 const logDir = fs.mkdtempSync(path.join(os.tmpdir(), "mystery-adherence-judge-"));
 
 function judge(id: string, turn = makeTurn(), options = {}) {
@@ -45,7 +46,9 @@ function finding(overrides: Record<string, unknown> = {}) {
   };
 }
 
-const mockBlueprint = (): BlueprintLike => JSON.parse(fs.readFileSync(MOCK_BLUEPRINT, "utf8"));
+const mockBlueprint = (): BlueprintLike => readMockCase() as unknown as BlueprintLike;
+/** The V2 fixture, for V2's role labels: they leave with V2. */
+const v2MockBlueprint = (): BlueprintLike => JSON.parse(fs.readFileSync("blueprints/mock-blueprint.json", "utf8"));
 
 afterEach(() => {
   delete process.env.RUNTIME_JUDGE_STUB_VERDICT;
@@ -149,7 +152,7 @@ describe("buildJudgeUserMessage", () => {
   });
 
   it("labels the judged turn with the role the model actually ran as", () => {
-    const blueprint = mockBlueprint();
+    const blueprint = v2MockBlueprint();
     const given = { mode: "explore", location_id: "loc-kitchen", history: [] };
     // A search WITH a query resolves to a different role than a bare one, and
     // the label has to follow the same resolver the narrator replay uses.
@@ -159,7 +162,20 @@ describe("buildJudgeUserMessage", () => {
     expect(roleOf({ type: "search", search_query: "look in the bin" })).toBe("search_targeted");
   });
 
+  it("marks only a clue-graph case's closing scene, by the role its accusation was worded in", () => {
+    const given = { mode: "accuse", location_id: "loc-kitchen", history: [] };
+    const action = { type: "accuse", player_reasoning: "It was Alice: the cookie jar is empty." };
+    const judgedAs = (role: string, eventType: string) => {
+      const response = { ...makeTurn().response, raw: { events: [{ event_type: eventType, payload: { role } }] } };
+      return JSON.parse(buildJudgeUserMessage("gm_spoiler", makeTurn({ given, action, response }), mockBlueprint())).subject.turns.at(-1);
+    };
+    expect(judgedAs("graph_ending", "accuse_resolved")).toMatchObject({ role_name: "graph_ending", is_accusation_phase: true });
+    expect(judgedAs("graph_accusation_round", "accuse_failed")).toMatchObject({ role_name: "graph_accusation_round", is_accusation_phase: false });
+  });
+
+  // V2's accusation judge: it leaves with V2.
   it("marks only the closing scene so the spoiler judge stands down, never a failed accusation", () => {
+    const mockBlueprint = v2MockBlueprint;
     const given = { mode: "accuse", location_id: "loc-kitchen", history: [] };
     const action = { type: "accuse", player_reasoning: "It was Alice, the crumbs prove it." };
     const judgedAs = (eventType: string) => {

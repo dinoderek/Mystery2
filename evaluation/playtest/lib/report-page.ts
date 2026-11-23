@@ -18,6 +18,9 @@ import fs from "node:fs";
 import path from "node:path";
 import url from "node:url";
 
+import { buildClueGraphWorld } from "../../../packages/shared/src/clue-graph-case.ts";
+import { isClueGraphFile } from "../../../packages/shared/src/clue-graph-schema.ts";
+import { validateClueGraph } from "../../../packages/shared/src/clue-graph-validator.ts";
 import { InputError } from "../../core/errors.ts";
 import { readRunIndex } from "../../core/run-folder.ts";
 import type { RunIndex } from "../../core/run-folder.ts";
@@ -62,7 +65,7 @@ function parseJson<T>(text: string, fallback: T): T {
 
 /**
  * The blueprint behind a run: from a game's trace.json when the run was
- * graded, else the repo's blueprints/ by id. Null when neither has it; clues
+ * graded, else the repo's blueprints/ and blueprints/clue-graph/ by id. Null when neither has it; clues
  * then show the text their event recorded, or only their id.
  */
 function findBlueprint(gameDirs: string[], blueprintId: string | undefined, repoRoot: string): ReportBlueprint | null {
@@ -70,11 +73,15 @@ function findBlueprint(gameDirs: string[], blueprintId: string | undefined, repo
     const trace = readJson<{ blueprint?: ReportBlueprint }>(path.join(dir, "trace.json"));
     if (trace?.blueprint) return trace.blueprint;
   }
-  const dir = path.join(repoRoot, "blueprints");
-  if (!blueprintId || !fs.existsSync(dir)) return null;
-  for (const name of fs.readdirSync(dir).filter((file) => file.endsWith(".json"))) {
-    const blueprint = parseJson<ReportBlueprint | null>(fs.readFileSync(path.join(dir, name), "utf8"), null);
-    if (blueprint?.id === blueprintId) return blueprint;
+  if (!blueprintId) return null;
+  for (const dir of [path.join(repoRoot, "blueprints"), path.join(repoRoot, "blueprints", "clue-graph")]) {
+    if (!fs.existsSync(dir)) continue;
+    for (const name of fs.readdirSync(dir).filter((file) => file.endsWith(".json"))) {
+      const parsed = parseJson<unknown>(fs.readFileSync(path.join(dir, name), "utf8"), null);
+      // A clue-graph case is read through its world view, which lists every clue's fact.
+      const blueprint = (isClueGraphFile(parsed) ? buildClueGraphWorld(validateClueGraph(parsed)) : parsed) as ReportBlueprint | null;
+      if (blueprint?.id === blueprintId) return blueprint;
+    }
   }
   return null;
 }

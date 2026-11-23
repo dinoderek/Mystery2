@@ -286,16 +286,20 @@ export function verdictContext(
   play: ClueGraphPlay,
   verdict: AccusationVerdict,
   report: AccusationReport = { accused: null, cited: [] },
+  turnsSpent = false,
 ): GraphVerdictContext {
   const { accused, cited } = report;
   const base = accusationContext(graph, play);
-  if (!resolves(verdict))
+  if (!resolves(verdict)) {
+    const reply = accusationReply(graph, play, { accused, cited });
     return {
       people: base.people.filter((person) => person.id === accused),
       held: base.held.filter((entry) => cited.includes(entry.id)),
       accused,
-      reply: accusationReply(graph, play, { accused, cited }),
+      // Out of turns there is no more looking, so a lead could not be followed.
+      reply: turnsSpent && "lead" in reply ? { ...reply, lead: null } : reply,
     };
+  }
   const { conclusion, character } = culpritOf(graph);
   const confession = confessionClues(graph).filter((id) => isLive(play, id));
   const support = new Set(supportingClues(graph, play));

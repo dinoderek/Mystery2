@@ -96,6 +96,12 @@ describe("the greenhouse clue-graph case", () => {
       expect.objectContaining({ mode: "accuse", accusations_left: 2 }),
       expect.objectContaining({ mode: "accuse", accusations_left: 1 }),
     ]);
+    // With nowhere left to look, each failed reply asks for another try and points at no lead.
+    for (const answer of answers.slice(2, 4)) {
+      const reply = answer.kind === "turn" ? answer.events.flatMap((event) => event.narration_parts.map((part) => part.text)).join(" ") : "";
+      expect(reply).toContain("Try your accusation again.");
+      expect(reply).not.toContain("Think about this");
+    }
     expect(last?.kind === "turn" && last.result).toBe("lose");
   });
 

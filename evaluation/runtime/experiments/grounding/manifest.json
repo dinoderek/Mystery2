@@ -1,6 +1,6 @@
 {
   "schema_version": "narrator-grounding/1",
-  "frozen_at": "2026-11-23T20:41:56.370866+00:00",
+  "frozen_at": "2026-11-23T21:06:09.554366+00:00",
   "scope": "clue-graph/2 only; no grounding-policy changes",
   "policy": {
     "name": "original",
@@ -37,12 +37,12 @@
     "endpoint": "OpenRouter chat/completions",
     "sampling": "Provider defaults; no temperature, seed or reasoning-effort override.",
     "response_format": "Existing live OpenRouter behavior: json_object for roles, absent for prose.",
-    "baseline_output_limit": "Provider default; preflight cap is removed.",
+    "baseline_output_limit": 8192,
     "narrator_timeout_ms": 90000,
     "wrapper_timeout_ms": 120000,
     "investigator_retries": 2,
     "game_max_steps": 40,
-    "subject_concurrency": 2,
+    "subject_concurrency": 1,
     "cli_retries": 1,
     "provider_attempts": 3,
     "provider_backoff_ms": 750,
@@ -53,7 +53,8 @@
     ],
     "retry_note": "CLI retries follow runner parse/transport failures. Live provider retries transport failures only; game API/browser retries retriable failed turns, including parser/admissibility failures.",
     "preflight_wrapper_output_limit": 8192,
-    "preflight_engine_output_limit": "Provider default; smoke engine uses Sonnet, whose worst-case reservation fits the smoke cap."
+    "preflight_engine_output_limit": "Provider default; smoke engine uses Sonnet, whose worst-case reservation fits the smoke cap.",
+    "transport_concurrency": 1
   },
   "prices": {
     "anthropic/claude-sonnet-5.5": {
@@ -73,10 +74,10 @@
     }
   },
   "limits": {
-    "dollars": 200,
+    "dollars": 8,
     "attempts": 3500,
     "milliseconds": 21600000,
-    "smoke_dollars": 5,
+    "smoke_dollars": "Already completed; included in total, no additional smoke batch.",
     "stop_on": [
       "Insufficient reserved budget",
       "Unaccounted usage",
@@ -87,23 +88,28 @@
   },
   "development": {
     "stories": [
-      "blueprints/clue-graph/greenhouse-prizewinner.json",
-      "blueprints/clue-graph/dragon-crown.json",
-      "blueprints/clue-graph/the-stopped-clock.json"
+      "blueprints/clue-graph/greenhouse-prizewinner.json"
     ],
-    "turns_per_story": 12,
-    "repetitions": 2,
+    "turns_per_story": 4,
+    "behaviours": [
+      "search-find",
+      "hold-pushed",
+      "shown",
+      "accuse-nothing-cited"
+    ],
+    "repetitions": 1,
     "models": 3,
-    "requested_fixed_samples": 216,
-    "inputs_sha256": "fe724e06d151c14cd4f726395f2f0279df5368c628bde4fe45ed110829856b81",
-    "cases_sha256": "6c2d58eb09e6cf8c16d80ce099deab1b4070d59d929ef321b8fd173b24d1a3af",
+    "requested_fixed_samples": 12,
+    "cases_file": "diagnostic-cases.json",
+    "cases_sha256": "51583edeff5395f68da383e1f54f3f336caa145b254c4bfc862d9081d7d7f6b2",
+    "live_model_judges": [],
+    "checks": [
+      "flesch",
+      "expect"
+    ],
     "whole_games": {
-      "personas": [
-        "detective",
-        "kid-7"
-      ],
-      "repetitions": 1,
-      "requested": 18
+      "requested": 0,
+      "reason": "Operator-approved diagnostic scope; whole-game acceptance remains a later separately funded task."
     }
   },
   "heldout": {
@@ -155,8 +161,8 @@
     "fixtures_sha256": "7bd1461d6773a8373770a8a416d123cb59b7c1d07e17e0c0f2074f50af1414af"
   },
   "order": {
-    "fixed": "For case index i, repetition r, position p, model=(i+r+p)%3; identical states across models.",
-    "games": "For story index i and persona index p, rotate model order by (i+p)%3. One game at a time, detective then kid-7."
+    "fixed": "Preserve original relative model rotation for the four selected slots; one fresh capped call per model/state, including both accusation stages.",
+    "games": "No N1 whole games."
   },
   "rubric": {
     "major": [
@@ -184,7 +190,8 @@
       "cli": "Parsed requested role output; semantic expect checks do not establish full engine admissibility.",
       "games": "Engine-admitted play; rejected turns remain failures even if later retried."
     },
-    "failures": "Retain every requested sample and attempt. Report parser, semantic/admissibility, infrastructure, timeout, quit, divergence, incomplete and judge errors separately; none becomes success by exclusion."
+    "failures": "Retain every requested sample and attempt. Report parser, semantic/admissibility, infrastructure, timeout, quit, divergence, incomplete and judge errors separately; none becomes success by exclusion.",
+    "n1_assessment": "Free expect/Flesch plus blinded operator assessment of every primary output. The four narrow judges remain the rubric for later acceptance; no additional N1 model-judge calls."
   },
   "acceptance": {
     "observed_adjudicated_major_violations": 0,
@@ -193,13 +200,14 @@
     "minimum_age_appropriate": 0.95,
     "minimum_median_human_quality": 4,
     "selection": "Apply independently to every frozen model/policy; report met and unmet criteria. No deployment/default change in measurement. Keep current choice when evidence does not justify a change.",
-    "uncertainty": "Report per-mystery denominators and 95% intervals. Repetitions are correlated; do not present turns or games as independent mysteries."
+    "uncertainty": "Report per-mystery denominators and 95% intervals. Repetitions are correlated; do not present turns or games as independent mysteries.",
+    "interpretation": "Diagnostic development baseline only; twelve samples on one mystery cannot establish transfer or reliability. Existing final acceptance thresholds are not evidence of achievement."
   },
   "human_review": {
     "reviewer": "Operator",
-    "major_findings": "All flagged major findings against source facts and prior turns.",
-    "passed_sample_fraction": 0.2,
-    "passed_selection": "Deterministic hash ordering, stratified by story, requested role and model; round each stratum up.",
+    "major_findings": "Operator marks major grounding/reveal/omission violations, age suitability and narrative quality (1\u20135) for every sample.",
+    "passed_sample_fraction": 1,
+    "passed_selection": "All twelve primary samples",
     "blinding": "Packet omits model/policy identities; identity key retained separately. Human ratings remain pending until the operator supplies them.",
     "ground_truth": "Model judges and judge agreement do not replace human adjudication."
   },
@@ -207,6 +215,13 @@
     "raw": "Normal run folders plus transport request/response/usage records in the private archive.",
     "index": "baseline.json beside this manifest; immutable hashes reference private artifacts.",
     "reproduction": "Retain bindings, dataset, inputs, source hashes, code commit, CLI versions, all requests and responses, usage and latency.",
-    "driver_sha256": "2f5e3c57883692f65a9e72e8fc680ead0b4567235795e2387e9cf8a4f359b521"
+    "driver_sha256": "95cf0f74d091af4a345667a3949c49455b3b92ae38dba69a7f93630662f7f3bf",
+    "original_driver_sha256": "2f5e3c57883692f65a9e72e8fc680ead0b4567235795e2387e9cf8a4f359b521"
+  },
+  "revision": 2,
+  "supersedes": {
+    "file": "manifest-v1.json",
+    "sha256": "f67667dee82df1dff8d5f1b2eb35b7c88f463ef8c190df341365a63ca139256c",
+    "reason": "Operator chose USD8 total diagnostic baseline; prior captures remain pilot data."
   }
 }

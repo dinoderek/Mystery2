@@ -1,4 +1,43 @@
 {
-  "status": "pending live capture",
-  "manifest_sha256": "f67667dee82df1dff8d5f1b2eb35b7c88f463ef8c190df341365a63ca139256c"
+  "status": "Revised twelve-sample diagnostic capture pending",
+  "manifest_sha256": "16216f6983afbbd843b7fba0bb0e0111eca64c2cc5fd2d9e6627e12165b585f7",
+  "archive": "experiments/narrator-grounding-2026-11-23",
+  "pilot": {
+    "status": "INCOMPLETE: funding required; measurement remains open",
+    "manifest_sha256": "f67667dee82df1dff8d5f1b2eb35b7c88f463ef8c190df341365a63ca139256c",
+    "measurement_commit": "6b0efcb92bf15482dc6ad265d451a932f98b04c3",
+    "archive": "experiments/narrator-grounding-2026-11-23",
+    "fixed": {
+      "requested": 216,
+      "captured": 10,
+      "fully_graded": 9,
+      "judge_incomplete": 1,
+      "run_error_transport": 206
+    },
+    "fully_graded_subjects": [
+      "greenhouse-prizewinner-1-intro-r1__narrator-sonnet",
+      "greenhouse-prizewinner-1-intro-r1__narrator-opus",
+      "greenhouse-prizewinner-1-intro-r1__narrator-astra",
+      "greenhouse-prizewinner-2-arrival-r1__narrator-opus",
+      "greenhouse-prizewinner-2-arrival-r1__narrator-astra",
+      "greenhouse-prizewinner-2-arrival-r1__narrator-sonnet",
+      "greenhouse-prizewinner-3-greeting-r1__narrator-astra",
+      "greenhouse-prizewinner-3-greeting-r1__narrator-sonnet",
+      "greenhouse-prizewinner-3-greeting-r1__narrator-opus"
+    ],
+    "whole_games": {
+      "requested": 18,
+      "started": 0
+    },
+    "live_usage": {
+      "attempts": 83,
+      "successful_responses": 80,
+      "rejected_before_provider": 3,
+      "cost_usd": 4.108706000000001
+    },
+    "partial_run": "runs/2026-11-23/20-43-22-judge-turn",
+    "human_adjudication": "Pending; no acceptance conclusion",
+    "heldout": "Six mysteries and 72 fixtures sealed; zero held-out narrator calls"
+  },
+  "human_review": "All twelve outputs pending blinded operator review"
 }

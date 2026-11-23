@@ -25,7 +25,6 @@ import type {
   TemplateRoleInput,
 } from "../../../packages/game-engine/src/role-request.ts";
 import type { BlueprintLike, TurnCase } from "./case.ts";
-import { parseFencedJson } from "./model-json.ts";
 import { buildNarrationMessages, buildNarrationPrompt, buildRoleRequest, resolveAccusationRole } from "./prompt-build.ts";
 import { getAction, normalizeHistory } from "./roles.ts";
 import { makeResponse } from "./transcript.ts";
@@ -103,7 +102,7 @@ export async function replayThroughNarrator(replay: CliReplayRequest): Promise<C
       if (!answer.trim()) throw new Error("Narrator returned empty prose");
       return { narration: answer.trim() };
     } : (answer) => {
-      const value = parseFencedJson(answer);
+      const value = JSON.parse(answer);
       // The live greeting always counts as understood, before its normal parser.
       const greeting = request.role === "graph_talk" && testCase.action.type === "talk";
       return parseRoleOutput(request.role!, greeting && typeof value === "object" && value !== null ? { ...value, input_understood: true } : value);
@@ -149,7 +148,7 @@ async function replayGraphAccusation({ testCase, blueprint, binding, logDir }: C
     logDir,
     output: "json",
     answerSchema: roleOutputJsonSchema("graph_accusation"),
-    parse: (answer) => parseGraphAccusationOutput(parseFencedJson(answer)) as unknown as Record<string, unknown>,
+    parse: (answer) => parseGraphAccusationOutput(JSON.parse(answer)) as unknown as Record<string, unknown>,
   });
   if (!reported.ok) failedCall(`narrator accuse report failed: ${reported.error}`, [reported.call]);
   const report = reported.value as unknown as ReturnType<typeof parseGraphAccusationOutput>;
@@ -175,7 +174,7 @@ async function replayGraphAccusation({ testCase, blueprint, binding, logDir }: C
     logDir,
     output: "json",
     answerSchema: roleOutputJsonSchema(role),
-    parse: (answer) => (ended ? parseGraphEndingOutput : parseGraphAccusationRoundOutput)(parseFencedJson(answer)) as unknown as Record<string, unknown>,
+    parse: (answer) => (ended ? parseGraphEndingOutput : parseGraphAccusationRoundOutput)(JSON.parse(answer)) as unknown as Record<string, unknown>,
   });
   if (!worded.ok) failedCall(`narrator accuse reply failed: ${worded.error}`, [reported.call, worded.call]);
 

@@ -30,14 +30,21 @@ export async function startBudgetProxy(options: {
   if (state.reserved) state.stopped = "Unreconciled requests from an interrupted run";
   const save = () => fs.writeFileSync(ledgerFile, JSON.stringify(state, null, 2) + "\n");
   const pending = new Map<string, number>();
+  let queue = Promise.resolve();
   save();
   const server = http.createServer(async (req, res) => {
     let reservation = 0;
     let stem: string | null = null;
+    let release: (() => void) | undefined;
     try {
       const chunks: Buffer[] = [];
       for await (const chunk of req) chunks.push(Buffer.from(chunk));
       const body = Buffer.concat(chunks);
+      const queuedAt = Date.now();
+      const preceding = queue;
+      queue = new Promise<void>((resolve) => { release = resolve; });
+      await preceding;
+      if (req.aborted || res.destroyed) throw new Error("Queued request was cancelled");
       const request = JSON.parse(body.toString("utf8"));
       const price = Object.hasOwn(options.prices, request.model) ? options.prices[request.model] : undefined;
       if (!price) throw new Error(`Unfrozen model: ${request.model}`);
@@ -66,8 +73,14 @@ export async function startBudgetProxy(options: {
       const raw = await response.text();
       fs.writeFileSync(`${stem}.response.json`, raw);
       const payload = JSON.parse(raw);
-      const cost = payload.usage?.cost;
-      if (!response.ok || typeof cost !== "number" || !Number.isFinite(cost) || cost < 0 || cost > reservation || payload.model !== request.model) {
+      const rejectedBeforeProvider = response.status === 402 && payload.error?.metadata?.reason === "in_flight_budget_exhausted" && payload.error?.metadata?.limit_source === "openrouter_in_flight_budget";
+      const reportedCost = payload.usage?.cost;
+      const cost = rejectedBeforeProvider && reportedCost == null ? 0 : reportedCost;
+      if (rejectedBeforeProvider) {
+        state.stopped = cost === 0
+          ? "Provider rejected before generation: in-flight budget exhausted; wait and check usable credits"
+          : "Reconcile contradictory provider rejection and reported usage";
+      } else if (!response.ok || typeof cost !== "number" || !Number.isFinite(cost) || cost < 0 || cost > reservation || payload.model !== request.model) {
         state.stopped = `Reconcile response ${state.attempts}: HTTP ${response.status}, usage or model mismatch`;
       }
       if (typeof cost === "number" && Number.isFinite(cost) && cost >= 0) {
@@ -76,7 +89,7 @@ export async function startBudgetProxy(options: {
         state.reserved = [...pending.values()].reduce((total, value) => total + value, 0);
         reservation = 0;
       }
-      fs.writeFileSync(`${stem}.timing.json`, JSON.stringify({ latency_ms: Date.now() - started, status: response.status, requested_model: request.model, reported_model: payload.model, usage: payload.usage ?? null }, null, 2) + "\n");
+      fs.writeFileSync(`${stem}.timing.json`, JSON.stringify({ latency_ms: Date.now() - started, queue_ms: started - queuedAt, status: response.status, requested_model: request.model, reported_model: payload.model, usage: payload.usage ?? null, ...(rejectedBeforeProvider ? { rejected_before_provider: true, cost_usd: cost ?? null } : {}) }, null, 2) + "\n");
       save();
       res.writeHead(response.status, { "Content-Type": "application/json" });
       res.end(raw);
@@ -85,6 +98,8 @@ export async function startBudgetProxy(options: {
       save();
       res.writeHead(402, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: { message: String(error) } }));
+    } finally {
+      release?.();
     }
   });
   await new Promise<void>((resolve, reject) => {
@@ -92,5 +107,13 @@ export async function startBudgetProxy(options: {
     server.listen(0, "127.0.0.1", () => resolve());
   });
   const port = (server.address() as { port: number }).port;
-  return { url: `http://127.0.0.1:${port}/api/v1/chat/completions`, ledger: () => ({ ...state }), close: () => new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve())) };
+  return {
+    url: `http://127.0.0.1:${port}/api/v1/chat/completions`,
+    ledger: () => ({ ...state }),
+    close: async () => {
+      await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+      // Disconnected clients can leave a handler reconciling an upstream charge.
+      await queue;
+    },
+  };
 }

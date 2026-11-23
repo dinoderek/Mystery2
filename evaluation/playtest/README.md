@@ -105,9 +105,9 @@ persistent refusal is retried twice by the binding, then the game stops with
 
 ## Cost
 
-Every turn is a narrator call and an investigator call, whose input grows with the
-story. `summary.json` reports both costs per game; check the first run's figure
-before playing many.
+Input grows each turn. CLI costs are in `summary.json`; OpenRouter narrator
+usage comes from the experiment's transport ledger, since its server summary
+lacks usage. Budget against that ledger.
 
 ## Tests
 

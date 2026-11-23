@@ -162,6 +162,20 @@ describe("judge turn on a case with expect", () => {
 });
 
 describe("a clue-graph accusation", () => {
+  it("rejects fenced role JSON as live OpenRouter does", async () => {
+    const file = path.join(scratch, "fenced-role.json");
+    fs.writeFileSync(file, JSON.stringify({ id: "fenced-role", blueprint: { path: "blueprints/clue-graph/greenhouse-prizewinner.json" }, given: { mode: "explore", location_id: "greenhouse", time_remaining: 5, history: [] }, action: { type: "search" } }));
+    // The binding envelope extracts exactly what the provider put in content.
+    const config = JSON.parse(fs.readFileSync(configFile, "utf8"));
+    const envelope = path.join(scratch, "fenced-binding.json");
+    fs.writeFileSync(envelope, JSON.stringify({ ...config, "narrator-stub": { ...config["narrator-stub"], extract_path: "result" } }));
+    const reply = '```json\n{"narration":"Nothing here.","revealed_clue_id":null,"notebook":[]}\n```';
+    const { code, runDir } = await judgeTurn([file, "--narrator", "narrator-stub"], [{ result: reply }], envelope);
+    expect(code).toBe(1);
+    const result = await readResult(path.join(runDir, "fenced-role-narrator-stub", "result.json"));
+    expect(result.run_error?.stage).toBe("parser");
+    expect(result.verdicts).toEqual([]);
+  });
   it("opens a clue-graph accusation with one normal scene call", async () => {
     const file = path.join(scratch, "graph-accusation-start.json");
     fs.writeFileSync(file, JSON.stringify({ id: "graph-start", blueprint: { path: "blueprints/clue-graph/greenhouse-prizewinner.json" }, given: { mode: "explore", location_id: "greenhouse", time_remaining: 5, history: [] }, action: { type: "accuse" } }));

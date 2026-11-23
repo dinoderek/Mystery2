@@ -101,7 +101,7 @@ clue-graph story folders retain their model baselines.
 
 `experiments/grounding/manifest.json` freezes the clue-graph-only split, rubric,
 models, repetitions, order, human review and selection thresholds. The baseline
-index sits beside it. Raw artifacts remain under the normal output root;
+index sits beside it. Raw artifacts remain under the output root;
 held-out mysteries and outputs stay sealed until candidate policies are frozen.
 A holdout used for tuning is retired.
 
@@ -111,8 +111,8 @@ not every engine admissibility rule. Wrong reveals count as semantic failures;
 parser failures retain calls/raw logs and never pass. Whole games measure
 **engine-admitted play**, including rejected turns and incomplete games. Invalid,
 rejected, transport and judge failures all remain in the denominator.
-`evaluation/core/budget-proxy.ts` records original request/response bytes and
-usage, reserves worst-case charges, and stops on an unreconciled call or limit.
+`evaluation/core/budget-proxy.ts` serialises requests, records their bytes, responses and usage, reserves
+worst-case charges, and stops on an unreconciled call or limit.
 
 ## Running
 

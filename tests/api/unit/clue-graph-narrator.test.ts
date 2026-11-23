@@ -5,7 +5,7 @@
 
 import fs from "node:fs";
 import { describe, expect, it } from "vitest";
-import { buildClueGraphBlueprint, clueGraphCaseId, validateClueGraph, type ClueGraphCase } from "@my2/shared";
+import { buildClueGraphWorld, clueGraphCaseId, validateClueGraph, type ClueGraphCase } from "@my2/shared";
 import { parseGraphTalkOutput, parseSearchOutput } from "../../../packages/game-engine/src/ai-contracts.ts";
 import { createAIProviderFromProfile, mockGraphSearch, mockGraphTalk } from "../../../packages/game-engine/src/ai-provider.ts";
 import { applyEvent, availableGates, replay, type ClueGraphEvent } from "../../../packages/game-engine/src/clue-graph/play.ts";
@@ -36,13 +36,12 @@ function history(events: ClueGraphEvent[]) {
 describe("the clue-graph world view", () => {
   it("names the case by a stable UUID and keeps the graph beside a rule-free world", () => {
     const graph = greenhouse();
-    const world = buildClueGraphBlueprint(graph);
+    const world = buildClueGraphWorld(graph);
     expect(world.id).toBe(clueGraphCaseId("greenhouse-prizewinner"));
     expect(world.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-8[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
     expect(clueGraphCaseId("another-case")).not.toBe(world.id);
     expect(world.clue_graph).toBe(graph);
     expect(world.metadata.title).toBe("The Smashed Prize Pumpkin — clue graph");
-    expect(world.solution_paths).toEqual([]);
     expect(world.world.characters.map((person) => [person.first_name, person.sex, person.is_culprit])).toEqual([
       ["Ms. Hale", "female", false],
       ["Toby", "male", true],
@@ -63,7 +62,7 @@ describe("the clue-graph world view", () => {
   it("points a hidden spot's clue at the spot's pointer, so an arrival keeps it quiet", () => {
     const graph = greenhouse();
     graph.locations.greenhouse.spots[3].revealed_by = "react_toby_pocket";
-    const spot = buildClueGraphBlueprint(graph).world.locations[0].sub_locations[3];
+    const spot = buildClueGraphWorld(graph).world.locations[0].sub_locations[3];
     expect(spot.clues[0].requires).toMatchObject({ kind: "pointer", clue_ids: ["react_toby_pocket"] });
   });
 });
@@ -208,7 +207,7 @@ describe("the clue-graph search outcome and mock", () => {
 
 describe("the clue-graph prompts", () => {
   const graph = greenhouse();
-  const blueprint = buildClueGraphBlueprint(graph);
+  const blueprint = buildClueGraphWorld(graph);
   const talking = { mode: "talk" as const, current_location_id: "thorne_garden", current_talk_character_id: "thorne", time_remaining: 9 };
   const met = history([
     { type: "move", location: "thorne_garden" },

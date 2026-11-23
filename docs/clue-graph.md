@@ -2,7 +2,8 @@
 
 Beside [V2](../packages/shared/src/blueprint-schema-v2.ts) and
 [MSF](mystery-structure.md). Checks:
-`packages/shared/src/clue-graph-schema.ts`; play:
+`packages/shared/src/clue-graph-schema.ts`; world view (`ClueGraphWorld`):
+`packages/shared/src/clue-graph-case.ts`; play:
 `packages/game-engine/src/clue-graph/`; cases: `blueprints/clue-graph/`,
 briefs: `blueprints/clue-graph/briefs/`.
 
@@ -42,7 +43,7 @@ One JSON file, `"format": "clue-graph/2"`, maps keyed by ID; unknown fields
 and formats are rejected by name. It holds facts, not narration. Each states every name, time, place
 and object. Beyond the schema:
 
-- `metadata.target_age`: the default reading age; the plot is sized to it.
+- `metadata.target_age`: the default reading age, sizing the plot.
 - A spot with `revealed_by` is hidden until that clue, whose line names it,
   is held.
 - `personality` and `demeanor` (by stance) direct the narrator; `knows`:
@@ -58,7 +59,7 @@ An earlier-format game stays listed; opening it answers `410`, logged once.
 `npm run validate:clue-graph -- <file>` exits 0 valid,
 1 invalid, 2 unreadable, 3 misuse; each fault names its field.
 
-Trails: `node scripts/print-clue-graph-trails.mjs <file>` prints each
+`node scripts/print-clue-graph-trails.mjs <file>` prints each
 conclusion's routes.
 
 References must fit: `after`, `takes_back`, `hinted_by` and `seen.with` name the same character's clues;

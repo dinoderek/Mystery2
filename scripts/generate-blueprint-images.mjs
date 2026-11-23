@@ -870,9 +870,7 @@ export async function runImageGeneration(rawOptions, dependencies = {}) {
   if (blueprint.format === "clue-graph/2") {
     const { ClueGraphCaseSchema } = await import("../packages/shared/src/clue-graph-schema.ts");
     blueprint = projectClueGraphArtwork(ClueGraphCaseSchema.parse(blueprint));
-  }
-
-  if (blueprint.schema_version !== "v2") {
+  } else if (blueprint.schema_version !== "v2") {
     throw new Error(
       `Blueprint schema_version must be "v2", got "${blueprint.schema_version ?? "undefined"}". ` +
         "V1 blueprints are no longer supported by the image generator.",

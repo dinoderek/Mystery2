@@ -2,14 +2,14 @@ import fs from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
-import type { ConversationFragment } from "../../../packages/game-engine/src/ai-context.ts";
+import type { ConversationFragment, V2BlueprintContext } from "../../../packages/game-engine/src/ai-context.ts";
 import { buildNarrationPrompt } from "../../../packages/game-engine/src/role-request.ts";
 
 // The stored snow-foxes game: Howard and Barnaby (the culprit) wait on the
 // platform, entered at s2 and returned to at s25.
 const trace = JSON.parse(
   fs.readFileSync("tests/api/unit/fixtures/snow-foxes-trace.json", "utf8"),
-) as { blueprint: Parameters<typeof buildNarrationPrompt>[0]["blueprint"]; events: ConversationFragment[] };
+) as { blueprint: V2BlueprintContext; events: ConversationFragment[] };
 
 function arrivalAt(sequence: number): string {
   const event = trace.events.find((entry) => entry.sequence === sequence)!;

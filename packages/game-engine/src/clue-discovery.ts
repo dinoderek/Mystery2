@@ -112,8 +112,7 @@ interface NotebookReasoningPath {
 }
 
 // The world shape needed to resolve a clue id to its text and where it came
-// from. Both the notebook blueprint and the runtime `BlueprintContext` satisfy
-// it; sub-location clues take their parent location's origin.
+// from. A V2 world view and a clue graph's both satisfy it; sub-location clues take their parent location's origin.
 export interface ClueOriginWorld {
   world: {
     locations: Array<{
@@ -125,7 +124,8 @@ export interface ClueOriginWorld {
     characters: Array<{
       id: string;
       first_name: string;
-      last_name: string;
+      /** None for a clue-graph character, who goes by one name. */
+      last_name?: string;
       clues: NotebookClue[];
     }>;
   };
@@ -210,7 +210,7 @@ function buildClueIndex(blueprint: ClueOriginWorld): Map<string, ClueIndexEntry>
     const origin: DiscoveryOrigin = {
       kind: "character",
       character_id: character.id,
-      character_name: `${character.first_name} ${character.last_name}`.trim(),
+      character_name: `${character.first_name} ${character.last_name ?? ""}`.trim(),
     };
     for (const clue of character.clues) index.set(clue.id, { text: clue.text, origin });
   }
@@ -221,7 +221,7 @@ function buildClueIndex(blueprint: ClueOriginWorld): Map<string, ClueIndexEntry>
 // order, annotated with where/when it was found, whether it was an off-script
 // grant, and which mini-mystery threads it serves.
 export function buildDiscoveryRecords(
-  blueprint: NotebookBlueprint,
+  blueprint: ClueOriginWorld,
   historyRows: Array<DiscoveryHistoryRow & { created_at?: string | null }>,
 ): DiscoveredClueRecord[] {
   const index = buildClueIndex(blueprint);

@@ -11,7 +11,7 @@
 // 7. Save once.
 // 8. Answer from what was saved.
 
-import type { PlayableBlueprint } from "../../../shared/src/msf-case.ts";
+import { lastNameOf, type PlayableCase } from "../../../shared/src/msf-case.ts";
 import { markClues, notebookMarks } from "../clue-graph/notebook-view.ts";
 import { sessionCase } from "../session-case.ts";
 import type { GameTurnResponse, TurnPlayedResponse } from "../../../shared/src/mystery-api-contracts.ts";
@@ -53,7 +53,7 @@ function defaultProvider(profile: EngineAIProfile): AIProvider {
 }
 
 /** What the line means here: the places, and everyone with where they stand. */
-export function grammarStateOf(session: GameSessionRow, blueprint: PlayableBlueprint): GrammarState {
+export function grammarStateOf(session: GameSessionRow, blueprint: PlayableCase): GrammarState {
   return {
     mode: session.mode,
     accusation_forced: accusationForced(session),
@@ -62,7 +62,7 @@ export function grammarStateOf(session: GameSessionRow, blueprint: PlayableBluep
     characters: blueprint.world.characters.map((character) => ({
       id: character.id,
       first_name: character.first_name,
-      last_name: character.last_name,
+      last_name: lastNameOf(character),
       location_name: character.location_id,
     })),
   };

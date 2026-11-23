@@ -22,7 +22,7 @@ import {
   resolveDatabasePath,
 } from "../../../packages/game-engine/src/paths.ts";
 import { buildRawTrace } from "./normalize.ts";
-import { buildClueGraphBlueprint } from "../../../packages/shared/src/clue-graph-case.ts";
+import { buildClueGraphWorld } from "../../../packages/shared/src/clue-graph-case.ts";
 import { validateClueGraph } from "../../../packages/shared/src/clue-graph-validator.ts";
 import { buildMsfBlueprint, validateMsfCaseFile } from "../../../packages/shared/src/msf-case.ts";
 import { atReadingAge, gameReadingAge } from "../../../packages/shared/src/reading-age.ts";
@@ -163,7 +163,7 @@ export async function extractSessionTrace(
     return buildRawTrace({
       session,
       events,
-      blueprint: playedAt(buildClueGraphBlueprint(graph), readingAge),
+      blueprint: playedAt(buildClueGraphWorld(graph), readingAge),
       source: { kind: "local", database: source.databasePath ? path.resolve(source.databasePath) : null },
       extractedAt,
       clueGraph: {

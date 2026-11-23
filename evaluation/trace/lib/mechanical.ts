@@ -273,7 +273,8 @@ function checkSpoilerLeak(rawTrace: RawTrace, minRun = DEFAULT_SPOILER_MIN_RUN):
   for (const entry of gt.timeline ?? []) secrets.push(entry);
   for (const character of blueprint?.world?.characters ?? []) {
     if (!character.is_culprit) continue;
-    for (const action of character.actual_actions ?? []) {
+    // A clue-graph character has no actual actions; its truth is the timeline above.
+    for (const action of ("actual_actions" in character ? character.actual_actions : [])) {
       if (action?.summary) secrets.push(action.summary);
     }
   }

@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ClueGraphCaseSchema } from "../../../packages/shared/src/clue-graph-schema.ts";
-import { buildClueGraphBlueprint } from "../../../packages/shared/src/clue-graph-case.ts";
+import { buildClueGraphWorld } from "../../../packages/shared/src/clue-graph-case.ts";
 import { main } from "../../../scripts/dev-cli.mjs";
 
 const dirs: string[] = [];
@@ -66,7 +66,7 @@ describe("./dev gen-images on clue-graph cases", () => {
       for (const fact of place.facts) expect(scene?.prompt).toContain(fact);
     }
     const patched = ClueGraphCaseSchema.parse(JSON.parse(fs.readFileSync(file, "utf8")));
-    const view = buildClueGraphBlueprint(patched);
+    const view = buildClueGraphWorld(patched);
     expect(view.metadata.image_id).toBe(patched.metadata.image_id);
     expect(view.metadata.image_id).toBeTruthy();
     for (const character of view.world.characters) {

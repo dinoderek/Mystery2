@@ -21,23 +21,18 @@ import { loadJudge } from "../../../evaluation/core/judge-loader.ts";
 import { getJudgeEntry, judgesFor, SUBJECT_KINDS } from "../../../evaluation/core/registry.ts";
 import { readResult } from "../../../evaluation/core/result.ts";
 import type { Result, Verdict } from "../../../evaluation/core/result.ts";
-import { resolveVerdict } from "../../../evaluation/judges/index.ts";
-import { FINDINGS_TABLE, findingsRow, kindedFindings } from "../../../evaluation/lib/truth/findings.ts";
-import { BLUEPRINT_KINDS, GAME_KINDS } from "../../../evaluation/lib/truth/kinds.ts";
+import { BLUEPRINT_KINDS } from "../../../evaluation/dimensions/blueprint-broad.schema.ts";
+import { GAME_KINDS } from "../../../evaluation/judges/gm-broad.schema.ts";
 import { validBlueprintV2 } from "./fixtures/blueprint-v2.fixture.ts";
 import { makeRawTrace } from "./trace-fixtures.ts";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, "..", "..", "..");
-const ANSWERS = JSON.parse(fs.readFileSync(path.join(HERE, "fixtures", "eval-snapshot-answers.json"), "utf8")) as Record<
-  string,
-  Record<string, unknown>
->;
 
 const BLUEPRINT_CANDIDATES = ["solve_depth_fairness", "knowledge_timeline_coherence", "blueprint_broad"];
 const CANDIDATES = [...BLUEPRINT_CANDIDATES, "gm_broad"];
 
-/** The truth-set kinds each candidate's findings may name. */
+/** The finding kinds each candidate may name. */
 const CANDIDATE_KINDS: Record<string, readonly string[]> = {
   solve_depth_fairness: ["solve_depth", "fairness"],
   knowledge_timeline_coherence: ["knowledge_coherence", "timeline_coherence"],
@@ -189,9 +184,7 @@ describe("a candidate named on its command", () => {
     const verdict = result.verdicts.find((v) => v.id === id) as Verdict;
     expect(verdict.status).toBe("fail");
     expect(verdict.details).toMatchObject({ major_count: 1, minor_count: 0, model_verdict: "pass", verdict_disagreement: true });
-    expect(kindedFindings(verdict, null)).toEqual([
-      { sequence: id === "gm_broad" ? 2 : null, kinds: [kind], severity: "major", judge_kind: kind, quote: "q", why: "w", refers_to: null },
-    ]);
+    expect(verdict.findings).toEqual([finding]);
   });
 
   it.each(CANDIDATES)("%s refuses an answer whose finding has no kind, or a kind it may not name", async (id) => {
@@ -253,49 +246,10 @@ describe("a blueprint candidate's judge workspace", () => {
   });
 });
 
-describe("the candidates' schemas and table rows", () => {
-  it.each(CANDIDATES)("%s's schema takes exactly the kinds its row gives", async (id) => {
-    const row = findingsRow(id);
-    expect(row).toEqual({ side: subjectOf(id), kinds: CANDIDATE_KINDS[id], read: "own_kind" });
+describe("the candidates' schemas", () => {
+  it.each(CANDIDATES)("%s's schema takes exactly its finding kinds", async (id) => {
     const { schema } = await loadJudge(id);
     const kindEnum = (schema as z.AnyZodObject).shape.findings.element.shape.kind as z.ZodEnum<[string, ...string[]]>;
-    expect([...kindEnum.options].sort()).toEqual([...row.kinds].sort());
-  });
-
-  it("gives every candidate a row, and maps each stub answer to its own kinds", () => {
-    for (const id of CANDIDATES) expect(FINDINGS_TABLE[id], id).toBeDefined();
-    const mapped = (key: string, id: string, turn: number | null) => {
-      const answer = ANSWERS[key];
-      const status = resolveVerdict(answer).status;
-      // The judges' words are read the same for every row; the truth set's tests check them.
-      return kindedFindings({ id, status, findings: answer.findings as unknown[] }, turn).map(({ sequence, kinds, severity, judge_kind }) => ({ sequence, kinds, severity, judge_kind }));
-    };
-    expect(mapped("blueprint.solve_depth_fairness", "solve_depth_fairness", null)).toEqual([
-      { sequence: null, kinds: ["fairness"], severity: "major", judge_kind: "fairness" },
-      { sequence: null, kinds: ["solve_depth"], severity: "minor", judge_kind: "solve_depth" },
-    ]);
-    expect(mapped("blueprint.knowledge_timeline_coherence", "knowledge_timeline_coherence", null)).toEqual([
-      { sequence: null, kinds: ["timeline_coherence"], severity: "minor", judge_kind: "timeline_coherence" },
-    ]);
-    expect(mapped("blueprint.blueprint_broad", "blueprint_broad", null)).toEqual([
-      { sequence: null, kinds: ["knowledge_coherence"], severity: "major", judge_kind: "knowledge_coherence" },
-      { sequence: null, kinds: ["age_appropriate"], severity: "minor", judge_kind: "age_appropriate" },
-    ]);
-    expect(mapped("trace.gm_broad", "gm_broad", null)).toEqual([
-      { sequence: 6, kinds: ["fabrication"], severity: "major", judge_kind: "fabrication" },
-      { sequence: 4, kinds: ["spoiler"], severity: "minor", judge_kind: "spoiler" },
-    ]);
-    // A judge of one turn points every finding at the turn it judged.
-    expect(mapped("runtime.gm_broad", "gm_broad", 12)).toEqual([
-      { sequence: 12, kinds: ["not_age_fit"], severity: "minor", judge_kind: "not_age_fit" },
-    ]);
-  });
-
-  it("refuses a stored finding of a kind the candidate's row does not give, and adds none to a bare fail", () => {
-    const findings = [{ sequence: 1, severity: "major", kind: "clue_graph" }];
-    expect(() => kindedFindings({ id: "solve_depth_fairness", status: "fail", findings }, null)).toThrow(
-      'a finding of "solve_depth_fairness" names kind "clue_graph", not one of solve_depth, fairness',
-    );
-    expect(kindedFindings({ id: "gm_broad", status: "fail", findings: [] }, null)).toEqual([]);
+    expect([...kindEnum.options].sort()).toEqual([...CANDIDATE_KINDS[id]].sort());
   });
 });

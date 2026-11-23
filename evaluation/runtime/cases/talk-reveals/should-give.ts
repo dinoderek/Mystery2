@@ -4,7 +4,7 @@
 // at them. Each case's comment says why it expects what it does.
 //
 // Four cases are cut from stored self-play games (`play.ts`); the rest are
-// hand-written on the truth-set bases in `evaluation/truth/bases/`.
+// hand-written on the runtime fixtures in `evaluation/runtime/fixtures/`.
 
 import type { TurnCase } from "../../lib/case.ts";
 import { asked, BASES, found, met, talkCase } from "./support/story.ts";

@@ -13,7 +13,7 @@ import {
 
 // The stored snow-foxes game, in which Barnaby swung between two stories.
 const trace = JSON.parse(
-  fs.readFileSync("evaluation/truth/games/large-snow-foxes-kid-7/trace.json", "utf8"),
+  fs.readFileSync("tests/api/unit/fixtures/snow-foxes-trace.json", "utf8"),
 ) as { blueprint: Parameters<typeof buildRoleRequest>[0]["blueprint"]; events: ConversationFragment[] };
 
 async function talkAt(sequence: number, characterId: string, locationId: string) {

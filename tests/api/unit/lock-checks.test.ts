@@ -83,7 +83,7 @@ describe("lock, reaction and hidden-spot checks", () => {
 
   it("stay quiet on the migrated large-snow-foxes-kid-7 game", () => {
     const trace = JSON.parse(
-      fs.readFileSync("evaluation/truth/games/large-snow-foxes-kid-7/trace.json", "utf8"),
+      fs.readFileSync("tests/api/unit/fixtures/snow-foxes-trace.json", "utf8"),
     ) as { blueprint: BlueprintV2 };
     const checks = runMechanicalChecks({ blueprintCandidate: trace.blueprint });
     expect(checks.filter((check) => LOCK_CHECKS.includes(check.id)).map((check) => [check.id, check.status])).toEqual(

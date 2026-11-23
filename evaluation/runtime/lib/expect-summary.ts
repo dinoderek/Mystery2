@@ -16,7 +16,7 @@ import { z } from "zod";
 
 import { InputError } from "../../core/errors.ts";
 import type { RunInfo, Verdict } from "../../core/result.ts";
-import { table } from "../../score/table.ts";
+import { table } from "./table.ts";
 import type { Direction, UseOutcome } from "./expect.ts";
 
 export const EXPECT_FILE = "expect.json";

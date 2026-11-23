@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { BLUEPRINT_KINDS } from "../lib/truth/kinds.ts";
+export const BLUEPRINT_KINDS = ["solve_depth", "fairness", "timeline_coherence", "knowledge_coherence", "character_grounding", "path_payoff", "clue_graph", "age_appropriate"] as const;
 
 /**
  * Every blueprint question in one judge, a candidate. Each finding names the

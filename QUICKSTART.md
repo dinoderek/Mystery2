@@ -59,22 +59,6 @@ command prints it). Mock narration, no network, no API key.
 
 Pick a profile name on the first screen — that is the whole of signing in.
 
-### Compare case formats
-
-Choose **The Missing Lighthouse Lens** for V2 (the default), or **The Missing
-Lighthouse Lens — MSF experiment** for native MSF. Keep the same narrator.
-For a recorded comparison:
-
-```bash
-./dev eval play --blueprint the-missing-lighthouse-lens --games 1 --judge
-./dev eval play --replay <baseline>/script.json --blueprint blueprints/msf/lighthouse.json --judge
-```
-
-Use a game's saved script from the first run. [Experiment details](docs/msf-gameplay.md).
-**The Smashed Prize Pumpkin — clue graph** plays the [clue graph](docs/clue-graph.md).
-Database versions 4 and 5 add private MSF and clue-graph snapshots; existing
-games are kept, but older checkouts cannot open the upgraded database.
-
 ### Live AI
 
 Copy `ai.example.json` to `ai.json` in the config root (gitignored) and list

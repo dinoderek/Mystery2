@@ -141,15 +141,6 @@ describe("game-turn endpoint", () => {
       expect(readStoredSession(gameId)).toMatchObject({ mode: "explore", outcome: null });
     });
 
-    it("plays the same flow on an MSF case", async () => {
-      const { game_id: gameId, state } = await startCase("46e4e135-82fe-4389-af0b-80aa749867a1");
-      expect(state.accusations_left).toBe(3);
-      const failed = await played(gameId, "accuse Roz");
-      expect(failed.events[0].event_type).toBe("accuse_failed");
-      expect(failed.state).toMatchObject({ mode: "explore", accusations_left: 2 });
-      expect((await getGame(gameId)).state.accusations_left).toBe(2);
-    });
-
     it("plays the same flow on a clue-graph case, a right name without support failing like any other", async () => {
       const { game_id: gameId, state } = await startCase(clueGraphCaseId("greenhouse-prizewinner"));
       expect(state.accusations_left).toBe(3);

@@ -66,6 +66,24 @@ afterEach(() => {
 });
 
 describe("listBlueprints", () => {
+  it("loads only the supported formats from the committed catalog", async () => {
+    const logger = recordingLogger();
+    const entries = await store([path.resolve("blueprints")]).listBlueprints(logger);
+    expect(entries.length).toBeGreaterThan(0);
+    expect(entries.every(({ blueprint }) => ["v2", "clue-graph/2"].includes(blueprint.schema_version))).toBe(true);
+    expect(logger.entries).toEqual([]);
+  });
+
+  it("rejects an unknown tagged format by filename, even with otherwise valid V2 fields", async () => {
+    writeBlueprint(primaryDir, "retired.json", { $format: "retired-case/1" });
+    const logger = recordingLogger();
+    expect(await store().listBlueprints(logger)).toEqual([]);
+    expect(logger.entries).toEqual([{
+      event: "blueprint.parse_failed",
+      details: { object: "retired.json", error: "Unknown case format: retired-case/1" },
+    }]);
+  });
+
   it("returns every readable blueprint with its filename as the source", async () => {
     writeBlueprint(primaryDir, `${BLUEPRINT_ID}.json`);
 

@@ -729,7 +729,6 @@ class MockAIProvider implements AIProvider {
             last_accusation?: boolean;
             full_blueprint?: { world?: { characters?: Array<Record<string, unknown>> } };
             path_coverage?: Array<{ kind?: string; summary?: string; missing_clue_ids?: string[] }>;
-            msf_progress?: { solution_supported: boolean };
           }
           | undefined;
         const last = accusationJudgeContext?.last_accusation === true;
@@ -757,10 +756,7 @@ class MockAIProvider implements AIProvider {
         // Mirrors the live judge semantics: the true culprit with support
         // wins; anything else spends the accusation ("continue"), and on the
         // last one ends the case ("lose").
-        // This paired-case mock recognizes a full reconstruction as well as graph-earned evidence.
-        const msfSupported = !accusationJudgeContext?.msf_progress || accusationJudgeContext.msf_progress.solution_supported ||
-          (/\blens\b/i.test(String(context.player_input)) && /\b(tide|causeway)\b/i.test(String(context.player_input)) && /\b(beacon|vote)\b/i.test(String(context.player_input)));
-        const accusationResolution: AccusationResolution = isCulprit && msfSupported
+        const accusationResolution: AccusationResolution = isCulprit
           ? "win"
           : last
           ? "lose"

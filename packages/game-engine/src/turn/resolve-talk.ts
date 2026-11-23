@@ -1,16 +1,16 @@
 // Conversations: walking up to someone, asking them things, and saying goodbye.
 
-import { v2CaseOf, type PlayableBlueprint } from "../../../shared/src/msf-case.ts";
+import { v2CaseOf, type PlayableBlueprint } from "../../../shared/src/playable-case.ts";
 import type { RevealedClue } from "../../../shared/src/mystery-api-contracts.ts";
 import { parseTalkConversationOutput, parseTalkEndOutput, parseTalkStartOutput } from "../ai-contracts.ts";
 import { findLocationById } from "../ai-context.ts";
 import { selectUsedClues } from "../character-state.ts";
-import { buildDiscoveredClueIdSet, isClueUnlocked } from "../clue-discovery.ts";
+import { buildDiscoveredClueIdSet } from "../clue-discovery.ts";
 import { RequestRejectedError } from "../errors.ts";
 import { createNarrationPart } from "../narration.ts";
 import { buildRoleRequest } from "../role-request.ts";
 import { createCharacterSpeaker, NARRATOR_SPEAKER } from "../speaker.ts";
-import { askRole, rejectOutput } from "./narrator.ts";
+import { askRole } from "./narrator.ts";
 import type { ActionOutcome, TurnGame, TurnRuntime } from "./types.ts";
 
 type Character = PlayableBlueprint["world"]["characters"][number];
@@ -149,12 +149,6 @@ export async function resolveAsk(
 
   // An off-script reveal is still a real discovery; only kept ids carry the flag.
   const discovered = buildDiscoveredClueIdSet(game.history);
-  for (const id of blueprint.msf ? output.revealed_clue_ids : []) {
-    const clue = character.clues.find((clue) => clue.id === id);
-    const node = blueprint.msf?.structure.nodes[id];
-    const bypass = node?.kind === "clue" && node.requires?.kind !== "physical" && output.revealed_off_script.includes(id);
-    if (!clue || (!isClueUnlocked(clue, discovered) && !bypass)) rejectOutput(runtime, "ask", "MSF conversation revealed an unavailable clue");
-  }
   const reveals = selectFirstTimeReveals(
     output,
     new Set(character.clues.map((clue) => clue.id)),
@@ -169,8 +163,7 @@ export async function resolveAsk(
   }
   // Only what the character can be shown, and the player holds or bluffs with
   // their own words, is recorded as used.
-  const evidence = blueprint.msf ? new Set(Object.entries(blueprint.msf.structure.nodes).filter(([, node]) => node.kind === "clue").map(([id]) => id)) : character;
-  const used = selectUsedClues(output, evidence, discovered, ask.question);
+  const used = selectUsedClues(output, character, discovered, ask.question);
   if (used.dropped.length > 0) {
     runtime.logger.log("ask.used_clue_dropped", {
       game_id: game.game_id,

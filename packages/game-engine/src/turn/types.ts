@@ -1,6 +1,6 @@
 // The shapes a turn passes between its steps.
 
-import type { PlayableCase } from "../../../shared/src/msf-case.ts";
+import type { PlayableCase } from "../../../shared/src/playable-case.ts";
 import type { RevealedClue } from "../../../shared/src/mystery-api-contracts.ts";
 import type { AIProvider } from "../ai-provider.ts";
 import type { GameEventRow, GameSessionPatch, GameSessionRow } from "../context.ts";

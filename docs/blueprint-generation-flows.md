@@ -126,9 +126,9 @@ return it as the notebook's case facts (`mystery_summary`, and a `summary` per
 location and character).
 <!-- /extract:gameplay-narration -->
 
-A clue-graph case gives rows facts to word, talk `knows` and
-first-meeting appearance; a found clue's saved line stands for it; the engine
-decides accusations ([clue graph](clue-graph.md)).
+A clue-graph case gives facts to word, talk `knows` and first-meeting
+appearance; saved lines stand for found clues. The engine chooses accusation
+verdicts and reply material ([clue graph](clue-graph.md)).
 
 ## Evaluation
 

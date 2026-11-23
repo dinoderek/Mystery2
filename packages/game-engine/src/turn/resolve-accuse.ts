@@ -12,7 +12,7 @@ import {
   parseGraphEndingOutput,
 } from "../ai-contracts.ts";
 import { ACCUSE_BACK, ACCUSE_FAILED, ACCUSE_RESOLVED, isLastAccusation } from "../accusations.ts";
-import { decideAccusation, resolves, type SavedAccusation } from "../clue-graph/accusation.ts";
+import { decideAccusation, resolves, type GraphVerdictContext, type SavedAccusation } from "../clue-graph/accusation.ts";
 import { playOf } from "../clue-graph/history.ts";
 import { createNarrationPart } from "../narration.ts";
 import { buildRoleRequest } from "../role-request.ts";
@@ -107,7 +107,7 @@ function judgedOutcome(
       ...event,
       event_type: result ? ACCUSE_RESOLVED : ACCUSE_FAILED,
       actor: "system",
-      payload: result ? event.payload : { ...event.payload, reply_kind: null },
+      payload: result ? event.payload : { reply_kind: null, ...event.payload },
       action: "accuse_reasoning",
       mode: "accuse",
     },
@@ -219,6 +219,7 @@ async function resolveGraphAccusation(game: TurnGame, runtime: TurnRuntime, reas
     blueprint: game.blueprint,
     player_input: reasoning,
     verdict: saved.verdict,
+    accused,
     cited,
     conversation_history: game.history,
   });
@@ -236,6 +237,7 @@ async function resolveGraphAccusation(game: TurnGame, runtime: TurnRuntime, reas
       player_reasoning: reasoning,
       judge_result: result ?? "continue",
       clue_graph_accusation: saved,
+      ...(!ended ? { reply_kind: (context.graph_accusation_context as GraphVerdictContext).reply!.kind } : {}),
       speaker: NARRATOR_SPEAKER,
     },
     narration_parts: [createNarrationPart(output.narration, NARRATOR_SPEAKER)],

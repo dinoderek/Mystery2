@@ -1,6 +1,6 @@
 # AI Runtime
 
-Narrator inputs, contracts and validation before saving a turn. Other formats:
+Narrator contracts and validation before saving. Formats:
 [MSF](msf-gameplay.md), [clue graph](clue-graph.md). Profiles and providers are
 `docs/ai-configuration.md`; which blueprint fields reach which output is
 `docs/blueprint-generation-flows.md`.
@@ -34,8 +34,9 @@ when the backend already knows a clue will be revealed, else `search_empty`;
 accusation once, `win` or `continue`; on the last `win` or `lose`
 (`docs/game.md`, "The accusation"). `talk_start` and `talk_end` move nobody; `gm_fabrication`
 reports invented movement. A clue-graph case's `graph_talk` and `graph_search`
-also return a notebook line per clue revealed, and its accusation has three
-roles of its own (`docs/clue-graph.md`).
+return notebook lines; `graph_accusation_round` words the engine's flaw,
+alternative or missing-fact reply, from only its supplied material
+([accusation](clue-graph.md#accusation)).
 
 ## Narration style
 <!-- extract:narration-style -->

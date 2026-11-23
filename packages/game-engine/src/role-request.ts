@@ -143,7 +143,7 @@ export type RoleRequestInput =
   | ({ role: "graph_search"; location_id: string; search_query: string | null } & SessionInput)
   // A clue-graph accusation: the judge, then what the engine decided, worded.
   | ({ role: "graph_accusation"; player_input: string } & SessionInput)
-  | ({ role: "graph_accusation_round"; player_input: string; verdict: AccusationVerdict } & SessionInput)
+  | ({ role: "graph_accusation_round"; player_input: string; verdict: AccusationVerdict; accused: string | null; cited: string[] } & SessionInput)
   | ({ role: "graph_ending"; player_input: string; verdict: AccusationVerdict; cited: string[] } & SessionInput)
   | ({
     role: "accusation_start";

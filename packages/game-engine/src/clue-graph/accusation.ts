@@ -21,7 +21,8 @@ export interface AccusationReport {
  * What the engine decided: `win`; `not_yet`, a failure that spends one
  * accusation; `lose`, a failure on the last one.
  */
-export type AccusationVerdict = "win" | "not_yet" | "lose";
+export const ACCUSATION_VERDICTS = ["win", "not_yet", "lose"] as const;
+export type AccusationVerdict = (typeof ACCUSATION_VERDICTS)[number];
 
 /** What an accusation event saves, beside the player's reasoning. */
 export interface SavedAccusation extends AccusationReport {
@@ -95,6 +96,29 @@ export function decideAccusation(
   return isLastAccusation(history) ? "lose" : "not_yet";
 }
 
+/** What the engine makes of the narrator's report: the accusation it saves, and the cited clues it dropped as not held. */
+export interface SettledAccusation {
+  saved: SavedAccusation;
+  notHeld: string[];
+}
+
+/**
+ * Settles a report the game accepted (its accused is in the case, or null): a
+ * clue the player does not hold cannot be cited, so it is dropped, and the
+ * engine decides on what is left.
+ */
+export function settleAccusation(
+  graph: ClueGraphCase,
+  play: ClueGraphPlay,
+  history: HistoryRow[],
+  report: AccusationReport,
+): SettledAccusation {
+  const cited = report.cited.filter((id) => play.held.includes(id));
+  const notHeld = report.cited.filter((id) => !play.held.includes(id));
+  const accusation = { accused: report.accused, cited };
+  return { saved: { ...accusation, verdict: decideAccusation(graph, play, history, accusation) }, notHeld };
+}
+
 /** The clues a lead is about: the character's, or the spot's. */
 function leadClues(graph: ClueGraphCase, key: string): string[] {
   const [kind, rest] = [key.slice(0, key.indexOf(":")), key.slice(key.indexOf(":") + 1)];
@@ -129,6 +153,9 @@ export interface AccusablePerson {
   id: string;
   name: string;
 }
+
+/** The kinds of reply a failed accusation gets, saved as its `reply_kind`. */
+export const REPLY_KINDS = ["flaw", "alternative", "missing"] as const;
 
 /** Only the material needed to explain this failed case, never a correctness flag. */
 export type AccusationReply =

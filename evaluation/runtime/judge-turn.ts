@@ -357,7 +357,7 @@ async function runSubject(item: WorkItem, runtime: Runtime): Promise<Result> {
   const stages: Array<{ name: string; duration_ms: number; failed?: boolean }> = [];
   const startedAt = performance.now();
   let turn: StoredTurn | null = null;
-  let call: ModelCall | null = null;
+  let calls: ModelCall[] = [];
   let runError: RunError | null = null;
   let verdicts: Verdict[] = [];
 
@@ -366,7 +366,7 @@ async function runSubject(item: WorkItem, runtime: Runtime): Promise<Result> {
     if (item.input.kind === "case") {
       const captured = await captureCase(item.narrator as string, item.input.testCase, runtime, folder);
       turn = captured.turn;
-      call = captured.collected.call;
+      calls = captured.collected.calls;
       stages.push({ name: "replay", duration_ms: Math.round(performance.now() - replayStart) });
     } else {
       turn = item.input.turn;
@@ -392,7 +392,7 @@ async function runSubject(item: WorkItem, runtime: Runtime): Promise<Result> {
     schema_version: RESULT_SCHEMA_VERSION,
     run: runtime.folder.info(),
     subject: { kind: "turn", id, path: turn ? TURN_FILE : null },
-    production: call ? { calls: [call] } : null,
+    production: calls.length > 0 ? { calls } : null,
     verdicts,
     summary: summarize(verdicts, runError),
     run_error: runError,

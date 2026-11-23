@@ -27,13 +27,13 @@ const NOTHING = { revealed_clue_ids: [], input_understood: true };
 /** The greenhouse searched: the glass outside, the welly prints, the boot prints. */
 export const SEARCHED: Step[] = [{ search: "the broken side window" }, { search: "the smashed pumpkin" }, { search: null }];
 
-const TOBY_GREETS: Step = {
+export const TOBY_GREETS: Step = {
   talk: "toby",
   narration: "Toby is sweeping the potting shed in trainers, while Mia's leaf-pattern club wellies stand by the door. He tucks his feet out of sight. \"I was at home all Friday evening, finishing my thousand-piece jigsaw. I went to bed at nine,\" he says, sweeping the same patch over and over. \"It was Mr. Thorne! He must have climbed over the fence and smashed the window to get in. On Thursday he was up his ladder, staring at Bertha with a tape measure. He said, 'Enjoy her while she lasts!'\"",
 };
 const TOBY_MET: Step[] = [...SEARCHED, { move: "potting_shed" }, TOBY_GREETS];
 
-const THORNE_GREETS: Step = {
+export const THORNE_GREETS: Step = {
   talk: "thorne",
   narration: "Mr. Thorne leans on his fence with his arms crossed. \"I was at the fair all evening with Goliath, at the growers' barbecue from seven till eleven. At nine o'clock I bought carrot cake from young Mia at the cake tent, across town. And I've never set foot in that school garden!\" His ears turn red, and he scuffs one huge boot on the grass.",
 };

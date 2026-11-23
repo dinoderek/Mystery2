@@ -80,9 +80,10 @@ const PROMPT_IDS = [
   ...BLUEPRINT_CANDIDATES.map((id) => `blueprint.${id}`),
   ...GM_CANDIDATES.flatMap((id) => [`trace.${id}`, `runtime.${id}`]),
   ...GRAPH_JUDGES.flatMap((id) => [`trace-clue-graph.${id}`, `runtime-clue-graph.${id}`]),
+  "runtime-clue-graph-accusation.gm_spoiler",
   ...CASE_JUDGES.map((id) => `blueprint.${id}`),
 ];
-const VERDICT_NAMES = ["blueprint", "trace", "runtime", "playtest-judging", "candidates", "blueprint-clue-graph"];
+const VERDICT_NAMES = ["blueprint", "trace", "runtime", "playtest-judging", "candidates", "blueprint-clue-graph", "runtime-clue-graph-accusation"];
 
 type Json = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -442,6 +443,45 @@ async function runClueGraphHarnesses(answersFile: string) {
   }
 }
 
+/**
+ * One failed accusation from the greenhouse case library, chained on the stub
+ * narrator (report, engine decision, reply) and graded: the spoiler judge reads
+ * the reply as a failed accusation's, and the grade says how the canned report
+ * misread the line.
+ */
+async function runClueGraphAccusation(answersFile: string) {
+  const dir = path.join(scratch, "clue-graph-accusation");
+  fs.mkdirSync(dir, { recursive: true });
+  const caseFile = path.join(dir, "case.mjs");
+  const library = path.join(REPO_ROOT, "evaluation/runtime/cases/clue-graph/greenhouse/accusation.ts");
+  fs.writeFileSync(caseFile, `import cases from ${JSON.stringify(library)};\nexport default cases.find((one) => one.id === "accuse-mia-cleared");\n`);
+  const config = path.join(dir, "config.json");
+  fs.writeFileSync(config, JSON.stringify({
+    "narrator-stub": { cmd: "evaluation/runtime/config/wrappers/stub-runtime.sh", args: ["{{user_message_file}}"], timeout_ms: 30_000 },
+    "turn-judge": stubBinding(answersFile, "runtime.{id}", path.join(scratch, "captured-graph-accusation")),
+  }));
+  const outputRoot = path.join(dir, "out");
+  const output: string[] = [];
+  const code = await judgeTurnCommand.run(
+    [caseFile, "--narrator", "narrator-stub", "--samples", "1", "--config", config, "--output-root", outputRoot],
+    { root: REPO_ROOT, out: (text) => output.push(text), err: (text) => output.push(text), env: {} },
+  );
+  // The canned report names nobody, so the engine words what is missing, not the flaw the case expects.
+  if (code !== 2) throw new Error(`judge turn exited ${code}:\n${output.join("\n")}`);
+  const [resultFile] = findFiles(outputRoot, "result.json");
+  const result = JSON.parse(fs.readFileSync(resultFile, "utf8"));
+  const turn = JSON.parse(fs.readFileSync(path.join(path.dirname(resultFile), "turn.json"), "utf8"));
+  verdicts.set("runtime-clue-graph-accusation", {
+    case_id: turn.case_id,
+    narration: turn.response.narration_text,
+    decided: { role: turn.response.raw.role, accusation: turn.response.raw.clue_graph_accusation, reply_kind: turn.response.raw.reply_kind },
+    narrator_calls: result.production.calls.length,
+    verdicts: result.verdicts.map((verdict: Json) => ({ id: verdict.id, status: verdict.status, details: verdict.id === "expect" ? verdict.details : undefined })),
+    summary: result.summary,
+  });
+  prompts.set("runtime-clue-graph-accusation.gm_spoiler", capturedPrompt("runtime.gm_spoiler", "captured-graph-accusation"));
+}
+
 /** `judge blueprint` on the greenhouse case: its check, and the four judges a clue-graph case gets. */
 async function runClueGraphBlueprint(answersFile: string) {
   const dir = path.join(scratch, "blueprint-clue-graph");
@@ -627,6 +667,7 @@ beforeAll(async () => {
     runPlaytestJudging(answersFile),
     runCandidates(answersFile),
     runClueGraphHarnesses(answersFile),
+    runClueGraphAccusation(answersFile),
     runClueGraphBlueprint(answersFile),
   ]);
   await composeInvestigatorPrompts();

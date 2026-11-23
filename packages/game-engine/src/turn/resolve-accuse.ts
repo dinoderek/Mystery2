@@ -19,7 +19,7 @@ import {
   accusationsLeft,
   isLastAccusation,
 } from "../accusations.ts";
-import { decideAccusation, resolves, type GraphVerdictContext, type SavedAccusation } from "../clue-graph/accusation.ts";
+import { resolves, settleAccusation, type GraphVerdictContext } from "../clue-graph/accusation.ts";
 import { playOf } from "../clue-graph/history.ts";
 import { createNarrationPart } from "../narration.ts";
 import { buildRoleRequest } from "../role-request.ts";
@@ -214,17 +214,11 @@ async function resolveGraphAccusation(game: TurnGame, runtime: TurnRuntime, reas
     rejectOutput(runtime, "accuse_reasoning", "Clue-graph accusation named someone the case does not hold", { accused });
   }
   // A clue the player does not hold cannot be cited: it is dropped, as a restated reveal is.
-  const cited = report.cited_clue_ids.filter((id) => play.held.includes(id));
-  const notHeld = report.cited_clue_ids.filter((id) => !play.held.includes(id));
+  const { saved, notHeld } = settleAccusation(graph, play, game.history, { accused, cited: report.cited_clue_ids });
   if (notHeld.length > 0) {
     runtime.logger.log("accusation.cited_not_held", { game_id: game.game_id, clue_ids: notHeld });
   }
-
-  const saved: SavedAccusation = {
-    accused,
-    cited,
-    verdict: decideAccusation(graph, play, game.history, { accused, cited }),
-  };
+  const { cited } = saved;
   const ended = resolves(saved.verdict);
   const role = ended ? "graph_ending" : "graph_accusation_round";
   const { prompt, context } = await buildRoleRequest({

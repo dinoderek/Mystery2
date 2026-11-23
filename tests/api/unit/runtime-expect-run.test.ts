@@ -161,6 +161,52 @@ describe("judge turn on a case with expect", () => {
   });
 });
 
+describe("a clue-graph accusation", () => {
+  /** One case of the greenhouse accusation library, in a file of its own. */
+  function libraryCase(id: string): string {
+    const file = path.join(scratch, `${id}.mjs`);
+    const library = path.join(REPO_ROOT, "evaluation/runtime/cases/clue-graph/greenhouse/accusation.ts");
+    fs.writeFileSync(file, `import cases from ${JSON.stringify(library)};\nexport default cases.find((one) => one.id === ${JSON.stringify(id)});\n`);
+    return file;
+  }
+  const report = (accused: string, cited: string[]) => ({ accused_character_id: accused, cited_clue_ids: cited });
+
+  it("chains the report, the engine's decision and the reply, as the game does", async () => {
+    const replies = [
+      report("mrs_nobody", []),
+      report("mia", ["clue_rota_purple_ink", "clue_key_in_water_butt"]),
+      { narration: "Mr. Dobbs heard the crash at ten to nine, and Mia was selling cake across town then." },
+    ];
+    const retrying = path.join(scratch, "retrying.json");
+    const config = JSON.parse(fs.readFileSync(configFile, "utf8"));
+    fs.writeFileSync(retrying, JSON.stringify({ ...config, "narrator-stub": { ...config["narrator-stub"], retries: 1 } }));
+    const { code, runDir } = await judgeTurn([libraryCase("accuse-mia-cleared"), "--narrator", "narrator-stub", "--samples", "1"], replies, retrying);
+    expect(code).toBe(0);
+    const subject = path.join(runDir, "accuse-mia-cleared-narrator-stub-s1");
+    const result = await readResult(path.join(subject, "result.json"));
+    // A report naming someone the case does not hold is retried; both calls are kept.
+    expect(result.production?.calls.map((call) => call.attempts.length)).toEqual([2, 1]);
+    expect(result.verdicts.map((verdict) => [verdict.id, verdict.status])).toEqual([["gm_spoiler", "pass"], ["expect", "pass"]]);
+    const turn = JSON.parse(fs.readFileSync(path.join(subject, "turn.json"), "utf8"));
+    // A cited clue the player does not hold is dropped before the engine decides.
+    expect(turn.response.raw).toMatchObject({
+      role: "graph_accusation_round",
+      clue_graph_accusation: { accused: "mia", cited: ["clue_rota_purple_ink"], verdict: "not_yet" },
+      reply_kind: "flaw",
+    });
+    expect(turn.response.narration_text).toContain("ten to nine");
+  });
+
+  it("words a won accusation as the closing scene, with no kind of reply", async () => {
+    const replies = [report("toby", ["clue_welly_prints"]), { narration: "You solved it! Toby's bench fell on Bertha, and the key went in the water butt." }];
+    const { code, runDir } = await judgeTurn([libraryCase("accuse-toby-won"), "--narrator", "narrator-stub", "--samples", "1"], replies);
+    expect(code).toBe(0);
+    const turn = JSON.parse(fs.readFileSync(path.join(runDir, "accuse-toby-won-narrator-stub-s1", "turn.json"), "utf8"));
+    expect(turn.response.raw).toMatchObject({ role: "graph_ending", clue_graph_accusation: { verdict: "win" } });
+    expect(turn.response.raw.reply_kind).toBeUndefined();
+  });
+});
+
 describe("a case without expect", () => {
   it("runs once per narrator, as before: no sample suffix, no grade, no summary", async () => {
     const { code, output, runDir } = await judgeTurn([NO_EXPECT, "--narrator", "narrator-stub", "--samples", "3"], [

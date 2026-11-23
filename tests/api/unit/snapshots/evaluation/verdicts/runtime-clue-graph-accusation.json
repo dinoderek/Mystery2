@@ -1,0 +1,59 @@
+{
+  "case_id": "accuse-mia-cleared",
+  "narration": "You take a slow look around. Nothing new catches your eye just yet.",
+  "decided": {
+    "role": "graph_accusation_round",
+    "accusation": {
+      "accused": null,
+      "cited": [],
+      "verdict": "not_yet"
+    },
+    "reply_kind": "missing"
+  },
+  "narrator_calls": 2,
+  "verdicts": [
+    {
+      "id": "gm_spoiler",
+      "status": "pass"
+    },
+    {
+      "id": "expect",
+      "status": "fail",
+      "details": {
+        "erred": [
+          "withheld",
+          "misread"
+        ],
+        "use": null,
+        "checks": [],
+        "input_understood": null,
+        "judges": {
+          "gm_spoiler": "pass"
+        },
+        "accusation": {
+          "verdict": {
+            "expected": "not_yet",
+            "actual": "not_yet"
+          },
+          "reply_kind": {
+            "expected": "flaw",
+            "actual": "missing"
+          }
+        },
+        "missing_handed": [
+          "ten to nine",
+          "cake"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "counts": {
+      "pass": 1,
+      "fail": 1,
+      "error": 0,
+      "skipped": 0
+    },
+    "passed": false
+  }
+}

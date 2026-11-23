@@ -126,7 +126,7 @@ describe("replaying through a throwaway server", () => {
 
     expect(collected.response.narration_text).toBe("Hello there.");
     expect(collected.model).toBe("free-ish");
-    expect(collected.call).toBeNull();
+    expect(collected.calls).toEqual([]);
     expect(seen.calls).toHaveLength(1);
     expect(seen.calls[0].endpoint).toBe("game-turn");
     expect(seen.calls[0].body.input).toBe("Then why are your hands shaking?");

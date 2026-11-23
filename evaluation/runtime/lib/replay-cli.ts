@@ -17,7 +17,7 @@
 import { runModel } from "../../core/runner.ts";
 import { accusationRole, replyKindOf, resolves, settleAccusation } from "../../../packages/game-engine/src/clue-graph/accusation.ts";
 import { playOf } from "../../../packages/game-engine/src/clue-graph/history.ts";
-import { parseGraphAccusationOutput, parseGraphAccusationRoundOutput, parseGraphEndingOutput } from "../../../packages/game-engine/src/ai-contracts.ts";
+import { roleOutputJsonSchema, parseRoleOutput, parseGraphAccusationOutput, parseGraphAccusationRoundOutput, parseGraphEndingOutput } from "../../../packages/game-engine/src/ai-contracts.ts";
 import type { ResolvedBinding } from "../../core/config.ts";
 import type { ModelCall } from "../../core/result.ts";
 import type {
@@ -25,15 +25,28 @@ import type {
   TemplateRoleInput,
 } from "../../../packages/game-engine/src/role-request.ts";
 import type { BlueprintLike, TurnCase } from "./case.ts";
-import { parseFencedJson } from "./model-json.ts";
-import { buildNarrationPrompt, buildRoleRequest } from "./prompt-build.ts";
-import type { ModelRequest } from "./prompt-build.ts";
+import { buildNarrationMessages, buildNarrationPrompt, buildRoleRequest } from "./prompt-build.ts";
 import { getAction, normalizeHistory } from "./roles.ts";
 import { makeResponse } from "./transcript.ts";
 import type { TurnResponse } from "./transcript.ts";
 
 /** Narration roles reply with prose rather than a role-output JSON contract. */
 const NARRATION_ROLES = new Set(["intro", "ambience"]);
+
+export class NarratorReplayError extends Error {
+  readonly calls: ModelCall[];
+  readonly stage: "parser" | "admissibility" | "transport";
+  constructor(message: string, calls: ModelCall[], stage: "parser" | "admissibility" | "transport") {
+    super(message);
+    this.calls = calls;
+    this.stage = stage;
+  }
+}
+
+function failedCall(message: string, calls: ModelCall[]): never {
+  const outcome = calls.at(-1)?.attempts.at(-1)?.outcome;
+  throw new NarratorReplayError(message, calls, outcome === "invalid" || outcome === "not_json" ? "parser" : "transport");
+}
 
 /** What a narrator source hands back for one case. */
 export interface Collected {
@@ -52,16 +65,15 @@ export interface CliReplayRequest {
 }
 
 /** What the provider sends for each shape of role (see `OpenRouterProvider.generateNarration` and `generateRoleOutput`). */
-async function composeRequest(testCase: TurnCase, blueprint: BlueprintLike): Promise<{ request: ModelRequest; narration: boolean }> {
+async function composeRequest(testCase: TurnCase, blueprint: BlueprintLike) {
   const action = getAction(testCase.action.type);
   const history = normalizeHistory(testCase.given.history);
   const roleInput = action.roleInput(testCase.given, testCase.action, blueprint, history);
   if (NARRATION_ROLES.has(roleInput.role)) {
     const prompt = buildNarrationPrompt(roleInput as unknown as NarrationRoleInput);
-    const system = "You are the narrator for a kids mystery game. Return plain text only.";
-    return { request: { system, user: prompt, prompt, context: null }, narration: true };
+    return { request: { ...buildNarrationMessages(prompt), prompt, context: null, role: null }, narration: true } as const;
   }
-  return { request: await buildRoleRequest(roleInput as unknown as TemplateRoleInput), narration: false };
+  return { request: await buildRoleRequest(roleInput as unknown as TemplateRoleInput), narration: false } as const;
 }
 
 export function modelLabel(binding: ResolvedBinding): string {
@@ -70,7 +82,8 @@ export function modelLabel(binding: ResolvedBinding): string {
 
 export async function replayThroughNarrator(replay: CliReplayRequest): Promise<Collected> {
   const { testCase, blueprint, binding, logDir } = replay;
-  if (testCase.action.type === "accuse") return replayGraphAccusation(replay);
+  // An accusation with reasoning is judged in two calls; without, it opens the scene.
+  if (testCase.action.type === "accuse" && testCase.action.player_reasoning?.trim()) return replayGraphAccusation(replay);
   const action = getAction(testCase.action.type);
   const { request, narration } = await composeRequest(testCase, blueprint);
 
@@ -80,17 +93,27 @@ export async function replayThroughNarrator(replay: CliReplayRequest): Promise<C
     systemPrompt: request.system,
     userMessage: request.user,
     logDir,
+    env: { EVAL_OUTPUT_FORMAT: narration ? "text" : "json" },
+    answerSchema: narration ? undefined : roleOutputJsonSchema(request.role!),
     // Prose is not JSON, so a narration role is read as text when the wrapper
     // prints it bare; a wrapper that prints an envelope names where the text is.
     output: narration && binding.extract_path === null ? "text" : "json",
     // Validated inside the retry loop: prose where JSON was asked for is a retriable failure.
-    parse: narration ? undefined : (answer) => parseFencedJson(answer) as Record<string, unknown>,
+    parse: narration ? (answer) => {
+      if (!answer.trim()) throw new Error("Narrator returned empty prose");
+      return { narration: answer.trim() };
+    } : (answer) => {
+      const value = JSON.parse(answer);
+      // The live greeting always counts as understood, before its normal parser.
+      const greeting = request.role === "graph_talk" && testCase.action.type === "talk";
+      return parseRoleOutput(request.role!, greeting && typeof value === "object" && value !== null ? { ...value, input_understood: true } : value);
+    },
   });
-  if (!result.ok) throw new Error(`narrator ${testCase.action.type} failed: ${result.error}`);
+  if (!result.ok) failedCall(`narrator ${testCase.action.type} failed: ${result.error}`, [result.call]);
 
   // Narration roles reply with prose; role-output roles reply with JSON whose
   // `narration` field carries the text.
-  const roleOutput = narration ? { narration: result.answer } : (result.value as Record<string, unknown>);
+  const roleOutput = result.value as Record<string, unknown>;
   const text = typeof roleOutput.narration === "string" ? roleOutput.narration : "";
   const speaker = action.speaker(testCase.given, testCase.action, blueprint);
 
@@ -100,6 +123,7 @@ export async function replayThroughNarrator(replay: CliReplayRequest): Promise<C
     parts: text ? [{ text, speaker }] : [],
     prompt: request.prompt,
     raw: roleOutput,
+    outputRole: request.role ?? undefined,
   });
   return { response, model: modelLabel(binding), calls: [result.call] };
 }
@@ -124,16 +148,15 @@ async function replayGraphAccusation({ testCase, blueprint, binding, logDir }: C
     userMessage: judge.user,
     logDir,
     output: "json",
-    parse: (answer) => {
-      const report = parseGraphAccusationOutput(parseFencedJson(answer));
-      const accused = report.accused_character_id;
-      if (accused !== null && !Object.hasOwn(graph.characters, accused)) throw new Error(`accused_character_id "${accused}" is not in the case`);
-      return report as unknown as Record<string, unknown>;
-    },
+    answerSchema: roleOutputJsonSchema("graph_accusation"),
+    parse: (answer) => parseGraphAccusationOutput(JSON.parse(answer)) as unknown as Record<string, unknown>,
   });
-  if (!reported.ok) throw new Error(`narrator accuse report failed: ${reported.error}`);
+  if (!reported.ok) failedCall(`narrator accuse report failed: ${reported.error}`, [reported.call]);
   const report = reported.value as unknown as ReturnType<typeof parseGraphAccusationOutput>;
 
+  if (report.accused_character_id !== null && !Object.hasOwn(graph.characters, report.accused_character_id)) {
+    throw new NarratorReplayError(`accused_character_id "${report.accused_character_id}" is not in the case`, [reported.call], "admissibility");
+  }
   const { saved } = settleAccusation(graph, playOf(graph, history), history, { accused: report.accused_character_id, cited: report.cited_clue_ids });
   const ended = resolves(saved.verdict);
   const role = accusationRole(saved.verdict);
@@ -151,9 +174,10 @@ async function replayGraphAccusation({ testCase, blueprint, binding, logDir }: C
     userMessage: reply.user,
     logDir,
     output: "json",
-    parse: (answer) => (ended ? parseGraphEndingOutput : parseGraphAccusationRoundOutput)(parseFencedJson(answer)) as unknown as Record<string, unknown>,
+    answerSchema: roleOutputJsonSchema(role),
+    parse: (answer) => (ended ? parseGraphEndingOutput : parseGraphAccusationRoundOutput)(JSON.parse(answer)) as unknown as Record<string, unknown>,
   });
-  if (!worded.ok) throw new Error(`narrator accuse reply failed: ${worded.error}`);
+  if (!worded.ok) failedCall(`narrator accuse reply failed: ${worded.error}`, [reported.call, worded.call]);
 
   const narration = String(worded.value!.narration);
   const replyKind = ended ? null : replyKindOf(reply.context as { graph_accusation_context?: unknown });
@@ -163,6 +187,7 @@ async function replayGraphAccusation({ testCase, blueprint, binding, logDir }: C
     parts: [{ text: narration, speaker: action.speaker(testCase.given, testCase.action, blueprint) }],
     prompt: `${judge.prompt}\n\n${reply.prompt}`,
     raw: { role, narration, report, clue_graph_accusation: saved, ...(ended ? {} : { reply_kind: replyKind }) },
+    outputRole: role,
   });
   return { response, model: modelLabel(binding), calls: [reported.call, worded.call] };
 }

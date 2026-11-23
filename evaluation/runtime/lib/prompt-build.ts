@@ -18,8 +18,10 @@
 
 import * as shared from "../../../packages/game-engine/src/role-request.ts";
 import type { NarrationRoleInput, TemplateRoleInput } from "../../../packages/game-engine/src/role-request.ts";
+import type { AIRoleName } from "../../../packages/game-engine/src/ai-contracts.ts";
 
 export interface ModelRequest {
+  role: AIRoleName;
   system: string;
   user: string;
   prompt: string;
@@ -34,8 +36,8 @@ export interface ModelRequest {
 export async function buildRoleRequest(input: TemplateRoleInput): Promise<ModelRequest> {
   const { role, prompt, context } = await shared.buildRoleRequest(input);
   return {
-    system: `You are a strict JSON API for role "${role}". Output JSON only.`,
-    user: JSON.stringify({ prompt, context }),
+    role,
+    ...shared.buildRoleMessages({ role, prompt, context }),
     prompt,
     context,
   };
@@ -45,3 +47,5 @@ export async function buildRoleRequest(input: TemplateRoleInput): Promise<ModelR
 export function buildNarrationPrompt(input: NarrationRoleInput): string {
   return shared.buildNarrationPrompt(input);
 }
+
+export const { buildNarrationMessages } = shared;

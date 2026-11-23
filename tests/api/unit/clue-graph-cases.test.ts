@@ -267,7 +267,7 @@ describe.each(STORIES)("the clue-graph $name accusation spellings", async (story
       // Every word here is one a reply uses without stating the thing: a lead, a look, a taken crown.
       const narration = `${named.join(" and ")} talked about it, and no longer looks cross. Maybe ${named[0]} knows more. What links ${named[0]} to this, and what ties it together? Who really took it, and who was there? Where will you look next, and what will you find?`;
       const base = makeTurn({ action: turnCase.action });
-      const turn: StoredTurn = { ...base, response: { ...base.response, action: "accuse", narration_text: narration, raw: { clue_graph_accusation: { verdict }, reply_kind } } };
+      const turn: StoredTurn = { ...base, response: { ...base.response, output_role: "graph_accusation_round", action: "accuse", narration_text: narration, raw: { narration, clue_graph_accusation: { verdict }, reply_kind } } };
       const grade = gradeExpect({ verdict, reply_kind, handed }, turn, []);
       expect(grade.details, turnCase.id).toMatchObject({ erred: ["withheld"] });
       expect((grade.details as { missing_handed: string[] }).missing_handed, turnCase.id).toHaveLength(1);

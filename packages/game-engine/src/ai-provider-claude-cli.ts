@@ -17,6 +17,7 @@ import { spawn } from "node:child_process";
 import os from "node:os";
 
 import { roleOutputJsonSchema } from "./ai-contracts.ts";
+import { buildNarrationMessages, buildRoleMessages } from "./role-request.ts";
 import type {
   AICallUsage,
   AIProvider,
@@ -42,9 +43,6 @@ const ISOLATION_FLAGS = [
   "",
   "--no-session-persistence",
 ];
-
-const NARRATION_SYSTEM_PROMPT =
-  "You are the narrator for a kids mystery game. Return plain text only.";
 
 /** The fields of the CLI's `--output-format json` reply this module reads. */
 export interface ClaudeCliReply {
@@ -98,8 +96,7 @@ export class ClaudeCliProvider implements AIProvider {
     const reply = await this.#call(
       {
         role: "narration",
-        system: NARRATION_SYSTEM_PROMPT,
-        user: prompt,
+        ...buildNarrationMessages(prompt),
         jsonSchema: null,
         check: (candidate) => {
           if (typeof candidate.result !== "string" || !candidate.result.trim()) {
@@ -118,9 +115,7 @@ export class ClaudeCliProvider implements AIProvider {
     const reply = await this.#call(
       {
         role: request.role,
-        system:
-          `You are a strict JSON API for role "${request.role}". Output JSON only.`,
-        user: JSON.stringify({ prompt: request.prompt, context: request.context }),
+        ...buildRoleMessages(request),
         jsonSchema: roleOutputJsonSchema(request.role),
         check: (candidate) => {
           const output = candidate.structured_output;

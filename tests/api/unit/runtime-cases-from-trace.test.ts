@@ -5,6 +5,10 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { readBlueprint } from "../../../evaluation/runtime/lib/case.ts";
+import { played, readGraph } from "../../../evaluation/runtime/cases/clue-graph/support/play.ts";
+import { getAction, normalizeHistory } from "../../../evaluation/runtime/lib/roles.ts";
+import { buildRoleRequest } from "../../../evaluation/runtime/lib/prompt-build.ts";
+import type { TemplateRoleInput } from "../../../packages/game-engine/src/role-request.ts";
 import {
   actionForEvent,
   casesCommand,
@@ -46,6 +50,10 @@ describe("sampleEvenly", () => {
 });
 
 describe("actionForEvent", () => {
+  it("retains a targeted search query and an accusation's reasoning", () => {
+    expect(actionForEvent({ event_type: "search", payload: { search_query: "the water butt" } })).toEqual({ type: "search", search_query: "the water butt" });
+    expect(actionForEvent({ event_type: "accuse_failed", payload: { player_reasoning: "It was Toby." } })).toEqual({ type: "accuse", player_reasoning: "It was Toby." });
+  });
   it("maps an ask event to an ask action carrying the player input", () => {
     expect(
       actionForEvent({ event_type: "ask", payload: { player_input: "who did it?" } }),
@@ -76,37 +84,30 @@ describe("actionForEvent", () => {
   });
 
   it("returns null for unsupported event types", () => {
-    expect(actionForEvent({ event_type: "end_talk", payload: {} })).toBeNull();
+    expect(actionForEvent({ event_type: "end_talk", payload: {} })).toEqual({ type: "end_talk" });
     expect(actionForEvent({ event_type: "clue_revealed", payload: {} })).toBeNull();
   });
 });
 
+it("reconstructs identical messages from engine-folded clue-graph history", async () => {
+  const file = "blueprints/clue-graph/greenhouse-prizewinner.json";
+  const graph = readGraph(file);
+  const before = played(graph, [{ search: "the broken side window" }, { move: "potting_shed" }, { talk: "toby", narration: "Toby says he was at home." }, { say: "The glass fell outside, so nobody climbed in.", reply: "Toby drops the burglar story.", opened: ["toby_drops_burglar"] }]);
+  const time = graph.metadata.time_budget - before.play.turns;
+  const source = { mode: "talk", location_id: before.play.at, talk_character_id: "toby", time_remaining: time, history: before.history };
+  const action = { type: "ask", player_input: "What happened next?" };
+  const exported = buildCase({ sequence: 99, event_type: "ask", payload: { role: "graph_talk", character_id: "toby", location_id: before.play.at, player_input: action.player_input, diagnostics: { mode: "talk", time_before: time } } }, before.history.map((row, i) => ({ ...row, sequence: i + 1 })), file, []);
+  const { blueprint } = await readBlueprint(file, process.cwd());
+  const messages = (given: typeof exported.given) => buildRoleRequest(getAction("ask").roleInput(given, action, blueprint, normalizeHistory(given.history)) as unknown as TemplateRoleInput);
+  // Compare the request after export with the original recorded state, including sequence.
+  source.history = source.history.map((row, i) => ({ ...row, sequence: i + 1 }));
+  expect(await messages(exported.given)).toEqual(await messages(source));
+});
+
 describe("historyPayload", () => {
-  it("keeps only the whitelisted history fields and drops everything else", () => {
-    const kept = historyPayload({
-      player_input: "hi",
-      character_id: "c1",
-      character_name: "Ann",
-      location_id: "l1",
-      location_name: "Hall",
-      destination: "l2",
-      revealed_clue_ids: ["x"],
-      revealed_clue_id: "y",
-      diagnostics: { mode: "talk" }, // not on the whitelist
-      other_field: "drop me",
-    });
-    expect(kept).toEqual({
-      player_input: "hi",
-      character_id: "c1",
-      character_name: "Ann",
-      location_id: "l1",
-      location_name: "Hall",
-      destination: "l2",
-      revealed_clue_ids: ["x"],
-      revealed_clue_id: "y",
-    });
-    expect(kept).not.toHaveProperty("diagnostics");
-    expect(kept).not.toHaveProperty("other_field");
+  it("preserves the engine payload, including earned state and notebook lines", () => {
+    const payload = { used_clue_ids: ["x"], used_quote: "the red marks", new_commitments: ["I saw it"], role: "graph_talk", clue_graph: { type: "line" }, notebook: { x: "Red marks." }, diagnostics: { mode: "talk" } };
+    expect(historyPayload(payload)).toEqual(payload);
   });
 
   it("returns an empty object for an empty or nullish payload", () => {
@@ -158,8 +159,8 @@ describe("buildCase", () => {
             event_type: "talk",
             actor: "player",
             narration: "t",
-            // The stray field is stripped by the history-payload whitelist.
-            payload: { character_id: "c1" },
+            // The entire recorded payload survives the export.
+            payload: { character_id: "c1", stray_field: "drop me" },
           },
         ],
       },

@@ -7,13 +7,16 @@ reach which output is `docs/blueprint-generation-flows.md`.
 
 ## How a request is assembled
 
-Every narrator request goes through `packages/game-engine/src/role-request.ts`:
-`buildRoleRequest` for roles with an output contract, `buildNarrationPrompt`
-for plain narration (`intro`, `ambience`). It builds the role's context
-(`ai-context.ts`) and renders its prompt (`ai-prompts.ts`) at the game's
-`target_age`. It is the only place the age is applied and imports no
-database, so the eval harness calls it too
-(`tests/api/unit/role-request.test.ts`).
+Pure `packages/game-engine/src/role-request.ts` builds each role's authorised
+context (`ai-context.ts`) and renders its prompt (`ai-prompts.ts`) at the
+game's `target_age`; it imports no database, so the eval harness calls it too
+(`tests/api/unit/role-request.test.ts`). `buildRoleMessages` and
+`buildNarrationMessages` construct the system/user pair for live OpenRouter,
+live Claude CLI and replay, including plain `intro` and `ambience`. Provider
+schemas and calls, including both accusation stages, remain distinct from
+messages. The original policy keeps its existing priority; request data stays
+in the user message. Captured messages are compared byte for byte across
+providers in `tests/api/unit/narrator-messages.test.ts`.
 
 **Lean prompts.** Each rule is stated once and no two conflict. Voice, reading
 level and grounding (only given facts, pronouns from `sex`) live in the shared
@@ -71,10 +74,10 @@ Which case fields reach which role is the "Narration at play" table in
 
 ## Trusting the output
 
-Each role's output contract is a Zod schema in `ai-contracts.ts`, the source of
-the parser and of the JSON Schema a provider hands the model
-(`roleOutputJsonSchema`). Output is validated before anything is written;
-invalid output is retriable.
+`ai-contracts.ts` supplies each role's parser and provider JSON Schema
+(`roleOutputJsonSchema`). Validation precedes writes;
+invalid output is retriable. Replay dispatches the same parser by requested
+role, never by answer shape; parser acceptance does not imply engine admissibility.
 
 - The parser forgives noise (missing flags default, junk ids drop, doubled
   quote escapes go); the JSON Schema asks for the clean shape, all fields
@@ -128,9 +131,8 @@ so a double confirmation cannot narrate twice. It costs no turn, and its
 
 ## The mock provider
 
-The default for `npm run dev` and every automated suite: a live model's paths,
-deterministically, at the target reading age. Changing a contract, prompt,
-context or provider selection changes the mock and its tests with it.
+The deterministic default for `npm run dev` and automated suites. Contract,
+prompt, context and provider changes update its tests too.
 
 ## Failures, logs and attribution
 

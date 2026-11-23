@@ -53,6 +53,7 @@ node -e '
             : "You take a slow look around. Nothing new catches your eye just yet.",
           revealed_clue_ids: [],
           input_understood: true,
+          ...(roleName.startsWith("graph_") ? { opened: [], answered: [], notebook: [] } : {}),
         })
       : "You take a slow look around. Nothing new catches your eye just yet.",
   );

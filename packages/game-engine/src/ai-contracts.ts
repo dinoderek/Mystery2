@@ -210,7 +210,7 @@ const ROLE_OUTPUT_SCHEMAS = {
   graph_ending: GraphVerdictOutputSchema,
 } satisfies Record<AIRoleName, z.ZodTypeAny>;
 
-function parseRoleOutput<S extends z.ZodTypeAny>(
+function parseWithSchema<S extends z.ZodTypeAny>(
   role: AIRoleName,
   schema: S,
   value: unknown,
@@ -221,6 +221,11 @@ function parseRoleOutput<S extends z.ZodTypeAny>(
     throw new Error(`Invalid AI ${role} output: ${reason}`);
   }
   return result.data;
+}
+
+/** Dispatch on the requested contract, never on fields in an untrusted answer. */
+export function parseRoleOutput(role: AIRoleName, value: unknown) {
+  return parseWithSchema(role, ROLE_OUTPUT_SCHEMAS[role], value);
 }
 
 /**
@@ -243,31 +248,31 @@ export function roleOutputJsonSchema(role: AIRoleName): Record<string, unknown> 
 }
 
 export function parseGraphTalkOutput(value: unknown): GraphTalkOutput {
-  return parseRoleOutput("graph_talk", GraphTalkOutputSchema, value);
+  return parseWithSchema("graph_talk", GraphTalkOutputSchema, value);
 }
 
 export function parseTalkEndOutput(value: unknown): TalkEndOutput {
-  return parseRoleOutput("talk_end", TalkEndOutputSchema, value);
+  return parseWithSchema("talk_end", TalkEndOutputSchema, value);
 }
 
 export function parseGraphSearchOutput(value: unknown): GraphSearchOutput {
-  return parseRoleOutput("graph_search", GraphSearchOutputSchema, value);
+  return parseWithSchema("graph_search", GraphSearchOutputSchema, value);
 }
 
 export function parseAccusationStartOutput(
   value: unknown,
 ): AccusationStartOutput {
-  return parseRoleOutput("accusation_start", AccusationStartOutputSchema, value);
+  return parseWithSchema("accusation_start", AccusationStartOutputSchema, value);
 }
 
 export function parseGraphAccusationOutput(value: unknown): GraphAccusationOutput {
-  return parseRoleOutput("graph_accusation", GraphAccusationOutputSchema, value);
+  return parseWithSchema("graph_accusation", GraphAccusationOutputSchema, value);
 }
 
 export function parseGraphAccusationRoundOutput(value: unknown): GraphVerdictOutput {
-  return parseRoleOutput("graph_accusation_round", GraphVerdictOutputSchema, value);
+  return parseWithSchema("graph_accusation_round", GraphVerdictOutputSchema, value);
 }
 
 export function parseGraphEndingOutput(value: unknown): GraphVerdictOutput {
-  return parseRoleOutput("graph_ending", GraphVerdictOutputSchema, value);
+  return parseWithSchema("graph_ending", GraphVerdictOutputSchema, value);
 }

@@ -1,6 +1,6 @@
 # Narrator grounding on unseen mysteries
 
-Status: planned. Checked against main `fc141da` on 2026-11-23.
+Status: measurement complete; policy pending. Checked against main `62b8e3e` on 2026-11-23.
 
 ## Objective
 
@@ -36,7 +36,7 @@ premature disclosures and omissions despite strong isolated scores.
 
 | Task | Depends on | Deliverable | Status |
 |---|---|---|---|
-| [N1: measurement](01-measurement.md) | Plan merged | Equivalent messages and validation, frozen experiment, original-policy baseline | Pending |
+| N1: measurement | Plan merged | Equivalent messages and validation, frozen experiment, original-policy baseline | Complete; 12 captured and operator-reviewed |
 | [N2: policy](02-policy.md) | N1 complete | Shared high-priority grounding policy, with sources | Pending |
 | [N3: acceptance](03-acceptance.md) | N2 complete | Blinded unseen-game comparison and deployment recommendation | Pending |
 
@@ -60,6 +60,9 @@ and obtain a fresh holdout.
 Candidate models are the current resolved Sonnet, Claude Opus 5.5 and GPT-6.2
 Astra, subject to availability. An unavailable candidate is reported rather
 than silently replaced. Record actual models, settings, commit and messages.
+
+The original-policy capture is complete. Future runs exclude OpenRouter and
+need new bindings and budget agreement. Reviews use Codex GPT-6.1 at Medium effort.
 
 ## Sources and owners
 

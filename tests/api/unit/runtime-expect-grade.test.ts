@@ -13,7 +13,7 @@ import { makeTurn } from "./runtime-turn-helpers.ts";
 
 function searchTurn(raw: Record<string, unknown>): StoredTurn {
   const turn = makeTurn({ action: { type: "search", search_query: "the pantry shelf" } });
-  return { ...turn, response: { ...turn.response, action: "search", raw: { narration: "You look.", ...raw } } };
+  return { ...turn, response: { ...turn.response, output_role: "graph_search", action: "search", raw: { narration: "You look.", ...raw } } };
 }
 
 /** A CLI narrator's talk reply: the gates it opened and the questions it answered. */
@@ -24,7 +24,7 @@ function askTurn(raw: Record<string, unknown>): StoredTurn {
 
 /** A talk turn as a server saved it, which is where a recorded use is read from. */
 function servedAsk(payload: Record<string, unknown>): StoredTurn {
-  const turn = makeTurn();
+  const turn = makeTurn({ narrator: "server" });
   return {
     ...turn,
     response: { ...turn.response, raw: { kind: "turn", events: [{ event_type: "ask", payload: { revealed_clue_ids: [], input_understood: true, ...payload } }] } },
@@ -107,6 +107,7 @@ describe("grading a talk turn", () => {
     const turn = askTurn({});
     const served = {
       ...turn,
+      narrator: "server",
       response: {
         ...turn.response,
         raw: { kind: "turn", events: [{ event_type: "ask", payload: { revealed_clue_ids: ["a"], used_clue_ids: ["gate"], input_understood: true } }] },
@@ -128,7 +129,7 @@ describe("grading a clue-graph reply", () => {
     const turn = makeTurn();
     return {
       ...turn,
-      response: { ...turn.response, narration_text: narration, raw: { narration, opened: [], answered: [], notebook: [], input_understood: true, ...reply } },
+      response: { ...turn.response, output_role: "graph_talk", narration_text: narration, raw: { narration, opened: [], answered: [], notebook: [], input_understood: true, ...reply } },
     };
   }
   const CAKE = { revealed_clue_ids: ["cake"], whole_fact: { cake: ["Mia", ["nine", "9:00"], "cake tent"] } };
@@ -174,6 +175,7 @@ describe("grading a clue-graph reply", () => {
     const turn = said("At nine he bought cake from Mia at the cake tent.", "");
     const served = {
       ...turn,
+      narrator: "server",
       response: {
         ...turn.response,
         raw: { kind: "turn", events: [{ payload: { revealed_clue_ids: ["cake"], clue_graph: { notebook: { cake: "Mia sold him cake at the cake tent at nine." } } } }] },
@@ -224,8 +226,9 @@ describe("grading a clue-graph accusation", () => {
   function accuseTurn(narration: string, decided: { verdict: string; reply_kind?: string }): StoredTurn {
     const turn = makeTurn({ action: { type: "accuse", player_reasoning: "It was Mia, she wrote on the rota." } });
     const { verdict, reply_kind } = decided;
-    const raw = { role: "graph_accusation_round", narration, report: {}, clue_graph_accusation: { accused: "mia", cited: [], verdict }, ...(reply_kind ? { reply_kind } : {}) };
-    return { ...turn, response: { ...turn.response, action: "accuse", narration_text: narration, raw } };
+    const outputRole = verdict === "not_yet" ? "graph_accusation_round" : "graph_ending";
+    const raw = { role: outputRole, narration, report: {}, clue_graph_accusation: { accused: "mia", cited: [], verdict }, ...(reply_kind ? { reply_kind } : {}) };
+    return { ...turn, response: { ...turn.response, output_role: outputRole, action: "accuse", narration_text: narration, raw } };
   }
   const FLAW: Expect = { verdict: "not_yet", reply_kind: "flaw", handed: [["ten to nine", "8:50"], "cake"] };
   const told = "Mr. Dobbs heard the crash at 8:50, and Mia was selling cake across town.";
@@ -264,14 +267,14 @@ describe("grading a clue-graph accusation", () => {
   it("reads the accusation a server saved on its event", () => {
     const turn = makeTurn({ action: { type: "accuse", player_reasoning: "Mia did it." } });
     const event = { event_type: "accuse_failed", payload: { role: "graph_accusation_round", clue_graph_accusation: { accused: "mia", cited: [], verdict: "not_yet" }, reply_kind: "flaw" } };
-    const played = { ...turn, response: { ...turn.response, action: "accuse", narration_text: told, raw: { kind: "turn", events: [event] } } };
+    const played = { ...turn, narrator: "server", response: { ...turn.response, action: "accuse", narration_text: told, raw: { kind: "turn", events: [event] } } };
     expect(graded(FLAW, played).status).toBe("pass");
   });
 
   it("cannot grade a turn that holds no decided accusation", () => {
     const turn = makeTurn({ action: { type: "accuse", player_reasoning: "Mia did it." } });
     const reported = { ...turn, response: { ...turn.response, action: "accuse", raw: { accused_character_id: "mia", cited_clue_ids: [] } } };
-    expect(graded(FLAW, reported)).toMatchObject({ status: "error", reason: expect.stringMatching(/no clue-graph accusation/) });
+    expect(graded(FLAW, reported)).toMatchObject({ status: "error", reason: expect.stringMatching(/cannot read/) });
   });
 });
 

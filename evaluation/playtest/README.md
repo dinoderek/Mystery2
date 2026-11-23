@@ -15,9 +15,10 @@ Only a clue-graph case ([`docs/clue-graph.md`](../../docs/clue-graph.md)) plays,
 ./dev eval report <run>
 ```
 
-Needs a logged-in `claude` CLI (narrator and investigator both use it), no API key. It builds the web app and starts it on a free port against a
-throwaway database, never touching yours. `--narrator mock` is for plumbing
-checks only. Open `<run>/report.html`, or read a game's `transcript.md`.
+By default narrator and investigator use a logged-in `claude` CLI.
+`--ai-profile <name>` instead seeds a named AI from `ai.json`, including
+OpenRouter; investigator and judge bindings remain independently configured.
+It builds on a free port against a throwaway database. `--narrator mock` checks plumbing. Open `<run>/report.html`, or read a game's `transcript.md`.
 
 The investigator is the `investigator` binding. Its wrapper,
 `evaluation/playtest/wrappers/claude-investigator.sh`, runs the CLI isolated from
@@ -41,8 +42,8 @@ played, 2 when a judge failed a game.
 - **No hidden memory.** Each call gets the whole view and history, so any step can
   be read back from `steps.jsonl`.
 
-A game stops when the case ends, the investigator quits or fails, three calls in a
-row fail, `--max-steps` runs out, or a replay runs out of script or diverges. Its folder is written
+A game stops when the case ends, the investigator quits or fails, three calls
+fail consecutively, `--max-steps` runs out, or a replay runs out of script or diverges. Its folder is written
 either way, with `stop_reason` in `summary.json`. Narrator calls are capped at 90s: a slow turn fails as a turn.
 
 ## A run folder
@@ -104,9 +105,9 @@ persistent refusal is retried twice by the binding, then the game stops with
 
 ## Cost
 
-Every turn is a narrator call and an investigator call, whose input grows with the
-story. `summary.json` reports both costs per game; check the first run's figure
-before playing many.
+Input grows each turn. CLI costs are in `summary.json`; OpenRouter narrator
+usage comes from the experiment's transport ledger, since its server summary
+lacks usage. Budget against that ledger.
 
 ## Tests
 

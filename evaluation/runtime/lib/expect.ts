@@ -34,7 +34,7 @@
 import { UsageError } from "../../core/errors.ts";
 import type { Verdict } from "../../core/result.ts";
 import { ACCUSATION_VERDICTS, REPLY_KINDS } from "../../../packages/game-engine/src/clue-graph/accusation.ts";
-import { parseGraphSearchOutput, parseGraphTalkOutput } from "../../../packages/game-engine/src/ai-contracts.ts";
+import { parseRoleOutput } from "../../../packages/game-engine/src/ai-contracts.ts";
 import type { Detail, Expect, JudgedDirection, TurnCase } from "./case.ts";
 import type { StoredTurn } from "./turn.ts";
 
@@ -195,9 +195,10 @@ function accusationSays(raw: unknown): Said {
 /** @throws Error when a CLI narrator's reply breaks the role's contract */
 export function outputSays(turn: StoredTurn): Said {
   const action = turn.action.type;
-  if (action === "accuse") return accusationSays(turn.response.raw);
-  const payload = savedPayload(turn.response.raw);
-  if (payload) {
+  if (turn.narrator === "server") {
+    if (action === "accuse") return accusationSays(turn.response.raw);
+    const payload = savedPayload(turn.response.raw);
+    if (!payload) throw new Error("the server capture holds no saved event");
     const single = payload.revealed_clue_id;
     return {
       revealed: action === "search" ? (typeof single === "string" && single ? [single] : []) : strings(payload.revealed_clue_ids),
@@ -206,14 +207,19 @@ export function outputSays(turn: StoredTurn): Said {
       lines: linesOf(asRecord(payload.clue_graph)?.notebook),
     };
   }
+  const role = turn.response.output_role;
+  if (!role) throw new Error("the capture does not name its requested output role");
+  const output = parseRoleOutput(role, turn.response.raw);
+  if (action === "accuse" && (role === "graph_accusation_round" || role === "graph_ending")) return accusationSays(turn.response.raw);
   // A reply carries a notebook line for each clue it brings out.
-  if (action === "search") {
-    const output = parseGraphSearchOutput(turn.response.raw);
+  if (role === "graph_search" && "revealed_clue_id" in output) {
     return { revealed: output.revealed_clue_id ? [output.revealed_clue_id] : [], used: [], understood: output.input_understood, lines: linesOf(output.notebook) };
   }
   // A talk reply lists the gates it opened and the questions it answered.
-  const output = parseGraphTalkOutput(turn.response.raw);
-  return { revealed: [...output.opened, ...output.answered], used: [], understood: output.input_understood, lines: linesOf(output.notebook) };
+  if (role === "graph_talk" && "opened" in output) {
+    return { revealed: [...output.opened, ...output.answered], used: [], understood: output.input_understood, lines: linesOf(output.notebook) };
+  }
+  throw new Error(`cannot grade ${action} with requested role ${role}`);
 }
 
 /** One detail a whole-fact case found missing, and where. */

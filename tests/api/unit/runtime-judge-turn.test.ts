@@ -132,7 +132,8 @@ describe("judge turn over a case set", () => {
     expect(code).toBe(1);
     const [dir] = subjectDirs(runDir);
     const result: Result = await readResult(path.join(dir, "result.json"));
-    expect(result.run_error).toMatchObject({ stage: "replay" });
+    expect(result.run_error).toMatchObject({ stage: "transport" });
+    expect(result.production?.calls[0].attempts[0].outcome).toBe("exit");
     expect(result.subject.path).toBeNull();
     expect(fs.existsSync(path.join(dir, "turn.json"))).toBe(false);
   });

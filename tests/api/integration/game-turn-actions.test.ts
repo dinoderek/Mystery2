@@ -83,7 +83,7 @@ describe("game-turn actions", () => {
       expect(forced!.sequence).toBeGreaterThan(moveEvent!.sequence);
       expect(forced?.payload?.trigger).toBe("timeout");
       expect(moveEvent?.narration_parts).toHaveLength(1);
-      expect(forced?.narration_parts).toHaveLength(1);
+      expect(forced?.narration_parts).toHaveLength(2); // the scene, then the rule
     });
   });
 
@@ -177,7 +177,7 @@ describe("game-turn actions", () => {
       expect(forced!.sequence).toBeGreaterThan(searchEvent!.sequence);
       expect(forced?.payload?.trigger).toBe("timeout");
       expect(searchEvent?.narration_parts).toHaveLength(1);
-      expect(forced?.narration_parts).toHaveLength(1);
+      expect(forced?.narration_parts).toHaveLength(2); // the scene, then the rule
     });
   });
 
@@ -236,7 +236,7 @@ describe("game-turn actions", () => {
       });
       expect(forced!.sequence).toBeGreaterThan(talkEvent!.sequence);
       expect(talkEvent?.narration_parts).toHaveLength(1);
-      expect(forced?.narration_parts).toHaveLength(1);
+      expect(forced?.narration_parts).toHaveLength(2); // the scene, then the rule
     });
 
     it("answers a question in the character's voice and spends no turn", async () => {

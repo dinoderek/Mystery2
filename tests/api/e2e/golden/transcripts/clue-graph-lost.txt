@@ -15,7 +15,7 @@ steps
 pages
   page 0 opening "The Smashed Prize Pumpkin — clue graph"
     step 0 | Narrator (narrator): "[Mock] Big Bertha, the prize pumpkin, was smashed overnight. A greenhouse window is broken. The greenhouse key has been missing for days. Mr. Dobbs saw Bertha whole on his 8pm rounds. Ms. Hale found Bertha smashed at 7:30. Toby and Mia are the club's two pupils. Mr. Thorne is the rival grower next door, and he is being blamed."
-    step 0 | Narrator (narrator): "Tip: type \"notebook\" (or \"n\") to open your case notebook. It holds what you know, who you have met, and every clue you have found. Type \"help\" to see what else you can do."
+    step 0 | Narrator (narrator): "Tip: type \"notebook\" (or \"n\") to open your case notebook. It holds what you know, who you have met, and every clue you have found. You have 3 accusations. Each one you try uses one up. Type \"accuse\" when you are ready, and \"back\" if you change your mind: that is free. Type \"help\" to see what else you can do."
   page 1 location "The Greenhouse"
     step 1 | Narrator (narrator): "[Mock] You arrive at The Greenhouse. The greenhouse air is warm and damp, and it smells of soil and squashed pumpkin. Big Bertha lies split open in her soil bed, under a toppled bench and broken pots. A smashed side window lets in a chilly breeze. Ms. Hale is here."
   page 2 conversation "Ms. Hale"
@@ -29,6 +29,7 @@ pages
   page 4 accusation "The accusation"
     step 5 | You (investigator): "accuse"
     step 5 | Narrator (narrator): "[Mock] The final accusation begins. Who did it, and how do you know?"
+    step 5 | System (system): "You have 3 accusations left. This one uses one. Type \"back\" to go back: that is free."
     step 6 | You (investigator): "It was Toby"
     step 6 | Narrator (narrator): "[Mock] Not proven yet. Your case needs a physical finding that links someone to what happened. Think about this: You have not talked to Mr. Dobbs yet. What could you check next?"
   page 5 accusation "The accusation"

@@ -168,6 +168,49 @@ describe("game-turn endpoint", () => {
     });
   });
 
+  describe("the accusation scene tells the rule", () => {
+    const partsOf = (answer: { events: Array<{ narration_parts: Array<{ text: string; speaker: { kind: string } }> }> }) =>
+      answer.events.flatMap((event) => event.narration_parts);
+
+    it("says how many accusations are left, that this uses one, and that back is free", async () => {
+      const gameId = (await startCase(MOCK_BLUEPRINT_ID)).game_id;
+
+      const scene = partsOf(await played(gameId, "accuse"));
+      expect(scene.at(-1)).toMatchObject({
+        text: 'You have 3 accusations left. This one uses one. Type "back" to go back: that is free.',
+        speaker: { kind: "system" },
+      });
+
+      await played(gameId, "back");
+      await played(gameId, "accuse Bob because he was in the living room");
+      const again = partsOf(await played(gameId, "accuse"));
+      expect(again.at(-1)?.text).toBe(
+        'You have 2 accusations left. This one uses one. Type "back" to go back: that is free.',
+      );
+    });
+
+    it("counts the last accusation in the singular", async () => {
+      const gameId = (await startCase(MOCK_BLUEPRINT_ID)).game_id;
+      await played(gameId, "accuse Bob because he was in the living room");
+      await played(gameId, "accuse Bob because he was in the living room");
+      const scene = partsOf(await played(gameId, "accuse"));
+      expect(scene.at(-1)?.text).toContain("You have 1 accusation left.");
+    });
+
+    it("does not offer back when the turns are out", async () => {
+      const gameId = (await startCase(MOCK_BLUEPRINT_ID)).game_id;
+      setStoredTimeRemaining(gameId, 1);
+
+      const forced = await played(gameId, "search");
+      const scene = forced.events.find((event) => event.event_type === "forced_endgame")!.narration_parts;
+      expect(scene.at(-1)).toMatchObject({
+        text: "You have 3 accusations left. This one uses one. Time is up, so there is no going back.",
+        speaker: { kind: "system" },
+      });
+      expect(scene.at(-1)?.text).not.toContain("back\"");
+    });
+  });
+
   it("forces the accusation when the last turn is spent", async () => {
     const gameId = await startGame();
     setStoredTimeRemaining(gameId, 1);

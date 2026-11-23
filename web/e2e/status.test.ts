@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { signInAsTestProfile } from './test-profile';
+import { confirmOpening, playedTurn, stubTurns } from './session-helpers';
 import {
   NARRATOR_SPEAKER as narratorSpeaker,
   EMPTY_CATALOG,
@@ -15,7 +16,7 @@ test.describe('US2 - Status Bar', () => {
         await page.route('**/api/game-sessions-list*', async route => {
             await route.fulfill({ json: EMPTY_CATALOG });
         });
-        await page.route('**/api/blueprints-list', async route => {
+        await page.route('**/api/blueprints-list*', async route => {
             await route.fulfill({ json: { blueprints: [createBlueprintSummary({ title: 'B1', one_liner: '1', target_age: 6 })] } });
         });
 
@@ -56,5 +57,71 @@ test.describe('US2 - Status Bar', () => {
         // Only characters in the current location should be shown.
         await expect(page.locator('text=Bob Smith')).toBeVisible();
         await expect(page.locator('text=Alice Brown')).toHaveCount(0);
+    });
+
+    test('shows accusations left in every mode, and one fewer after a failed accusation', async ({ page }) => {
+        await signInAsTestProfile(page);
+        await page.route('**/api/game-sessions-list*', async route => {
+            await route.fulfill({ json: EMPTY_CATALOG });
+        });
+        await page.route('**/api/blueprints-list*', async route => {
+            await route.fulfill({ json: { blueprints: [createBlueprintSummary({ title: 'B1', one_liner: '1', target_age: 6 })] } });
+        });
+        await page.route('**/api/game-start', async route => {
+            await route.fulfill({
+                json: createGameStartResponse({
+                    narration_events: [
+                        createNarrationEvent({
+                            narration_parts: [{ text: 'A case.', speaker: narratorSpeaker }],
+                        }),
+                    ],
+                }),
+            });
+        });
+        await stubTurns(page, ({ input }) => {
+            const where = { location: 'loc-kitchen', time_remaining: 9 };
+            if (input === 'talk to Bob') {
+                return playedTurn('talk', 'Bob nods.', { state: { ...where, mode: 'talk', current_talk_character: 'char-bob', accusations_left: 3 } });
+            }
+            if (input === 'bye') {
+                return playedTurn('end_talk', 'Bye.', { state: { ...where, mode: 'explore', accusations_left: 3 } });
+            }
+            if (input === 'accuse') {
+                return playedTurn('accuse_start', 'Who did it?', { state: { ...where, mode: 'accuse', accusations_left: 3 } });
+            }
+            return playedTurn('accuse_failed', 'Not quite.', { state: { ...where, mode: 'explore', accusations_left: 2 } });
+        });
+
+        await page.goto('/');
+        await expect(page.getByText('1. Start a new game')).toBeVisible();
+        await page.keyboard.press('1');
+        await expect(page.getByText('B1')).toBeVisible();
+        await page.keyboard.press('1');
+        await expect(page).toHaveURL(/.*\/session/);
+        await confirmOpening(page);
+
+        const input = page.locator('input[type="text"]');
+        const say = async (line: string) => {
+            await input.fill(line);
+            await input.press('Enter');
+        };
+
+        // Exploring, then talking, then back to exploring: still three.
+        await expect(page.locator('text=ACCUSATIONS: 3')).toBeVisible();
+        await say('talk to Bob');
+        await expect(page.getByText('Bob nods.')).toBeVisible();
+        await expect(page.locator('text=ACCUSATIONS: 3')).toBeVisible();
+        await say('bye');
+        await expect(page.getByText('Bye.')).toBeVisible();
+
+        // Accusing: still three until one is judged.
+        await say('accuse');
+        await expect(page.getByText('Who did it?')).toBeVisible();
+        await expect(page.locator('text=ACCUSATIONS: 3')).toBeVisible();
+
+        await say('Maybe Bob?');
+        await expect(page.getByText('Not quite.')).toBeVisible();
+        await expect(page.locator('text=ACCUSATIONS: 2')).toBeVisible();
+        await expect(page.locator('text=TIME: 9')).toBeVisible();
     });
 });

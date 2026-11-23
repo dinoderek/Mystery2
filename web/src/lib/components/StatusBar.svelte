@@ -1,5 +1,6 @@
 <script lang="ts">
   import { gameSessionStore } from "$lib/domain/store.svelte";
+  import { accusationsLeftText } from "$lib/domain/accusations";
 
   const currentLocationName = $derived.by(() => {
     const state = gameSessionStore.state;
@@ -34,6 +35,10 @@
       {gameSessionStore.state?.discovered_clues.length ?? 0}
     </button>
     <span><span class="text-t-muted/70 font-bold">TIME:</span> {gameSessionStore.state?.time_remaining || 0}</span>
+    <span title={accusationsLeftText(gameSessionStore.state?.accusations_left ?? 0)}
+      ><span class="text-t-muted/70 font-bold">ACCUSATIONS:</span>
+      {gameSessionStore.state?.accusations_left ?? 0}</span
+    >
   </div>
 </div>
 <div class="flex items-center border border-t-muted/30 p-2 bg-t-muted/5 mt-2 text-sm">

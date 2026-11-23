@@ -22,8 +22,6 @@ How they connect:
   (`evaluation/judges/README.md`).
 - **Playtest** produces sessions, not grades: an AI investigator plays the
   real server. `--judge` hands the games to trace.
-- **The truth set** holds subjects with known faults to score judges against
-  (`evaluation/truth/README.md`).
 
 Played-game readers skip `no_turn_line` events (`playedEvents`, `evaluation/lib/game-events.ts`).
 
@@ -111,7 +109,7 @@ an optional analyzer, and `idChecks`, the ids the answer may cite.
 
 ## Deliberately not done yet
 
-- Several blueprints per brief; suites sample a judge several times instead.
+- Several blueprints per brief.
 - Run history beyond the run directories.
 - Further dimensions (clue economy, red herrings, cover-ups, tone).
 - Measuring how long a case takes to solve in play.

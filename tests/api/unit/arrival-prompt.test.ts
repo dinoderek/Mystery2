@@ -8,7 +8,7 @@ import { buildNarrationPrompt } from "../../../packages/game-engine/src/role-req
 // The stored snow-foxes game: Howard and Barnaby (the culprit) wait on the
 // platform, entered at s2 and returned to at s25.
 const trace = JSON.parse(
-  fs.readFileSync("evaluation/truth/games/large-snow-foxes-kid-7/trace.json", "utf8"),
+  fs.readFileSync("tests/api/unit/fixtures/snow-foxes-trace.json", "utf8"),
 ) as { blueprint: V2BlueprintContext; events: ConversationFragment[] };
 
 function arrivalAt(sequence: number): string {

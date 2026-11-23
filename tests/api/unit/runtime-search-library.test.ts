@@ -184,7 +184,7 @@ describe("the library on the stub narrator", () => {
 });
 
 describe("searchCase", () => {
-  const glitterwood = "evaluation/truth/bases/glitterwood-forest/blueprint.json";
+  const glitterwood = "evaluation/runtime/fixtures/glitterwood-forest/blueprint.json";
 
   it("leaves a history that matches what the player holds, ending where they stand", () => {
     const c = searchCase({

@@ -285,7 +285,7 @@ export type OneJudgeInput = Pick<BlueprintJudgeInput, "brief" | "blueprint" | "l
 /**
  * One judge on a blueprint that passes Blueprint V2, by registry id, whether
  * or not the battery runs it, with no checks and no analyzer: the verdict a
- * harness that picks its own judges, such as `./dev eval suite`, needs.
+ * caller that picks its own judges needs.
  */
 export async function judgeOneDimension(id: string, input: OneJudgeInput): Promise<Verdict> {
   const entry = getJudgeEntry(id);

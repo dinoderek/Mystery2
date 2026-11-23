@@ -1,7 +1,7 @@
 /**
  * The root's `playwright` and the browser suite's `@playwright/test` move
- * together: the labelling page's keyboard test (`eval-label-keyboard.test.ts`)
- * launches the Chromium the browser suite installs, and each Playwright version
+ * together: root-level browser helpers launch the Chromium the browser suite
+ * installs, and each Playwright version
  * looks for its own build of it.
  */
 

@@ -7,7 +7,7 @@
 // being talked to or the people in the room differ, the input no longer means
 // what it meant (the character to talk to may not be here), so the replay
 // stops there and records what differed. A game that ends before its script
-// does has diverged too (the accusation was settled in fewer rounds). Found
+// does has diverged too (the case was settled in fewer accusations). Found
 // clues can differ without changing what an input means (a narrator reveals in
 // a different turn); the first such difference is recorded, and the replay
 // carries on.

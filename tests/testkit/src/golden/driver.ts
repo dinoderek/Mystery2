@@ -83,13 +83,13 @@ function readParts(payload: Record<string, unknown>): NarrationPart[] {
 }
 
 /**
- * An accusation made with its reasoning in one line is saved as its first
- * round, which on its own would continue the page already open. On screen it
+ * An accusation made with its reasoning in one line is saved as the judged
+ * accusation alone, which would continue the page already open. On screen it
  * opens the accusation, as `accuse` alone does.
  */
 function presentedType(eventType: string, playedIn: GameMode): string {
-  const isRound = eventType === "accuse_round" || eventType === "accuse_resolved";
-  return isRound && playedIn === "explore" ? "accuse_start" : eventType;
+  const isJudged = eventType === "accuse_failed" || eventType === "accuse_resolved";
+  return isJudged && playedIn === "explore" ? "accuse_start" : eventType;
 }
 
 function viewOutcome(answer: Extract<GameTurnResponse, { kind: "view" }>): LineOutcome {

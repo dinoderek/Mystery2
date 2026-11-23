@@ -15,8 +15,10 @@
 // attached best-effort (guarded per turn) and is the foundation for turning a
 // flagged turn into a replayable fixture later.
 
+import { ACCUSE_BACK, ACCUSE_FAILED, isLastAccusation } from "../../../packages/game-engine/src/accusations.ts";
 import {
   EVENT_ROLE,
+  LEGACY_ACCUSE_ROUND,
   offScriptClueIdsForEvent,
   playedEvents,
   notebookLinesForEvent,
@@ -111,8 +113,9 @@ interface ReconstructInput {
   history: ConversationFragment[];
   priorEvents: RawEvent[];
   forcedByTimeout: boolean;
-  round: number;
-  /** A clue-graph accusation round's saved decision. */
+  /** The accusation judged was the game's last. */
+  lastAccusation: boolean;
+  /** A clue-graph accusation's saved decision. */
   verdict: AccusationVerdict | null;
   cited: string[];
 }
@@ -141,7 +144,7 @@ function reconstructContext(roleName: string, ctx: ReconstructInput): AIContext 
     if (roleName === "search") {
       return buildGraphSearchAIContext({ ...common, location_id: locationId, search_query: ctx.searchQuery ?? null });
     }
-    // A round is worded from the engine's saved decision. One saved before the
+    // An accusation is worded from the engine's saved decision. One saved before the
     // engine decided was judged on the full blueprint, which is not rebuilt.
     if (roleName === "accusation_judge") {
       if (!ctx.verdict) return null;
@@ -213,7 +216,8 @@ function reconstructContext(roleName: string, ctx: ReconstructInput): AIContext 
       return buildAccusationJudgeContext({
         ...accuseCommon,
         player_input: playerInput ?? "",
-        round: ctx.round ?? 1,
+        last_accusation: ctx.lastAccusation,
+        forced_by_timeout: session.time_remaining === 0,
       });
     default:
       return null;
@@ -305,12 +309,12 @@ export function reconstructTrace(rawTrace: RawTrace): Reconstruction {
     const playerInput =
       readField(payload, "player_reasoning") ?? readField(payload, "player_input");
     const forcedByTimeout = event.event_type === "forced_endgame";
-    // Match the runtime: the judge round is the number of accuse_round events
-    // that already happened (0 on the first round); the resolving event is not
-    // counted (`turn/resolve-accuse.ts` in the engine).
-    const accusationRound = priorEvents.filter(
-      (e) => e.event_type === "accuse_round",
-    ).length;
+    // Match the runtime: the accusations spent before this one decide whether
+    // it is the last (`turn/resolve-accuse.ts` in the engine). A legacy round
+    // counts as a failed accusation.
+    const lastAccusation = isLastAccusation(
+      priorEvents.map((e) => (e.event_type === LEGACY_ACCUSE_ROUND ? { ...e, event_type: ACCUSE_FAILED } : e)),
+    );
 
     // Resolve the scope (location/character) for this turn from the pre-state,
     // falling back to payload hints.
@@ -339,7 +343,7 @@ export function reconstructTrace(rawTrace: RawTrace): Reconstruction {
           history: priorEvents.map(toFragment),
           priorEvents,
           forcedByTimeout,
-          round: accusationRound,
+          lastAccusation,
           verdict: (payload?.clue_graph_accusation as SavedAccusation | undefined)?.verdict ?? null,
           cited: (payload?.clue_graph_accusation as SavedAccusation | undefined)?.cited ?? [],
         });
@@ -391,8 +395,15 @@ export function reconstructTrace(rawTrace: RawTrace): Reconstruction {
         break;
       case "accuse_start":
       case "forced_endgame":
-      case "accuse_round":
+      case LEGACY_ACCUSE_ROUND:
         state.mode = "accuse";
+        break;
+      case ACCUSE_FAILED:
+        // A failed accusation returns to exploring, unless the turns are spent.
+        state.mode = state.time_remaining === 0 ? "accuse" : "explore";
+        break;
+      case ACCUSE_BACK:
+        state.mode = "explore";
         break;
       case "accuse_resolved":
         state.mode = "ended";

@@ -12,10 +12,10 @@ kinds.
 
 ## 1 `spoiler`
 
-Before the accusation, the narration gives away who, why or how; tells a hidden
-action as fact; does the player's reasoning or clears a suspect unearned; or
-confirms a guess. A clue's content, a character's lie or theory, and accusation
-turns are not.
+Before the closing scene, the narration gives away who, why or how; tells a
+hidden action as fact; does the player's reasoning or clears a suspect unearned;
+or confirms a guess, a failed accusation's reply included. A clue's content, a
+character's lie or theory, and the closing scene are not.
 
 > "The real stick is in Clementine's cape pocket."
 

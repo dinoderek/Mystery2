@@ -156,6 +156,8 @@ export const NotebookLeadSchema = z.object({
 export const TurnStateSchema = z.object({
   mode: ModeSchema,
   time_remaining: z.number().int().nonnegative(),
+  /** The accusations the game has left, derived from its events. */
+  accusations_left: z.number().int().nonnegative(),
   location: z.string().min(1),
   current_talk_character: z.string().nullable(),
 });
@@ -174,7 +176,7 @@ export const TurnPlayedResponseSchema = z.object({
   result: OutcomeSchema.nullable(),
 });
 
-export const RefusalReasonSchema = z.enum(["missing-target", "invalid-target", "unrecognized"]);
+export const RefusalReasonSchema = z.enum(["missing-target", "invalid-target", "unrecognized", "no-way-back"]);
 
 export const TurnRefusedResponseSchema = z.object({
   kind: z.literal("refused"),
@@ -253,6 +255,8 @@ export const GameStateSchema = z.object({
   // Clue-graph cases: what to do next.
   leads: z.array(NotebookLeadSchema).optional(),
   time_remaining: z.number().int().nonnegative(),
+  /** The accusations the game has left, derived from its events. */
+  accusations_left: z.number().int().nonnegative(),
   location: z.string(),
   mode: ModeSchema,
   current_talk_character: z.string().nullable(),

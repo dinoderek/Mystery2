@@ -115,7 +115,7 @@ Every row also receives `metadata.target_age` and `metadata.narration_style`.
 | Search | the search action (`search_bare`, `search_targeted`) | The location's `description` and unlocked `clues`; each unhidden sub-location's `name`, `hint` and unlocked clues | History at that location; the player's `search_query` | — |
 | Conversation | the talk, ask and end-talk actions (`talk_*`) | Location summaries; every character's public face; the active character's private fields — `background`, `clues`, `flavor_knowledge`, `actual_actions` (only steps safe to say), `agendas` (reactions and confession once earned), `tells`, alibi, motive, personality, attitude | History with that character, and their state; `player_known_clues` | `portrait_image_id` (start, ask) |
 | Accusation start | the accuse action (`accusation_start`), or a forced endgame | Location and timing; the public roster | All history, or none | — |
-| Accusation judge | the accuse action (`accusation_judge`) | The **full** blueprint, including `ground_truth`, `solution_paths`, `red_herrings`, `suspect_elimination_paths` | All history, or none; the reasoning; the round; `player_known_clues`, `path_coverage` | — |
+| Accusation judge | the accuse action (`accusation_judge`) | The **full** blueprint, including `ground_truth`, `solution_paths`, `red_herrings`, `suspect_elimination_paths` | All history, or none; the reasoning; `last_accusation`; `player_known_clues`, `path_coverage` | — |
 
 A character's **public face** is `first_name`, `last_name`, `sex`,
 `appearance`, and their `starting_knowledge` summary. Private

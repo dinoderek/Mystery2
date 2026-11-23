@@ -120,10 +120,10 @@ export function makeEvents(): TraceEventRow[] {
   ];
 }
 
-// A two-search-in-one-location trace plus a multi-round accusation, modeling the
-// real persisted payload shapes (cumulative search revealed_clue_ids; accusation
-// player_reasoning; round = count of prior accuse_round events). Used to guard
-// against the per-turn/cumulative and round/reasoning reconstruction bugs.
+// A two-search-in-one-location trace plus a failed accusation and a won one,
+// modeling the real persisted payload shapes (cumulative search
+// revealed_clue_ids; accusation player_reasoning). Used to guard against the
+// per-turn/cumulative and reasoning reconstruction bugs.
 export function makeMultiStepEvents(): TraceEventRow[] {
   return [
     { id: "m1", sequence: 1, event_type: "search", actor: "system", payload: { location_id: "loc_hall", revealed_clue_id: "clue_hall_1", revealed_clue_ids: ["clue_hall_1"] }, narration: "A muddy footprint.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:00:00Z" },
@@ -132,7 +132,7 @@ export function makeMultiStepEvents(): TraceEventRow[] {
     // clue_rug_1 here and must NOT flag clue_hall_1 as re-revealed.
     { id: "m2", sequence: 2, event_type: "search", actor: "system", payload: { location_id: "loc_hall", search_query: "under the rug", revealed_clue_id: "clue_rug_1", revealed_clue_ids: ["clue_hall_1", "clue_rug_1"] }, narration: "A torn cloakroom ticket under the rug.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:01:00Z" },
     { id: "m3", sequence: 3, event_type: "accuse_start", actor: "player", payload: { role: "accusation_start" }, narration: "Name the culprit.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:02:00Z" },
-    { id: "m4", sequence: 4, event_type: "accuse_round", actor: "system", payload: { role: "accusation_judge", player_reasoning: "I think it was Mara.", judge_result: "continue" }, narration: "Are you sure? What about her alibi?", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:03:00Z" },
+    { id: "m4", sequence: 4, event_type: "accuse_failed", actor: "system", payload: { role: "accusation_judge", player_reasoning: "I think it was Mara.", judge_result: "continue", reply_kind: null }, narration: "Are you sure? What about her alibi?", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:03:00Z" },
     { id: "m5", sequence: 5, event_type: "accuse_resolved", actor: "system", payload: { role: "accusation_judge", player_reasoning: "No — it was Dorn, his glove was by the case.", judge_result: "win" }, narration: "Correct.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:04:00Z" },
   ];
 }

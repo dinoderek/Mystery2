@@ -138,12 +138,29 @@ describe("reconstructTrace — accusation fidelity", () => {
     expect(turnBySeq(turns, 5).player_input).toBe("No — it was Dorn, his glove was by the case.");
   });
 
-  it("numbers judge rounds like the runtime: prior accuse_round count, resolver not self-counted", () => {
-    type JudgeCtx = { accusation_judge_context?: { round?: number } | null };
-    const round4 = (turnBySeq(turns, 4).reconstructed_context as JudgeCtx)?.accusation_judge_context?.round;
-    const round5 = (turnBySeq(turns, 5).reconstructed_context as JudgeCtx)?.accusation_judge_context?.round;
-    expect(round4).toBe(0); // first round: no prior accuse_round events
-    expect(round5).toBe(1); // resolver: exactly one prior accuse_round
+  type JudgeCtx = { accusation_judge_context?: { last_accusation?: boolean } | null };
+  const lastOf = (found: typeof turns, sequence: number) =>
+    (turnBySeq(found, sequence).reconstructed_context as JudgeCtx)?.accusation_judge_context?.last_accusation;
+
+  it("tells the judge whether an accusation is the last, like the runtime: from the failures before it", () => {
+    expect(lastOf(turns, 4)).toBe(false);
+    expect(lastOf(turns, 5)).toBe(false); // one failure before it: two left
+    const [start, ...rest] = makeMultiStepEvents().slice(2);
+    const failed = rest[0];
+    const third = reconstructTrace(
+      makeRawTrace({ events: [start, failed, { ...failed, id: "m5", sequence: 5 }, { ...rest[1], id: "m6", sequence: 6 }] }),
+    ).turns;
+    expect(lastOf(third, 6)).toBe(true);
+    // A game recorded with rounds counts each as a failed accusation.
+    const legacy = { ...failed, event_type: "accuse_round" };
+    const rounds = reconstructTrace(
+      makeRawTrace({ events: [start, legacy, { ...legacy, id: "m5", sequence: 5 }, { ...rest[1], id: "m6", sequence: 6 }] }),
+    ).turns;
+    expect(lastOf(rounds, 6)).toBe(true);
+  });
+
+  it("folds a failed accusation back to exploring", () => {
+    expect(turnBySeq(turns, 5).pre_state).toMatchObject({ mode: "explore" });
   });
 });
 

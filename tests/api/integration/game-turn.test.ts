@@ -1,6 +1,13 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { GameTurnResponseSchema, NO_TURN_EVENT_TYPE, SessionTranscriptResponseSchema, type GameTurnResponse } from "@my2/shared";
+import {
+  clueGraphCaseId,
+  GameStartResponseSchema,
+  GameTurnResponseSchema,
+  NO_TURN_EVENT_TYPE,
+  SessionTranscriptResponseSchema,
+  type GameTurnResponse,
+} from "@my2/shared";
 import {
   API_URL,
   MOCK_BLUEPRINT_ID,
@@ -21,14 +28,18 @@ describe("game-turn endpoint", () => {
     auth = await setupApiTestAuth("game-turn");
   });
 
-  async function startGame(): Promise<string> {
+  async function startCase(blueprintId: string) {
     const res = await fetch(`${API_URL}/game-start`, {
       method: "POST",
       headers: auth.headers,
-      body: JSON.stringify({ blueprint_id: MOCK_BLUEPRINT_ID }),
+      body: JSON.stringify({ blueprint_id: blueprintId }),
     });
     expect(res.status).toBe(200);
-    return (await res.json()).game_id as string;
+    return GameStartResponseSchema.parse(await res.json());
+  }
+
+  async function startGame(): Promise<string> {
+    return (await startCase(MOCK_BLUEPRINT_ID)).game_id;
   }
 
   function send(body: unknown): Promise<Response> {
@@ -76,9 +87,9 @@ describe("game-turn endpoint", () => {
     expect(accuse.events[0].event_type).toBe("accuse_start");
     expect(accuse.state.mode).toBe("accuse");
 
-    const round = await played(gameId, "Maybe it was Bob?");
-    expect(round.events[0].event_type).toBe("accuse_round");
-    expect(round.result).toBeNull();
+    const failed = await played(gameId, "Maybe it was Bob?");
+    expect(failed.events[0].event_type).toBe("accuse_failed");
+    expect(failed.result).toBeNull();
 
     const stored = readStoredEvents(gameId);
     expect(stored.map((event) => event.event_type)).toEqual([
@@ -89,7 +100,7 @@ describe("game-turn endpoint", () => {
       "ask",
       "end_talk",
       "accuse_start",
-      "accuse_round",
+      "accuse_failed",
     ]);
     expect(stored.slice(1).map((event) => event.payload?.input)).toEqual([
       "go to the Living Room",
@@ -100,7 +111,59 @@ describe("game-turn endpoint", () => {
       "accuse",
       "Maybe it was Bob?",
     ]);
-    expect(readStoredSession(gameId)).toMatchObject({ mode: "accuse", time_remaining: 7 });
+    expect(readStoredSession(gameId)).toMatchObject({ mode: "explore", time_remaining: 7 });
+  });
+
+  describe("three accusations", () => {
+    it("starts with three, spends none on back, one on a failure, and keeps the count on resume", async () => {
+      const started = await startCase(MOCK_BLUEPRINT_ID);
+      const gameId = started.game_id;
+      expect(started.state.accusations_left).toBe(3);
+
+      await played(gameId, "accuse");
+      const back = await played(gameId, "back");
+      expect(back.state).toMatchObject({ mode: "explore", time_remaining: 10, accusations_left: 3 });
+
+      const failed = await played(gameId, "accuse Bob because he was in the living room");
+      expect(failed.state).toMatchObject({ mode: "explore", time_remaining: 10, accusations_left: 2 });
+      expect((await getGame(gameId)).state).toMatchObject({ mode: "explore", accusations_left: 2 });
+
+      expect(readStoredEvents(gameId).map((event) => [event.event_type, event.payload?.judge_result ?? null])).toEqual([
+        ["start", null],
+        ["accuse_start", null],
+        ["accuse_back", null],
+        ["accuse_failed", "continue"],
+      ]);
+      expect(readStoredEvents(gameId).at(-1)?.payload).toMatchObject({
+        player_reasoning: "Bob because he was in the living room",
+        reply_kind: null,
+      });
+      expect(readStoredSession(gameId)).toMatchObject({ mode: "explore", outcome: null });
+    });
+
+    it("plays the same flow on an MSF case", async () => {
+      const { game_id: gameId, state } = await startCase("46e4e135-82fe-4389-af0b-80aa749867a1");
+      expect(state.accusations_left).toBe(3);
+      const failed = await played(gameId, "accuse Roz");
+      expect(failed.events[0].event_type).toBe("accuse_failed");
+      expect(failed.state).toMatchObject({ mode: "explore", accusations_left: 2 });
+      expect((await getGame(gameId)).state.accusations_left).toBe(2);
+    });
+
+    it("plays the same flow on a clue-graph case, a right name without support failing like any other", async () => {
+      const { game_id: gameId, state } = await startCase(clueGraphCaseId("greenhouse-prizewinner"));
+      expect(state.accusations_left).toBe(3);
+      await played(gameId, "accuse");
+      expect((await played(gameId, "never mind")).state).toMatchObject({ mode: "explore", accusations_left: 3 });
+
+      const failed = await played(gameId, "accuse Toby");
+      expect(failed.events[0]).toMatchObject({
+        event_type: "accuse_failed",
+        payload: { judge_result: "continue", reply_kind: null, clue_graph_accusation: { accused: "toby", verdict: "not_yet" } },
+      });
+      expect(failed.state).toMatchObject({ mode: "explore", accusations_left: 2 });
+      expect((await getGame(gameId)).state).toMatchObject({ mode: "explore", accusations_left: 2 });
+    });
   });
 
   it("forces the accusation when the last turn is spent", async () => {

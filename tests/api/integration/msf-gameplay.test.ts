@@ -86,7 +86,6 @@ describe("selectable paired MSF case", () => {
     expect(JSON.stringify(resumed)).not.toMatch(
       /msf_snapshot|knows_fact_ids|supported_rule_ids/,
     );
-    await sendLine(owner, gameId, "Roz took the lens");
     const won = GameTurnResponseSchema.parse(
       await (await sendLine(owner, gameId, "Roz took the lens")).json(),
     );

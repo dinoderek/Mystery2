@@ -2,11 +2,11 @@
 
 > **CURATED EXTRACT — do not edit casually.**
 > Pinned sources:
-> - `docs/ai-runtime.md#narration-style` — `2e356412cff2cc6a8d8224a6a60f8d061b736c58`
+> - `docs/ai-runtime.md#narration-style` — `e26a73642194fe803fd30258c263b1fac94d39ce`
 > - `docs/ai-runtime.md#context-boundaries` — `8dd0e325f0a079c7c445e5de59cd3fac8c4c8d56`
 > - `docs/ai-runtime.md#clue-gating` — `e455a996689e5ecb40e6b9e6c71166747576bbe6`
 > - `docs/ai-runtime.md#game-enter` — `392824f2abc6087819c855b65f2031c3b6d46a46`
-> - `docs/blueprint-generation-flows.md#gameplay-narration` — `8117b3394386cc4cc73a8dd80e8a075a7c9ad952`
+> - `docs/blueprint-generation-flows.md#gameplay-narration` — `704783421c103d71fced07405c8b2a50be487b71`
 > - `docs/blueprint-generation-flows.md#generator-prompt` — `ff596125947e94ebe0c3064db368d1712cd2296b`
 > - `docs/blueprint-generation-flows.md#image-generation` — `23d25531394bf81c9861bfb93189828ef5c1eee0`
 > Verifier: `npm run check:curated-docs`

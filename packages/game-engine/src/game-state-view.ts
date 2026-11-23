@@ -6,7 +6,7 @@ import type { GameState } from "../../shared/src/mystery-api-contracts.ts";
 
 export type GameStanding = Pick<
   GameState,
-  "discovered_clues" | "leads" | "time_remaining" | "location" | "mode" | "current_talk_character"
+  "discovered_clues" | "leads" | "time_remaining" | "accusations_left" | "location" | "mode" | "current_talk_character"
 >;
 
 export function buildGameState(blueprint: Pick<BlueprintV2, "metadata" | "narrative" | "world">, standing: GameStanding): GameState {

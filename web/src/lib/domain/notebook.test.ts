@@ -40,6 +40,7 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     discovered_clues: [],
     leads: [],
     time_remaining: 10,
+    accusations_left: 3,
     location: 'Kitchen',
     mode: 'explore',
     current_talk_character: null,

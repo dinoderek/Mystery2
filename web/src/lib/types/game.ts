@@ -61,6 +61,7 @@ export interface GameState {
   discovered_clues: DiscoveredClue[];
   leads: NotebookLead[];
   time_remaining: number;
+  accusations_left: number;
   location: string;
   mode: 'explore' | 'talk' | 'accuse' | 'ended';
   current_talk_character: string | null;

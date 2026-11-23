@@ -183,7 +183,7 @@ describe('buildSessionPages', () => {
     const events = [
       ...opening(),
       event('accuse_start', [{ text: 'Name your suspect.' }]),
-      event('accuse_round', [{ text: 'Go on.' }]),
+      event('accuse_failed', [{ text: 'Not yet.' }]),
     ];
 
     const pages = buildSessionPages(events);
@@ -192,6 +192,26 @@ describe('buildSessionPages', () => {
     expect(pages[2].fallbackLabel).toBe('The accusation');
     // No image of its own, so the scene pane keeps showing where the player is.
     expect(pages[2].imageId).toBe('kitchen.png');
+  });
+
+  it('keeps a failed accusation on its page, and opens a new one for exploring after it', () => {
+    const pages = buildSessionPages([
+      ...opening(),
+      event('accuse_start', [{ text: 'Name your suspect.' }]),
+      event('accuse_failed', [{ text: 'Not yet.' }]),
+      event('input', [{ text: 'search' }]),
+      event('search', [{ text: 'You find a crumb.' }]),
+      event('accuse_start', [{ text: 'Who, then?' }]),
+      event('accuse_back', [{ text: 'You put it aside.' }]),
+      event('search', [{ text: 'Nothing new.' }]),
+    ]);
+
+    expect(pages.slice(2).map((page) => [page.kind, page.events.map((e) => e.event_type)])).toEqual([
+      ['accusation', ['accuse_start', 'accuse_failed']],
+      ['location', ['input', 'search']],
+      ['accusation', ['accuse_start', 'accuse_back']],
+      ['location', ['search']],
+    ]);
   });
 
   it('adopts the first image an event contributes to an already-open page', () => {

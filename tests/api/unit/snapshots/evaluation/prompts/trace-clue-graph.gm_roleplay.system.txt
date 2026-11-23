@@ -47,8 +47,8 @@ Each turn carries:
   bypass of a clue's `requires` gate (a "brilliance override").
 - `prior_revealed_clue_ids` — every clue id established before this turn. Treat
   this as the authoritative record of what the player already knows.
-- `is_accusation_phase` — true once the endgame begins, where the solution is
-  legitimately discussed.
+- `is_accusation_phase` — true only for the closing scene, where the solution is
+  legitimately told. A failed accusation's reply is not the closing scene.
 
 ## How to judge
 

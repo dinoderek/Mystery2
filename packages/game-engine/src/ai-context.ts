@@ -16,6 +16,7 @@ import { buildCharacterState, FALLBACK_VISITS, gateClueIds, isAgendaFullyEarned,
 import { type ClueRef, type ClueWorld, mapClueIdsToClues } from "./clues.ts";
 import { namedHiddenSpot } from "./search-target.ts";
 import type { ClueGraphCase } from "../../shared/src/clue-graph-schema.ts";
+import { ACCUSE_FAILED } from "./accusations.ts";
 import { playOf } from "./clue-graph/history.ts";
 import { lineOf, supportedConclusions } from "./clue-graph/play.ts";
 import {
@@ -361,7 +362,8 @@ export interface ClueGraphProgress {
 
 export interface AccusationJudgeContext {
   msf_progress?: ReturnType<typeof evaluateMysteryStructure>;
-  round: number;
+  /** This accusation is the game's last: one that fails ends the case. */
+  last_accusation: boolean;
   full_blueprint: BlueprintContext;
   // Every clue discovered this session, in discovery order. The only thing
   // separating what exists in the blueprint from what the player holds.
@@ -392,7 +394,7 @@ export type AIContext = {
   // Present only for a clue-graph case's talk and search (`clue-graph/`).
   graph_talk_context?: GraphTalkContext;
   graph_search_context?: GraphSearchContext;
-  // Present only for a clue-graph accusation round (`clue-graph/accusation.ts`).
+  // Present only for a clue-graph accusation (`clue-graph/accusation.ts`).
   graph_accusation_context?: GraphAccusationContext | GraphVerdictContext;
 };
 
@@ -829,7 +831,7 @@ export function selectLocationConversationHistory(
   );
 }
 
-const ACCUSATION_HISTORY = new Set(["accuse_start", "forced_endgame", "accuse_round"]);
+const ACCUSATION_HISTORY = new Set(["accuse_start", "forced_endgame", ACCUSE_FAILED]);
 
 function selectConversationHistoryForRole(
   input: BuildContextInput,
@@ -1194,7 +1196,8 @@ export function buildAccusationJudgeContext(input: {
   session: SessionSnapshot;
   blueprint: BlueprintContext;
   player_input: string;
-  round: number;
+  last_accusation: boolean;
+  forced_by_timeout?: boolean;
   conversation_history?: ConversationFragment[];
   history_mode?: "all" | "none";
 }): AIContext {
@@ -1205,12 +1208,13 @@ export function buildAccusationJudgeContext(input: {
     game_id: input.game_id,
     role_name: "accusation_judge",
     session: input.session,
+    forced_by_timeout: input.forced_by_timeout ?? false,
     blueprint: input.blueprint,
     player_input: input.player_input,
     conversation_history: input.conversation_history,
     accusation_history_mode: input.history_mode ?? "all",
     accusation_judge_context: {
-      round: input.round,
+      last_accusation: input.last_accusation,
       full_blueprint: input.blueprint,
       // A clue-graph clue reads as its saved notebook line.
       player_known_clues: buildKnownCluesWithOrigin(withSavedLines(input.blueprint, input.conversation_history ?? []), discovered),
@@ -1232,15 +1236,7 @@ export function clueGraphProgress(graph: ClueGraphCase, history: ConversationFra
   };
 }
 
-/** What the investigator said in this accusation's earlier rounds, in order. */
-function earlierReasoning(history: ConversationFragment[]): string[] {
-  return history.flatMap((entry) => {
-    const said = entry.event_type === "accuse_round" ? entry.payload?.player_reasoning : undefined;
-    return typeof said === "string" ? [said] : [];
-  });
-}
-
-/** A clue-graph accusation round as the narrator reads it: who was named, and what was cited. */
+/** A clue-graph accusation as the narrator reads it: who was named, and what was cited. */
 export function buildGraphAccusationAIContext(input: {
   game_id: string;
   session: SessionSnapshot;
@@ -1257,12 +1253,12 @@ export function buildGraphAccusationAIContext(input: {
     blueprint: input.blueprint,
     player_input: input.player_input,
     conversation_history: history,
-    graph_accusation_context: { ...accusationContext(graph, playOf(graph, history)), earlier_reasoning: earlierReasoning(history) },
+    graph_accusation_context: accusationContext(graph, playOf(graph, history)),
   });
 }
 
 /**
- * The narration of what the engine decided: a round before the case is
+ * The narration of what the engine decided: a failed accusation before the case is
  * resolved, given only what the investigator holds, or the closing scene,
  * given the whole truth.
  */
@@ -1272,7 +1268,7 @@ export function buildGraphVerdictAIContext(input: {
   blueprint: BlueprintContext;
   player_input: string;
   verdict: AccusationVerdict;
-  /** The held clues the judge found cited this round. */
+  /** The held clues the judge found cited in this accusation. */
   cited?: string[];
   conversation_history?: ConversationFragment[];
 }): AIContext {
@@ -1286,10 +1282,7 @@ export function buildGraphVerdictAIContext(input: {
     blueprint: input.blueprint,
     player_input: input.player_input,
     conversation_history: history,
-    graph_accusation_context: {
-      ...verdictContext(graph, playOf(graph, history), input.verdict, input.cited ?? []),
-      earlier_reasoning: earlierReasoning(history),
-    },
+    graph_accusation_context: verdictContext(graph, playOf(graph, history), input.verdict, input.cited ?? []),
   });
 }
 

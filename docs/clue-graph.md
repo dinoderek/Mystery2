@@ -134,11 +134,10 @@ and every turn play, without the story checks. Each turn that counts saves its e
 The engine decides; the narrator (`graph_accusation`) only says who was named
 and which held clues they cited. Naming the culprit wins with the confession
 held (their gated true statements the culprit conclusion names), or with that
-conclusion holding on clues not taken back, one cited. A first right name
-short of that earns one question, even at the limit; else V2's rounds: lost
-from the third.
+conclusion holding on clues not taken back, one cited. Anything else, a right
+name included, spends one of the three accusations; the third failure loses.
 
-Until then a round (`graph_accusation_round`) gets only the people, the
+Until then a failure (`graph_accusation_round`) gets only the people, the
 notebook and, unless support is held, a lead off the confession's route,
 never whether the name was right. The closing scene (`graph_ending`), win or
 lose, tells `truth.timeline`, the culprit conclusion and `truth.motive`.

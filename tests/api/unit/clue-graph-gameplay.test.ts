@@ -542,7 +542,8 @@ describe("clue-graph sessions and turns", () => {
       role: "graph_accusation_round",
       player_reasoning: "It was Toby: the welly prints",
       judge_result: "continue",
-      clue_graph_accusation: { accused: "toby", cited: [], verdict: "question" },
+      clue_graph_accusation: { accused: "toby", cited: [], verdict: "not_yet" },
+      reply_kind: null,
     });
   });
 

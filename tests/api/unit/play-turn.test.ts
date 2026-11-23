@@ -182,7 +182,13 @@ describe("playTurn, for each action", () => {
   it("moves: a turn spent, the place changed, the line stored as typed", async () => {
     const answer = await playAction("  go to the Living Room  ");
 
-    expect(answer.state).toEqual({ mode: "explore", time_remaining: 9, location: "loc-living-room", current_talk_character: null });
+    expect(answer.state).toEqual({
+      mode: "explore",
+      time_remaining: 9,
+      accusations_left: 3,
+      location: "loc-living-room",
+      current_talk_character: null,
+    });
     expect(answer.events).toHaveLength(1);
     expect(answer.events[0]).toMatchObject({
       sequence: 2,
@@ -218,20 +224,99 @@ describe("playTurn, for each action", () => {
     expect(bye.events[0]).toMatchObject({ event_type: "end_talk", payload: { input: "bye" } });
   });
 
-  it("accuses: the scene, a round that goes on, and a verdict", async () => {
+  it("accuses: the scene, back for nothing, a failure that spends one and returns to exploring, then a win", async () => {
     const start = await playAction("accuse");
     expect(start.events[0].event_type).toBe("accuse_start");
-    expect(start.state.mode).toBe("accuse");
+    expect(start.state).toMatchObject({ mode: "accuse", accusations_left: 3 });
 
-    const round = await playAction("Maybe it was Bob?");
-    expect(round.events[0]).toMatchObject({ event_type: "accuse_round", payload: { player_reasoning: "Maybe it was Bob?" } });
-    expect(round.result).toBeNull();
+    const back = await playAction("back");
+    expect(back.events[0]).toMatchObject({ event_type: "accuse_back", payload: { input: "back" } });
+    expect(back.state).toMatchObject({ mode: "explore", time_remaining: 10, accusations_left: 3 });
 
-    const verdict = await playAction("I think it was Alice, because of the empty cookie jar.");
-    expect(verdict.events[0].event_type).toBe("accuse_resolved");
-    expect(verdict.result).not.toBeNull();
-    expect(verdict.state.mode).toBe("ended");
-    expect((await ctx.sessions.getById(gameId))?.outcome).toBe(verdict.result);
+    await playAction("accuse");
+    const failed = await playAction("Maybe it was Bob?");
+    expect(failed.events[0]).toMatchObject({
+      event_type: "accuse_failed",
+      payload: { player_reasoning: "Maybe it was Bob?", judge_result: "continue", reply_kind: null },
+    });
+    expect(failed.result).toBeNull();
+    expect(failed.state).toMatchObject({ mode: "explore", time_remaining: 10, accusations_left: 2 });
+
+    const searched = await playAction("search");
+    expect(searched.state).toMatchObject({ mode: "explore", accusations_left: 2 });
+
+    const verdict = await playAction("accuse Alice, because of the empty cookie jar.");
+    expect(verdict.events[0]).toMatchObject({ event_type: "accuse_resolved", payload: { judge_result: "win" } });
+    expect(verdict.result).toBe("win");
+    expect(verdict.state).toMatchObject({ mode: "ended", accusations_left: 2 });
+    expect((await ctx.sessions.getById(gameId))?.outcome).toBe("win");
+  });
+
+  it("ends the case lost on the third failure, each accusation judged once", async () => {
+    const first = await playAction("accuse Bob because he was here");
+    expect(first.events.map((event) => event.event_type)).toEqual(["accuse_failed"]);
+    expect(first.state).toMatchObject({ mode: "explore", accusations_left: 2 });
+    expect((await playAction("accuse Bob, again")).state).toMatchObject({ mode: "explore", accusations_left: 1 });
+
+    const last = await playAction("accuse Bob for the last time");
+    expect(last.events[0]).toMatchObject({ event_type: "accuse_resolved", payload: { judge_result: "lose" } });
+    expect(last.result).toBe("lose");
+    expect(last.state).toMatchObject({ mode: "ended", accusations_left: 0 });
+    expect(storedEvents().map((event) => event.event_type)).toEqual(["start", "accuse_failed", "accuse_failed", "accuse_resolved"]);
+  });
+
+  it("out of turns, refuses the way back and asks again after each failure", async () => {
+    await ctx.sessions.update(gameId, { mode: "accuse", time_remaining: 0 });
+    const judged: Array<Record<string, unknown>> = [];
+    const watching = (profile: EngineAIProfile): AIProvider => {
+      const inner = createAIProviderFromProfile(profile, { openrouterApiKey: null });
+      return {
+        profile: inner.profile,
+        get resolvedModel() {
+          return inner.resolvedModel;
+        },
+        generateNarration: (prompt, metadata) => inner.generateNarration(prompt, metadata),
+        generateRoleOutput: (request) => {
+          if (request.role === "accusation_judge") judged.push(request.context);
+          return inner.generateRoleOutput(request);
+        },
+      };
+    };
+
+    expect(await play("back")).toMatchObject({ kind: "refused", reason: "no-way-back" });
+    const failed = await playAction("It was Bob", { createProvider: watching });
+    // The judge is told there is no more looking, and that this is not yet the last accusation.
+    expect(judged[0]).toMatchObject({ forced_by_timeout: true, accusation_judge_context: { last_accusation: false } });
+    expect(failed.events[0].event_type).toBe("accuse_failed");
+    expect(failed.state).toMatchObject({ mode: "accuse", time_remaining: 0, accusations_left: 2 });
+    expect(await play("never mind")).toMatchObject({ kind: "refused", reason: "no-way-back" });
+    expect((await playAction("It was Bob, truly")).state).toMatchObject({ mode: "accuse", accusations_left: 1 });
+    expect((await playAction("Bob!", { createProvider: watching })).result).toBe("lose");
+    expect(judged[1]).toMatchObject({ forced_by_timeout: true, accusation_judge_context: { last_accusation: true } });
+  });
+
+  it("retries a judge that answers outside what this accusation allows", async () => {
+    const judging = (resolution: string) => (profile: EngineAIProfile): AIProvider => {
+      const inner = createAIProviderFromProfile(profile, { openrouterApiKey: null });
+      return {
+        profile: inner.profile,
+        get resolvedModel() {
+          return inner.resolvedModel;
+        },
+        generateNarration: (prompt, metadata) => inner.generateNarration(prompt, metadata),
+        generateRoleOutput: (request) =>
+          request.role === "accusation_judge"
+            ? Promise.resolve(request.parse({ narration: "Hmm.", accusation_resolution: resolution }))
+            : inner.generateRoleOutput(request),
+      };
+    };
+
+    // A loss before the last accusation, and a question on the last one, are the wrong scene.
+    await expect(play("accuse Bob", { createProvider: judging("lose") })).rejects.toBeInstanceOf(RetriableAIError);
+    await playAction("accuse Bob");
+    await playAction("accuse Bob");
+    await expect(play("accuse Bob", { createProvider: judging("continue") })).rejects.toBeInstanceOf(RetriableAIError);
+    expect(storedEvents().map((event) => event.event_type)).toEqual(["start", "accuse_failed", "accuse_failed"]);
   });
 
   it("forces the accusation when the last turn is spent, in the same save", async () => {

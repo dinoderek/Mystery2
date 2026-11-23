@@ -31,8 +31,8 @@ const INPUTS = [
 	'Where were you last night?',
 	'bye',
 	'accuse',
-	'Alice did it, the crumbs lead to her.',
-	'Alice took the cookies: the crumbs and the empty jar both point to her.'
+	'Bob did it, he was in the living room.',
+	'accuse Alice took the cookies: the crumbs and the empty jar both point to her.'
 ];
 
 let scratch: string | null = null;

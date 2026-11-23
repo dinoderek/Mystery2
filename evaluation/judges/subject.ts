@@ -26,7 +26,7 @@
 // flag a single-interaction judge would blame the model for its fixture.
 
 import {
-  ACCUSATION_EVENT_TYPES,
+  CLOSING_SCENE_EVENT_TYPES,
   EVENT_ROLE,
   type GameEventLike,
   offScriptClueIdsForEvent,
@@ -154,7 +154,7 @@ export function projectTraceSubject(reconstructedTurns: readonly TraceTurnLike[]
       ...recordedUseField(t.recorded_use ?? null),
       ...notebookField(t.notebook ?? null),
       narration: t.narration,
-      is_accusation_phase: ACCUSATION_EVENT_TYPES.has(t.event_type),
+      is_accusation_phase: CLOSING_SCENE_EVENT_TYPES.has(t.event_type),
     }));
   return finalizeSubject("trace", turns);
 }
@@ -241,7 +241,7 @@ function historyTurns(history: readonly GameEventLike[] | undefined): TurnBefore
     revealed_off_script: offScriptClueIdsForEvent(event),
     ...notebookField(notebookLinesForEvent(event)),
     narration: event.narration ?? "",
-    is_accusation_phase: ACCUSATION_EVENT_TYPES.has(event.event_type),
+    is_accusation_phase: CLOSING_SCENE_EVENT_TYPES.has(event.event_type),
   }));
 }
 

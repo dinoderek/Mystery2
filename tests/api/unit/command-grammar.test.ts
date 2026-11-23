@@ -11,7 +11,8 @@ import { BASE_GAME_STATE } from "../../testkit/src/fixtures.ts";
 const EXPLORE_HINT =
   "Commands: move to/go to <location>, talk to <character>, search, accuse [statement], locations, characters, notebook, help, quit. Type 'help' for details.";
 const TALK_HINT = "Commands: <question>, bye, notebook, help, quit. Type 'help' for details.";
-const ACCUSE_HINT = "Commands: <reasoning>, notebook, help, quit. Type 'help' for details.";
+const ACCUSE_HINT = "Commands: <who did it and why>, back, notebook, help, quit. Type 'help' for details.";
+const FORCED_ACCUSE_HINT = "Commands: <who did it and why>, notebook, help, quit. Type 'help' for details.";
 const ENDED_HINT = "Commands: notebook, help, quit. Type 'help' for details.";
 
 const MODES: GameMode[] = ["explore", "talk", "accuse", "ended"];
@@ -108,6 +109,26 @@ describe("interpretLine - aliases and modes", () => {
     expect(interpret("travel to garden", "accuse")).toEqual(
       action({ type: "ask", question: "travel to garden" }),
     );
+  });
+
+  it("leaves the accusation on back, unless the turns have run out", () => {
+    for (const word of ["back", "Back!", "cancel", "never mind", "nevermind"]) {
+      expect(interpret(word, "accuse")).toEqual(action({ type: "back" }));
+      expect(interpretLine(word, { ...stateFor("accuse"), accusation_forced: true })).toMatchObject({
+        kind: "refused",
+        reason: "no-way-back",
+      });
+    }
+    // The end-talk words and `go back` keep their own meaning: said in the accusation, they are reasoning.
+    expect(interpret("leave", "accuse")).toEqual(action({ type: "ask", question: "leave" }));
+    expect(interpret("go back", "accuse")).toEqual(action({ type: "ask", question: "go back" }));
+    expect(interpret("back", "explore")).toMatchObject({ kind: "refused", reason: "unrecognized" });
+    expect(interpret("back", "talk")).toEqual(action({ type: "ask", question: "back" }));
+    expect(interpretLine("", { ...stateFor("accuse"), accusation_forced: true })).toEqual({
+      kind: "refused",
+      reason: "unrecognized",
+      hint: FORCED_ACCUSE_HINT,
+    });
   });
 
   it("treats command-like input as reasoning while in accuse mode", () => {
@@ -254,6 +275,7 @@ describe("interpretLine - hints for unrecognised lines", () => {
     expect(commandHint("explore")).toBe(EXPLORE_HINT);
     expect(commandHint("talk")).toBe(TALK_HINT);
     expect(commandHint("accuse")).toBe(ACCUSE_HINT);
+    expect(commandHint("accuse", true)).toBe(FORCED_ACCUSE_HINT);
     expect(commandHint("ended")).toBe(ENDED_HINT);
   });
 

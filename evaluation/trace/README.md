@@ -55,7 +55,7 @@ trace:
 | Check | Asks |
 |---|---|
 | `clue_accounting` | Every revealed clue id is real and in scope, with no repeats. Each bare search reveals the next unrevealed location clue that is *unlocked* (its `requires` already revealed), skipping locked ones. A clue-graph game's events are folded by the engine's rules. |
-| `spoiler_leak` | No pre-accusation narration copies a long *verbatim* run of ground-truth text. Verbatim only, so it stays precise; paraphrase is `gm_spoiler`'s job. |
+| `spoiler_leak` | No narration before the closing scene copies a long *verbatim* run of ground truth. Verbatim only, to stay precise; paraphrase is `gm_spoiler`'s. |
 | `clue_requires_violation` | No `requires`-gated clue is revealed before its prerequisites, unless the event lists it in `revealed_off_script`. **Off by default**: set `enforce_requires: true` on its entry in `evaluation/core/registry.ts`. |
 
 The judges are the registry's `game` judges: today the four shared `gm_*` judges,

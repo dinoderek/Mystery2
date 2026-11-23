@@ -115,7 +115,7 @@ substance, or a character hinting they know more without delivering it.
 
 ## `spoiler`
 
-Before the accusation, did the game master give away the answer? Only turns
+Before the closing scene, was the answer given away? Only turns
 where `is_accusation_phase` is false can carry these findings. Measure against
 `ground_truth`, characters' `is_culprit`, `motive` and `actual_actions`, and
 `solution_paths`. Ask what a player would know after the turn that they should

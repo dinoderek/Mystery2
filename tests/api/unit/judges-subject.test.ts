@@ -6,7 +6,7 @@ import {
   revealedClueIdsFromResponse,
 } from "../../../evaluation/judges/subject.ts";
 import { reconstructTrace } from "../../../evaluation/trace/lib/reconstruct.ts";
-import { makeRawTrace } from "./trace-fixtures";
+import { makeMultiStepEvents, makeRawTrace } from "./trace-fixtures";
 
 // Both harnesses project into ONE subject shape so the same judge brief grades
 // a whole played session and a single replayed interaction. These tests pin the
@@ -166,6 +166,15 @@ describe("projectTraceSubject", () => {
     expect(subject.subject_kind).toBe("trace");
     expect(subject.turns.every((t: { judged: boolean }) => t.judged)).toBe(true);
     expect(subject.turns.every((t: { role_name: string | null }) => t.role_name !== null)).toBe(true);
+  });
+
+  it("marks only the closing scene as the endgame: opening the accusation and a failed one are judged like any turn", () => {
+    const subject = projectTraceSubject(reconstructTrace(makeRawTrace({ events: makeMultiStepEvents() })).turns);
+    const phases = Object.fromEntries(
+      subject.turns.map((t: { sequence: number; is_accusation_phase: boolean }) => [t.sequence, t.is_accusation_phase]),
+    );
+    // 3 accuse_start, 4 accuse_failed, 5 accuse_resolved
+    expect([phases[3], phases[4], phases[5]]).toEqual([false, false, true]);
   });
 
   it("flags accusation turns so the spoiler judge stops at the endgame", () => {

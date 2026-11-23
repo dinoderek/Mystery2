@@ -36,7 +36,8 @@ export type PlannedAction =
   | { kind: "ask"; question: string; character_id: string }
   | { kind: "end_talk"; character_id: string }
   | { kind: "accuse_start" }
-  | { kind: "accuse_round"; reasoning: string };
+  | { kind: "accuse_back" }
+  | { kind: "accusation"; reasoning: string };
 
 /** How the narrator sets the accusation scene when this action spends the last turn. */
 export interface EndgameScene {

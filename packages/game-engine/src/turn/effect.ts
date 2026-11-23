@@ -3,7 +3,8 @@
 // Pure: it takes data and returns data, so every rule here is unit-tested.
 
 import type { TurnState } from "../../../shared/src/mystery-api-contracts.ts";
-import type { GameSessionPatch, GameSessionRow, SaveEvent } from "../context.ts";
+import { accusationsLeft } from "../accusations.ts";
+import type { GameEventRow, GameSessionPatch, GameSessionRow, SaveEvent } from "../context.ts";
 import { forcedEndgameEvent } from "../forced-endgame.ts";
 import {
   buildNarrationEvent,
@@ -49,6 +50,8 @@ export interface TurnEffect {
 export interface TurnEffectInput {
   game_id: string;
   session: GameSessionRow;
+  /** The events played before this turn, which count the accusations spent. */
+  history: Pick<GameEventRow, "event_type" | "payload">[];
   outcome: ActionOutcome;
   cost: TurnCost;
   /** The forced accusation's narration, when `cost.forced_endgame`. */
@@ -102,10 +105,17 @@ function forcedRecord(input: TurnEffectInput, forced: ForcedEndgame): InsertNarr
   });
 }
 
-function stateAfter(session: GameSessionRow, patch: GameSessionPatch, mode: GameMode, time: number): TurnState {
+function stateAfter(
+  session: GameSessionRow,
+  patch: GameSessionPatch,
+  mode: GameMode,
+  time: number,
+  accusations: number,
+): TurnState {
   return {
     mode,
     time_remaining: time,
+    accusations_left: accusations,
     location: patch.current_location_id ?? session.current_location_id,
     current_talk_character:
       patch.current_talk_character_id === undefined
@@ -139,7 +149,13 @@ export function turnEffect(input: TurnEffectInput): TurnEffect {
   return {
     patch,
     events,
-    state: stateAfter(input.session, patch, resultingMode, cost.time_after),
+    state: stateAfter(
+      input.session,
+      patch,
+      resultingMode,
+      cost.time_after,
+      accusationsLeft([...input.history, ...events.map(({ event }) => event)]),
+    ),
     resulting_mode: resultingMode,
   };
 }

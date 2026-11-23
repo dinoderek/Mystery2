@@ -43,6 +43,7 @@ function createStore(mode: 'explore' | 'talk' | 'accuse' = 'explore') {
     discovered_clues: [],
     leads: [],
     time_remaining: 10,
+    accusations_left: 3,
     location: 'loc-kitchen',
     mode,
     current_talk_character: null,
@@ -145,7 +146,7 @@ describe('playing a line', () => {
     answer(
       createTurnPlayedResponse({
         events: [event('move', 'You reach the garden.', { location_id: 'loc-garden', location_name: 'Garden', input: 'go to the garden' })],
-        state: { mode: 'explore', time_remaining: 9, location: 'loc-garden', current_talk_character: null },
+        state: { mode: 'explore', time_remaining: 9, accusations_left: 3, location: 'loc-garden', current_talk_character: null },
       }),
     );
 
@@ -179,11 +180,11 @@ describe('playing a line', () => {
     answer(
       createTurnPlayedResponse({
         events: [{ ...event('talk', 'Rosie looks up.', { character_name: 'Rosie' }), narration_parts: [{ text: 'Rosie looks up.', speaker: characterSpeaker('Rosie') }] }],
-        state: { mode: 'talk', time_remaining: 9, location: 'loc-kitchen', current_talk_character: 'char-rosie' },
+        state: { mode: 'talk', time_remaining: 9, accusations_left: 3, location: 'loc-kitchen', current_talk_character: 'char-rosie' },
       }),
     );
     await store.submitInput('talk to Rosie');
-    answer(createTurnPlayedResponse({ events: [event('ask', 'She shrugs.')], state: { mode: 'talk', time_remaining: 8, location: 'loc-kitchen', current_talk_character: 'char-rosie' } }));
+    answer(createTurnPlayedResponse({ events: [event('ask', 'She shrugs.')], state: { mode: 'talk', time_remaining: 8, accusations_left: 3, location: 'loc-kitchen', current_talk_character: 'char-rosie' } }));
     await store.submitInput('ask about the cake');
 
     expect(store.state).toMatchObject({ mode: 'talk', time_remaining: 8, current_talk_character: 'char-rosie' });
@@ -196,7 +197,7 @@ describe('playing a line', () => {
     answer(
       createTurnPlayedResponse({
         events: [event('search', 'You find nothing.'), event('forced_endgame', 'Time is up. Name the culprit.')],
-        state: { mode: 'accuse', time_remaining: 0, location: 'loc-kitchen', current_talk_character: null },
+        state: { mode: 'accuse', time_remaining: 0, accusations_left: 3, location: 'loc-kitchen', current_talk_character: null },
       }),
     );
 
@@ -211,23 +212,24 @@ describe('playing a line', () => {
     const store = createStore('explore');
     answer(
       createTurnPlayedResponse({
-        events: [event('accuse_round', 'Go on.')],
-        state: { mode: 'accuse', time_remaining: 9, location: 'loc-kitchen', current_talk_character: null },
+        events: [event('accuse_failed', 'Not yet.')],
+        state: { mode: 'explore', time_remaining: 9, accusations_left: 2, location: 'loc-kitchen', current_talk_character: null },
       }),
     );
 
     await store.submitInput('accuse Bob, he had the cake');
 
     expect(store.activePage).toMatchObject({ kind: 'accusation', fallbackLabel: 'The accusation' });
+    expect(store.state).toMatchObject({ mode: 'explore', accusations_left: 2 });
   });
 
-  it('keeps an accusation round on the accusation page once it is open', async () => {
+  it('keeps a failed accusation on the accusation page once it is open', async () => {
     const store = createStore('accuse');
     store.state!.history.push({ sequence: 3, event_type: 'accuse_start', narration_parts: [{ text: 'Who?', speaker: NARRATOR_SPEAKER }] });
     answer(
       createTurnPlayedResponse({
-        events: [event('accuse_round', 'Go on.')],
-        state: { mode: 'accuse', time_remaining: 0, location: 'loc-kitchen', current_talk_character: null },
+        events: [event('accuse_failed', 'Not yet.')],
+        state: { mode: 'accuse', time_remaining: 0, accusations_left: 2, location: 'loc-kitchen', current_talk_character: null },
       }),
     );
 
@@ -235,7 +237,7 @@ describe('playing a line', () => {
 
     expect(store.pageCount).toBe(3);
     expect(store.activePage?.kind).toBe('accusation');
-    expect(typesOf(store.state?.history).slice(-2)).toEqual(['input', 'accuse_round']);
+    expect(typesOf(store.state?.history).slice(-2)).toEqual(['input', 'accuse_failed']);
   });
 
   it('ends the case with a verdict', async () => {
@@ -243,7 +245,7 @@ describe('playing a line', () => {
     answer(
       createTurnPlayedResponse({
         events: [event('accuse_resolved', 'You are right.')],
-        state: { mode: 'ended', time_remaining: 0, location: 'loc-kitchen', current_talk_character: null },
+        state: { mode: 'ended', time_remaining: 0, accusations_left: 3, location: 'loc-kitchen', current_talk_character: null },
         result: 'win',
       }),
     );

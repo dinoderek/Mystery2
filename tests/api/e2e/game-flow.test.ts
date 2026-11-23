@@ -119,14 +119,14 @@ describe("Full E2E API Investigation Flow", () => {
       ),
     ).toBe(true);
 
-    const accuseStart = await line(headers, game_id, "accuse Alice because she was nearby and acted nervous.");
+    const accuseStart = await line(headers, game_id, "accuse");
     expect(accuseStart.state.mode).toBe("accuse");
     expect(speakers(accuseStart)).toEqual(["narrator"]);
 
-    const accuseRoundOne = await line(headers, game_id, "Alice was nearby and behaved nervously.");
-    expect(accuseRoundOne.state.mode).toBe("ended");
-    expect(accuseRoundOne.result).toBe("win");
-    expect(speakers(accuseRoundOne)).toEqual(["narrator"]);
+    const accusation = await line(headers, game_id, "Alice was nearby and behaved nervously.");
+    expect(accusation.state.mode).toBe("ended");
+    expect(accusation.result).toBe("win");
+    expect(speakers(accusation)).toEqual(["narrator"]);
 
     const finalGetRes = await fetch(`${API_URL}/game-get?game_id=${game_id}`, {
       headers,

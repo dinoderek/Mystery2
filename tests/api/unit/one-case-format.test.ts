@@ -111,8 +111,9 @@ describe("the world view", () => {
 });
 
 // A retired format's name, as code, tests or docs would spell it. The names are
-// matched without regard to case, except the two type names.
-const MSF = /msf/i;
+// matched without regard to case, except the two type names; `msf` only as its
+// own word part, so `msf_snapshot` and `MSF-CASE/1` match and `itemsFor` does not.
+const MSF = /(?<![a-z])msf(?![a-z])/i;
 const RETIRED_NAMES: readonly RegExp[] = [
   /blueprint-schema-v2/i,
   MSF,
@@ -130,7 +131,8 @@ const ALLOWED: Readonly<Record<string, readonly RegExp[]>> = {
   "tests/api/unit/local-engine-db.test.ts": [MSF],
 };
 
-// Code and docs know one case format, so neither says "V2". Tests may: they
+// Code and docs know one case format, so neither says "V2", in either case: a
+// third-party `/v2/` in code is caught too, and needs an entry here. Tests may: they
 // write the old format's tag to prove it is refused. The turn-judge briefs
 // still describe the old format, with the overlay that corrects them for the
 // clue graph, until they are rewritten; these are the files that say so.

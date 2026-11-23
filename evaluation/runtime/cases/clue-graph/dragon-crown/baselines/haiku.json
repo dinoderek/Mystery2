@@ -14,9 +14,7 @@
       "--samples",
       "5",
       "--concurrency",
-      "4",
-      "--output-root",
-      "/private/tmp/claude-501/-Users-dinohughes--local-share-engine-control-repos-dinoderek-Mystery2-worktrees-task-Mystery2-397/ba14e4ab-4178-4666-9a72-8bbacfc20e2e/scratchpad/lib-haiku-dragon-crown"
+      "4"
     ]
   },
   "complete": true,

@@ -1,5 +1,5 @@
 import { GameStartRequestSchema } from "../../../shared/src/mystery-api-contracts.ts";
-import { msfOf, type PlayableCase } from "../../../shared/src/msf-case.ts";
+import type { PlayableCase } from "../../../shared/src/playable-case.ts";
 import {
   DEFAULT_AI_PROFILE_ID,
   type EngineAIProfile,
@@ -94,9 +94,7 @@ function startDiagnostics(blueprint: PlayableCase, relatedSequence?: number) {
 }
 
 function startPayload(blueprint: PlayableCase) {
-  const msf = msfOf(blueprint);
   return {
-    ...(msf ? { case_format: "msf/0.1.0", case_revision: msf.structure.metadata.revision } : {}),
     ...(blueprint.clue_graph ? { case_format: blueprint.clue_graph.format } : {}),
     speaker: NARRATOR_SPEAKER,
     blueprint_image_id: blueprint.metadata.image_id ?? null,
@@ -156,7 +154,6 @@ async function openCase(
         current_location_id: blueprint.world.starting_location_id,
         time_remaining: blueprint.metadata.time_budget,
         reading_age: blueprint.metadata.target_age,
-        ...(msfOf(blueprint) ? { msf_snapshot: msfOf(blueprint) } : {}),
         ...(blueprint.clue_graph ? { clue_graph_snapshot: blueprint.clue_graph } : {}),
       },
       events: [buildNarrationEvent(startEvent, 1)],

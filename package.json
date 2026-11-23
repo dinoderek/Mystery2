@@ -20,7 +20,6 @@
         "lint": "eslint .",
         "format": "prettier --write .",
         "typecheck": "tsc --noEmit",
-    "validate:mystery-structure": "node scripts/validate-mystery-structure.mjs",
     "validate:clue-graph": "node scripts/validate-clue-graph.mjs",
     "trails:clue-graph": "node scripts/print-clue-graph-trails.mjs",
         "check:doc-refs": "node scripts/check-doc-refs.mjs",

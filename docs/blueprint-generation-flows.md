@@ -2,7 +2,7 @@
 
 Case format: [clue graph](clue-graph.md); V2 schema:
 `packages/shared/src/blueprint-schema-v2.ts`; narrator context:
-`docs/ai-runtime.md`; [MSF](msf-gameplay.md).
+`docs/ai-runtime.md`.
 “Input” goes to the model; “attached” pairs with its output; sessions
 store ids.
 

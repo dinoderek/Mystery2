@@ -8,7 +8,7 @@ import path from "node:path";
 import {
   BlueprintV2Schema,
 } from "../../shared/src/blueprint-schema-v2.ts";
-import { buildMsfBlueprint, msfOf, validateMsfCaseFile, type PlayableCase } from "../../shared/src/msf-case.ts";
+import type { PlayableCase } from "../../shared/src/playable-case.ts";
 import { buildClueGraphWorld } from "../../shared/src/clue-graph-case.ts";
 import { validateClueGraph } from "../../shared/src/clue-graph-validator.ts";
 import { isClueGraphFile } from "../../shared/src/clue-graph-schema.ts";
@@ -78,9 +78,8 @@ export function createLocalContentStore(
 
     try {
       const candidate = JSON.parse(text);
-      const blueprint = candidate?.$format === "MSF-CASE/1"
-        ? buildMsfBlueprint(validateMsfCaseFile(candidate))
-        : isClueGraphFile(candidate)
+      if (candidate?.$format !== undefined) throw new Error(`Unknown case format: ${candidate.$format}`);
+      const blueprint = isClueGraphFile(candidate)
         ? buildClueGraphWorld(validateClueGraph(candidate))
         : BlueprintV2Schema.parse(candidate);
       cache.set(filePath, { stamp: stampOf(stats), blueprint });
@@ -98,7 +97,7 @@ export function createLocalContentStore(
   function blueprintFiles(): string[] {
     const files: string[] = [];
 
-    for (const dir of options.blueprintDirs.flatMap((dir) => [dir, path.join(dir, "msf"), path.join(dir, "clue-graph")])) {
+    for (const dir of options.blueprintDirs.flatMap((dir) => [dir, path.join(dir, "clue-graph")])) {
       let entries: fs.Dirent[];
       try {
         entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -125,16 +124,15 @@ export function createLocalContentStore(
   return {
     async loadScenes(blueprint: PlayableCase): Promise<SceneManifest | null> {
       if (!isSafeSegment(blueprint.id)) return null;
-      const assetId = msfOf(blueprint)?.paired_blueprint_id ?? blueprint.id;
       for (const dir of options.sceneDirs) {
         let text: string;
         try {
-          text = fs.readFileSync(path.join(dir, `${assetId}.json`), "utf8");
+          text = fs.readFileSync(path.join(dir, `${blueprint.id}.json`), "utf8");
         } catch (error) {
           if ((error as NodeJS.ErrnoException).code === "ENOENT") continue;
           throw error;
         }
-        return { ...validateSceneManifest(JSON.parse(text), { ...blueprint, id: assetId }), blueprint_id: blueprint.id };
+        return validateSceneManifest(JSON.parse(text), blueprint);
       }
       return null;
     },

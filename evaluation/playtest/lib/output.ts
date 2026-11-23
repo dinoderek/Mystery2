@@ -11,7 +11,6 @@
 
 import fs from "node:fs";
 import type { ClueGraphCase } from "../../../packages/shared/src/clue-graph-schema.ts";
-import type { MsfCaseFile } from "../../../packages/shared/src/msf-case.ts";
 import path from "node:path";
 
 import { ACCUSATIONS } from "../../../packages/game-engine/src/accusations.ts";
@@ -24,7 +23,6 @@ type Clues = { clues?: unknown[] };
 
 /** The parts of a blueprint a game's folder reads. */
 export interface PlaytestBlueprint {
-  msf?: MsfCaseFile;
   clue_graph?: ClueGraphCase;
   id: string;
   metadata: { title: string; time_budget: number; target_age?: number };
@@ -153,7 +151,6 @@ export function summarizeGame({
     game_number: number ?? null,
     game_id: game.gameId,
     blueprint: { id: blueprint.id, title: blueprint.metadata.title,
-      ...(blueprint.msf ? { format: "msf/0.1.0", revision: blueprint.msf.structure.metadata.revision } : {}),
       ...(blueprint.clue_graph ? { format: blueprint.clue_graph.format, revision: 1 } : {}),
     },
     persona,

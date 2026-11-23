@@ -15,7 +15,6 @@ import { UsageError } from "../../core/errors.ts";
 import { buildClueGraphWorld } from "../../../packages/shared/src/clue-graph-case.ts";
 import { isClueGraphFile, type ClueGraphCase } from "../../../packages/shared/src/clue-graph-schema.ts";
 import { validateClueGraph } from "../../../packages/shared/src/clue-graph-validator.ts";
-import { buildMsfBlueprint, validateMsfCaseFile, type MsfCaseFile } from "../../../packages/shared/src/msf-case.ts";
 
 export interface Speaker {
   kind: string;
@@ -121,7 +120,6 @@ interface Named {
 }
 
 export interface BlueprintLike {
-  msf?: MsfCaseFile;
   clue_graph?: ClueGraphCase;
   id?: string;
   metadata?: { target_age?: number; title?: string };
@@ -155,8 +153,7 @@ export async function readBlueprint(
     const candidate = JSON.parse(await fs.readFile(absolute, "utf8"));
     blueprint = isClueGraphFile(candidate)
       ? buildClueGraphWorld(validateClueGraph(candidate))
-      : candidate?.$format === "MSF-CASE/1" || candidate?.msf
-      ? buildMsfBlueprint(validateMsfCaseFile(candidate.msf ?? candidate)) : candidate as BlueprintLike;
+      : candidate as BlueprintLike;
   } catch (error) {
     throw new UsageError(`cannot read blueprint ${absolute}: ${(error as Error).message}`);
   }

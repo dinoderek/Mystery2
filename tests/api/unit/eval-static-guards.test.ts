@@ -66,7 +66,7 @@ describe("the evaluation tree", () => {
 });
 
 describe("./dev eval", () => {
-  it("lists exactly the ten evaluation commands", () => {
+  it("lists exactly the nine evaluation commands", () => {
     expect(COMMANDS.map((command) => command.name)).toEqual([
       "judge blueprint",
       "validate",

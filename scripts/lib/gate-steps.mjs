@@ -64,7 +64,6 @@ export const GATE_STEPS = [
     roots: ["web/src/lib/domain", "web/src/lib/api"],
     workspace: "web",
   }),
-  { name: "curated-docs", phase: 1, args: ["run", "check:curated-docs"] },
   { name: "doc-refs", phase: 1, args: ["run", "check:doc-refs"] },
   { name: "word-budgets", phase: 1, args: ["run", "check:word-budgets"] },
   { name: "gate-coverage", phase: 1, args: ["run", "check:gate-coverage"] },

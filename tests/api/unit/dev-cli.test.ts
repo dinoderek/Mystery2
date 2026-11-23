@@ -229,8 +229,13 @@ describe("./dev test and ./dev run", () => {
     expect(() => selectSteps(GATE_STEPS, ["lint", "nope"])).toThrow(/Unknown gate step: nope/);
   });
 
+  it("has no curated-docs step: its extracts and their check are gone", () => {
+    expect(GATE_STEPS.map((step: { name: string }) => step.name)).not.toContain("curated-docs");
+    expect(() => selectSteps(GATE_STEPS, ["curated-docs"])).toThrow(/Unknown gate step: curated-docs/);
+  });
+
   it("selects every check by name, including the doc checks and gate-coverage", () => {
-    for (const name of ["curated-docs", "doc-refs", "word-budgets", "gate-coverage"]) {
+    for (const name of ["doc-refs", "word-budgets", "gate-coverage"]) {
       expect(selectSteps(GATE_STEPS, [name]).map((step: { name: string }) => step.name)).toEqual([name]);
     }
   });

@@ -1,72 +1,26 @@
 # Blueprint Generation Flows
 
-V2 schema: `packages/shared/src/blueprint-schema-v2.ts`; narrator context:
-`docs/ai-runtime.md`; [MSF](msf-gameplay.md), [clue graph](clue-graph.md).
+Case format: [clue graph](clue-graph.md); V2 schema:
+`packages/shared/src/blueprint-schema-v2.ts`; narrator context:
+`docs/ai-runtime.md`; [MSF](msf-gameplay.md).
 “Input” goes to the model; “attached” pairs with its output; sessions
 store ids.
 
 ## Generating a clue-graph case
 
-`./dev generate` writes a `clue-graph/2` case by default (agent only) from a
-brief (`packages/blueprint-generator/src/clue-graph-brief.ts`). Prompt:
-`packages/blueprint-generator/src/clue-graph-prompt.md`: a child's-game check,
-no age guidance or validator rule; workspace validator: the mechanical check
-(`evaluation/generator-harness/template/README.md`). Repair needs no `--judge`
-(two by default, five at most); `--install` copies a passing final case to
-`blueprints/clue-graph/`.
-
-## Generating a blueprint
-
-Both backends of `./dev generate --format v2` use
-`buildBlueprintGenerationChatInput`:
-
-- **System:** `packages/blueprint-generator/src/generator-prompt.md` plus
-  `renderGenerationGuidance` (`packages/shared/src/age-profile.ts`).
-- **User:** the brief (`packages/blueprint-generator/src/story-brief.ts`)
-  with schema instructions.
-- **API response format:** strict JSON Schema from `BlueprintV2Schema`, less
-  image ids and strict-mode nulls.
-
-### Repair rounds
-
-`--judge --repair <n>` (agent) runs up to `n` rounds while anything fails
+`./dev generate` writes `clue-graph/2` cases only, with the Claude agent in a
+workspace, from a brief (`packages/blueprint-generator/src/clue-graph-brief.ts`).
+Prompt: `packages/blueprint-generator/src/clue-graph-prompt.md`: a child's-game
+check, no age guidance or validator rule; workspace validator: the mechanical
+check (`evaluation/generator-harness/template/README.md`). `--repair <n>` runs
+up to `n` rounds while anything fails, two by default and five at most
 (`evaluation/generate/repair.ts`): the agent fixes the faults `repair.json`
-quotes as data, and every check and judge reruns on brief and blueprint
-alone. Round 0 is kept: it measures the prompt.
-
-<!-- extract:generator-prompt -->
-What the generator prompt asks for, in short:
-
-- A complete, solvable children's mystery, built in a fixed order: hidden
-  truth, what each character actually did, solution paths, red herrings,
-  suspect-elimination paths, clue placement, flavour, then a consistency
-  pass.
-- Text at the target age on two dials that mirror the narrator's:
-  **complexity** (sentence length, vocabulary) and **length** (a per-age word
-  budget for the one-liner, premise, every `starting_knowledge` summary, every
-  location description and every clue). Names carry no word budget.
-- Challenge sized to `timeBudget`, and a shortest solution path of at least
-  `minPathLength` distinct, necessary clues, deepened if it falls short.
-- Agendas (self-protection, with each breaking fact's clues and reaction,
-  and a confession; protect-other, implicate-other, conditional reveal) and
-  cross-character clues, with a solution path free of condition-gated clues.
-- A clue discovery graph through `requires`, each lock a `pointer` or
-  `leverage`: mostly ungated, acyclic, every solution clue reachable from an
-  ungated root, a location lock always a pointer. The schema, the mechanical
-  checks and the `clue_graph` dimension enforce it.
-- Physical consistency: where an object is, what state it is in, and what a
-  character looks like or carries agree across clues, `actual_actions`,
-  descriptions, `appearance`, `flavor_knowledge` and summaries. Nothing the
-  player sees before a clue is found — `appearance`, location descriptions,
-  `starting_knowledge` — shows or contradicts that clue's evidence. The
-  `knowledge_coherence` dimension judges it.
-- Exactly one culprit and a consistent timeline; `cover_image` direction; no
-  image ids.
-<!-- /extract:generator-prompt -->
+quotes as data, and the check and, with `--judge`, every judge reruns on the
+case alone. Round 0 is kept: it measures the prompt. `--install` copies a
+passing final case to `blueprints/clue-graph/`.
 
 ## Generating images
 
-<!-- extract:image-generation -->
 `./dev gen-images` (`scripts/generate-blueprint-images.mjs`) calls OpenRouter's Images API
 (`POST /api/v1/images`) and writes each image to `<image_id>.png`. The aspect
 ratio is sent as a parameter and written into the prompt, so the two agree.
@@ -84,7 +38,6 @@ Three phases keep images consistent:
 - References use `input_references[]` in the prompt legend’s order. At most 16 are sent; beyond that the first 16, with a warning.
 - `--chat-packets` writes the same prompts, with the references to upload in
   the same order, for pasting into a chat.
-<!-- /extract:image-generation -->
 
 For `clue-graph/2`, portraits use appearance facts, locations public facts,
 covers cover facts (else the title) and visual direction; artwork is optional.
@@ -104,7 +57,6 @@ in `blueprint-scenes/<blueprint-id>.json`, the config root's winning over
 committed examples; the endpoint serves only these.
 
 ## Narration at play
-<!-- extract:gameplay-narration -->
 
 Every row also receives `metadata.target_age` and `metadata.narration_style`.
 
@@ -124,7 +76,6 @@ fields reach only that character's own conversation.
 `narrative.starting_knowledge` is never narrated: `game-start` and `game-get`
 return it as the notebook's case facts (`mystery_summary`, and a `summary` per
 location and character).
-<!-- /extract:gameplay-narration -->
 
 A clue-graph case gives facts to word, talk `knows` and first-meeting
 appearance; saved lines stand for found clues. The engine chooses accusation

@@ -129,17 +129,12 @@ A brief names the story, reading age and size (`small`, `medium` or `large`):
 
 ```bash
 ./dev generate path/to/brief.json --judge --install
-./dev generate --format v2 path/to/story-brief.json --backend api --model openai/gpt-4.1-mini
 ```
 
-A clue-graph case, the default, is written by the Claude agent on your Claude
-login. Up to two repair rounds fix what the validator and, with `--judge`, the
-judges report; `--install` copies a case that passed into
-`blueprints/clue-graph/` in the config root. `--format v2` writes a Blueprint V2
-from a story brief (`targetAge`, `timeBudget`, `mustInclude`): `api` makes one
-OpenRouter call and needs `OPENROUTER_API_KEY` in the shell or the config root's
-`.env.local`, and `model` on `generator-api` in `evaluation/config.json` is
-its default.
+A clue-graph case is written by the Claude agent on your Claude login. Up to
+two repair rounds fix what the validator and, with `--judge`, the judges
+report; `--install` copies a case that passed into `blueprints/clue-graph/` in
+the config root.
 
 Flags: `./dev generate --help`.
 
@@ -149,7 +144,7 @@ Evaluation pipelines and their runbooks:
 
 | Pipeline | What it evaluates | Commands |
 |----------|-------------------|----------|
-| Blueprint | Generated mystery blueprints | `./dev generate`, `./dev eval judge blueprint` |
+| Blueprint | Generated clue-graph cases | `./dev generate`, `./dev eval judge blueprint` |
 | Trace | Played game-master traces | `./dev eval judge game` |
 | Runtime | Live narrator responses to a single action | `./dev eval judge turn`, `./dev eval cases` |
 | Playtest | Whole games played by an AI investigator | `./dev eval play` |

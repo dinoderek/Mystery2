@@ -36,7 +36,7 @@ schemas both sides import, `evaluation/` the judges and pipelines. Detail:
 | AI backends and settings | `docs/ai-configuration.md` |
 | UI | `docs/ui.md`, `docs/game.md` |
 | API and database | `docs/backend-conventions.md` |
-| Blueprint generation | `packages/shared/src/blueprint-schema-v2.ts`, `docs/blueprint-generation-flows.md`, `packages/blueprint-generator/src/generator-prompt.md`, `evaluation/generator-harness/template/README.md` |
+| Blueprint generation | `packages/shared/src/clue-graph-schema.ts`, `docs/blueprint-generation-flows.md`, `packages/blueprint-generator/src/clue-graph-prompt.md`, `evaluation/generator-harness/template/README.md` |
 | Blueprint judges | `docs/evaluation-pipeline.md`, `evaluation/README.md` |
 | `gm_*` judges | `evaluation/judges/README.md`, "Earned, not free" in `docs/ai-runtime.md` |
 | Trace, runtime, playtest | the README beside the code |

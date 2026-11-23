@@ -1,7 +1,7 @@
 /**
  * The loader: turns a registry entry into what runs it. A judge's definition
  * is its brief, its Zod schema and its preamble read from the files the entry
- * names; an analyzer or a check is the function its entry points at.
+ * names; a check is the function its entry points at.
  *
  * Nothing is found by naming convention: a file the registry does not name is
  * never loaded, and one it names that is missing or malformed fails loudly.
@@ -73,20 +73,6 @@ export async function loadJudge(idOrEntry: string | JudgeEntry): Promise<JudgeDe
     loadSchema(entry.id, schemaPath),
   ]);
   return { id: entry.id, entry, text, filePath, schema, schemaPath, preamble };
-}
-
-export interface Analyzer {
-  dimensionId: string;
-  analyzerPath: string;
-  analyze: (input: { brief?: unknown; blueprint: unknown; context: unknown }) => unknown;
-}
-
-/** The analyzer that runs beside a judge, or null when its entry names none. */
-export async function loadAnalyzer(id: string): Promise<Analyzer | null> {
-  const { analyzer } = getJudgeEntry(id);
-  if (!analyzer) return null;
-  const analyze = (await importExport(analyzer, `Analyzer for "${id}"`)) as Analyzer["analyze"];
-  return { dimensionId: id, analyzerPath: resolveRegistryPath(analyzer.module), analyze };
 }
 
 /**

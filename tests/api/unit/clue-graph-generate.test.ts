@@ -16,12 +16,11 @@ import { buildClueGraphGenerationChatInput } from "../../../packages/blueprint-g
 import { MAX_TARGET_AGE, MIN_TARGET_AGE, renderGenerationGuidance } from "../../../packages/shared/src/age-profile.ts";
 import { readResult } from "../../../evaluation/core/result.ts";
 import type { Result } from "../../../evaluation/core/result.ts";
-import { CLUE_GRAPH_REPAIR, parseBackends, parseFormat, parseRepair } from "../../../evaluation/generate/commands.ts";
+import { CLUE_GRAPH_REPAIR, parseRepair } from "../../../evaluation/generate/commands.ts";
 import { REPORTS_NOTICE } from "../../../evaluation/generate/repair.ts";
 import { main } from "../../../scripts/dev-cli.mjs";
 import { countWords } from "../../../scripts/lib/word-budgets.mjs";
 import { floors, sizedCase } from "./fixtures/clue-graph-sized.ts";
-import { generatorBrief } from "./fixtures/generator-brief.ts";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const SETUP = path.join(REPO_ROOT, "evaluation/generator-harness/setup-workspace.sh");
@@ -45,7 +44,7 @@ function write(name: string, value: unknown): string {
 
 /**
  * A config whose generator answers round n with `answers[n]` (exiting 1 past
- * the end) and keeps every message, system prompt and format it is sent under
+ * the end) and keeps every message and system prompt it is sent under
  * `calls/<round>`, and whose judges pass every case unless named in
  * `failing`, which they fail with one major finding.
  */
@@ -63,7 +62,6 @@ function stubConfig(answers: unknown[], failing: string[] = []): string {
      fs.mkdirSync(folder, { recursive: true });
      fs.writeFileSync(path.join(folder, "message.json"), JSON.stringify(message));
      fs.writeFileSync(path.join(folder, "system.md"), fs.readFileSync(systemFile, "utf8"));
-     fs.writeFileSync(path.join(folder, "format"), process.env.EVAL_GENERATE_FORMAT ?? "");
      const answers = JSON.parse(fs.readFileSync(${JSON.stringify(answersFile)}, "utf8"));
      if (round >= answers.length) process.exit(1);
      process.stdout.write(JSON.stringify({ total_cost_usd: 1, result: JSON.stringify(answers[round]) }));`,
@@ -104,7 +102,6 @@ function call(round: number) {
       repair?: { round: number; blueprint: unknown; notice: string; reports: Array<{ id: string; tier: string; details?: { issues: string[] }; answer?: unknown }> };
     },
     system: fs.readFileSync(path.join(folder, "system.md"), "utf8"),
-    format: fs.readFileSync(path.join(folder, "format"), "utf8"),
   };
 }
 
@@ -134,12 +131,11 @@ afterEach(() => {
 });
 
 describe("generate, clue graph", () => {
-  it("is the default format: a brief gives a clue-graph job on the agent backend, which passes and installs", async () => {
+  it("gives a brief one job on the generator agent, which passes and installs", async () => {
     const root = path.join(dir, "root");
     expect(await generate(["--config", stubConfig([good]), "--install"], { MYSTERY_CONFIG_ROOT: root })).toBe(0);
 
     const first = call(0);
-    expect(first.format).toBe("clue-graph");
     expect(first.message.story_brief).toEqual(brief);
     expect(first.message.instructions).toContain("./case.json");
     expect(first.system).toBe((await buildClueGraphGenerationChatInput(brief as never)).systemPrompt);
@@ -161,7 +157,6 @@ describe("generate, clue graph", () => {
     expect(repair.reports).toEqual([
       { id: "clue_graph_valid", tier: "mechanical", details: { issues: [expect.stringMatching(/^clues: Has 2 .*a small case needs/)] } },
     ]);
-    expect(call(1).format).toBe("clue-graph");
 
     const { result, folder } = await onlyResult();
     expect(result.rounds?.map((round) => round.summary.passed)).toEqual([false, true]);
@@ -218,21 +213,147 @@ describe("generate, clue graph", () => {
     expect(reports[0].details?.issues).toEqual(expect.arrayContaining([expect.stringMatching(/^format: /)]));
   });
 
-  it("refuses the api backend, a V2 brief and too many rounds, before it starts", async () => {
-    expect(await generate(["--backend", "api"])).toBe(1);
-    expect(err.join("\n")).toContain("the api backend writes only Blueprint V2");
-
-    err = [];
-    write("brief.json", generatorBrief);
+  it("refuses a brief that is not a clue-graph brief, and options that no longer exist, before it starts", async () => {
+    write("brief.json", { brief: "A missing cookie.", targetAge: 8, timeBudget: 12, culprits: 1, suspects: 1, witnesses: 1, locations: 2, redHerringTrails: 1 });
     expect(await generate([])).toBe(1);
-    expect(err.join("\n")).toContain("is a Blueprint V2 story brief: pass --format v2");
+    expect(err.join("\n")).toMatch(/is not a clue-graph brief: size: Required/);
 
-    expect(() => parseRepair(String(CLUE_GRAPH_REPAIR.max + 1), false, ["agent"], "clue-graph")).toThrow(`at most ${CLUE_GRAPH_REPAIR.max} rounds`);
-    expect(parseRepair(undefined, false, ["agent"], "clue-graph")).toBe(CLUE_GRAPH_REPAIR.default);
-    expect(parseRepair("0", false, ["agent"], "clue-graph")).toBe(0);
-    expect(parseBackends(["api"], "v2")).toEqual(["api"]);
-    expect(parseFormat(undefined)).toBe("clue-graph");
-    expect(() => parseFormat("msf")).toThrow("--format must be one of clue-graph, v2");
+    write("brief.json", brief);
+    for (const option of [["--format", "v2"], ["--backend", "api"]]) {
+      err = [];
+      expect(await generate(option)).toBe(1);
+      expect(err.join("\n")).toContain(option[0]);
+    }
+  });
+
+  it("holds --repair to a whole number of rounds, at most the limit", () => {
+    expect(() => parseRepair(String(CLUE_GRAPH_REPAIR.max + 1))).toThrow(`at most ${CLUE_GRAPH_REPAIR.max} rounds`);
+    expect(parseRepair(undefined)).toBe(CLUE_GRAPH_REPAIR.default);
+    expect(parseRepair("0")).toBe(0);
+    expect(() => parseRepair("-1")).toThrow("--repair needs a whole number");
+    expect(() => parseRepair("one")).toThrow("--repair needs a whole number");
+  });
+
+  it("makes a job for every brief and model, and names each by both", async () => {
+    write("second.json", { ...brief, brief: "A missing hat at a village fete." });
+    const argv = [path.join(dir, "brief.json"), path.join(dir, "second.json"), "--output-root", path.join(dir, "out"), "--quiet", "--repair", "0", "--model", "m/one", "--model", "m/two", "--config", stubConfig([good])];
+    expect(await main(["generate", ...argv], { root: process.cwd(), out: (t: string) => out.push(t), err: (t: string) => err.push(t), env: {} })).toBe(0);
+    const results = fs.readdirSync(path.join(dir, "out"), { recursive: true, encoding: "utf8" }).filter((file) => file.endsWith("result.json"));
+    expect(results.map((file) => path.basename(path.dirname(file))).sort()).toEqual(["brief-m-one", "brief-m-two", "second-m-one", "second-m-two"]);
+  });
+});
+
+describe("generate, the rest of the run", () => {
+  it("never installs without --install, and will not replace a case already in the library", async () => {
+    const root = path.join(dir, "root");
+    expect(await generate(["--config", stubConfig([good])], { MYSTERY_CONFIG_ROOT: root })).toBe(0);
+    expect(fs.existsSync(root)).toBe(false);
+
+    expect(await generate(["--config", stubConfig([good]), "--install"], { MYSTERY_CONFIG_ROOT: root })).toBe(0);
+    fs.writeFileSync(installed(root), "{}");
+    out = [];
+    expect(await generate(["--config", stubConfig([good]), "--install"], { MYSTERY_CONFIG_ROOT: root })).toBe(1);
+    expect(fs.readFileSync(installed(root), "utf8")).toBe("{}");
+    expect(out.join("\n")).toContain("already exists");
+  });
+
+  it("breaks the run (exit 1) when the generator gives nothing to keep, recording the attempt as production", async () => {
+    expect(await generate(["--config", stubConfig([])])).toBe(1);
+    const { result } = await onlyResult();
+    expect(result.run_error?.stage).toBe("generate");
+    expect(result.subject.path).toBeNull();
+    expect(result.production?.calls[0].attempts.map((attempt) => attempt.outcome)).toEqual(["exit"]);
+    expect(Object.keys(result.run.bindings)).toEqual(["generator-agent"]);
+  });
+
+  it("breaks the run when a repair call gives nothing to keep, keeping the round before it", async () => {
+    expect(await generate(["--config", stubConfig([thin]), "--repair", "1"])).toBe(1);
+    const { result } = await onlyResult();
+    expect(result.run_error?.stage).toBe("repair_round_1");
+    expect(result.rounds).toHaveLength(1);
+    expect(result.subject.path).toBe("blueprint.json");
+    expect(result.production?.calls).toHaveLength(2);
+    expect(out.join("\n")).toContain("final: broke during a repair round");
+  });
+
+  it("retries an answer that is not an object and keeps the one that is", async () => {
+    const counter = path.join(dir, "attempts");
+    const flaky = write(
+      "flaky.mjs",
+      `import fs from "node:fs";
+       const second = fs.existsSync(${JSON.stringify(counter)});
+       fs.writeFileSync(${JSON.stringify(counter)}, "1");
+       process.stdout.write(JSON.stringify({ result: second ? ${JSON.stringify(JSON.stringify(good))} : "[]" }));`,
+    );
+    const config = write("flaky-config.json", {
+      "generator-agent": { cmd: process.execPath, args: [flaky], extract_path: "result", model: "m", timeout_ms: 60_000, retries: 1 },
+    });
+    expect(await generate(["--config", config])).toBe(0);
+    const { result } = await onlyResult();
+    expect(result.production?.calls[0].attempts.map((attempt) => attempt.outcome)).toEqual(["invalid", "ok"]);
+    expect(result.summary.passed).toBe(true);
+  });
+
+  it("prints each round's cost and the run's, and records no rounds with --repair 0", async () => {
+    expect(await generate(["--config", stubConfig([thin, good])])).toBe(0);
+    const printed = out.join("\n");
+    expect(printed).toContain("[eval] first pass: failed (");
+    expect(printed).toContain("final: passed after 1 repair round(s)");
+    expect(printed).toContain("[eval] cost: round 0 $1.00, round 1 $1.00; total $2.00");
+    expect(printed).toContain("[eval] run cost: $2.00");
+
+    fs.rmSync(path.join(dir, "out"), { recursive: true });
+    out = [];
+    expect(await generate(["--config", stubConfig([thin]), "--repair", "0"])).toBe(2);
+    expect((await onlyResult()).result.rounds).toBeUndefined();
+    expect(out.join("\n")).not.toContain("run cost");
+  });
+
+  it("runs no repair round on a case that passes", async () => {
+    expect(await generate(["--config", stubConfig([good]), "--repair", "3"])).toBe(0);
+    expect(out.join("\n")).toContain("final: passed after 0 repair round(s)");
+    expect(fs.existsSync(path.join(dir, "calls", "1"))).toBe(false);
+  });
+
+  it("generates several cases at once with --parallelism", async () => {
+    expect(await generate(["--config", stubConfig([good]), "--model", "a", "--model", "b", "--model", "c", "--parallelism", "3"])).toBe(0);
+    expect(fs.readdirSync(path.join(dir, "out"), { recursive: true, encoding: "utf8" }).filter((file) => file.endsWith("result.json"))).toHaveLength(3);
+  });
+
+  describe("before it starts", () => {
+    async function refused(extra: string[], config = stubConfig([good])) {
+      expect(await generate(["--config", config, ...extra])).toBe(1);
+      expect(fs.existsSync(path.join(dir, "out"))).toBe(false);
+      return err.join("\n");
+    }
+
+    it("stops on a bad --parallelism", async () => {
+      expect(await refused(["--parallelism", "0"])).toContain("--parallelism needs a positive whole number");
+    });
+
+    it("stops when the generator binding is missing from the config, naming it", async () => {
+      expect(await refused([], write("only-judge.json", { "blueprint-judge": { cmd: "x", args: [], timeout_ms: 1000 } }))).toContain('has no binding "generator-agent"');
+    });
+
+    it("stops when the judge binding cannot run, before any generation", async () => {
+      const config = write("broken.json", {
+        "generator-agent": { cmd: process.execPath, args: [], model: "m", timeout_ms: 1000 },
+        "blueprint-judge": { cmd: "no-such-wrapper-xyz", args: [], timeout_ms: 1000 },
+      });
+      expect(await refused(["--judge"], config)).toContain("cannot run");
+    });
+
+    it("stops on a brief that is not there, and with no brief at all, and prints its help", async () => {
+      expect(await main(["generate", path.join(dir, "missing.json"), "--config", stubConfig([good])], { root: process.cwd(), out: (t: string) => out.push(t), err: (t: string) => err.push(t), env: {} })).toBe(1);
+      expect(err.join("\n")).toContain("brief path not found");
+      err = [];
+      expect(await main(["generate", "--quiet"], { root: process.cwd(), out: (t: string) => out.push(t), err: (t: string) => err.push(t), env: {} })).toBe(1);
+      expect(err.join("\n")).toContain("expected at least 1 argument");
+      out = [];
+      expect(await main(["generate", "--help"], { root: process.cwd(), out: (t: string) => out.push(t), err: (t: string) => err.push(t), env: {} })).toBe(0);
+      expect(out.join("\n")).toContain("--install");
+      expect(out.join("\n")).not.toContain("--backend");
+    });
   });
 });
 
@@ -252,7 +373,7 @@ describe("the clue-graph generator prompt", () => {
 describe("the clue-graph workspace", () => {
   function workspace(caseValue: unknown, briefValue: unknown) {
     const target = path.join(dir, "workspace");
-    const setup = spawnSync("bash", [SETUP, target, "clue-graph"], { encoding: "utf8" });
+    const setup = spawnSync("bash", [SETUP, target], { encoding: "utf8" });
     expect(setup.status, setup.stderr).toBe(0);
     fs.writeFileSync(path.join(target, "brief.json"), JSON.stringify({ story_brief: briefValue, instructions: "x" }));
     fs.writeFileSync(path.join(target, "case.json"), JSON.stringify(caseValue));
@@ -286,9 +407,13 @@ describe("the clue-graph workspace", () => {
     expect(failed.stderr).toContain(`metadata.size: the brief's size is "medium", the case has "small"`);
   });
 
-  it("refuses an unknown format", () => {
-    const setup = spawnSync("bash", [SETUP, path.join(dir, "other"), "msf"], { encoding: "utf8" });
-    expect(setup.status).toBe(1);
-    expect(setup.stderr).toContain("unknown format: msf");
+  it("refuses a workspace that already exists, and an unknown format argument", () => {
+    const target = workspace(good, brief);
+    const again = spawnSync("bash", [SETUP, target], { encoding: "utf8" });
+    expect(again.status).toBe(2);
+    expect(again.stderr).toContain("refusing to overwrite existing workspace");
+    const other = spawnSync("bash", [SETUP, path.join(dir, "other"), "msf"], { encoding: "utf8" });
+    expect(other.status).toBe(1);
+    expect(other.stderr).toContain("usage:");
   });
 });

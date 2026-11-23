@@ -13,7 +13,6 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { validateClueGraph } from "../../../packages/shared/src/clue-graph-validator.ts";
 import type { ClueGraphCase } from "../../../packages/shared/src/clue-graph-schema.ts";
 import { CLUE_GRAPH_BREAKS, brokenCopy } from "../../../evaluation/blueprint/clue-graph-breaks.ts";
-import { blueprintFormat } from "../../../evaluation/blueprint/judge.ts";
 import { clueWaves, playerView } from "../../../evaluation/blueprint/player-view.ts";
 import { runClueGraphChecks } from "../../../evaluation/checks/clue-graph-case.ts";
 import { COMMANDS } from "../../../evaluation/commands.ts";
@@ -23,7 +22,6 @@ import { validateJudgeAnswer } from "../../../evaluation/core/judge-output.ts";
 import { composeJudgeSystemPrompt } from "../../../evaluation/core/judge-prompt.ts";
 import { checksFor, judgesFor } from "../../../evaluation/core/registry.ts";
 import { readResult } from "../../../evaluation/core/result.ts";
-import { validBlueprintV2 } from "./fixtures/blueprint-v2.fixture.ts";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = process.cwd();
@@ -43,27 +41,13 @@ const greenhouse = story("greenhouse-prizewinner");
 const dragon = story("dragon-crown");
 
 describe("which blueprints get the clue-graph judges", () => {
-  it("gives a clue-graph case its own check and four judges, and none of the Blueprint V2 ones", () => {
-    expect(judgesFor("blueprint", { format: "clue_graph" }).map((j) => j.id)).toEqual(CASE_JUDGES);
-    expect(checksFor("blueprint", "clue_graph").map((c) => c.id)).toEqual(["clue_graph_valid"]);
-    const v2 = new Set([...judgesFor("blueprint", { candidates: true }), ...checksFor("blueprint")].map((e) => e.id));
-    for (const id of [...CASE_JUDGES, "clue_graph_valid"]) expect(v2.has(id), id).toBe(false);
-  });
-
-  it("gives these judges new ids, never a V2 dimension's", () => {
-    const v2 = judgesFor("blueprint", { candidates: true }).map((j) => j.id);
-    expect(v2).toEqual(expect.arrayContaining(["clue_graph", "character_grounding"]));
-    for (const id of CASE_JUDGES) expect(v2).not.toContain(id);
-  });
-
-  it("reads a case by its format and anything else as Blueprint V2", () => {
-    expect(blueprintFormat(greenhouse)).toBe("clue_graph");
-    expect(blueprintFormat({ format: "clue-graph/1" })).toBe("clue_graph");
-    expect(blueprintFormat(validBlueprintV2)).toBe("v2");
+  it("gives a case its own check and four judges, and nothing else", () => {
+    expect(judgesFor("blueprint", { candidates: true }).map((j) => j.id)).toEqual(CASE_JUDGES);
+    expect(checksFor("blueprint").map((c) => c.id)).toEqual(["clue_graph_valid"]);
   });
 
   it("fails every one on a major finding, and sends only the step judge the player's view", () => {
-    for (const judge of judgesFor("blueprint", { format: "clue_graph" })) {
+    for (const judge of judgesFor("blueprint")) {
       expect(judge.verdict, judge.id).toBe("major_findings");
       expect(judge.playerView === true, judge.id).toBe(judge.id === "cg_step_sense");
       expect(judge.prompt).toMatchObject({ preamble: "evaluation/prompts/clue-graph-judge-system.md" });
@@ -277,9 +261,25 @@ describe("judge blueprint on a clue-graph case", () => {
 
   it("refuses a brief, and a judge a case does not have", async () => {
     await expect(run(caseArgv("--brief", path.join(dir, "brief.json")))).resolves.toBe(1);
-    expect(err.join("\n")).toMatch(/judged without a brief/);
+    expect(err.join("\n")).toContain("--brief");
     err.length = 0;
     await expect(run(caseArgv("--judges", "solve_depth"))).resolves.toBe(1);
-    expect(err.join("\n")).toMatch(/--judges needs dimension ids from: cg_soundness/);
+    expect(err.join("\n")).toMatch(/--judges needs judge ids from: cg_soundness/);
+  });
+
+  it("fails a file that is not a clue-graph case by naming what it lacks, and judges none of it", async () => {
+    fs.writeFileSync(path.join(dir, "dragon-crown.json"), JSON.stringify({ id: "old", world: {} }));
+    expect(await run(caseArgv("--quiet"))).toBe(2);
+    const [resultFile] = fs.globSync("**/result.json", { cwd: path.join(dir, "out") });
+    const result = await readResult(path.join(dir, "out", resultFile));
+    expect(result.verdicts[0]).toMatchObject({ id: "clue_graph_valid", status: "fail" });
+    expect(result.verdicts.slice(1).map((v) => v.status)).toEqual(["error", "error", "error", "error"]);
+    expect(result.verdicts[1].reason).toMatch(/Case failed schema validation/);
+  });
+
+  it("validates a case with no model, and fails one that is not valid", async () => {
+    expect(await run(["validate", path.join(dir, "dragon-crown.json"), "--output-root", path.join(dir, "out")])).toBe(0);
+    fs.writeFileSync(path.join(dir, "dragon-crown.json"), JSON.stringify({ format: "clue-graph/2" }));
+    expect(await run(["validate", path.join(dir, "dragon-crown.json"), "--output-root", path.join(dir, "out2")])).toBe(2);
   });
 });

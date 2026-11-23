@@ -58,7 +58,7 @@ export function seedSessionWithHistory({ databaseFile, blueprint, given, aiProfi
       JSON.stringify(given.discovered_clues ?? []),
       now,
       now,
-      blueprint.msf ? JSON.stringify(blueprint.msf) : null,
+      null,
       // The private snapshot every turn of a clue-graph case plays, as a start saves it.
       blueprint.clue_graph ? JSON.stringify(blueprint.clue_graph) : null,
     );

@@ -2,7 +2,7 @@ import fs from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
-import type { ConversationFragment } from "../../../packages/game-engine/src/ai-context.ts";
+import type { ConversationFragment, V2BlueprintContext } from "../../../packages/game-engine/src/ai-context.ts";
 import { loadPromptTemplate } from "../../../packages/game-engine/src/ai-prompts.ts";
 import { allRoleRequestNames, buildNarrationPrompt, buildRoleRequest } from "../../../packages/game-engine/src/role-request.ts";
 import {
@@ -13,8 +13,8 @@ import {
 
 // The stored snow-foxes game, in which Barnaby swung between two stories.
 const trace = JSON.parse(
-  fs.readFileSync("evaluation/truth/games/large-snow-foxes-kid-7/trace.json", "utf8"),
-) as { blueprint: Parameters<typeof buildRoleRequest>[0]["blueprint"]; events: ConversationFragment[] };
+  fs.readFileSync("tests/api/unit/fixtures/snow-foxes-trace.json", "utf8"),
+) as { blueprint: V2BlueprintContext; events: ConversationFragment[] };
 
 async function talkAt(sequence: number, characterId: string, locationId: string) {
   const event = trace.events.find((entry) => entry.sequence === sequence)!;

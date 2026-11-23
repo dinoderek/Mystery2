@@ -1,6 +1,6 @@
 # Narrator grounding on unseen mysteries
 
-Status: measurement awaits operator review. Checked against main `7eee941` on 2026-11-23.
+Status: measurement awaits operator review. Checked against main `3139e21` on 2026-11-23.
 
 ## Objective
 

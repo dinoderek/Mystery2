@@ -214,7 +214,7 @@ describe("the steps a character may speak of", () => {
 
 describe("Barnaby's talk context, rebuilt from the stored snow-foxes game", () => {
   const trace = JSON.parse(
-    fs.readFileSync("evaluation/truth/games/large-snow-foxes-kid-7/trace.json", "utf8"),
+    fs.readFileSync("tests/api/unit/fixtures/snow-foxes-trace.json", "utf8"),
   ) as { blueprint: Parameters<typeof buildTalkConversationContext>[0]["blueprint"]; events: ConversationFragment[] };
   // The stored game predates recorded use, so turn 28's line, which makes the
   // prints' point at Barnaby, carries what the engine now records for it.

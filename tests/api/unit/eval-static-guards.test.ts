@@ -51,11 +51,11 @@ describe("the evaluation tree", () => {
 
   it("starts a model subprocess or calls a model API only in the core, or in a wrapper's own body", () => {
     const outsideCore = evaluationFiles.filter((file) => /\.(ts|sh)$/.test(file) && !file.startsWith("evaluation/core/"));
-    // The api generation backend is a script a binding starts; it makes the one call.
-    const wrapperBody = new Set(["evaluation/generate/openrouter.ts", "evaluation/runtime/config/wrappers/openrouter-runtime.ts"]);
+    // A binding starts this wrapper body to make its one model call.
+    const wrapperBody = new Set(["evaluation/runtime/config/wrappers/openrouter-runtime.ts"]);
     // The self-play client talks to the throwaway game server, not to a model.
     const gameServerClient = new Set(["evaluation/playtest/lib/api.ts"]);
-    const starter = /child_process|(?<![.\w])(spawn|spawnSync|execFile|execFileSync|execSync|exec)\(|runClaudeCli|generateBlueprint\(|openrouter\.ai|api\.openai\.com|(?<![.\w])fetch\(/;
+    const starter = /child_process|(?<![.\w])(spawn|spawnSync|execFile|execFileSync|execSync|exec)\(|runClaudeCli|openrouter\.ai|api\.openai\.com|(?<![.\w])fetch\(/;
     const offenders = filesMatching(outsideCore, starter).filter((file) => !wrapperBody.has(file) && !gameServerClient.has(file));
     expect(offenders).toEqual([]);
   });
@@ -68,9 +68,8 @@ describe("the evaluation tree", () => {
 });
 
 describe("./dev eval", () => {
-  it("lists exactly the fourteen evaluation commands", () => {
+  it("lists exactly the nine evaluation commands", () => {
     expect(COMMANDS.map((command) => command.name)).toEqual([
-      "scenes",
       "judge blueprint",
       "validate",
       "judge game",
@@ -80,21 +79,16 @@ describe("./dev eval", () => {
       "baseline compare",
       "play",
       "report",
-      "label",
-      "score",
-      "compare",
-      "suite",
     ]);
     const listing = listCommands(COMMANDS).split("\n");
     const listed = listing.filter((line) => /^ {2}\S/.test(line));
-    expect(listed).toHaveLength(14);
+    expect(listed).toHaveLength(9);
   });
 
   it("has a test that runs each command's main path on stub bindings", () => {
     // The gate runs every command without a model call. A new command is a new
     // row here, naming the test that runs it and what that test starts it with.
     const runBy: Record<string, [file: string, startedWith: string]> = {
-      scenes: ["tests/api/unit/eval-scenes-command.test.ts", '"scenes",'],
       "judge blueprint": ["tests/api/unit/eval-blueprint-command.test.ts", '["judge", "blueprint"'],
       validate: ["tests/api/unit/eval-blueprint-command.test.ts", '["validate"'],
       "judge game": ["tests/api/unit/trace-judge-game.test.ts", '["judge", "game"'],
@@ -104,16 +98,19 @@ describe("./dev eval", () => {
       "baseline compare": ["tests/api/unit/runtime-expect-run.test.ts", '["baseline", "compare"'],
       play: ["tests/api/integration/playtest-command.test.ts", "['play', ...args"],
       report: ["tests/api/integration/playtest-command.test.ts", "['report', runDir]"],
-      score: ["tests/api/unit/eval-score.test.ts", '["score", ...argv]'],
-      label: ["tests/api/unit/eval-label.test.ts", '["label", "medal"'],
-      compare: ["tests/api/unit/eval-compare.test.ts", '["compare", ...argv]'],
-      suite: ["tests/api/unit/eval-suite-helpers.ts", '["suite", file'],
     };
 
     expect(Object.keys(runBy).sort()).toEqual(COMMANDS.map((command) => command.name).sort());
     for (const [name, [file, startedWith]] of Object.entries(runBy)) {
       expect(fs.readFileSync(path.join(ROOT, file), "utf8"), name).toContain(startedWith);
     }
+  });
+
+  it.each(["label", "suite", "score", "compare"])("rejects retired command %s as unknown", async (name) => {
+    const errors: string[] = [];
+    const code = await runEval([name], { root: ROOT, out: () => {}, err: (text) => errors.push(text), env: {} }, COMMANDS);
+    expect(code).toBe(1);
+    expect(errors.join("\n")).toContain(`Unknown eval command "${name}"`);
   });
 
   it("prints that list for --help and exits 0", async () => {
@@ -128,31 +125,6 @@ describe("the workspace validators", () => {
   function run(script: string, args: string[], cwd: string) {
     return spawnSync("node", [path.join(ROOT, script), ...args], { cwd, encoding: "utf8" });
   }
-
-  it("reject a blueprint with missing fields without crashing, naming each one", () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "validate-blueprint-"));
-    try {
-      fs.writeFileSync(path.join(dir, "b.json"), "{}");
-      const result = run("evaluation/generator-harness/scripts/validate-blueprint.ts", ["b.json"], dir);
-      expect(result.status).toBe(1);
-      expect(result.stderr).toContain("INVALID");
-      expect(result.stderr).toContain("solution_paths");
-      expect(result.stderr).not.toContain("fatal");
-    } finally {
-      fs.rmSync(dir, { recursive: true, force: true });
-    }
-  });
-
-  it("exit 3 with a usage line when given no file, and 2 for one that is not JSON", () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "validate-blueprint-"));
-    try {
-      expect(run("evaluation/generator-harness/scripts/validate-blueprint.ts", [], dir).status).toBe(3);
-      fs.writeFileSync(path.join(dir, "b.json"), "not json");
-      expect(run("evaluation/generator-harness/scripts/validate-blueprint.ts", ["b.json"], dir).status).toBe(2);
-    } finally {
-      fs.rmSync(dir, { recursive: true, force: true });
-    }
-  });
 
   it("judge-output validator exits 3 with no file, and 2 outside a workspace", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "validate-judge-"));

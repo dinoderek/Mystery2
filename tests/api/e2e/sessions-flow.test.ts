@@ -148,8 +148,10 @@ describe('session list resume/view API flows', () => {
 
   it('opens a completed session in ended mode with persisted history', async () => {
     const gameId = await startSession(auth);
+    // One route to the culprit: the empty jar, and the score sheet that clears Bob.
+    for (const line of ['search the pantry shelf', 'go to the Living Room', 'search']) await playLine(auth, gameId, line);
 
-    const verdict = await playLine(auth, gameId, 'accuse Alice based on motive and opportunity.');
+    const verdict = await playLine(auth, gameId, 'accuse Alice: the cookie jar is empty, and Bob was playing his board game.');
     expect(verdict.state.mode).toBe('ended');
 
     const preResumeData = await loadSessionTranscript(auth, gameId);
@@ -175,7 +177,7 @@ describe('session list resume/view API flows', () => {
     expect(lastEventParts.some((p: { speaker: { kind: string } }) => p.speaker.kind === 'narrator')).toBe(true);
     expect(
       getData.narration_events.map((entry: { event_type: string }) => entry.event_type),
-    ).toEqual(['start', 'accuse_resolved']);
+    ).toEqual(['start', 'search', 'move', 'search', 'accuse_resolved']);
     expect(getData.narration_events).toEqual(preResumeData.narration_events);
   });
 });
@@ -197,8 +199,9 @@ describe('three accusations, each one shot', () => {
     const searched = await playLine(auth, gameId, 'search');
     expect(searched.state).toMatchObject({ mode: 'explore', time_remaining: 9, accusations_left: 2 });
 
+    for (const line of ['search the pantry shelf', 'go to the Living Room', 'search']) await playLine(auth, gameId, line);
     await playLine(auth, gameId, 'accuse');
-    const won = await playLine(auth, gameId, 'Alice took them: the crumb was in the kitchen.');
+    const won = await playLine(auth, gameId, 'Alice took them: the cookie jar is empty, and Bob was playing his board game.');
     expect(won.result).toBe('win');
     expect(won.state).toMatchObject({ mode: 'ended', accusations_left: 2 });
   });

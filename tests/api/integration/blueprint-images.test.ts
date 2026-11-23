@@ -1,6 +1,3 @@
-import fs from "node:fs/promises";
-import path from "node:path";
-
 import { describe, expect, it } from "vitest";
 
 import {
@@ -12,6 +9,7 @@ import {
 } from "./helpers";
 import { collectBlueprintImageReferences } from "../../../scripts/lib/blueprint-image-manifest.mjs";
 import { buildImageStorageKey } from "../../../packages/game-engine/src/images.ts";
+import { readMockCase } from "../../testkit/src/mock-case";
 
 // The contract: the image ids a blueprint names are the files the server
 // serves, at the path `blueprintImageUrl()` builds — and only those.
@@ -20,14 +18,8 @@ import { buildImageStorageKey } from "../../../packages/game-engine/src/images.t
 // carry no cookie is part of what they assert.
 
 describe("blueprint images", () => {
-  async function mockBlueprint() {
-    return JSON.parse(
-      await fs.readFile(path.resolve(process.cwd(), "blueprints/mock-blueprint.json"), "utf-8"),
-    );
-  }
-
   it("serves every image the blueprint references, at the path the link endpoint returns", async () => {
-    const blueprint = await mockBlueprint();
+    const blueprint = readMockCase();
     const references = collectBlueprintImageReferences(blueprint);
     expect(references.length).toBeGreaterThanOrEqual(3); // cover + location + portrait
 
@@ -48,17 +40,17 @@ describe("blueprint images", () => {
   it("404s an image the blueprint does not reference, even when the file exists", async () => {
     // The private bucket's read policy became this check, and it is the whole
     // of what confines the route: the blueprint has to name the image.
-    seedTestImage("mock-blueprint.unreferenced.png");
+    seedTestImage("mock-case.unreferenced.png");
 
     const bytesRes = await fetch(
-      `${BASE_URL}/api/images/${MOCK_BLUEPRINT_ID}/mock-blueprint.unreferenced.png`,
+      `${BASE_URL}/api/images/${MOCK_BLUEPRINT_ID}/mock-case.unreferenced.png`,
     );
     expect(bytesRes.status).toBe(404);
   });
 
   it("404s a referenced image whose file is missing", async () => {
-    const blueprint = await mockBlueprint();
-    const coverId: string = blueprint.metadata.image_id;
+    const blueprint = readMockCase();
+    const coverId = blueprint.metadata.image_id!;
 
     // An earlier test in this file may have seeded it; the case under test is
     // a blueprint that names an image nobody has generated yet. The cover is

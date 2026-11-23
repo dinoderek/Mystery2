@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { BlueprintV2 } from "./blueprint-schema-v2.ts";
 
 const coordinate = z.number().finite().min(-200).max(200);
 const vector = z.tuple([coordinate, coordinate, coordinate]);
@@ -38,16 +37,8 @@ export const ProceduralSceneSchema = z
   })
   .strict();
 
-export const SceneRecipeSchema = z.discriminatedUnion("kind", [
-  z
-    .object({
-      kind: z.literal("lighthouse"),
-      location_id: id,
-      label: z.string().trim().min(1).max(600),
-    })
-    .strict(),
-  ProceduralSceneSchema,
-]);
+/** A recipe is a procedural scene: the one kind there is. */
+export const SceneRecipeSchema = ProceduralSceneSchema;
 
 export const SceneManifestSchema = z
   .object({
@@ -66,7 +57,6 @@ export const SceneManifestSchema = z
           message: "Duplicate location",
         });
       locations.add(scene.location_id);
-      if (scene.kind !== "procedural") continue;
       const ids = scene.objects.map((object) => object.id);
       if (new Set(ids).size !== ids.length)
         ctx.addIssue({
@@ -96,7 +86,7 @@ export type SceneManifest = z.infer<typeof SceneManifestSchema>;
 /** Checks asset ownership and references without exposing any private blueprint fields. */
 export function validateSceneManifest(
   value: unknown,
-  blueprint: Pick<BlueprintV2, "id" | "world">,
+  blueprint: { id: string; world: { locations: ReadonlyArray<{ id: string }> } },
 ): SceneManifest {
   const manifest = SceneManifestSchema.parse(value);
   if (manifest.blueprint_id !== blueprint.id)

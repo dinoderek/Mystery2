@@ -113,17 +113,6 @@ describe("local database client", () => {
     expect(createPlayerStore(db).list().map((p) => p.name)).toEqual(["Ada"]);
   });
 
-  it("upgrades version 3 with a nullable private MSF snapshot and keeps existing sessions", async () => {
-    const player = createPlayerStore(db).create("Version three");
-    const sessionId = await createSessionStore(db, player.id).create(newSession(player.id));
-    db.exec(`${DROP_READING_AGES} alter table game_sessions drop column clue_graph_snapshot; alter table game_sessions drop column msf_snapshot; pragma user_version = 3;`);
-    db.close();
-    db = openDatabase({ path: databasePath() });
-    expect(db.prepare("pragma user_version").get()).toEqual({ user_version: SCHEMA_VERSION });
-    expect(await createSessionStore(db, player.id).getById(sessionId)).toMatchObject({ blueprint_id: "blueprint-1" });
-    expect(db.prepare("select msf_snapshot from game_sessions where id = ?").get(sessionId)).toEqual({ msf_snapshot: null });
-  });
-
   it("upgrades version 4 with a nullable private clue-graph snapshot and keeps existing sessions", async () => {
     const player = createPlayerStore(db).create("Version four");
     const sessionId = await createSessionStore(db, player.id).create(newSession(player.id));

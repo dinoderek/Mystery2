@@ -1,54 +1,42 @@
 # Judge workspace
 
-A one-shot workspace created by the evaluation pipeline to run a Claude
-agent as a single-dimension judge. Each `evaluateDimension` call produces a
-workspace under `~/mysteryevals/<run-date>/<run-stamp>/evaluators-<brief>/<dimension>/`.
-All dimensions for one run share the `evaluators-<brief>` parent, and every run
-gets its own `<run-stamp>` subtree, never overwritten.
+A one-shot workspace created by the evaluation pipeline to run a Claude agent
+as a single judge of a clue-graph case. Each judge call produces a workspace
+under `~/mysteryevals/<run-date>/<run-stamp>/evaluators-<case>/<judge>/`.
+Every run gets its own `<run-stamp>` subtree, never overwritten.
 
 ## Layout
 
 ```
 .
-├── CLAUDE.md                          Harness instructions (read by the agent)
+├── CLAUDE.md                          Instructions (clue-graph/CLAUDE.md, read by the agent)
 ├── README.md                          This file
-├── dimension-id                       One-line text: the dimension id
-├── dimension.md                       Symlink: dimension definition
-├── brief.json                         Copied: the story brief
-├── blueprint.json                     Copied: the full Blueprint V2
-├── context.json                       Copied: per-dimension context ({} if none)
+├── dimension-id                       One-line text: the judge id
+├── dimension.md                       Symlink: the judge's brief
+├── case.json                          Copied: the case
+├── player_view.json                   Copied: for cg_step_sense only
+├── context.json                       Copied: per-judge context ({} if none)
 ├── verdict.json                       Written by the agent
 ├── prompts/
-│   └── judge-system.md                Symlink: shared judge preamble
+│   └── judge-system.md                Symlink: the clue-graph judges' preamble
 ├── schema/
-│   └── output-schema.ts               Symlink: dimension's Zod output schema
-├── docs/                              (only for dims that need extra context)
-│   └── runtime-consumption.md         Symlink: curated runtime narrator doc
-│                                                (character_grounding, blueprint_broad)
+│   └── output-schema.ts               Symlink: the judge's Zod output schema
 └── scripts/
     └── validate-judge-output.ts      Symlink: schema + reference validator
 ```
 
-A clue-graph case's workspace holds `case.json` (and `player_view.json` for
-`cg_step_sense`) instead of the brief and blueprint. Its `CLAUDE.md` is
-`clue-graph/CLAUDE.md`; its preamble, `clue-graph-judge-system.md`.
-
 ## Symlinks vs copies
 
-- **Symlinks** to authoritative repo artifacts:
-  `prompts/judge-system.md`, `schema/output-schema.ts`, `dimension.md`,
-  `scripts/validate-judge-output.ts`, any per-dim docs. Edits to these
-  flow into the next eval run.
-- **Copies** of per-run inputs: `brief.json`, `blueprint.json`,
-  `context.json`. Each run gets its own snapshot.
+- **Symlinks** to authoritative repo artifacts: `prompts/judge-system.md`,
+  `schema/output-schema.ts`, `dimension.md`, `scripts/validate-judge-output.ts`.
+  Edits to these flow into the next eval run.
+- **Copies** of per-run inputs: `case.json`, `player_view.json`, `context.json`.
 - **Copies** of harness static files: `CLAUDE.md`, `README.md`.
 
 ## Pruning
 
-Workspaces accumulate. Prune with:
-
 ```
-rm -rf ~/mysteryevals/<run-date>/<run-stamp>/evaluators-<brief>        # one run's evaluators
-rm -rf ~/mysteryevals/<run-date>/<run-stamp>/evaluators-<brief>/<dim>  # one dimension
+rm -rf ~/mysteryevals/<run-date>/<run-stamp>/evaluators-<case>        # one run's judges
+rm -rf ~/mysteryevals/<run-date>/<run-stamp>/evaluators-<case>/<judge> # one judge
 rm -rf ~/mysteryevals/<run-date>/<run-stamp>/                          # one run
 ```

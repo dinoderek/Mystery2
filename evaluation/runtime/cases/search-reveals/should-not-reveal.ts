@@ -1,13 +1,13 @@
 // Searches that earn nothing: the narrator must reveal no clue, however
-// pleasantly it narrates the attempt. Hand-written on truth-set bases; each
+// pleasantly it narrates the attempt. Hand-written on runtime fixtures; each
 // comment says why the search finds nothing.
 
 import { searchCase } from "../../lib/search-case.ts";
 
-const glitterwood = "evaluation/truth/bases/glitterwood-forest/blueprint.json";
-const greenhouse = "evaluation/truth/bases/greenhouse-prizewinner/blueprint.json";
-const foxes = "evaluation/truth/bases/large-snow-foxes/blueprint.json";
-const lighthouse = "evaluation/truth/bases/lighthouse-lens/blueprint.json";
+const glitterwood = "evaluation/runtime/fixtures/glitterwood-forest/blueprint.json";
+const greenhouse = "evaluation/runtime/fixtures/greenhouse-prizewinner/blueprint.json";
+const foxes = "evaluation/runtime/fixtures/large-snow-foxes/blueprint.json";
+const lighthouse = "evaluation/runtime/fixtures/lighthouse-lens/blueprint.json";
 
 export default [
   // The fake stick was found on the shelf already; a clue is never revealed twice.

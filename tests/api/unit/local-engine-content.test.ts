@@ -16,7 +16,7 @@ import {
 } from "../../../packages/game-engine/src/content.ts";
 import type { LogWriter } from "../../../packages/game-engine/src/logging.ts";
 import { validBlueprintV2 } from "./fixtures/blueprint-v2.fixture.ts";
-import { BlueprintV2Schema } from "../../../packages/shared/src/blueprint-schema-v2.ts";
+import { readMockCase } from "../../testkit/src/mock-case.ts";
 import { createProceduralScene, createSceneManifest } from "../../testkit/src/fixtures.ts";
 
 const BLUEPRINT_ID = validBlueprintV2.id;
@@ -66,6 +66,24 @@ afterEach(() => {
 });
 
 describe("listBlueprints", () => {
+  it("loads only the supported formats from the committed catalog", async () => {
+    const logger = recordingLogger();
+    const entries = await store([path.resolve("blueprints")]).listBlueprints(logger);
+    expect(entries.length).toBeGreaterThan(0);
+    expect(entries.every(({ blueprint }) => ["v2", "clue-graph/2"].includes(blueprint.schema_version))).toBe(true);
+    expect(logger.entries).toEqual([]);
+  });
+
+  it("rejects an unknown tagged format by filename, even with otherwise valid V2 fields", async () => {
+    writeBlueprint(primaryDir, "retired.json", { $format: "retired-case/1" });
+    const logger = recordingLogger();
+    expect(await store().listBlueprints(logger)).toEqual([]);
+    expect(logger.entries).toEqual([{
+      event: "blueprint.parse_failed",
+      details: { object: "retired.json", error: "Unknown case format: retired-case/1" },
+    }]);
+  });
+
   it("returns every readable blueprint with its filename as the source", async () => {
     writeBlueprint(primaryDir, `${BLUEPRINT_ID}.json`);
 
@@ -198,16 +216,17 @@ describe("resolveImageFile", () => {
 });
 
 describe("loadScenes", () => {
-  const blueprint = BlueprintV2Schema.parse(validBlueprintV2);
+  const blueprint = readMockCase();
+  const SCENES_ID = blueprint.id;
   it("prefers configured artwork and uses committed examples only when it is absent", async () => {
     const configured = path.join(tempDir, "configured-scenes");
     const committed = path.join(tempDir, "committed-scenes");
     fs.mkdirSync(configured); fs.mkdirSync(committed);
     const content = createLocalContentStore({ blueprintDirs: [primaryDir], imagesDir, sceneDirs: [configured, committed] });
-    const fallback = createSceneManifest({ blueprint_id: BLUEPRINT_ID, scenes: [createProceduralScene({ location_id: blueprint.world.locations[0].id })] });
-    fs.writeFileSync(path.join(committed, `${BLUEPRINT_ID}.json`), JSON.stringify(fallback));
+    const fallback = createSceneManifest({ blueprint_id: SCENES_ID, scenes: [createProceduralScene({ location_id: blueprint.world.locations[0].id })] });
+    fs.writeFileSync(path.join(committed, `${SCENES_ID}.json`), JSON.stringify(fallback));
     expect(await content.loadScenes(blueprint)).toEqual(fallback);
-    fs.writeFileSync(path.join(configured, `${BLUEPRINT_ID}.json`), JSON.stringify(createSceneManifest({ blueprint_id: BLUEPRINT_ID })));
+    fs.writeFileSync(path.join(configured, `${SCENES_ID}.json`), JSON.stringify(createSceneManifest({ blueprint_id: SCENES_ID })));
     expect((await content.loadScenes(blueprint))?.scenes).toEqual([]);
   });
   it("returns missing artwork as null, and reloads saved public recipes after an edit", async () => {
@@ -215,9 +234,9 @@ describe("loadScenes", () => {
     expect(await content.loadScenes(blueprint)).toBeNull();
     const dir = path.join(tempDir, "blueprint-scenes");
     fs.mkdirSync(dir);
-    const file = path.join(dir, `${BLUEPRINT_ID}.json`);
+    const file = path.join(dir, `${SCENES_ID}.json`);
     const scene = createProceduralScene({ location_id: blueprint.world.locations[0].id });
-    const manifest = createSceneManifest({ blueprint_id: BLUEPRINT_ID, scenes: [scene] });
+    const manifest = createSceneManifest({ blueprint_id: SCENES_ID, scenes: [scene] });
     fs.writeFileSync(file, JSON.stringify(manifest));
     expect(await content.loadScenes(blueprint)).toEqual(manifest);
     fs.writeFileSync(file, JSON.stringify({ ...manifest, scenes: [] }));
@@ -227,10 +246,10 @@ describe("loadScenes", () => {
   it("rejects invalid files and references, rather than quietly hiding a broken primary asset", async () => {
     const dir = path.join(tempDir, "blueprint-scenes");
     fs.mkdirSync(dir);
-    const file = path.join(dir, `${BLUEPRINT_ID}.json`);
+    const file = path.join(dir, `${SCENES_ID}.json`);
     fs.writeFileSync(file, "not json");
     await expect(store().loadScenes(blueprint)).rejects.toThrow();
-    fs.writeFileSync(file, JSON.stringify(createSceneManifest({ blueprint_id: BLUEPRINT_ID, scenes: [createProceduralScene({ location_id: "not-a-place" })] })));
+    fs.writeFileSync(file, JSON.stringify(createSceneManifest({ blueprint_id: SCENES_ID, scenes: [createProceduralScene({ location_id: "not-a-place" })] })));
     await expect(store().loadScenes(blueprint)).rejects.toThrow("Unknown scene location");
     fs.rmSync(file);
     fs.mkdirSync(file);

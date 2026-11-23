@@ -17,7 +17,7 @@ import type { StoredTurn } from "../../../evaluation/runtime/lib/turn.ts";
 import { makeTurn } from "./runtime-turn-helpers.ts";
 
 const REPO_ROOT = process.cwd();
-const FIXTURE_TRACE = path.resolve("tests/api/unit/fixtures/truth/games/medal/trace.json");
+const FIXTURE_TRACE = path.resolve("tests/api/unit/fixtures/medal-trace.json");
 const MISSING = "/nonexistent/narrator-command";
 
 interface TraceFile {

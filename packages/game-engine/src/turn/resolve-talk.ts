@@ -1,18 +1,19 @@
 // Conversations: walking up to someone, asking them things, and saying goodbye.
 
+import { v2CaseOf, type PlayableBlueprint } from "../../../shared/src/playable-case.ts";
 import type { RevealedClue } from "../../../shared/src/mystery-api-contracts.ts";
 import { parseTalkConversationOutput, parseTalkEndOutput, parseTalkStartOutput } from "../ai-contracts.ts";
 import { findLocationById } from "../ai-context.ts";
 import { selectUsedClues } from "../character-state.ts";
-import { buildDiscoveredClueIdSet, isClueUnlocked } from "../clue-discovery.ts";
+import { buildDiscoveredClueIdSet } from "../clue-discovery.ts";
 import { RequestRejectedError } from "../errors.ts";
 import { createNarrationPart } from "../narration.ts";
 import { buildRoleRequest } from "../role-request.ts";
 import { createCharacterSpeaker, NARRATOR_SPEAKER } from "../speaker.ts";
-import { askRole, rejectOutput } from "./narrator.ts";
+import { askRole } from "./narrator.ts";
 import type { ActionOutcome, TurnGame, TurnRuntime } from "./types.ts";
 
-type Character = TurnGame["blueprint"]["world"]["characters"][number];
+type Character = PlayableBlueprint["world"]["characters"][number];
 
 export interface FirstTimeReveals {
   revealed_clue_ids: string[];
@@ -42,15 +43,15 @@ export function selectFirstTimeReveals(
   };
 }
 
-function characterOf(game: TurnGame, characterId: string): Character {
-  const character = game.blueprint.world.characters.find((entry) => entry.id === characterId);
+function characterOf(blueprint: PlayableBlueprint, characterId: string): Character {
+  const character = blueprint.world.characters.find((entry) => entry.id === characterId);
   if (!character) throw new RequestRejectedError(500, "Character missing in blueprint", "character_missing_in_blueprint");
   return character;
 }
 
 export async function resolveTalk(game: TurnGame, runtime: TurnRuntime, characterId: string): Promise<ActionOutcome> {
   const { session } = game;
-  const character = game.blueprint.world.characters.find(
+  const character = v2CaseOf(game.blueprint).world.characters.find(
     (entry) => entry.id === characterId && entry.location_id === session.current_location_id,
   );
   if (!character) {
@@ -125,7 +126,8 @@ export async function resolveAsk(
   ask: { character_id: string; question: string },
 ): Promise<ActionOutcome> {
   const { session } = game;
-  const character = characterOf(game, ask.character_id);
+  const blueprint = v2CaseOf(game.blueprint);
+  const character = characterOf(blueprint, ask.character_id);
   const speaker = createCharacterSpeaker(character.first_name);
 
   const { prompt, context } = await buildRoleRequest({
@@ -147,12 +149,6 @@ export async function resolveAsk(
 
   // An off-script reveal is still a real discovery; only kept ids carry the flag.
   const discovered = buildDiscoveredClueIdSet(game.history);
-  for (const id of game.blueprint.msf ? output.revealed_clue_ids : []) {
-    const clue = character.clues.find((clue) => clue.id === id);
-    const node = game.blueprint.msf?.structure.nodes[id];
-    const bypass = node?.kind === "clue" && node.requires?.kind !== "physical" && output.revealed_off_script.includes(id);
-    if (!clue || (!isClueUnlocked(clue, discovered) && !bypass)) rejectOutput(runtime, "ask", "MSF conversation revealed an unavailable clue");
-  }
   const reveals = selectFirstTimeReveals(
     output,
     new Set(character.clues.map((clue) => clue.id)),
@@ -167,8 +163,7 @@ export async function resolveAsk(
   }
   // Only what the character can be shown, and the player holds or bluffs with
   // their own words, is recorded as used.
-  const evidence = game.blueprint.msf ? new Set(Object.entries(game.blueprint.msf.structure.nodes).filter(([, node]) => node.kind === "clue").map(([id]) => id)) : character;
-  const used = selectUsedClues(output, evidence, discovered, ask.question);
+  const used = selectUsedClues(output, character, discovered, ask.question);
   if (used.dropped.length > 0) {
     runtime.logger.log("ask.used_clue_dropped", {
       game_id: game.game_id,

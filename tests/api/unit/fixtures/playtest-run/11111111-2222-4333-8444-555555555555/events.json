@@ -18,8 +18,8 @@
     "sequence": 3,
     "type": "search",
     "payload": {
-      "revealed_clue_id": "clue-crumb",
-      "revealed_clue_text": "A crumb on the floor.",
+      "revealed_clue_id": "clue_crumbs",
+      "revealed_clue_text": "[Mock] A trail of cookie crumbs runs from the pantry to the back of the kitchen, not towards the living room.",
       "diagnostics": {
         "time_after": 5
       }
@@ -49,7 +49,7 @@
         "speaker": {
           "kind": "character",
           "key": "char-alice",
-          "label": "Alice Smith"
+          "label": "Alice"
         },
         "text": "I was baking all morning."
       }

@@ -14,7 +14,7 @@
 // therefore map a thrown error to 500 and a null to 404/400.
 
 import type { ClueGraphCase } from "../../shared/src/clue-graph-schema.ts";
-import type { PlayableBlueprint, MsfCaseFile } from "../../shared/src/msf-case.ts";
+import type { PlayableCase } from "../../shared/src/playable-case.ts";
 import type { SceneManifest } from "../../shared/src/scene-schema.ts";
 import type { LogWriter } from "./logging.ts";
 import type { NarrationPart } from "./narration.ts";
@@ -28,7 +28,6 @@ export interface EnginePlayer {
 
 /** A row of `game_sessions`, as every handler expects to read it. */
 export interface GameSessionRow {
-  msf_snapshot?: MsfCaseFile;
   /** The validated clue-graph case the game started with: resume and every turn play this, not today's file. */
   clue_graph_snapshot?: ClueGraphCase;
   id: string;
@@ -49,7 +48,6 @@ export interface GameSessionRow {
 
 /** The subset of session columns the catalog endpoint reads. */
 export interface GameSessionSummaryRow {
-  msf_title?: string;
   clue_graph_title?: string;
   /** The saved clue-graph snapshot's format, when there is one: an old one cannot be opened. */
   clue_graph_format?: string;
@@ -63,7 +61,6 @@ export interface GameSessionSummaryRow {
 }
 
 export interface NewGameSession {
-  msf_snapshot?: MsfCaseFile;
   clue_graph_snapshot?: ClueGraphCase;
   player_id: string;
   blueprint_id: string;
@@ -164,7 +161,7 @@ export interface EventStore {
 }
 
 export interface BlueprintSummaryEntry {
-  blueprint: PlayableBlueprint;
+  blueprint: PlayableCase;
   /** Storage key / filename the blueprint was read from, for diagnostics. */
   source: string;
 }
@@ -176,9 +173,9 @@ export interface ContentStore {
    */
   listBlueprints(logger?: LogWriter): Promise<BlueprintSummaryEntry[]>;
   /** Returns null when the blueprint is missing or unparseable. */
-  loadBlueprint(blueprintId: string, logger: LogWriter): Promise<PlayableBlueprint | null>;
+  loadBlueprint(blueprintId: string, logger: LogWriter): Promise<PlayableCase | null>;
   /** Optional public artwork; missing returns null, invalid content throws. */
-  loadScenes(blueprint: PlayableBlueprint): Promise<SceneManifest | null>;
+  loadScenes(blueprint: PlayableCase): Promise<SceneManifest | null>;
 }
 
 /** Resolved AI runtime profile, including the provider secret. */

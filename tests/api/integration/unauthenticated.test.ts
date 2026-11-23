@@ -1,3 +1,5 @@
+import { isDeepStrictEqual } from "node:util";
+
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   API_URL,
@@ -21,7 +23,7 @@ import {
 // A portrait rather than the cover: `blueprint-images.test.ts` deletes the
 // cover to prove a missing file 404s, and suites in a run share one image
 // directory. Nothing removes this one.
-const REFERENCED_IMAGE_ID = "mock-blueprint.character-char-alice.png";
+const REFERENCED_IMAGE_ID = "mock-case.character-char-alice.png";
 
 const NO_PROFILE_HEADERS = { "Content-Type": "application/json" };
 
@@ -90,11 +92,16 @@ describe("requests without a profile", () => {
     );
 
     // Signing in does not change it: the catalog belongs to nobody, so both
-    // callers see the same thing.
-    const signedIn = await (
-      await fetch(`${API_URL}/blueprints-list`, { headers: auth.headers })
-    ).json();
-    expect(signedIn).toEqual(anonymous);
+    // callers see the same thing. Another file installs a case in the config
+    // root every file shares for a moment, so one pair of reads can straddle
+    // it; a catalog that depended on the profile would differ on every pair.
+    const read = async (headers?: Record<string, string>) =>
+      (await fetch(`${API_URL}/blueprints-list`, headers ? { headers } : {})).json();
+    let pair = [anonymous, await read(auth.headers)];
+    for (let attempt = 0; attempt < 3 && !isDeepStrictEqual(pair[0], pair[1]); attempt += 1) {
+      pair = await Promise.all([read(), read(auth.headers)]);
+    }
+    expect(pair[1]).toEqual(pair[0]);
   });
 
   it("serves image bytes without a profile", async () => {

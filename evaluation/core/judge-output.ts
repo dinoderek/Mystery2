@@ -3,7 +3,7 @@
  *
  * Two stages. The shape is the judge's schema (or, for the turn-level age
  * judge, the shape its prompt asks for). The ids are the checks the judge's
- * registry entry declares, which need the blueprint it judged: a model that
+ * registry entry declares, which need the case it judged: a model that
  * cites a clue that does not exist has answered in the right shape and still
  * wrongly. A harness retries a model on the shape; the judge workspace tells
  * its agent about both.
@@ -69,19 +69,11 @@ export type AnswerResult =
   | { ok: false; stage: "shape"; messages: string[] }
   | { ok: false; stage: "ids"; messages: string[] };
 
-/**
- * Both stages, for a judge's answer about a blueprint. `context` is the
- * context the judge was given, which some of its id checks read.
- */
-export function validateJudgeAnswer(
-  definition: JudgeDefinition,
-  answer: unknown,
-  blueprint: unknown,
-  context: Record<string, unknown> = {},
-): AnswerResult {
+/** Both stages, for a judge's answer about a case. */
+export function validateJudgeAnswer(definition: JudgeDefinition, answer: unknown, subject: unknown): AnswerResult {
   const shape = validateJudgeOutput(answer, definition.schema);
   if (!shape.ok) return { ok: false, stage: "shape", messages: [shape.message] };
-  const issues = checkAnswerIds(definition.entry.idChecks ?? [], shape.data, blueprint, context);
+  const issues = checkAnswerIds(definition.entry.idChecks ?? [], shape.data, subject);
   if (issues.length > 0) return { ok: false, stage: "ids", messages: issues };
   return { ok: true, data: shape.data };
 }

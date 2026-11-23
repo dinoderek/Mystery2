@@ -26,10 +26,9 @@
  */
 
 import fs from "node:fs";
-import { buildClueGraphBlueprint } from "../../packages/shared/src/clue-graph-case.ts";
+import { buildClueGraphWorld } from "../../packages/shared/src/clue-graph-case.ts";
 import { validateClueGraph } from "../../packages/shared/src/clue-graph-validator.ts";
 import { isClueGraphFile } from "../../packages/shared/src/clue-graph-schema.ts";
-import { buildMsfBlueprint, validateMsfCaseFile } from "../../packages/shared/src/msf-case.ts";
 import net from "node:net";
 import os from "node:os";
 import path from "node:path";
@@ -90,7 +89,7 @@ const HELP = formatHelp({
     "Each game is a subject with its result.json; the run gets report.html. Blueprints are looked up in the\n" +
     "repo's blueprints/ only; one generated elsewhere is named by its path.",
   options: [
-    ["--blueprint <x>", "a blueprint or case id, file name, title, or path (with --replay: the original or its paired MSF case)"],
+    ["--blueprint <x>", "a blueprint or case id, file name, title, or path"],
     ["--replay <script.json>", "replay a recorded game's inputs; no investigator is called"],
     ["--persona <name>", `a file in personas/ (default: detective; not with --replay)`],
     ["--games <n>", `games to play (default: ${DEFAULT_GAMES})`],
@@ -164,8 +163,8 @@ function readOptions({ common, values }: ParsedArgs): PlayOptions {
 /** A blueprint by path, or by id, file name or title among the repo's. */
 function readPlayableFile(file: string): PlaytestBlueprint {
   const candidate = JSON.parse(fs.readFileSync(file, "utf8"));
-  if (isClueGraphFile(candidate)) return buildClueGraphBlueprint(validateClueGraph(candidate));
-  return candidate?.$format === "MSF-CASE/1" || candidate?.msf ? buildMsfBlueprint(validateMsfCaseFile(candidate.msf ?? candidate)) : candidate;
+  if (isClueGraphFile(candidate)) return buildClueGraphWorld(validateClueGraph(candidate));
+  return candidate;
 }
 
 export function findBlueprint(query: string, repoBlueprints: string, hint: string): { file: string; blueprint: PlaytestBlueprint } {
@@ -173,7 +172,7 @@ export function findBlueprint(query: string, repoBlueprints: string, hint: strin
     return { file: path.resolve(query), blueprint: readPlayableFile(query) };
   }
   const wanted = query.toLowerCase().replace(/\.json$/, "");
-  const names = ["", "msf", "clue-graph"].flatMap((folder) => {
+  const names = ["", "clue-graph"].flatMap((folder) => {
     const dir = path.join(repoBlueprints, folder);
     return fs.existsSync(dir) ? fs.readdirSync(dir).filter((entry) => entry.endsWith(".json")).map((entry) => path.join(folder, entry)) : [];
   });
@@ -492,7 +491,7 @@ async function runPlay(argv: string[], context: EvalContext, startServer: StartS
     path.join(root, "blueprints"),
     hint,
   );
-  if (script && blueprint.id !== script.blueprintId && blueprint.msf?.paired_blueprint_id !== script.blueprintId) {
+  if (script && blueprint.id !== script.blueprintId) {
     throw new UsageError(`The script was played on "${script.blueprintId}", not "${blueprint.id}".`);
   }
   const bindings = resolveBindings(parsed, options, root);

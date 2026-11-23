@@ -1,7 +1,4 @@
 import type { AIRoleName } from "./ai-contracts.ts";
-import type { MsfCaseFile } from "../../shared/src/msf-case.ts";
-import { evaluateMysteryStructure } from "../../shared/src/mystery-structure-progress.ts";
-import { msfCharacterKnowledge } from "./msf-context.ts";
 import {
   buildDiscoveredClueIdSet,
   buildKnownCluesWithOrigin,
@@ -16,6 +13,7 @@ import { buildCharacterState, FALLBACK_VISITS, gateClueIds, isAgendaFullyEarned,
 import { type ClueRef, type ClueWorld, mapClueIdsToClues } from "./clues.ts";
 import { namedHiddenSpot } from "./search-target.ts";
 import type { ClueGraphCase } from "../../shared/src/clue-graph-schema.ts";
+import type { ClueGraphWorld } from "../../shared/src/clue-graph-case.ts";
 import { ACCUSE_FAILED } from "./accusations.ts";
 import { playOf } from "./clue-graph/history.ts";
 import { lineOf, supportedConclusions } from "./clue-graph/play.ts";
@@ -92,9 +90,11 @@ export interface BlueprintReasoningPath {
   character_clue_ids: string[];
 }
 
-export interface BlueprintContext {
-  msf?: MsfCaseFile;
-  clue_graph?: ClueGraphCase;
+/** The world view a narrator context is built from: a V2 case's, or a clue graph's own. */
+export type BlueprintContext = V2BlueprintContext | ClueGraphWorld;
+
+export interface V2BlueprintContext {
+  clue_graph?: undefined;
   metadata: {
     title: string;
     one_liner: string;
@@ -309,7 +309,6 @@ export interface TalkCharacterStateContext {
 }
 
 export interface TalkCharacterPrivateContext extends TalkCharacterPublicSummary {
-  msf?: ReturnType<typeof msfCharacterKnowledge>;
   background: string;
   personality: string;
   initial_attitude_towards_investigator: string;
@@ -361,10 +360,9 @@ export interface ClueGraphProgress {
 }
 
 export interface AccusationJudgeContext {
-  msf_progress?: ReturnType<typeof evaluateMysteryStructure>;
   /** This accusation is the game's last: one that fails ends the case. */
   last_accusation: boolean;
-  full_blueprint: BlueprintContext;
+  full_blueprint: V2BlueprintContext;
   // Every clue discovered this session, in discovery order. The only thing
   // separating what exists in the blueprint from what the player holds.
   player_known_clues: KnownClueWithOrigin[];
@@ -419,18 +417,31 @@ interface BuildContextInput {
   graph_accusation_context?: GraphAccusationContext | GraphVerdictContext;
 }
 
-export function findLocationById(
-  blueprint: BlueprintContext,
+export function findLocationById<B extends BlueprintContext>(
+  blueprint: B,
   locationId: string,
-): BlueprintContext["world"]["locations"][number] | undefined {
-  return blueprint.world.locations.find((l) => l.id === locationId);
+): B["world"]["locations"][number] | undefined {
+  const locations: B["world"]["locations"][number][] = blueprint.world.locations;
+  return locations.find((l) => l.id === locationId);
 }
 
-export function findCharacterById(
-  blueprint: BlueprintContext,
+export function findCharacterById<B extends BlueprintContext>(
+  blueprint: B,
   characterId: string,
-): BlueprintContext["world"]["characters"][number] | undefined {
-  return blueprint.world.characters.find((c) => c.id === characterId);
+): B["world"]["characters"][number] | undefined {
+  const characters: B["world"]["characters"][number][] = blueprint.world.characters;
+  return characters.find((c) => c.id === characterId);
+}
+
+/** A V2 case's world view. The V2 roles (talk start and conversation, search, the judge) never play a clue graph. */
+function v2Of(blueprint: BlueprintContext): V2BlueprintContext {
+  if (blueprint.clue_graph) throw new Error("A clue-graph case does not play the V2 roles");
+  return blueprint;
+}
+
+/** The narration voice a case sets; a clue graph sets none. */
+export function narrationStyleOf(blueprint: BlueprintContext): string | null {
+  return blueprint.clue_graph ? null : blueprint.metadata.narration_style ?? null;
 }
 
 function readPayloadField(
@@ -576,7 +587,7 @@ export function buildTalkCharacterPublicSummaries(
   blueprint: BlueprintContext,
 ): TalkCharacterPublicSummary[] {
   const publicSummaryByCharacterId = new Map(
-    (blueprint.narrative.starting_knowledge?.characters ?? []).map(
+    (blueprint.clue_graph ? [] : blueprint.narrative.starting_knowledge?.characters ?? []).map(
       (entry) => [entry.character_id, entry.summary] as const,
     ),
   );
@@ -584,7 +595,7 @@ export function buildTalkCharacterPublicSummaries(
   return blueprint.world.characters.map((character) => ({
     id: character.id,
     first_name: character.first_name,
-    last_name: character.last_name,
+    last_name: v2FieldsOf(character).last_name,
     location_id: character.location_id,
     sex: character.sex,
     appearance: character.appearance,
@@ -604,8 +615,32 @@ export function buildPlayerKnownClues(
 }
 
 type BlueprintCharacter = BlueprintContext["world"]["characters"][number];
+type V2Character = V2BlueprintContext["world"]["characters"][number];
+type V2CharacterFields = Pick<
+  V2Character,
+  "last_name" | "background" | "stated_alibi" | "motive" | "flavor_knowledge" | "actual_actions" | "agendas" | "tells"
+>;
 
-function buildTalkAgendas(character: BlueprintCharacter, state: ReturnType<typeof buildCharacterState>): TalkAgendaContext[] {
+/**
+ * A character's V2 fields. A clue-graph character has none of them; the
+ * narrator contexts both formats share (talk end, arrival, the roster) read
+ * them empty.
+ */
+function v2FieldsOf(character: BlueprintCharacter): V2CharacterFields {
+  if ("last_name" in character) return character;
+  return {
+    last_name: "",
+    background: "",
+    stated_alibi: null,
+    motive: null,
+    flavor_knowledge: [],
+    actual_actions: [],
+    agendas: [],
+    tells: [],
+  };
+}
+
+function buildTalkAgendas(character: V2CharacterFields, state: ReturnType<typeof buildCharacterState>): TalkAgendaContext[] {
   return (character.agendas ?? []).map((agenda, agendaIndex) => {
     const { parts: authoredParts, confession, ...rest } = agenda;
     if (agenda.type !== "self_protect") return rest;
@@ -639,17 +674,16 @@ function buildTalkCharacterPrivateContext(
   if (!character) {
     throw new Error(`Character ${characterId} not found in blueprint`);
   }
+  const v2 = v2FieldsOf(character);
 
-  const publicSummary =
-    blueprint.narrative.starting_knowledge?.characters.find(
-      (entry) => entry.character_id === characterId,
-    )?.summary ?? null;
+  const publicSummary = blueprint.clue_graph
+    ? null
+    : blueprint.narrative.starting_knowledge?.characters.find(
+        (entry) => entry.character_id === characterId,
+      )?.summary ?? null;
 
   const discoveredSet = new Set(playerKnownClues.map((c) => c.id));
-  const clues: TalkClueContext[] = character.clues.filter((clue) => {
-    const node = blueprint.msf?.structure.nodes[clue.id];
-    return node?.kind !== "clue" || node.requires?.kind !== "physical" || isClueUnlocked(clue, discoveredSet);
-  }).map((clue) => ({
+  const clues: TalkClueContext[] = (character.clues as BlueprintClue[]).map((clue) => ({
     id: clue.id,
     text: clue.text,
     about_character_id: clue.about_character_id,
@@ -659,38 +693,37 @@ function buildTalkCharacterPrivateContext(
     player_can_use_prerequisites: clue.requires ? isClueUnlocked(clue, discoveredSet) : null,
     known_to_player: discoveredSet.has(clue.id),
   }));
-  const state = buildCharacterState(character, conversationHistory, options);
-  const msf = blueprint.msf ? msfCharacterKnowledge(blueprint.msf.structure, character.id, discoveredSet, state.used_clue_ids) : undefined;
+  const stateCharacter = { ...character, ...v2 };
+  const state = buildCharacterState(stateCharacter, conversationHistory, options);
 
   return {
     id: character.id,
     first_name: character.first_name,
-    last_name: character.last_name,
+    last_name: v2.last_name,
     location_id: character.location_id,
     sex: character.sex,
     appearance: character.appearance,
     public_summary: publicSummary,
-    background: character.background,
+    background: v2.background,
     personality: character.personality,
     initial_attitude_towards_investigator:
       character.initial_attitude_towards_investigator,
-    stated_alibi: character.stated_alibi,
-    motive: character.motive,
+    stated_alibi: v2.stated_alibi,
+    motive: v2.motive,
     clues,
-    flavor_knowledge: character.flavor_knowledge,
-    actual_actions: safeSteps(character, state, character.actual_actions),
-    agendas: buildTalkAgendas(character, state),
-    tells: character.tells ?? [],
+    flavor_knowledge: v2.flavor_knowledge,
+    actual_actions: safeSteps(stateCharacter, state, v2.actual_actions),
+    agendas: buildTalkAgendas(v2, state),
+    tells: v2.tells ?? [],
     player_known_clues: playerKnownClues,
-    gate_clues: [...new Set([...gateClueIds(character), ...(blueprint.msf ? discoveredSet : [])])].map((id) => ({ id, held: discoveredSet.has(id) })),
+    gate_clues: [...gateClueIds(stateCharacter)].map((id) => ({ id, held: discoveredSet.has(id) })),
     state: {
       used_clue_ids: state.used_clue_ids,
-      current_story: msf ? [...msf.claims.map((claim) => `${claim.disproved ? "Evidence disproves my earlier claim: " : ""}${claim.value ? "" : "It is false that "}${claim.text}`), ...state.commitments] : state.current_story,
+      current_story: state.current_story,
       commitments: state.commitments,
       visits_with_questions: state.visits_with_questions,
       fallback_open: state.visits_with_questions >= FALLBACK_VISITS,
     },
-    ...(msf ? { msf } : {}),
   };
 }
 
@@ -754,8 +787,9 @@ export function buildArrivalCharacterContexts(
   const nameOf = (id: string) =>
     blueprint.world.characters.find((entry) => entry.id === id)?.first_name ?? "someone";
   return present.map((character) => {
-    const state = buildCharacterState(character, conversationHistory);
-    const manner = (character.agendas ?? [])
+    const v2 = v2FieldsOf(character);
+    const state = buildCharacterState({ ...character, ...v2 }, conversationHistory);
+    const manner = (v2.agendas ?? [])
       .map((agenda, index) => ({ agenda, index }))
       .filter(({ agenda, index }) => !isAgendaSpent(agenda, index, state, discovered))
       .sort((a, b) =>
@@ -765,13 +799,13 @@ export function buildArrivalCharacterContexts(
     return {
       id: character.id,
       first_name: character.first_name,
-      last_name: character.last_name,
+      last_name: v2.last_name,
       sex: character.sex,
       appearance: character.appearance,
       personality: character.personality,
       initial_attitude_towards_investigator: character.initial_attitude_towards_investigator,
       manner: [...new Set(manner)],
-      tells: (character.tells ?? [])
+      tells: (v2.tells ?? [])
         .filter((tell) => tell.trigger.kind === "always")
         .map((tell) => tell.text),
     };
@@ -979,8 +1013,8 @@ export function buildTalkConversationContext(input: {
  * accusation never word it afresh. Any other case is returned as it is.
  */
 function withSavedLines(blueprint: BlueprintContext, history: ConversationFragment[]): BlueprintContext {
+  if (!blueprint.clue_graph) return blueprint;
   const graph = blueprint.clue_graph;
-  if (!graph) return blueprint;
   const play = playOf(graph, history);
   const reword = <C extends { id: string; text: string }>(clues: C[]): C[] =>
     clues.map((clue) => (play.held.includes(clue.id) ? { ...clue, text: lineOf(graph, play, clue.id) } : clue));
@@ -991,7 +1025,7 @@ function withSavedLines(blueprint: BlueprintContext, history: ConversationFragme
       locations: blueprint.world.locations.map((location) => ({
         ...location,
         clues: reword(location.clues),
-        sub_locations: location.sub_locations?.map((spot) => ({ ...spot, clues: reword(spot.clues) })),
+        sub_locations: location.sub_locations.map((spot) => ({ ...spot, clues: reword(spot.clues) })),
       })),
       characters: blueprint.world.characters.map((character) => ({ ...character, clues: reword(character.clues) })),
     },
@@ -1004,9 +1038,9 @@ function withSavedLines(blueprint: BlueprintContext, history: ConversationFragme
  * found, as their notebook lines. The rest stay with the graph.
  */
 function foundCluesOnly(blueprint: BlueprintContext, history: ConversationFragment[]): BlueprintContext {
-  if (!blueprint.clue_graph) return blueprint;
-  const found = buildDiscoveredClueIdSet(history);
   const worded = withSavedLines(blueprint, history);
+  if (!worded.clue_graph) return worded;
+  const found = buildDiscoveredClueIdSet(history);
   return {
     ...worded,
     world: {
@@ -1064,7 +1098,8 @@ export function buildSearchContext(input: {
   search_query?: string | null;
   conversation_history?: ConversationFragment[];
 }): AIContext {
-  const location = findLocationById(input.blueprint, input.location_id);
+  const blueprint = v2Of(input.blueprint);
+  const location = findLocationById(blueprint, input.location_id);
   if (!location) {
     throw new Error(`Location ${input.location_id} not found in blueprint`);
   }
@@ -1082,7 +1117,7 @@ export function buildSearchContext(input: {
   // A spot whose clues are all locked is left out altogether, so the narrator
   // never advertises it or narrates "nothing here" for it, unless this targeted
   // search names it: then it is shown, clues and all, to narrate the find.
-  const admitted = input.blueprint.msf ? null : namedHiddenSpot(location, input.search_query, discoveredSet)?.id ?? null;
+  const admitted = namedHiddenSpot(location, input.search_query, discoveredSet)?.id ?? null;
   const subLocations: SubLocationContext[] = (location.sub_locations ?? [])
     .filter((sl) => sl.id === admitted || !isSpotHidden(sl, discoveredSet))
     .map((sl) => {
@@ -1204,6 +1239,7 @@ export function buildAccusationJudgeContext(input: {
   // Reconstructed from the full session history (searches included), not the
   // `discovered_clues` cache — same source of truth as the talk context.
   const discovered = buildDiscoveredClueIdSet(input.conversation_history ?? []);
+  const blueprint = v2Of(input.blueprint);
   return buildContext({
     game_id: input.game_id,
     role_name: "accusation_judge",
@@ -1215,11 +1251,9 @@ export function buildAccusationJudgeContext(input: {
     accusation_history_mode: input.history_mode ?? "all",
     accusation_judge_context: {
       last_accusation: input.last_accusation,
-      full_blueprint: input.blueprint,
-      // A clue-graph clue reads as its saved notebook line.
-      player_known_clues: buildKnownCluesWithOrigin(withSavedLines(input.blueprint, input.conversation_history ?? []), discovered),
-      path_coverage: buildPathCoverage(input.blueprint, discovered),
-      ...(input.blueprint.msf ? { msf_progress: evaluateMysteryStructure(input.blueprint.msf.structure, discovered) } : {}),
+      full_blueprint: blueprint,
+      player_known_clues: buildKnownCluesWithOrigin(blueprint, discovered),
+      path_coverage: buildPathCoverage(blueprint, discovered),
     },
   });
 }

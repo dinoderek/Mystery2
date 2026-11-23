@@ -61,19 +61,20 @@ describe("a judge's hash", () => {
     if (fabrication.prompt.kind !== "files") throw new Error("gm_fabrication's prompt is in files");
     const changed: JudgeEntry[] = [
       { ...fabrication, prompt: { ...fabrication.prompt, brief: "evaluation/judges/gm-spoiler.md" } },
-      { ...fabrication, prompt: { ...fabrication.prompt, preamble: "evaluation/prompts/judge-system.md" } },
+      { ...fabrication, prompt: { ...fabrication.prompt, preamble: "evaluation/prompts/clue-graph-judge-system.md" } },
       { ...fabrication, context: { strict: true } },
-      { ...fabrication, idChecks: [{ kind: "equals", at: "target_age", to: "target_age" }] },
+      { ...fabrication, idChecks: [{ kind: "ref", at: "findings[].ids[]", set: "case_ids", label: "id" }] },
       { ...fabrication, verdict: "stated" },
     ];
     for (const entry of changed) expect(judgeHash(entry)).not.toBe(hash);
   });
 
-  it("covers the file a built prompt is made in, and an analyzer", () => {
+  it("covers the file a built prompt is made in, and the code a player's view is derived by", () => {
     const turnAge = getJudgeEntry("age_appropriate_turn");
     if (turnAge.prompt.kind !== "built") throw new Error("age_appropriate_turn's prompt is built");
     expect(judgeHash({ ...turnAge, prompt: { ...turnAge.prompt, source: "evaluation/core/judge-loader.ts" } })).not.toBe(judgeHash(turnAge));
-    const graph = getJudgeEntry("clue_graph");
-    expect(judgeHash({ ...graph, analyzer: { module: "evaluation/checks/analyzers/age-appropriate.ts", export: "analyze" } })).not.toBe(judgeHash(graph));
+    const step = getJudgeEntry("cg_step_sense");
+    expect(step.playerView).toBe(true);
+    expect(judgeHash({ ...step, playerView: undefined })).not.toBe(judgeHash(step));
   });
 });

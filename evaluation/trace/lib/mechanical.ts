@@ -17,7 +17,6 @@
 //                     leakage is a judge's job.
 
 import { findCharacterById, findLocationById } from "../../../packages/game-engine/src/ai-context.ts";
-import { collectClues } from "../../checks/lib/clue-graph.ts";
 import { isClueUnlocked } from "../../../packages/game-engine/src/clue-discovery.ts";
 import { clueGraphEvents } from "../../../packages/game-engine/src/clue-graph/history.ts";
 import { applyEvent, startPlay, type ClueGraphPlay } from "../../../packages/game-engine/src/clue-graph/play.ts";
@@ -26,6 +25,19 @@ import type { RawEvent, RawTrace } from "./normalize.ts";
 import { revealedClueIdsForEvent } from "./reconstruct.ts";
 
 const DEFAULT_SPOILER_MIN_RUN = 12;
+
+/** The `requires` ids of every clue of a V2-shaped blueprint, by clue id. */
+function collectClues(blueprint: RawTrace["blueprint"]): Map<string, { requires: string[] }> {
+  const clues = new Map<string, { requires: string[] }>();
+  const add = (clue: { id: string; requires?: { clue_ids?: string[] } | null }) =>
+    clues.set(clue.id, { requires: clue.requires?.clue_ids ?? [] });
+  for (const location of blueprint?.world?.locations ?? []) {
+    for (const clue of location.clues ?? []) add(clue);
+    for (const sub of location.sub_locations ?? []) for (const clue of sub.clues ?? []) add(clue);
+  }
+  for (const character of blueprint?.world?.characters ?? []) for (const clue of character.clues ?? []) add(clue);
+  return clues;
+}
 
 /** One check's result; the details are the violations found, or null when there are none. */
 export interface TraceCheckResult {
@@ -261,7 +273,8 @@ function checkSpoilerLeak(rawTrace: RawTrace, minRun = DEFAULT_SPOILER_MIN_RUN):
   for (const entry of gt.timeline ?? []) secrets.push(entry);
   for (const character of blueprint?.world?.characters ?? []) {
     if (!character.is_culprit) continue;
-    for (const action of character.actual_actions ?? []) {
+    // A clue-graph character has no actual actions; its truth is the timeline above.
+    for (const action of ("actual_actions" in character ? character.actual_actions : [])) {
       if (action?.summary) secrets.push(action.summary);
     }
   }

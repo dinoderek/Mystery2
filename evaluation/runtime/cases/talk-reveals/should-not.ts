@@ -105,7 +105,7 @@ function history(file: string): HistoryEntry[] {
 }
 
 /**
- * Barnaby, cut from the truth set's `large-snow-foxes-kid-7` (history through
+ * Barnaby, cut from a stored snow-foxes game (history through
  * turn 34). Its turns 27 to 35 are known over-concessions: he gave up his walk
  * (a part earned only by `clue_bramble_barnaby`, which the player never
  * found) and wobbled to near-confession under pushing. Pushing, insisting and

@@ -156,7 +156,7 @@ export function storedGameTurns(game: { blueprint: object; events: StoredEvent[]
     .map((event) => turnFromEvent(event, owner));
 }
 
-/** What names a stored game in a run: its file, or its folder when the file is the truth set's `trace.json`. */
+/** What names a stored game in a run: its file, or its folder when the file is named `trace.json`. */
 function gameId(file: string): string {
   const stem = path.basename(file, ".json");
   return stem === "trace" ? path.basename(path.dirname(file)) : stem;

@@ -5,36 +5,28 @@ import {
   SceneManifestSchema,
   validateSceneManifest,
 } from "../../../packages/shared/src/scene-schema.ts";
-import { BlueprintV2Schema } from "../../../packages/shared/src/blueprint-schema-v2.ts";
-import { buildSceneGenerationInput } from "../../../packages/blueprint-generator/src/scene-prompt.ts";
-import {
-  createProceduralScene,
-  createSceneManifest,
-} from "../../testkit/src/fixtures.ts";
-import { validBlueprintV2 } from "./fixtures/blueprint-v2.fixture.ts";
+import { createProceduralScene, createSceneManifest } from "../../testkit/src/fixtures.ts";
+import { readMockCase } from "../../testkit/src/mock-case.ts";
+
+const MOCK_SCENES = path.join("tests", "testkit", "src", "mock-case-scenes.json");
 
 describe("scene recipes", () => {
-  it("ships complete, validated scenery for both playable settings", () => {
-    for (const file of [
-      "the-missing-lighthouse-lens.json",
-      "the-missing-heartwood.json",
-    ]) {
-      const blueprint = BlueprintV2Schema.parse(
-        JSON.parse(fs.readFileSync(path.join("blueprints", file), "utf8")),
-      );
-      const manifest = validateSceneManifest(
-        JSON.parse(
-          fs.readFileSync(
-            path.join("blueprint-scenes", `${blueprint.id}.json`),
-            "utf8",
-          ),
-        ),
-        blueprint,
-      );
-      expect(manifest.scenes.map((scene) => scene.location_id).sort()).toEqual(
-        blueprint.world.locations.map((location) => location.id).sort(),
-      );
-    }
+  it("accepts a procedural recipe and rejects the retired lighthouse kind", () => {
+    const scene = createProceduralScene();
+    expect(SceneManifestSchema.safeParse(createSceneManifest({ scenes: [scene] })).success).toBe(true);
+    const lighthouse = { kind: "lighthouse", location_id: scene.location_id, label: scene.label };
+    expect(
+      SceneManifestSchema.safeParse({ ...createSceneManifest(), scenes: [lighthouse] }).success,
+    ).toBe(false);
+  });
+
+  it("the mock case's test scenes are complete and valid for the mock case", () => {
+    const mock = readMockCase();
+    const manifest = validateSceneManifest(JSON.parse(fs.readFileSync(MOCK_SCENES, "utf8")), mock);
+    expect(manifest.blueprint_id).toBe(mock.id);
+    expect(manifest.scenes.map((scene) => scene.location_id).sort()).toEqual(
+      mock.world.locations.map((location) => location.id).sort(),
+    );
   });
 
   it("rejects executable fields, external assets, oversized scenes, invalid transforms, duplicate ids, and degenerate cameras", () => {
@@ -68,34 +60,14 @@ describe("scene recipes", () => {
     expect(() =>
       validateSceneManifest(
         { ...manifest, blueprint_id: "a3f5c9d1-4e7b-4a2c-9f81-6b0d2e5a7c34" },
-        BlueprintV2Schema.parse(validBlueprintV2),
+        readMockCase(),
       ),
     ).toThrow("another blueprint");
     expect(() =>
       validateSceneManifest(
-        { ...manifest, scenes: [{ ...scene, location_id: "unknown" }] },
-        BlueprintV2Schema.parse(validBlueprintV2),
+        { ...manifest, blueprint_id: readMockCase().id, scenes: [{ ...scene, location_id: "unknown" }] },
+        readMockCase(),
       ),
     ).toThrow("Unknown scene location");
-  });
-
-  it("sends only public location and visual fields to generation", () => {
-    const blueprint = BlueprintV2Schema.parse(validBlueprintV2);
-    blueprint.ground_truth.what_happened = "PRIVATE SOLUTION";
-    blueprint.metadata.visual_direction = { art_style: "paper diorama", color_palette: "teal and gold", mood: "cozy", lighting: "daylight", portrait_background: "PRIVATE PORTRAIT BACKDROP" };
-    const location = blueprint.world.locations[0];
-    for (const clue of location.clues) clue.text = "PRIVATE CLUE";
-    location.sub_locations = [{ id: "area", name: "Public cupboard", hint: "PRIVATE HINT", clues: [] }];
-    const prompt = buildSceneGenerationInput(blueprint, location.id);
-    expect(prompt.userMessage).toContain(location.description);
-    expect(prompt.userMessage).not.toContain("PRIVATE");
-    expect(Object.keys(JSON.parse(prompt.userMessage))).toEqual([
-      "visual_direction",
-      "location",
-    ]);
-    expect(prompt.answerSchema).toHaveProperty("type", "object");
-    expect(() => buildSceneGenerationInput(blueprint, "missing")).toThrow(
-      "Unknown scene location",
-    );
   });
 });

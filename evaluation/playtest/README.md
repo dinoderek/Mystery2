@@ -2,7 +2,7 @@
 
 An **AI investigator** plays against the real server, saving transcripts and
 [replay](#replay) scripts. Options: `./dev eval play --help`; output layout:
-`evaluation/README.md`. Paired MSF comparison: [runbook](../../docs/msf-gameplay.md).
+`evaluation/README.md`.
 A clue-graph case ([`docs/clue-graph.md`](../../docs/clue-graph.md)) is named by path, ID or title.
 
 ## Quick start

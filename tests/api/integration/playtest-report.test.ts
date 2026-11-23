@@ -19,23 +19,25 @@ import { buildReportData, renderReport } from '../../../evaluation/playtest/lib/
 import type { Verdict } from '../../../evaluation/core/result.ts';
 import { createRunFolder } from '../../../evaluation/core/run-folder.ts';
 import { RESULT_SCHEMA_VERSION, summarize, writeResult } from '../../../evaluation/core/result.ts';
+import { readMockCase } from '../../testkit/src/mock-case';
 import { BASE_URL, MOCK_BLUEPRINT_ID, TEST_CONFIG_ROOT } from './helpers';
 
-const MOCK_BLUEPRINT = JSON.parse(
-	fs.readFileSync(path.join(process.cwd(), 'blueprints', 'mock-blueprint.json'), 'utf8')
-);
+const MOCK_BLUEPRINT = readMockCase();
 
 const INPUTS = [
 	'search',
 	'help',
 	'serch the pantry',
+	'search the pantry shelf',
 	'talk to alice',
 	'Where were you last night?',
 	'accuse Alice because of the crumbs',
 	'bye',
+	'go to living room',
+	'search',
 	'accuse',
 	'Bob did it, he was in the living room.',
-	'accuse Alice took the cookies: the crumbs and the empty jar both point to her.'
+	'accuse Alice took the cookies: the cookie crumbs and the empty cookie jar both point to her.'
 ];
 
 interface Turn {
@@ -61,7 +63,7 @@ describe('playtest report', () => {
 		scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'mystery-playtest-report-'));
 		const game = await playGame({
 			api: await signIn(BASE_URL, 'playtest-report'),
-			blueprint: { id: MOCK_BLUEPRINT_ID, title: 'Mock Blueprint' },
+			blueprint: { id: MOCK_BLUEPRINT_ID, title: MOCK_BLUEPRINT.metadata.title },
 			investigator: scriptedInvestigator(INPUTS)
 		});
 		expect(game.result).toBe('win');

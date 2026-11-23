@@ -54,9 +54,9 @@ describe('play refuses what it cannot run, before it starts a server', () => {
 
 	it.each([
 		[[], '--blueprint or --replay is required'],
-		[['--blueprint', 'mock-blueprint', '--narrator', 'loud'], '--narrator must be claude or mock'],
-		[['--blueprint', 'mock-blueprint', '--games', '0'], '--games needs a positive integer'],
-		[['--blueprint', 'mock-blueprint', '--persona', 'pirate'], 'Unknown persona "pirate". Known: detective, kid-7'],
+		[['--blueprint', 'mock-case', '--narrator', 'loud'], '--narrator must be claude or mock'],
+		[['--blueprint', 'mock-case', '--games', '0'], '--games needs a positive integer'],
+		[['--blueprint', 'mock-case', '--persona', 'pirate'], 'Unknown persona "pirate". Known: detective, kid-7'],
 		[['--blueprint', 'no-such-blueprint'], 'No blueprint matches "no-such-blueprint"'],
 		[['--replay', 'script.json', '--persona', 'detective'], 'drop --persona'],
 		[['--replay', 'script.json', '--model-override', 'investigator=opus'], 'calls no investigator'],
@@ -70,7 +70,7 @@ describe('play refuses what it cannot run, before it starts a server', () => {
 
 	it('stops for a binding that cannot run, instead of playing without it', async () => {
 		const outputRoot = path.join(scratch, 'out');
-		const base = ['--blueprint', 'mock-blueprint', '--output-root', outputRoot];
+		const base = ['--blueprint', 'mock-case', '--output-root', outputRoot];
 
 		const noInvestigator = await play(...base, '--config', writeConfig({ 'game-judge': STUB_BINDING }));
 		expect(noInvestigator.code).toBe(1);
@@ -101,7 +101,7 @@ describe('play refuses what it cannot run, before it starts a server', () => {
 		const outputRoot = path.join(scratch, 'out');
 		const { code, output } = await play(
 			'--blueprint',
-			'mock-blueprint',
+			'mock-case',
 			'--output-root',
 			outputRoot,
 			'--config',
@@ -122,7 +122,7 @@ describe('play refuses what it cannot run, before it starts a server', () => {
 	it('starts a mock narrator by naming mock, with no ai.json and no way to reach a model', async () => {
 		startServer.mockRejectedValue(new Error('no server in this test'));
 		const config = writeConfig({ investigator: STUB_BINDING });
-		await play('--blueprint', 'mock-blueprint', '--narrator', 'mock', '--output-root', path.join(scratch, 'out'), '--config', config);
+		await play('--blueprint', 'mock-case', '--narrator', 'mock', '--output-root', path.join(scratch, 'out'), '--config', config);
 
 		const [options] = startServer.mock.calls[0];
 		expect(options.env).toMatchObject({
@@ -140,7 +140,7 @@ describe('play refuses what it cannot run, before it starts a server', () => {
 		const config = writeConfig({ investigator: STUB_BINDING });
 		await play(
 			'--blueprint',
-			'mock-blueprint',
+			'mock-case',
 			'--narrator',
 			'claude',
 			'--narrator-model',
@@ -179,7 +179,7 @@ describe('play refuses what it cannot run, before it starts a server', () => {
 	it('does not need an investigator to replay, only the script it names', async () => {
 		const script = path.join(scratch, 'script.json');
 		fs.writeFileSync(script, JSON.stringify({ blueprint_id: 'someone-else', inputs: ['search'] }));
-		const { code, output } = await play('--replay', script, '--blueprint', 'mock-blueprint', '--config', writeConfig({}));
+		const { code, output } = await play('--replay', script, '--blueprint', 'mock-case', '--config', writeConfig({}));
 		expect(code).toBe(1);
 		expect(output).toContain('The script was played on "someone-else"');
 		expect(startServer).not.toHaveBeenCalled();
@@ -231,18 +231,20 @@ describe('report on a committed run folder', () => {
 		expect(output).toContain('report.html');
 
 		const { html, data } = pageData(runDir);
-		expect(html).toContain('<title>The Missing Cookies Playtest</title>');
+		expect(html).toContain('<title>Mock Case — clue graph Playtest</title>');
 		expect(html).not.toContain('__REPORT_');
 		// Nothing a judge quoted can close the script the data sits in.
 		expect(html).not.toContain('</script><b>');
-		expect(data).toMatchObject({ title: 'The Missing Cookies', persona: 'detective', narratorModel: 'mock', investigatorModel: 'stub-model' });
+		expect(data).toMatchObject({ title: 'Mock Case — clue graph', persona: 'detective', narratorModel: 'mock', investigatorModel: 'stub-model' });
+		// The run has no trace.json, so the case is found by its id among the repo's clue-graph cases.
+		expect(data.targetAge).toBe(10);
 
 		const [game] = data.games;
 		expect(game).toMatchObject({
 			number: 1,
 			outcome: 'win',
 			cluesFound: 1,
-			cluesTotal: 2,
+			cluesTotal: 12,
 			cost: { narrator: null, investigator: 0.03, judges: 0.5 },
 			judges: { gm_spoiler: { status: 'fail', major: 1, minor: 0 } }
 		});
@@ -259,12 +261,12 @@ describe('report on a committed run folder', () => {
 			[5, 'ask', 'accuse Alice because of the crumbs']
 		]);
 		expect(game.turns[1]).toMatchObject({
-			clues: [{ id: 'clue-crumb', text: 'A crumb on the floor.' }],
+			clues: [{ id: 'clue_crumbs', text: '[Mock] A trail of cookie crumbs runs from the pantry to the back of the kitchen, not towards the living room.' }],
 			grade: { value: 8, pass: false },
 			turnsLeft: 5
 		});
 		expect(game.turns[2].note).toEqual({ kind: 'feedback', text: 'Try: search' });
-		expect(game.turns[3]).toMatchObject({ asDialogue: true, parts: [{ speaker: 'Alice Smith', character: true }] });
+		expect(game.turns[3]).toMatchObject({ asDialogue: true, parts: [{ speaker: 'Alice', character: true }] });
 
 		// A game that never started is named, with why.
 		expect(data.failed).toEqual([{ number: 2, error: 'game-start failed: signed out' }]);

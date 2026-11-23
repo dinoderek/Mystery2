@@ -71,7 +71,7 @@ describe("game-turn endpoint", () => {
 
     const search = await played(gameId, "search");
     expect(search.state.time_remaining).toBe(8);
-    expect(search.revealed_clues.map((clue) => clue.id)).toEqual(["clue-wrapper"]);
+    expect(search.revealed_clues.map((clue) => clue.id)).toEqual(["clue_score_sheet"]);
 
     const talk = await played(gameId, "talk to Bob");
     expect(talk.state).toMatchObject({ mode: "talk", current_talk_character: "char-bob", time_remaining: 7 });
@@ -136,18 +136,9 @@ describe("game-turn endpoint", () => {
       ]);
       expect(readStoredEvents(gameId).at(-1)?.payload).toMatchObject({
         player_reasoning: "Bob because he was in the living room",
-        reply_kind: null,
+        reply_kind: "missing",
       });
       expect(readStoredSession(gameId)).toMatchObject({ mode: "explore", outcome: null });
-    });
-
-    it("plays the same flow on an MSF case", async () => {
-      const { game_id: gameId, state } = await startCase("46e4e135-82fe-4389-af0b-80aa749867a1");
-      expect(state.accusations_left).toBe(3);
-      const failed = await played(gameId, "accuse Roz");
-      expect(failed.events[0].event_type).toBe("accuse_failed");
-      expect(failed.state).toMatchObject({ mode: "explore", accusations_left: 2 });
-      expect((await getGame(gameId)).state.accusations_left).toBe(2);
     });
 
     it("plays the same flow on a clue-graph case, a right name without support failing like any other", async () => {

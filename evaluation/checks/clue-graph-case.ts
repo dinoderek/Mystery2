@@ -12,7 +12,14 @@ import { ZodError } from "zod";
 
 import { ClueGraphBriefSchema } from "../../packages/blueprint-generator/src/clue-graph-brief.ts";
 import { validateClueGraph } from "../../packages/shared/src/clue-graph-validator.ts";
-import type { MechanicalCheck } from "./mechanical.ts";
+
+/** One mechanical check's result; `details` holds what failed, or is null. */
+export interface MechanicalCheck {
+  id: string;
+  kind: "mechanical";
+  status: "pass" | "fail";
+  details: Record<string, unknown> | null;
+}
 
 function metadataOf(candidate: unknown): Record<string, unknown> {
   const metadata = (candidate as { metadata?: unknown } | null)?.metadata;

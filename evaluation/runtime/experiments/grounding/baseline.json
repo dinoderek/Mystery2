@@ -143,8 +143,8 @@
   },
   "retention": {
     "inventory": "capture-artifacts.sha256",
-    "inventory_sha256": "233755f0cf8d6066e8e900a8ba2a782b13c33ba4df9db71cba1af761b544af86",
-    "files": 2981,
+    "inventory_sha256": "12605a183cf5e6e99786eeb324bb81e24f2ea2842ceb3523ceed8d2fdf5010c4",
+    "files": 2982,
     "covers": "Original pilot, primary capture, transport requests/responses/usage/timing, frozen input files, drivers and blinded review packet; human ratings will be retained separately when supplied."
   },
   "heldout": {
@@ -158,5 +158,14 @@
     "narrator_calls": 0,
     "status": "Sealed for later acceptance; no held-out outputs generated or used for tuning"
   },
-  "interpretation": "Descriptive original-policy development baseline: four fixed states of one purposively selected age-10 mystery, one sample per model/state. Mechanical checks are not a grounding or age-suitability verdict. Human assessment remains pending. Unseen-mystery reliability and a population 95% interval are not estimable from this diagnostic cohort; final acceptance thresholds are not established."
+  "interpretation": "Descriptive original-policy development baseline: four fixed states of one purposively selected age-10 mystery, one sample per model/state. Mechanical checks are not a grounding or age-suitability verdict. Human assessment remains pending. Unseen-mystery reliability and a population 95% interval are not estimable from this diagnostic cohort; final acceptance thresholds are not established.",
+  "main_integration": {
+    "base_commit": "3139e21",
+    "frozen_capture_commit": "34b63818743e9b18138da16161d014ebd3bf055b",
+    "development_messages_compared": 36,
+    "primary_call_message_pairs_compared": 15,
+    "result": "Byte-identical system and user messages, including engine-derived accusation replies; no model calls.",
+    "artifact": "main-integration-parity.json",
+    "sha256": "b07d85cdfc717d7bdb4843bc197b196516213258f0d7085bd63713e2988f1ca6"
+  }
 }

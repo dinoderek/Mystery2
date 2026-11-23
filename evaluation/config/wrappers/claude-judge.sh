@@ -6,24 +6,19 @@
 #        the agent reads judge-system.md, the dimension definition, and the
 #        output schema from disk via workspace symlinks)
 #   $2 — path to the user message JSON
-#        ({ dimension_id, context, story_brief, blueprint }, or for a
-#        clue-graph case { dimension_id, context, case, player_view? })
+#        ({ dimension_id, context, case, player_view? })
 #
 #   stdout — { "result": "<verdict-json-string>" } so the pipeline's default
 #            extract_path ".result" works unchanged.
 #
 # Required env:
 #   EVAL_DIMENSION_ID — which dimension to judge
-#                       (solve_depth | fairness | timeline_coherence |
-#                        knowledge_coherence | character_grounding |
-#                        path_payoff | clue_graph | age_appropriate,
-#                        a candidate judge of a blueprint, or a judge of a
-#                        clue-graph case: cg_soundness | cg_truth_agreement |
+#                       (cg_soundness | cg_truth_agreement |
 #                        cg_character_grounding | cg_step_sense)
 #   EVAL_RUN_DIR      — this run's output directory (absolute). The judge
 #                       workspace is created at
 #                       <EVAL_RUN_DIR>/evaluators/<dimension>/, alongside the
-#                       result/blueprint/logs and the generator workspace, all
+#                       result/case/logs and the generator workspace, all
 #                       inside the one self-contained run directory.
 # Optional env (standalone fallback when invoked WITHOUT the pipeline):
 #   EVAL_WORKSPACE_BASE_ID — brief name used in the fallback run dir name.
@@ -58,14 +53,8 @@ mkdir -p "$WORKSPACE_PARENT"
 if [[ -e "$WORKSPACE" ]]; then
   WORKSPACE="${WORKSPACE}-retry-$(openssl rand -hex 3)"
 fi
-# A message carrying a `case` judges a clue-graph case; any other, a Blueprint V2.
-FORMAT="$(node -e '
-  const fs = require("fs");
-  const um = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
-  process.stdout.write(Object.hasOwn(um, "case") ? "clue_graph" : "v2");
-' "$USER_MESSAGE_FILE")"
 "$REPO_ROOT/evaluation/judge-harness/setup-workspace.sh" \
-  "$WORKSPACE" "$EVAL_DIMENSION_ID" "$FORMAT" >&2
+  "$WORKSPACE" "$EVAL_DIMENSION_ID" >&2
 
 # Split the pipeline's user-message JSON into separate workspace files.
 node -e '
@@ -73,15 +62,10 @@ node -e '
   const um = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
   const dest = process.argv[2];
   const write = (name, value) => fs.writeFileSync(dest + "/" + name, JSON.stringify(value, null, 2));
-  if (process.argv[3] === "clue_graph") {
-    write("case.json", um.case);
-    if (um.player_view !== undefined) write("player_view.json", um.player_view);
-  } else {
-    write("brief.json", um.story_brief ?? {});
-    write("blueprint.json", um.blueprint ?? {});
-  }
+  write("case.json", um.case);
+  if (um.player_view !== undefined) write("player_view.json", um.player_view);
   write("context.json", um.context ?? {});
-' "$USER_MESSAGE_FILE" "$WORKSPACE" "$FORMAT"
+' "$USER_MESSAGE_FILE" "$WORKSPACE"
 
 cd "$WORKSPACE"
 # Run with stream-json so the pipeline can tail the live event stream from

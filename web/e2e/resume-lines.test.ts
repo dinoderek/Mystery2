@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { listOnlyMockCase } from './session-helpers';
 import { signInAsTestProfile } from './test-profile';
 
 // Against the real server and its mock narrator: a line the game refuses, and
@@ -7,10 +8,11 @@ import { signInAsTestProfile } from './test-profile';
 test.describe('Lines that cost no turn', () => {
   test('are in the transcript again after the page is reloaded and the case reopened', async ({ page }) => {
     await signInAsTestProfile(page);
+    await listOnlyMockCase(page);
     await page.goto('/');
     await expect(page.getByText('1. Start a new game')).toBeVisible();
     await page.keyboard.press('1');
-    await expect(page.getByText('Mock Blueprint')).toBeVisible();
+    await expect(page.getByText('Mock Case — clue graph')).toBeVisible();
     await page.keyboard.press('1');
     await expect(page).toHaveURL(/.*\/session/);
 

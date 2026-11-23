@@ -9,10 +9,9 @@ Each harness has its README beside its code:
 - played games, `judge game`: `evaluation/trace/README.md`
 - one turn replayed, `judge turn`, `cases` and `baseline`: `evaluation/runtime/README.md`
 - self-play, `play` and `report`: `evaluation/playtest/README.md`
-- the truth set, `label`, `score`, `compare` and `suite`:
-  `evaluation/truth/README.md`
 - the `gm_*` judges: `evaluation/judges/README.md`
 - the generator agent's workspace: `evaluation/generator-harness/template/README.md`
+- the judge agent's workspace: `evaluation/judge-harness/template/README.md`
 
 ## Bindings
 
@@ -25,14 +24,14 @@ affecting the result. A turn judge hands its answer schema in
 
 ## Judges
 
-`evaluation/core/registry.ts` lists the battery of each blueprint format;
-each judge's question is its brief, `evaluation/dimensions/<id>.md`. A
-dimension passes when its analyzer and judge both do. `--judges` and
+`evaluation/core/registry.ts` lists the case's check and four judges; each
+judge's question is its brief, `evaluation/dimensions/<id>.md` (underscores
+become hyphens). `--judges` and
 `--no-judges` mark unselected judges skipped; candidates run only when named.
-To iterate on a judge, run `judge blueprint` on a saved subject and edit its
-files. On `judge-stub` the V2 battery passes the test fixture.
+To iterate on a judge, run `judge blueprint` on a saved case and edit its
+files.
 
-**Clue-graph judges** are scored on both hand-written stories and their broken
+**Case judges** are scored on both hand-written stories and their broken
 copies (`node evaluation/blueprint/clue-graph-breaks.ts <case> <out>`): a
 change keeps every story passing and every copy failing.
 
@@ -42,11 +41,10 @@ the gate until its new hash is appended; append one by hand otherwise.
 
 ## Generation
 
-`./dev generate` creates clue-graph cases (`--format v2`: blueprints), kept
-even when invalid; `./dev eval judge blueprint` judges saved ones.
-`--install` copies a blueprint that passed its mechanical checks, or a case
-that passed everything, into the config root's `blueprints/` (cases:
-`clue-graph/`), never replacing files; a failed install exits 1.
+`./dev generate` creates clue-graph cases from clue-graph briefs, kept even
+when invalid; `./dev eval judge blueprint` judges saved ones. `--install`
+copies a case that passed everything into the config root's
+`blueprints/clue-graph/`, never replacing files; a failed install exits 1.
 
 **Repair** (`docs/blueprint-generation-flows.md`): round `n` is kept in
 `rounds/<n>/` and `result.json`'s `rounds[]`; the result is the last round's,
@@ -57,9 +55,7 @@ installed only if it passed everything.
 Every run writes under `--output-root`, else `$MYSTERYEVALS_DIR`, else
 `~/mysteryevals`, never overwriting. A run folder,
 `<root>/<date>/<time>-<command>/`, holds `run.json` (the index) and a folder per
-subject: its `result.json`, inputs, prompts, logs and agent workspaces. A
-suite keeps its journal and runs in `<root>/suites/<name>/`; only its results
-file goes in the repo.
+subject: its `result.json`, inputs, prompts, logs and agent workspaces.
 
 `result.json` (`evaluation/core/result.ts`) is written even when the run
 aborts. `logs/<step>*.stream.jsonl` is for watching only.
@@ -68,13 +64,13 @@ aborts. `logs/<step>*.stream.jsonl` is for watching only.
 
 For every command, **0**: everything passed. **1**: the run broke (a bad
 file or binding, `run_error` in the result, the usage limit). **2**: a check
-or judge failed, or could not judge (`suite`: a threshold was not met).
+or judge failed, or could not judge.
 
 ## Retries
 
 A call is retried, up to its binding's `retries`, on a non-zero exit, a
 timeout, stdout that is not JSON, an `extract_path` miss, or an answer failing
-its schema (a dimension's, or Blueprint V2).
+its schema.
 
 At the login's usage limit nothing is retried and no judge records an error:
-the run breaks, exiting 1. A `suite` rerun resumes, repeating no finished call.
+the run breaks, exiting 1.

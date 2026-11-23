@@ -1,6 +1,7 @@
 // Searching: the narrator judges the search, and the engine decides whether
 // the clue it names may be found. Search gates are hard.
 
+import { v2CaseOf } from "../../../shared/src/playable-case.ts";
 import type { RevealedClue } from "../../../shared/src/mystery-api-contracts.ts";
 import { parseSearchOutput } from "../ai-contracts.ts";
 import { findLocationById, type BlueprintClue } from "../ai-context.ts";
@@ -10,7 +11,7 @@ import { createNarrationPart } from "../narration.ts";
 import { buildRoleRequest, resolveSearchRole } from "../role-request.ts";
 import { namedHiddenSpot } from "../search-target.ts";
 import { NARRATOR_SPEAKER } from "../speaker.ts";
-import { askRole, rejectOutput } from "./narrator.ts";
+import { askRole } from "./narrator.ts";
 import type { ActionOutcome, TurnGame, TurnRuntime } from "./types.ts";
 
 type SearchHistoryRow = {
@@ -162,7 +163,8 @@ export async function resolveSearch(
   runtime: TurnRuntime,
   query: string | null,
 ): Promise<ActionOutcome> {
-  const { session, blueprint, history } = game;
+  const { session, history } = game;
+  const blueprint = v2CaseOf(game.blueprint);
   const location = findLocationById(blueprint, session.current_location_id);
   if (!location) {
     throw new RequestRejectedError(500, "Current location not found in blueprint", "current_location_missing_in_blueprint");
@@ -177,7 +179,7 @@ export async function resolveSearch(
       ? (location.clues.find((clue) => !here.includes(clue.id) && isClueUnlocked(clue, anywhere)) ?? null)
       : null;
   // A targeted search that names a hidden spot is shown it, and finds its clue.
-  const spot = blueprint.msf ? null : namedHiddenSpot(location, query, anywhere);
+  const spot = namedHiddenSpot(location, query, anywhere);
 
   const { prompt, context } = await buildRoleRequest({
     role: resolveSearchRole(query),
@@ -193,11 +195,6 @@ export async function resolveSearch(
   });
   const output = await askRole(runtime, "search", { role: "search", prompt, context, parse: parseSearchOutput });
   const model = runtime.provider.resolvedModel;
-
-  if (blueprint.msf && output.revealed_clue_id !== null) {
-    const candidate = cluesAt(location).get(output.revealed_clue_id);
-    if (!candidate || !isClueUnlocked(candidate, anywhere)) rejectOutput(runtime, "search", "MSF search revealed an unavailable clue");
-  }
 
   const clue = admitClue(runtime, location, output.revealed_clue_id, { here, anywhere }, { spot, query });
   // A clue found past its lock is declared off script, as a conversation's is.

@@ -20,7 +20,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import { buildClueGraphBlueprint } from "../../../packages/shared/src/clue-graph-case.ts";
+import { buildClueGraphWorld } from "../../../packages/shared/src/clue-graph-case.ts";
 import { validateClueGraph } from "../../../packages/shared/src/clue-graph-validator.ts";
 import { isClueGraphFile } from "../../../packages/shared/src/clue-graph-schema.ts";
 import type { ResolvedBinding } from "../../core/config.ts";
@@ -74,7 +74,7 @@ async function loadBlueprint(turn: StoredTurn, options: JudgeOptions, root: stri
   const candidate = JSON.parse(await fs.readFile(path.resolve(root, blueprintPath), "utf8"));
   // A clue-graph case file is read as the game reads it: its world view, with the graph in `clue_graph`.
   return (isClueGraphFile(candidate)
-    ? buildClueGraphBlueprint(validateClueGraph(candidate))
+    ? buildClueGraphWorld(validateClueGraph(candidate))
     : candidate) as BlueprintLike;
 }
 

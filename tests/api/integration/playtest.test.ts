@@ -17,11 +17,11 @@ import { signIn } from '../../../evaluation/playtest/lib/api.ts';
 import { scriptedInvestigator } from '../../../evaluation/playtest/lib/investigator.ts';
 import { writeGameFolder } from '../../../evaluation/playtest/lib/output.ts';
 import { playGame } from '../../../evaluation/playtest/lib/game.ts';
+import { readMockCase } from '../../testkit/src/mock-case';
 import { BASE_URL, MOCK_BLUEPRINT_ID } from './helpers';
 
-const MOCK_BLUEPRINT = JSON.parse(
-	fs.readFileSync(path.join(process.cwd(), 'blueprints', 'mock-blueprint.json'), 'utf8')
-);
+const MOCK_BLUEPRINT = readMockCase();
+const MOCK_TITLE = MOCK_BLUEPRINT.metadata.title;
 
 const INPUTS = [
 	'search',
@@ -38,7 +38,7 @@ const INPUTS = [
 	// A failed accusation returns to exploring; the next is made in one line.
 	'Bob did it, he was in the living room.',
 	'search',
-	'accuse Alice took the cookies: the crumbs and the empty jar both point to her.',
+	'accuse Alice took the cookies: the cookie crumbs and the empty cookie jar both point to her.',
 	'this line is never reached'
 ];
 // The game ends on the line before the last, which is never sent.
@@ -55,7 +55,7 @@ describe('playtest loop', () => {
 	it('stops when the investigator quits, and the game is left as it was', async () => {
 		const game = await playGame({
 			api: await signIn(BASE_URL, 'playtest-quit'),
-			blueprint: { id: MOCK_BLUEPRINT_ID, title: 'Mock Blueprint' },
+			blueprint: { id: MOCK_BLUEPRINT_ID, title: MOCK_TITLE },
 			investigator: scriptedInvestigator(['quit', 'search'])
 		});
 		expect(game.stopReason).toBe('quit');
@@ -71,7 +71,7 @@ describe('playtest loop', () => {
 
 		const game = await playGame({
 			api,
-			blueprint: { id: MOCK_BLUEPRINT_ID, title: 'Mock Blueprint' },
+			blueprint: { id: MOCK_BLUEPRINT_ID, title: MOCK_TITLE },
 			investigator: scriptedInvestigator(INPUTS)
 		});
 
@@ -88,7 +88,7 @@ describe('playtest loop', () => {
 		expect(byInput['talk to Zed'].action).toEqual({
 			kind: 'refused',
 			reason: 'invalid-target',
-			text: expect.stringContaining('"zed" is not a valid character. Try: Alice Smith'),
+			text: expect.stringContaining('"zed" is not a valid character. Try: Alice'),
 		});
 
 		// `help` is a view: the investigator is told it opened, as the browser says.
@@ -112,7 +112,7 @@ describe('playtest loop', () => {
 			kind: 'turn',
 			event_type: 'accuse_failed'
 		});
-		expect(played('accuse Alice took the cookies: the crumbs and the empty jar both point to her.')).toEqual({
+		expect(played('accuse Alice took the cookies: the cookie crumbs and the empty cookie jar both point to her.')).toEqual({
 			kind: 'turn',
 			event_type: 'accuse_resolved'
 		});
@@ -129,7 +129,7 @@ describe('playtest loop', () => {
 		expect(steps.map((step) => step.input)).toEqual(PLAYED);
 
 		// It opened as the browser does: the premise, then the arrival.
-		expect(game.steps[0].view).toMatch(/Narrator: \[Mock\] Narration for:/);
+		expect(game.steps[0].view).toMatch(/Narrator: \[Mock\] The cookies vanished from the kitchen at noon\./);
 		// `notebook` opens a screen in the browser: no echo, no turn. `help` is echoed.
 		expect(game.transcript.some((entry: { text: string }) => entry.text === 'help')).toBe(true);
 		expect(byInput['notebook'].action).toMatchObject({ kind: 'view', view: 'notebook' });
@@ -146,7 +146,7 @@ describe('playtest loop', () => {
 		const api = await signIn(BASE_URL, 'playtest-smoke-folder');
 		const game = await playGame({
 			api,
-			blueprint: { id: MOCK_BLUEPRINT_ID, title: 'Mock Blueprint' },
+			blueprint: { id: MOCK_BLUEPRINT_ID, title: MOCK_TITLE },
 			investigator: scriptedInvestigator(INPUTS)
 		});
 
@@ -193,7 +193,7 @@ describe('playtest loop', () => {
 	it('replays a recorded game, and stops where the game no longer matches', async () => {
 		const original = await playGame({
 			api: await signIn(BASE_URL, 'playtest-replay-original'),
-			blueprint: { id: MOCK_BLUEPRINT_ID, title: 'Mock Blueprint' },
+			blueprint: { id: MOCK_BLUEPRINT_ID, title: MOCK_TITLE },
 			investigator: scriptedInvestigator(INPUTS)
 		});
 
@@ -203,7 +203,7 @@ describe('playtest loop', () => {
 		});
 		const replay = await playGame({
 			api: await signIn(BASE_URL, 'playtest-replay-same'),
-			blueprint: { id: MOCK_BLUEPRINT_ID, title: 'Mock Blueprint' },
+			blueprint: { id: MOCK_BLUEPRINT_ID, title: MOCK_TITLE },
 			investigator: replayer
 		});
 		expect(replay).toMatchObject({ stopReason: 'ended', result: 'win', divergence: null });
@@ -219,7 +219,7 @@ describe('playtest loop', () => {
 		);
 		const diverged = await playGame({
 			api: await signIn(BASE_URL, 'playtest-replay-diverged'),
-			blueprint: { id: MOCK_BLUEPRINT_ID, title: 'Mock Blueprint' },
+			blueprint: { id: MOCK_BLUEPRINT_ID, title: MOCK_TITLE },
 			investigator: scriptedInvestigator(original.script, { checkpoints: tampered })
 		});
 		expect(diverged.stopReason).toBe('diverged');
@@ -233,7 +233,7 @@ describe('playtest loop', () => {
 		// The game is settled while the script has more to say...
 		const endedEarly = await playGame({
 			api: await signIn(BASE_URL, 'playtest-replay-ended-early'),
-			blueprint: { id: MOCK_BLUEPRINT_ID, title: 'Mock Blueprint' },
+			blueprint: { id: MOCK_BLUEPRINT_ID, title: MOCK_TITLE },
 			investigator: scriptedInvestigator([...original.script, 'Bob helped her.'], {
 				checkpoints: [...original.checkpoints, { ...original.endCheckpoint, mode: 'accuse' }]
 			})
@@ -249,7 +249,7 @@ describe('playtest loop', () => {
 		const accusing = original.script.length - 1;
 		const unsettled = await playGame({
 			api: await signIn(BASE_URL, 'playtest-replay-unsettled'),
-			blueprint: { id: MOCK_BLUEPRINT_ID, title: 'Mock Blueprint' },
+			blueprint: { id: MOCK_BLUEPRINT_ID, title: MOCK_TITLE },
 			investigator: scriptedInvestigator(original.script.slice(0, accusing), {
 				checkpoints: original.checkpoints.slice(0, accusing),
 				end: original.endCheckpoint

@@ -48,8 +48,7 @@ snapshot ([`docs/clue-graph.md`](../../docs/clue-graph.md)). Action types and mo
 - `flesch`, a check: the deterministic Flesch–Kincaid grade against the
   blueprint's `target_age`.
 - `age_appropriate_turn`, a judge for what the formula cannot see (vocabulary,
-  figurative language), against the narrator prompt's age profile; not the
-  blueprint dimension `age_appropriate`.
+  figurative language), against the narrator prompt's age profile.
 - `gm_roleplay`, `gm_clue_discipline`, `gm_fabrication`, `gm_spoiler`: the
   adherence judges shared with the game harness (`evaluation/judges/README.md`).
   The history is context; only the action is judged.

@@ -5,9 +5,7 @@
 Unit tests cover logic; integration, against the built server under the mock
 provider, covers endpoints, ownership, profiles, schema and content; E2E covers
 journeys, over HTTP (`tests/api/e2e`) and in the browser (`web/e2e`). Prefer
-integration for backend behaviour; Playwright is for browser journeys. The
-evaluation server's labelling page is driven in Chromium from the unit suite. A change
-updates every suite it affects. Helpers live in `tests/testkit`.
+integration for backend behaviour; Playwright is for browser journeys. A change updates every suite it affects. Helpers live in `tests/testkit`.
 
 ## The gate
 
@@ -33,11 +31,6 @@ fix, prune with `npm run check:quality -- --prune` or
 
 **Doc checks**, all failing the gate:
 
-- `check:curated-docs` holds the extracts in
-  `evaluation/generator-harness/template/docs/` to the doc sections they
-  summarise. On drift, fix the extract if it no longer holds, then record the
-  new hash. A refreshed hash over stale prose fixes nothing
-  (`evaluation/generator-harness/template/README.md`).
 - `check:doc-refs` fails when any `AGENTS.md`, `QUICKSTART.md`, `docs/` or
   README names a path, `npm run` script or relative link that does not exist.
   A code span counts as a path only when its first segment is a real directory. Gitignored
@@ -98,9 +91,9 @@ content, that is the operator's call.
 `tests/api/e2e/golden-transcripts.test.ts` plays fixed games over HTTP under
 the mock narrator and compares what the player would see with
 `tests/api/e2e/golden/transcripts/`. Only `tests/testkit/src/golden/driver.ts`
-knows how a line becomes requests. The mock quotes the start of the narrator
-prompt, so editing it changes every transcript. Re-record on purpose with
-`npm run test:golden:record`; review the diff.
+knows how a line becomes requests. The mock narrates from the case and the
+context it is given, so changing either moves the transcripts. Re-record on
+purpose with `npm run test:golden:record`; review the diff.
 
 ## Writing tests
 
@@ -109,7 +102,11 @@ prompt, so editing it changes every transcript. Re-record on purpose with
   `setupApiTestAuth(tag)` and scopes assertions to its own identifiers, with no
   unscoped global counts. Anything that opens a database gets an explicit path,
   never `resolveDatabasePath()`, which names your play database.
-- **Fixtures.** Use the factories in `tests/testkit/src/fixtures.ts`; never
+- **Fixtures.** A test that plays a case plays the mock case,
+  `blueprints/clue-graph/mock-case.json` (`tests/testkit/src/mock-case.ts`).
+  Its scenes (`tests/testkit/src/mock-case-scenes.json`) are written into each
+  test config root, since `blueprint-scenes/` ships none.
+  Use the factories in `tests/testkit/src/fixtures.ts`; never
   hand-write an object for a shape with a Zod schema in `packages/shared/src/`.
   Factories parse at creation: pass only the overrides that differ. A new
   response type needs its factory. For a TypeScript-only shape, annotate the

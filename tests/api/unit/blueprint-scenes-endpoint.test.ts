@@ -1,14 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import { handle } from "../../../packages/game-engine/src/endpoints/blueprint-scenes.ts";
 import type { CatalogContext } from "../../../packages/game-engine/src/context.ts";
-import { BlueprintV2Schema } from "../../../packages/shared/src/blueprint-schema-v2.ts";
-import { validBlueprintV2 } from "./fixtures/blueprint-v2.fixture.ts";
+import { readMockCase } from "../../testkit/src/mock-case.ts";
 
 describe("scene artwork failures", () => {
   it("logs a broken asset once and returns a safe error while the game can continue", async () => {
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
     try {
-      const blueprint = BlueprintV2Schema.parse(validBlueprintV2);
+      const blueprint = readMockCase();
       const context: CatalogContext = {
         content: {
           listBlueprints: async () => [],

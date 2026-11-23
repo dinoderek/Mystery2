@@ -27,10 +27,10 @@ afterEach(async () => {
   await Promise.all(tmpDirs.splice(0).map((dir) => fs.rm(dir, { recursive: true, force: true })));
 });
 
-const V2_MESSAGE = { dimension_id: "fairness", context: {}, story_brief: {}, blueprint: {} };
+const MESSAGE = { dimension_id: "cg_soundness", context: {}, case: { format: "clue-graph/2" } };
 
 async function runWrapper(
-  message: Record<string, unknown> = V2_MESSAGE,
+  message: Record<string, unknown> = MESSAGE,
 ): Promise<{ status: number | null; stdout: string; stderr: string; args: string[]; workspace: string }> {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "judge-wrapper-"));
   tmpDirs.push(dir);
@@ -72,15 +72,6 @@ describe("the blueprint judge wrapper", () => {
     expect(valueOf(run.args, "--tools")).toBe("Read,Write,Edit,Bash");
     expect(valueOf(run.args, "--setting-sources")).toBe("");
     for (const flag of ["--strict-mcp-config", "--disable-slash-commands", "--no-session-persistence"]) expect(run.args, flag).toContain(flag);
-  });
-
-  it("gives a Blueprint V2 judge the brief, the blueprint and the V2 preamble", async () => {
-    const run = await runWrapper();
-    expect(run.status, run.stderr).toBe(0);
-    expect((await fs.readdir(run.workspace)).sort()).toEqual(expect.arrayContaining(["blueprint.json", "brief.json", "context.json"]));
-    expect(await fs.realpath(path.join(run.workspace, "prompts", "judge-system.md"))).toBe(
-      path.join(repoRoot(), "evaluation/prompts/judge-system.md"),
-    );
   });
 
   it("gives a clue-graph judge the case, the player's view, and the clue-graph instructions and preamble", async () => {

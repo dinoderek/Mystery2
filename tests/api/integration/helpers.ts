@@ -1,5 +1,6 @@
 import { GameTurnResponseSchema } from '@my2/shared';
 import type { Db } from '../../../packages/game-engine/src/db/client.ts';
+import { MOCK_CASE_ID } from '../../testkit/src/mock-case';
 import { API_URL, createTestPlayer, testDatabase, type TestPlayer } from '../../testkit/src/server';
 
 export {
@@ -13,8 +14,11 @@ export {
 	STUB_PNG,
 } from '../../testkit/src/server';
 
-/** The deterministic fixture in `blueprints/mock-blueprint.json`. */
-export const MOCK_BLUEPRINT_ID = '123e4567-e89b-12d3-a456-426614174000';
+/** The default fixture, the clue-graph mock case (`tests/testkit/src/mock-case.ts`). */
+export const MOCK_BLUEPRINT_ID = MOCK_CASE_ID;
+
+/** The V2 fixture in `blueprints/mock-blueprint.json`, for the tests of V2-only play that leave with V2. */
+export const V2_MOCK_BLUEPRINT_ID = '123e4567-e89b-12d3-a456-426614174000';
 
 export type ApiAuthContext = TestPlayer;
 
@@ -133,12 +137,12 @@ export function readStoredEvents(gameId: string, db: Db = testDatabase()): Store
 // Playing a game over the API
 // ---------------------------------------------------------------------------
 
-/** Starts a case on the mock blueprint as `auth`'s player and returns its game id. */
-export async function startMockGame(auth: ApiAuthContext): Promise<string> {
+/** Starts a case, the mock case unless named, as `auth`'s player and returns its game id. */
+export async function startMockGame(auth: ApiAuthContext, blueprintId = MOCK_BLUEPRINT_ID): Promise<string> {
 	const res = await fetch(`${API_URL}/game-start`, {
 		method: 'POST',
 		headers: auth.headers,
-		body: JSON.stringify({ blueprint_id: MOCK_BLUEPRINT_ID })
+		body: JSON.stringify({ blueprint_id: blueprintId })
 	});
 	if (res.status !== 200) throw new Error(`game-start answered ${res.status}`);
 	return (await res.json()).game_id as string;

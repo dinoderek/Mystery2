@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { listOnlyMockCase } from "./session-helpers";
 import { signInThroughPicker } from "./test-profile";
 
 test.skip(
@@ -8,11 +9,12 @@ test.skip(
 
 test.describe("Live AI smoke", () => {
   test("loads a real session and executes one live command", async ({ page }) => {
+    await listOnlyMockCase(page);
     await signInThroughPicker(page);
 
     await expect(page.getByText("1. Start a new game")).toBeVisible();
     await page.keyboard.press("1");
-    await expect(page.getByText("Mock Blueprint")).toBeVisible();
+    await expect(page.getByText("Mock Case — clue graph")).toBeVisible();
     await page.keyboard.press("1");
     await expect(page).toHaveURL(/.*\/session/);
 

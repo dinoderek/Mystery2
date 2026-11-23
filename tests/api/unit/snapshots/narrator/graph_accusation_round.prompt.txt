@@ -24,7 +24,7 @@ The investigator says: "It was Toby."
 The case is not proven. graph_accusation_context carries the reported accused (an id in people, or null), held (only the clues cited), and reply (the engine's chosen explanation). Word that reply warmly; do not choose another kind.
 - kind "flaw": explain the problem using cleared_by, the held clues that conflict with the accusation, or retracted, the cited statements taken back and who took them back. Give those details without declaring anyone guilty or innocent.
 - kind "alternative": the cited clues also fit reply.people. Name those people, without suggesting they did it or inventing how the clues fit. The clues alone do not distinguish the accounts.
-- kind "missing": say plainly, in simple words, the kind of fact the case still needs: reply.fact_kind. It is a kind of fact, never an unseen fact to reveal.
+- kind "missing": what is cited is not enough. First say plainly, in simple words, the kind of fact the case still needs: reply.fact_kind. Then point to the lead. Do not spend the reply retelling the cited clues. reply.fact_kind is a kind of fact, never an unseen fact to reveal.
 For alternative or missing, when reply.lead is set, point toward that person or place in your own words. End with one short question about investigating further. The player can explore again; do not demand another accusation now.
 Use only the supplied reply and cited clues. Never identify the culprit, confirm or deny the accused name, or invent a clue, explanation or alternative person. No right-name hint: every missing reply reads the same way.
 

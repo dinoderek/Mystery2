@@ -15,7 +15,7 @@
  */
 
 import { runModel } from "../../core/runner.ts";
-import { settleAccusation, resolves, type GraphVerdictContext } from "../../../packages/game-engine/src/clue-graph/accusation.ts";
+import { accusationRole, replyKindOf, resolves, settleAccusation } from "../../../packages/game-engine/src/clue-graph/accusation.ts";
 import { playOf } from "../../../packages/game-engine/src/clue-graph/history.ts";
 import { parseGraphAccusationOutput, parseGraphAccusationRoundOutput, parseGraphEndingOutput } from "../../../packages/game-engine/src/ai-contracts.ts";
 import type { ResolvedBinding } from "../../core/config.ts";
@@ -136,7 +136,7 @@ async function replayGraphAccusation({ testCase, blueprint, binding, logDir }: C
 
   const { saved } = settleAccusation(graph, playOf(graph, history), history, { accused: report.accused_character_id, cited: report.cited_clue_ids });
   const ended = resolves(saved.verdict);
-  const role = ended ? "graph_ending" : "graph_accusation_round";
+  const role = accusationRole(saved.verdict);
   const reply = await buildRoleRequest({
     ...(roleInput as unknown as Extract<TemplateRoleInput, { role: "graph_accusation" }>),
     role,
@@ -156,7 +156,7 @@ async function replayGraphAccusation({ testCase, blueprint, binding, logDir }: C
   if (!worded.ok) throw new Error(`narrator accuse reply failed: ${worded.error}`);
 
   const narration = String(worded.value!.narration);
-  const replyKind = ended ? null : (reply.context as { graph_accusation_context: GraphVerdictContext }).graph_accusation_context.reply!.kind;
+  const replyKind = ended ? null : replyKindOf(reply.context as { graph_accusation_context?: unknown });
   const response = makeResponse({
     action: "accuse",
     request: { ...testCase.action },

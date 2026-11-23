@@ -317,3 +317,15 @@ export function verdictContext(
 export function resolves(verdict: AccusationVerdict): verdict is "win" | "lose" {
   return verdict === "win" || verdict === "lose";
 }
+
+/** The role that words a decided accusation: the closing scene, or the failure's reply. */
+export function accusationRole(verdict: AccusationVerdict): "graph_ending" | "graph_accusation_round" {
+  return resolves(verdict) ? "graph_ending" : "graph_accusation_round";
+}
+
+/** The kind of reply a failure's context hands the narrator, as its event saves it. */
+export function replyKindOf(context: { graph_accusation_context?: unknown }): AccusationReply["kind"] {
+  const reply = (context.graph_accusation_context as GraphVerdictContext | undefined)?.reply;
+  if (!reply) throw new Error("a failed accusation's context carries no reply");
+  return reply.kind;
+}

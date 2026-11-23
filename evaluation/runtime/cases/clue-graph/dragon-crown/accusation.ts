@@ -2,15 +2,13 @@
 // player opened, which the narrator reports, the engine decides and the
 // narrator words. The groups are the greenhouse's (`../greenhouse/accusation.ts`).
 
+import { PHYSICAL_FINDING, TAKEN_BACK } from "../support/details.ts";
 import { accusationCase, type Step } from "../support/play.ts";
-import { TAKEN_BACK } from "../greenhouse/accusation.ts";
 import { ABARA_GREETS, CARDS, GOLD_STEPS, LEO_GREETS, NINA_GREETS, PIKE_GREETS, PIKE_MET } from "./talk.ts";
 
 const DRAGON = "blueprints/clue-graph/dragon-crown.json";
 const accuse = (steps: Step[], reasoning: string, labels: Parameters<typeof accusationCase>[3]) => accusationCase(DRAGON, steps, reasoning, labels);
 const SPOILER = { gm_spoiler: "given_away" } as const;
-/** A physical finding, however the reply puts it. */
-const FINDING = ["physical", "find", "found", "finding", "search", "look", "evidence", "link", "links"];
 
 /** Nina's script cards behind the bike shed, and Mr. Pike watching her there all lunchtime: Nina is cleared. */
 const NINA_CLEARED: Step[] = [
@@ -49,13 +47,13 @@ export default [
     id: "accuse-sam-nothing-cited",
     group: "accuse-nothing-cited",
     // A physical finding, and Nina as the lead.
-    expect: { verdict: "not_yet", reply_kind: "missing", handed: [FINDING, "Nina"], judges: SPOILER },
+    expect: { verdict: "not_yet", reply_kind: "missing", handed: [PHYSICAL_FINDING, "Nina"], judges: SPOILER },
   }),
   accuse([...GOLD_STEPS, { move: "art_room" }, LEO_GREETS], "Leo did it. He keeps tugging his jumper down and there's gold sparkling on his trousers, just like the glitter on the stage steps.", {
     id: "accuse-leo-unsupported",
     group: "accuse-unsupported",
     // The right name without support reads like any name with nothing cited.
-    expect: { verdict: "not_yet", reply_kind: "missing", handed: [FINDING, "Nina"], judges: SPOILER },
+    expect: { verdict: "not_yet", reply_kind: "missing", handed: [PHYSICAL_FINDING, "Nina"], judges: SPOILER },
   }),
   accuse([...CARDS, { move: "art_room" }, LEO_GREETS, LEO_SHOWN_CARDS], "It was Nina. Leo said he saw her sneaking about with a bundle, and she wished the play would be cancelled.", {
     id: "accuse-nina-retracted",

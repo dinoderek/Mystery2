@@ -13,14 +13,13 @@
 // - accuse-retracted: a statement its speaker took back (a flaw);
 // - accuse-won: the culprit, shown by the clues cited (the closing scene).
 
+import { TAKEN_BACK, WHO_WAS_WHERE } from "../support/details.ts";
 import { accusationCase, type Step } from "../support/play.ts";
 import { DOBBS_MET, SEARCHED, THORNE_GREETS, TOBY_GREETS, TOBY_SHOWN_GLASS } from "./talk.ts";
 
 const GREENHOUSE = "blueprints/clue-graph/greenhouse-prizewinner.json";
 const accuse = (steps: Step[], reasoning: string, labels: Parameters<typeof accusationCase>[3]) => accusationCase(GREENHOUSE, steps, reasoning, labels);
 const SPOILER = { gm_spoiler: "given_away" } as const;
-/** That a statement was taken back, however the reply puts it. */
-export const TAKEN_BACK = ["taken", "took", "no longer", "withdrawn"];
 
 /** Mr. Dobbs heard the crash at ten to nine, and Mr. Thorne bought cake from Mia at nine: Mia is cleared. */
 const MIA_CLEARED: Step[] = [
@@ -48,13 +47,13 @@ export default [
     id: "accuse-dobbs-nothing-cited",
     group: "accuse-nothing-cited",
     // An account of who was where, and Ms. Hale as the lead.
-    expect: { verdict: "not_yet", reply_kind: "missing", handed: [["where", "alibi"], ["Ms. Hale", "Ms Hale", "Hale"]], judges: SPOILER },
+    expect: { verdict: "not_yet", reply_kind: "missing", handed: [WHO_WAS_WHERE, ["Ms. Hale", "Ms Hale", "Hale"]], judges: SPOILER },
   }),
   accuse(TOBY_MET, "It was Toby. He went all pink and kept sweeping the same spot, and he's hiding his feet.", {
     id: "accuse-toby-unsupported",
     group: "accuse-unsupported",
     // The right name without support reads like any name with nothing cited.
-    expect: { verdict: "not_yet", reply_kind: "missing", handed: [["where", "alibi"], ["Ms. Hale", "Ms Hale", "Hale"]], judges: SPOILER },
+    expect: { verdict: "not_yet", reply_kind: "missing", handed: [WHO_WAS_WHERE, ["Ms. Hale", "Ms Hale", "Hale"]], judges: SPOILER },
   }),
   accuse([...TOBY_MET, TOBY_SHOWN_GLASS], "Mr. Thorne did it. Toby said he climbed over the fence and smashed the window to get in.", {
     id: "accuse-thorne-retracted",

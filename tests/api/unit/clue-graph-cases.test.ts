@@ -22,6 +22,10 @@ import { getAction, normalizeHistory } from "../../../evaluation/runtime/lib/rol
 import { played, readGraph } from "../../../evaluation/runtime/cases/clue-graph/support/play.ts";
 import { resolves, settleAccusation, type AccusationReport, type GraphVerdictContext } from "../../../packages/game-engine/src/clue-graph/accusation.ts";
 import { playOf } from "../../../packages/game-engine/src/clue-graph/history.ts";
+import { PHYSICAL_FINDING, TAKEN_BACK, WHO_WAS_WHERE } from "../../../evaluation/runtime/cases/clue-graph/support/details.ts";
+import { gradeExpect } from "../../../evaluation/runtime/lib/expect.ts";
+import type { StoredTurn } from "../../../evaluation/runtime/lib/turn.ts";
+import { makeTurn } from "./runtime-turn-helpers.ts";
 
 /** One group per kind of accusation (`evaluation/runtime/cases/clue-graph/greenhouse/accusation.ts`). */
 const ACCUSE_GROUPS = ["accuse-cleared", "accuse-alternative", "accuse-nothing-cited", "accuse-unsupported", "accuse-retracted", "accuse-won"];
@@ -244,6 +248,29 @@ describe.each(STORIES)("the clue-graph $name accusation cases", async (story) =>
         const spellings = typeof detail === "string" ? [detail] : detail;
         expect(spellings.some((spelling) => handed.includes(spelling.toLowerCase())), `${turnCase.id}: ${spellings[0]} is not handed`).toBe(true);
       }
+    }
+  });
+});
+
+/** The shared spellings of what a reply must state, beside the words a reply uses for anything else. */
+const STATED = [TAKEN_BACK, WHO_WAS_WHERE, PHYSICAL_FINDING];
+
+describe.each(STORIES)("the clue-graph $name accusation spellings", async (story) => {
+  const accusations = (await loadCasesFrom(story.library)).filter((turnCase) => turnCase.action.type === "accuse");
+
+  it("withhold a kind of fact or a retraction from a reply that gives everything else and a closing question", () => {
+    const stating = accusations.filter((turnCase) => turnCase.expect!.handed!.some((detail) => STATED.includes(detail as string[])));
+    expect(stating.length, "a missing case and a retracted case at least").toBeGreaterThanOrEqual(3);
+    for (const turnCase of stating) {
+      const { verdict, reply_kind, handed } = turnCase.expect!;
+      const named = handed!.filter((detail) => !STATED.includes(detail as string[])).map((detail) => (typeof detail === "string" ? detail : detail[0]));
+      // Every word here is one a reply uses without stating the thing: a lead, a look, a taken crown.
+      const narration = `${named.join(" and ")} talked about it. Maybe ${named[0]} knows more. Who really took it, and who was there? Where will you look next, and what will you find?`;
+      const base = makeTurn({ action: turnCase.action });
+      const turn: StoredTurn = { ...base, response: { ...base.response, action: "accuse", narration_text: narration, raw: { clue_graph_accusation: { verdict }, reply_kind } } };
+      const grade = gradeExpect({ verdict, reply_kind, handed }, turn, []);
+      expect(grade.details, turnCase.id).toMatchObject({ erred: ["withheld"] });
+      expect((grade.details as { missing_handed: string[] }).missing_handed, turnCase.id).toHaveLength(1);
     }
   });
 });

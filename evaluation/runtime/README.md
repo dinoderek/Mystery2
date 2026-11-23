@@ -1,6 +1,6 @@
 # Judging a turn
 
-Grades one narration against fixed state and history. Options: `evaluation/README.md`.
+Grades one narration on fixed state and history. Options: `evaluation/README.md`.
 
 ## Determinism is the point
 
@@ -28,9 +28,8 @@ model under test never reads `CLAUDE.md`.
 
 A `server` run starts the app against a temporary config root
 (`scripts/lib/test-server.mjs`), seeds each case's history, sends the action as
-a typed line, and removes the root, never touching your play database. A case that sets
-`accusation_history_mode` needs a CLI narrator, since a typed line cannot carry
-it. An `--ai-profile` other than `mock` or `default` (mock on the fresh
+a typed line, and removes the root, never touching your play database. A case setting
+`accusation_history_mode` needs a CLI narrator: a typed line cannot carry it. An `--ai-profile` other than `mock` or `default` (mock on the fresh
 database) comes from the config root's `ai.json` with its key; a missing name
 or key fails the run first.
 
@@ -52,7 +51,8 @@ per narrator interaction (`InteractionId` in `packages/shared/src/age-profile.ts
 - `flesch`, a check: the deterministic Flesch–Kincaid grade against the
   blueprint's `target_age`.
 - `age_appropriate_turn`, a judge for what the formula cannot see (vocabulary,
-  figurative language), against the narrator prompt's age profile.
+  figurative language), against the narrator prompt's age profile; not the
+  blueprint dimension `age_appropriate`.
 - `gm_roleplay`, `gm_clue_discipline`, `gm_fabrication`, `gm_spoiler`: the
   adherence judges shared with the game harness (`evaluation/judges/README.md`).
   The history is context; the action is the one judged turn.
@@ -81,8 +81,8 @@ clue's details (spellings each): its notebook line, and the narration or the
 player's words it answers, must hold each. A tell riding on a
 statement counts with it.
 
-An accusation chains the game's steps: the narrator reports who was named and
-what was cited, the engine decides, the narrator words the reply. `verdict`
+An accusation chains the game's steps: the narrator reports the name and the
+citations, the engine decides, the narrator words the reply. `verdict`
 (`win`, `not_yet`, `lose`) and `reply_kind` (`flaw`, `alternative`, `missing`)
 grade the decision; the narration must hold each `handed` detail (spellings
 each) of what the engine handed the reply.
@@ -93,13 +93,14 @@ not expected), **misread** (an accusation: another verdict or reply kind), or wa
 withheld on a case expecting a use went **unseen** (use missing) or was **refused**.
 `expect.json`, also printed, holds each case's and `group`'s share
 right; `ungraded: true` keeps a case out of its group. A sample that did not run
-or could not be graded counts neither way and marks the run INCOMPLETE.
+or could not be graded, such as a give-away a server refuses, counts neither way
+and marks the run INCOMPLETE.
 
-`./dev eval baseline save <run> <file>` stores a complete run's summary (narrator,
-model, samples, commit), by convention as `<case folder>/baselines/<model>.json`;
-`baseline compare <baseline> <run>` prints the change per case and group.
-`cases/search-reveals/` and `cases/talk-reveals/` have `haiku` and `sonnet`
-baselines, and `<model>-after` ones. Each `cases/clue-graph/` story has
+`./dev eval baseline save <run> <file>` stores a complete run's summary, by
+convention as `<case folder>/baselines/<model>.json`;
+`baseline compare <baseline> <run>` prints each case's and group's change.
+`cases/search-reveals/` and `cases/talk-reveals/` have `haiku`, `sonnet` and
+`<model>-after` baselines. Each `cases/clue-graph/` story has
 `haiku` and `sonnet`; ported greenhouse cases keep their IDs. Its `whole-fact`,
 `plain-unknown` and `invention` groups, with `gm_clue_discipline` and
 `gm_fabrication`, measure [the narrator's judgement](../../docs/clue-graph.md);
@@ -122,8 +123,7 @@ failure, measure the accusation. Each case and group scores at least 4 of 5.
 ```
 
 Each case × narrator is one subject, `<case>__<narrator>/`: `turn.json` (the raw
-capture, written **before** any judge runs) and `result.json`. A failed narrator
-exits 1; a judge that fails or cannot judge exits 2.
+capture, written **before** any judge runs) and `result.json`. A failed narrator exits 1; a judge that fails or cannot judge exits 2.
 
 To re-judge a stored turn without calling its narrator:
 

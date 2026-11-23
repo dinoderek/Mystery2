@@ -19,7 +19,7 @@ import {
   accusationsLeft,
   isLastAccusation,
 } from "../accusations.ts";
-import { resolves, settleAccusation, type GraphVerdictContext } from "../clue-graph/accusation.ts";
+import { accusationRole, replyKindOf, resolves, settleAccusation } from "../clue-graph/accusation.ts";
 import { playOf } from "../clue-graph/history.ts";
 import { createNarrationPart } from "../narration.ts";
 import { buildRoleRequest } from "../role-request.ts";
@@ -220,7 +220,7 @@ async function resolveGraphAccusation(game: TurnGame, runtime: TurnRuntime, reas
   }
   const { cited } = saved;
   const ended = resolves(saved.verdict);
-  const role = ended ? "graph_ending" : "graph_accusation_round";
+  const role = accusationRole(saved.verdict);
   const { prompt, context } = await buildRoleRequest({
     role,
     game_id: game.game_id,
@@ -246,7 +246,7 @@ async function resolveGraphAccusation(game: TurnGame, runtime: TurnRuntime, reas
       player_reasoning: reasoning,
       judge_result: result ?? "continue",
       clue_graph_accusation: saved,
-      ...(!ended ? { reply_kind: (context.graph_accusation_context as GraphVerdictContext).reply!.kind } : {}),
+      ...(!ended ? { reply_kind: replyKindOf(context) } : {}),
       speaker: NARRATOR_SPEAKER,
     },
     narration_parts: [createNarrationPart(output.narration, NARRATOR_SPEAKER)],

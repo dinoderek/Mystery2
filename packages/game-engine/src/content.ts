@@ -8,8 +8,8 @@ import path from "node:path";
 import {
   BlueprintV2Schema,
 } from "../../shared/src/blueprint-schema-v2.ts";
-import { buildMsfBlueprint, validateMsfCaseFile, type PlayableBlueprint } from "../../shared/src/msf-case.ts";
-import { buildClueGraphBlueprint } from "../../shared/src/clue-graph-case.ts";
+import { buildMsfBlueprint, msfOf, validateMsfCaseFile, type PlayableCase } from "../../shared/src/msf-case.ts";
+import { buildClueGraphWorld } from "../../shared/src/clue-graph-case.ts";
 import { validateClueGraph } from "../../shared/src/clue-graph-validator.ts";
 import { isClueGraphFile } from "../../shared/src/clue-graph-schema.ts";
 import type { BlueprintSummaryEntry, ContentStore } from "./context.ts";
@@ -27,7 +27,7 @@ export interface LocalContentOptions {
 interface CachedBlueprint {
   /** mtime + size of the file the blueprint was parsed from. */
   stamp: string;
-  blueprint: PlayableBlueprint;
+  blueprint: PlayableCase;
 }
 
 function stampOf(stats: fs.Stats): string {
@@ -56,7 +56,7 @@ export function createLocalContentStore(
   function readBlueprintFile(
     filePath: string,
     logger?: LogWriter,
-  ): PlayableBlueprint | null {
+  ): PlayableCase | null {
     let stats: fs.Stats;
     let text: string;
     try {
@@ -81,7 +81,7 @@ export function createLocalContentStore(
       const blueprint = candidate?.$format === "MSF-CASE/1"
         ? buildMsfBlueprint(validateMsfCaseFile(candidate))
         : isClueGraphFile(candidate)
-        ? buildClueGraphBlueprint(validateClueGraph(candidate))
+        ? buildClueGraphWorld(validateClueGraph(candidate))
         : BlueprintV2Schema.parse(candidate);
       cache.set(filePath, { stamp: stampOf(stats), blueprint });
       return blueprint;
@@ -123,9 +123,9 @@ export function createLocalContentStore(
   }
 
   return {
-    async loadScenes(blueprint: PlayableBlueprint): Promise<SceneManifest | null> {
+    async loadScenes(blueprint: PlayableCase): Promise<SceneManifest | null> {
       if (!isSafeSegment(blueprint.id)) return null;
-      const assetId = blueprint.msf?.paired_blueprint_id ?? blueprint.id;
+      const assetId = msfOf(blueprint)?.paired_blueprint_id ?? blueprint.id;
       for (const dir of options.sceneDirs) {
         let text: string;
         try {
@@ -160,7 +160,7 @@ export function createLocalContentStore(
     async loadBlueprint(
       blueprintId: string,
       logger: LogWriter,
-    ): Promise<PlayableBlueprint | null> {
+    ): Promise<PlayableCase | null> {
       if (isSafeSegment(blueprintId)) {
         for (const dir of options.blueprintDirs) {
           const blueprint = readBlueprintFile(

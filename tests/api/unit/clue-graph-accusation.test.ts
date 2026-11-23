@@ -4,7 +4,7 @@
 
 import fs from "node:fs";
 import { describe, expect, it } from "vitest";
-import { buildClueGraphBlueprint, validateClueGraph, type ClueGraphCase } from "@my2/shared";
+import { buildClueGraphWorld, validateClueGraph, type ClueGraphCase } from "@my2/shared";
 import {
   confessionClues,
   accusationReply,
@@ -108,7 +108,7 @@ function history(events: ClueGraphEvent[], after: Array<{ event_type: string; pa
 }
 
 describe("what the clue-graph accusation narrator is given", () => {
-  const blueprint = buildClueGraphBlueprint(graph);
+  const blueprint = buildClueGraphWorld(graph);
   const session = { mode: "accuse" as const, current_location_id: "greenhouse", current_talk_character_id: null, time_remaining: 4 };
   const found = history(
     [

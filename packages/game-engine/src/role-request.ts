@@ -36,6 +36,7 @@ import {
   type BlueprintClue,
   type BlueprintContext,
   buildAccusationJudgeContext,
+  narrationStyleOf,
   buildAccusationStartContext,
   buildArrivalCharacterContexts,
   buildGraphAccusationAIContext,
@@ -230,7 +231,7 @@ const REGISTRY: Record<RoleRequestName, any> = {
       buildGameStartPrompt({
         target_age: input.blueprint.metadata.target_age,
         premise: input.blueprint.narrative.premise,
-        narration_style: input.blueprint.metadata.narration_style ?? null,
+        narration_style: narrationStyleOf(input.blueprint),
         // A clue-graph opening words the case's public facts.
         ...(input.blueprint.clue_graph ? { facts: input.blueprint.clue_graph.opening.facts } : {}),
       }),
@@ -264,7 +265,7 @@ const REGISTRY: Record<RoleRequestName, any> = {
         ),
         destination_sub_locations_json:
           subLocations.length > 0 ? JSON.stringify(subLocations) : undefined,
-        narration_style: input.blueprint.metadata.narration_style ?? null,
+        narration_style: narrationStyleOf(input.blueprint),
         ...(graph ? { destination_facts: graph.locations[destination.id].facts } : {}),
       });
     },
@@ -485,7 +486,7 @@ function searchVars(input: SearchInput) {
 
 /** The extra guidance a case format adds to a shared role's prompt. */
 function roleGuidance(blueprint: BlueprintContext, role: AIPromptKey): string {
-  if (blueprint.msf) return `\n\n${msfRoleGuidance(role)}`;
+  if (!blueprint.clue_graph && blueprint.msf) return `\n\n${msfRoleGuidance(role)}`;
   const guidance = blueprint.clue_graph ? clueGraphRoleGuidance(role) : "";
   return guidance ? `\n\n${guidance}` : "";
 }
@@ -540,7 +541,7 @@ export async function buildRoleRequest(input: TemplateRoleInput): Promise<RoleRe
     input.blueprint.metadata.target_age,
     {
       interaction: spec.interaction?.(input as never),
-      narrationStyle: input.blueprint.metadata.narration_style ?? null,
+      narrationStyle: narrationStyleOf(input.blueprint),
       talkProfile: character ? talkPromptProfile(character) : undefined,
       clueGraph: input.blueprint.clue_graph !== undefined,
     },

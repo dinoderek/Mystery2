@@ -31,7 +31,7 @@ interface StateAgenda {
 /** The character fields the state reads. */
 export interface StateCharacter {
   id: string;
-  stated_alibi: string | null;
+  stated_alibi?: string | null;
   clues: Array<{ id: string; requires?: ClueRequires | null }>;
   agendas?: StateAgenda[];
 }

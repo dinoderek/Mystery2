@@ -1,6 +1,7 @@
 // Searching: the narrator judges the search, and the engine decides whether
 // the clue it names may be found. Search gates are hard.
 
+import { v2CaseOf } from "../../../shared/src/msf-case.ts";
 import type { RevealedClue } from "../../../shared/src/mystery-api-contracts.ts";
 import { parseSearchOutput } from "../ai-contracts.ts";
 import { findLocationById, type BlueprintClue } from "../ai-context.ts";
@@ -162,7 +163,8 @@ export async function resolveSearch(
   runtime: TurnRuntime,
   query: string | null,
 ): Promise<ActionOutcome> {
-  const { session, blueprint, history } = game;
+  const { session, history } = game;
+  const blueprint = v2CaseOf(game.blueprint);
   const location = findLocationById(blueprint, session.current_location_id);
   if (!location) {
     throw new RequestRejectedError(500, "Current location not found in blueprint", "current_location_missing_in_blueprint");

@@ -1,7 +1,7 @@
 # AI Runtime
 
 Narrator contracts and validation before saving. Formats:
-[MSF](msf-gameplay.md), [clue graph](clue-graph.md). Profiles and providers are
+[Clue graph](clue-graph.md). Profiles and providers are
 `docs/ai-configuration.md`; which blueprint fields reach which output is
 `docs/blueprint-generation-flows.md`.
 

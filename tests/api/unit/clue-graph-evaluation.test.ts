@@ -248,10 +248,9 @@ describe("the runtime harness on a clue-graph case", () => {
         playerName: "seeded",
       });
       const read = openDatabase({ path: databaseFile, readonly: true });
-      const row = read.prepare("select blueprint_id, clue_graph_snapshot, msf_snapshot from game_sessions where id = ?").get(gameId) as Record<string, string | null>;
+      const row = read.prepare("select blueprint_id, clue_graph_snapshot from game_sessions where id = ?").get(gameId) as Record<string, string | null>;
       read.close();
       expect(row.blueprint_id).toBe(GREENHOUSE_ID);
-      expect(row.msf_snapshot).toBeNull();
       expect(JSON.parse(row.clue_graph_snapshot as string)).toEqual(blueprint.clue_graph);
     } finally {
       fs.rmSync(scratch, { recursive: true, force: true });

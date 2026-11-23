@@ -1,7 +1,7 @@
 # Blueprint Generation Flows
 
 V2 schema: `packages/shared/src/blueprint-schema-v2.ts`; narrator context:
-`docs/ai-runtime.md`; [MSF](msf-gameplay.md), [clue graph](clue-graph.md).
+`docs/ai-runtime.md`; [clue graph](clue-graph.md).
 “Input” goes to the model; “attached” pairs with its output; sessions
 store ids.
 

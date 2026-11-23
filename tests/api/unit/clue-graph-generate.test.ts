@@ -232,7 +232,7 @@ describe("generate, clue graph", () => {
     expect(parseRepair("0", false, ["agent"], "clue-graph")).toBe(0);
     expect(parseBackends(["api"], "v2")).toEqual(["api"]);
     expect(parseFormat(undefined)).toBe("clue-graph");
-    expect(() => parseFormat("msf")).toThrow("--format must be one of clue-graph, v2");
+    expect(() => parseFormat("unknown")).toThrow("--format must be one of clue-graph, v2");
   });
 });
 
@@ -287,8 +287,8 @@ describe("the clue-graph workspace", () => {
   });
 
   it("refuses an unknown format", () => {
-    const setup = spawnSync("bash", [SETUP, path.join(dir, "other"), "msf"], { encoding: "utf8" });
+    const setup = spawnSync("bash", [SETUP, path.join(dir, "other"), "unknown"], { encoding: "utf8" });
     expect(setup.status).toBe(1);
-    expect(setup.stderr).toContain("unknown format: msf");
+    expect(setup.stderr).toContain("unknown format: unknown");
   });
 });

@@ -11,7 +11,7 @@
 // 7. Save once.
 // 8. Answer from what was saved.
 
-import { lastNameOf, type PlayableCase } from "../../../shared/src/msf-case.ts";
+import { lastNameOf, type PlayableCase } from "../../../shared/src/playable-case.ts";
 import { markClues, notebookMarks } from "../clue-graph/notebook-view.ts";
 import { sessionCase } from "../session-case.ts";
 import type { GameTurnResponse, TurnPlayedResponse } from "../../../shared/src/mystery-api-contracts.ts";

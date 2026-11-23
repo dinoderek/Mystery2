@@ -157,9 +157,9 @@ describe("claude-generate.sh wrapper", () => {
   });
 
   it("refuses an unknown format", async () => {
-    const { result } = await runWrapper({ renderedPrompt: "p", format: "msf" });
+    const { result } = await runWrapper({ renderedPrompt: "p", format: "unknown" });
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain("unknown EVAL_GENERATE_FORMAT: msf");
+    expect(result.stderr).toContain("unknown EVAL_GENERATE_FORMAT: unknown");
   });
 
   it("starts a generation without a repair file, on the iteration protocol", async () => {

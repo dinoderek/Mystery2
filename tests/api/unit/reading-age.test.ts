@@ -9,10 +9,8 @@ import path from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import {
-  buildClueGraphWorld,
   GameGetResponseSchema,
   GameStartResponseSchema,
-  validateClueGraph,
   type ClueGraphWorld,
   type PlayableBlueprint,
   type PlayableCase,

@@ -641,7 +641,7 @@ class MockAIProvider implements AIProvider {
       case "graph_ending": {
         const verdict = context.graph_accusation_context as GraphVerdictContext | undefined;
         if (!verdict) throw new Error(`Mock AI ${role} requires graph_accusation_context`);
-        return { narration: mockGraphVerdict(verdict, context.forced_by_timeout) };
+        return { narration: mockGraphVerdict(verdict, context.forced_by_timeout === true) };
       }
       case "search": {
         const searchContext = context.search_context as

@@ -11,7 +11,14 @@ import {
   parseGraphAccusationRoundOutput,
   parseGraphEndingOutput,
 } from "../ai-contracts.ts";
-import { ACCUSE_BACK, ACCUSE_FAILED, ACCUSE_RESOLVED, isLastAccusation } from "../accusations.ts";
+import {
+  ACCUSE_BACK,
+  ACCUSE_FAILED,
+  ACCUSE_RESOLVED,
+  accusationRuleLine,
+  accusationsLeft,
+  isLastAccusation,
+} from "../accusations.ts";
 import { decideAccusation, resolves, type SavedAccusation } from "../clue-graph/accusation.ts";
 import { playOf } from "../clue-graph/history.ts";
 import { createNarrationPart } from "../narration.ts";
@@ -24,6 +31,11 @@ import type { ActionOutcome, ActionEvent, TurnGame, TurnRuntime } from "./types.
 /** The session as the narrator sees it once the accusation is under way. */
 function accusing(game: TurnGame) {
   return { ...game.session, mode: "accuse" as const, current_talk_character_id: null };
+}
+
+/** The rule, told on the scene a player opens with `accuse`, where `back` is free. */
+function ruleLine(game: TurnGame) {
+  return createNarrationPart(accusationRuleLine(accusationsLeft(game.history), false), SYSTEM_SPEAKER);
 }
 
 export async function resolveAccuseStart(game: TurnGame, runtime: TurnRuntime): Promise<ActionOutcome> {
@@ -47,7 +59,10 @@ export async function resolveAccuseStart(game: TurnGame, runtime: TurnRuntime): 
       event_type: "accuse_start",
       actor: "player",
       payload: { role: "accusation_start", trigger: "player", speaker: NARRATOR_SPEAKER },
-      narration_parts: [createNarrationPart(output.narration, NARRATOR_SPEAKER)],
+      narration_parts: [
+        createNarrationPart(output.narration, NARRATOR_SPEAKER),
+        ruleLine(game),
+      ],
       model: runtime.provider.resolvedModel,
       action: "accuse_start",
       mode: game.session.mode,

@@ -43,3 +43,14 @@ export function isLastAccusation(events: AccusationEvent[]): boolean {
 export function accusationForced(session: { mode: string; time_remaining: number }): boolean {
   return session.mode === "accuse" && session.time_remaining === 0;
 }
+
+/**
+ * What the accusation scene tells the player about the rule. A fixed line the
+ * engine adds after the narrator's scene, so it is always right and the
+ * narrator never has to state it.
+ */
+export function accusationRuleLine(left: number, forced: boolean): string {
+  const count = left === 1 ? "1 accusation left" : `${left} accusations left`;
+  const tail = forced ? "Time is up, so there is no going back." : 'Type "back" to go back: that is free.';
+  return `You have ${count}. This one uses one. ${tail}`;
+}

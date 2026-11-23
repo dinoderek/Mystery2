@@ -75,6 +75,9 @@ describe("game-start endpoint", () => {
     expect(data.narration_events[0].narration_parts[1].text).not.toContain(
       "You already know:",
     );
+    // ...and tells the rule before it matters.
+    expect(data.narration_events[0].narration_parts[1].text).toContain("You have 3 accusations.");
+    expect(data.narration_events[0].narration_parts[1].text).toContain('"back"');
     expect(fetchSessionAIProfile(data.game_id)).toBe("default");
   });
 

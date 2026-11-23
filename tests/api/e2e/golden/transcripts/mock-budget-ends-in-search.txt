@@ -20,7 +20,7 @@ steps
 pages
   page 0 opening "Mock Blueprint"
     step 0 | Narrator (narrator): "[Mock] Narration for: You are the narrator for a children's mystery game.\nThe reader is 10 y..."
-    step 0 | Narrator (narrator): "Tip: type \"notebook\" (or \"n\") to open your case notebook. It holds what you know, who you have met, and every clue you have found. Type \"help\" to see what else you can do."
+    step 0 | Narrator (narrator): "Tip: type \"notebook\" (or \"n\") to open your case notebook. It holds what you know, who you have met, and every clue you have found. You have 3 accusations. Each one you try uses one up. Type \"accuse\" when you are ready, and \"back\" if you change your mind: that is free. Type \"help\" to see what else you can do."
   page 1 location "Kitchen"
     step 1 | Narrator (narrator): "[Mock] You arrive at Kitchen. Alice is here."
     step 2 | You (investigator): "search"
@@ -44,6 +44,7 @@ pages
     step 11 | You (investigator): "search"
     step 11 | Narrator (narrator): "[Mock] You search Kitchen again, but discover no new clue."
     step 11 | Narrator (narrator): "[Mock] Time is up. You must make your accusation now. Who did it, and how do you know?"
+    step 11 | System (system): "You have 3 accusations left. This one uses one. Time is up, so there is no going back."
     step 12 | You (investigator): "accuse"
     step 12 | Narrator (narrator): "[Mock] I am not sure yet. Who do you think did it, and what clue shows it?"
     step 13 | You (investigator): "quit"

@@ -41,6 +41,8 @@ import {
 const NOTEBOOK_GUIDANCE =
   'Tip: type "notebook" (or "n") to open your case notebook. ' +
   "It holds what you know, who you have met, and every clue you have found. " +
+  `You have ${ACCUSATIONS} accusations. Each one you try uses one up. ` +
+  'Type "accuse" when you are ready, and "back" if you change your mind: that is free. ' +
   'Type "help" to see what else you can do.';
 
 const JSON_HEADERS = { "Content-Type": "application/json" };

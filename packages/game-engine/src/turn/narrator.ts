@@ -10,7 +10,8 @@ import {
 import { RetriableAIError } from "../errors.ts";
 import { buildRoleRequest } from "../role-request.ts";
 import { createNarrationPart } from "../narration.ts";
-import { NARRATOR_SPEAKER } from "../speaker.ts";
+import { NARRATOR_SPEAKER, SYSTEM_SPEAKER } from "../speaker.ts";
+import { accusationRuleLine, accusationsLeft } from "../accusations.ts";
 import type { EndgameScene, ForcedEndgame, TurnGame, TurnRuntime } from "./types.ts";
 
 /** The endpoint every turn's AI calls are recorded under; `action` says which. */
@@ -112,7 +113,10 @@ export async function narrateForcedEndgame(
     parse: parseAccusationStartOutput,
   });
   return {
-    narration_parts: [createNarrationPart(output.narration, NARRATOR_SPEAKER)],
+    narration_parts: [
+      createNarrationPart(output.narration, NARRATOR_SPEAKER),
+      createNarrationPart(accusationRuleLine(accusationsLeft(game.history), true), SYSTEM_SPEAKER),
+    ],
     // Read straight after the call: it names the model that set this scene.
     model: runtime.provider.resolvedModel,
   };

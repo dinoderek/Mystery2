@@ -28,11 +28,10 @@ uses one up and sends you back to exploring, with a reply on what is wrong.
 The third wrong one loses.
 
 After a bare `accuse`, `back` returns to exploring, free. Back out when your
-clues do not yet point to one person. Once they do, accuse with turns to spare:
-a wrong one's reply shows where to look. When the turns run out you must
-accuse: no way back.
+clues do not yet point to one person. After a failure, explore again unless the
+reply shows what to fix. When the turns run out you must accuse: no way back.
 
-If the game does not understand you, try again: no turn lost.
+If the game does not understand you, it says so; try again, no turn lost.
 
 ## Your reply
 

@@ -165,19 +165,6 @@ Copy `.env.images.example` to `.env.images.local` and set `OPENROUTER_API_KEY`.
 Every flag, default and file location: `./dev gen-images --help`.
 Which blueprint fields shape each image: `docs/blueprint-generation-flows.md`.
 
-## 3D scene recipes
-
-The lighthouse and Heartwood cases include saved scenes and need no model.
-
-```bash
-./dev eval scenes blueprints/my-case.json --install
-```
-
-This generates missing locations through the evaluation `scene-generator`
-binding (Claude CLI by default). Configure its wrapper before live generation;
-existing recipes are kept. Data flow and validation:
-`docs/blueprint-generation-flows.md`.
-
 ## Your data
 
 Each worktree runs on its own port and database; `npm run prod` uses the

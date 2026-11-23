@@ -37,16 +37,8 @@ export const ProceduralSceneSchema = z
   })
   .strict();
 
-export const SceneRecipeSchema = z.discriminatedUnion("kind", [
-  z
-    .object({
-      kind: z.literal("lighthouse"),
-      location_id: id,
-      label: z.string().trim().min(1).max(600),
-    })
-    .strict(),
-  ProceduralSceneSchema,
-]);
+/** A recipe is a procedural scene: the one kind there is. */
+export const SceneRecipeSchema = ProceduralSceneSchema;
 
 export const SceneManifestSchema = z
   .object({
@@ -65,7 +57,6 @@ export const SceneManifestSchema = z
           message: "Duplicate location",
         });
       locations.add(scene.location_id);
-      if (scene.kind !== "procedural") continue;
       const ids = scene.objects.map((object) => object.id);
       if (new Set(ids).size !== ids.length)
         ctx.addIssue({

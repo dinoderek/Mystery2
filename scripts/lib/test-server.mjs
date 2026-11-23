@@ -18,6 +18,7 @@ import fs from "node:fs";
 import net from "node:net";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { npmBin } from "./process.mjs";
 import { TEST_DATABASE, resolveDatabaseFile, resolveDatabasesRoot } from "../../lib/database-target.mjs";
@@ -27,10 +28,25 @@ const READY_POLL_MS = 100;
 const PORT_PROBE_TIMEOUT_MS = 1_000;
 const STOP_GRACE_MS = 5_000;
 
+const MOCK_CASE_SCENES = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../tests/testkit/src/mock-case-scenes.json");
+
+/**
+ * Writes the mock case's procedural scenes into a config root's
+ * `blueprint-scenes/`, where the scenes endpoint reads them. The repo's own
+ * `blueprint-scenes/` holds no content, so the suites' scenes come from here.
+ */
+export function installMockCaseScenes(configRoot) {
+  const manifest = JSON.parse(fs.readFileSync(MOCK_CASE_SCENES, "utf8"));
+  const dir = path.join(configRoot, "blueprint-scenes");
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, `${manifest.blueprint_id}.json`), `${JSON.stringify(manifest, null, 2)}\n`);
+}
+
 /** A disposable config root: the run's database lives here and nowhere else. */
 export function createTestConfigRoot() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "mystery-test-"));
   fs.mkdirSync(path.join(root, "blueprint-images"), { recursive: true });
+  installMockCaseScenes(root);
   return root;
 }
 

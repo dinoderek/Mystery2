@@ -7,35 +7,36 @@ import { buildScene } from './scene-world';
 import { createProceduralScene } from '../../../../tests/testkit/src/fixtures';
 
 describe('the recipe renderer', () => {
-  it('builds every shipped scene from saved data with finite geometry, stable cameras, and repeatable motion', () => {
-    const dir = path.resolve('../blueprint-scenes');
-    for (const file of fs.readdirSync(dir)) {
-      const manifest = SceneManifestSchema.parse(
-        JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8')),
-      );
-      for (const recipe of manifest.scenes) {
-        const world = buildScene(recipe);
-        const camera = world.camera.position.clone();
-        world.animate(12);
-        expect(world.camera.position).toEqual(camera);
-        world.scene.traverse((object) => {
-          if (!(object instanceof Mesh || object instanceof Points)) return;
-          expect(
-            Array.from(object.geometry.getAttribute('position').array).every(
-              Number.isFinite,
-            ),
-          ).toBe(true);
-          expect(object.position.toArray().every(Number.isFinite)).toBe(true);
-        });
-        if (recipe.kind === 'procedural') {
-          world.animate(0);
-          for (const object of recipe.objects)
-            expect(
-              world.scene.getObjectByName(object.id)?.position.toArray(),
-            ).toEqual(object.position);
-        }
-        world.dispose();
-      }
+  it('builds each of the mock case scenes with finite geometry, stable cameras, and repeatable motion', () => {
+    const manifest = SceneManifestSchema.parse(
+      JSON.parse(
+        fs.readFileSync(
+          path.resolve('../tests/testkit/src/mock-case-scenes.json'),
+          'utf8',
+        ),
+      ),
+    );
+    expect(manifest.scenes.length).toBeGreaterThan(0);
+    for (const recipe of manifest.scenes) {
+      const world = buildScene(recipe);
+      const camera = world.camera.position.clone();
+      world.animate(12);
+      expect(world.camera.position).toEqual(camera);
+      world.scene.traverse((object) => {
+        if (!(object instanceof Mesh || object instanceof Points)) return;
+        expect(
+          Array.from(object.geometry.getAttribute('position').array).every(
+            Number.isFinite,
+          ),
+        ).toBe(true);
+        expect(object.position.toArray().every(Number.isFinite)).toBe(true);
+      });
+      world.animate(0);
+      for (const object of recipe.objects)
+        expect(
+          world.scene.getObjectByName(object.id)?.position.toArray(),
+        ).toEqual(object.position);
+      world.dispose();
     }
   });
 

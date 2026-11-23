@@ -31,12 +31,11 @@ once one is chosen; settings sets the reading age (`docs/game.md`).
 
 ## The session screen
 
-Case selection and opening pages preview the first saved scene; visible cards are
+Case selection and opening pages preview the first scene recipe; visible cards are
 stills. During play, scenes follow the viewed location, including history.
 Conversations prefer portraits, otherwise scenery. Scenes respect reduced motion;
 frame pacing preserves input responsiveness. Failures log once and fall back to
 illustrations. WebGL scenes stay still. Narrow screens stack art above narration and input.
-`/prototype/lighthouse` previews the accepted lantern room.
 
 Two keyboard rules are easy to break:
 

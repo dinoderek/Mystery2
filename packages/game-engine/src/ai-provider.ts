@@ -189,7 +189,7 @@ function mockGraphAccusation(context: GraphAccusationContext, playerInput: strin
 }
 
 /** The mock's wording of what the engine decided: a failed accusation, or the whole account at the end. */
-function mockGraphVerdict(context: GraphVerdictContext): string {
+function mockGraphVerdict(context: GraphVerdictContext, turnsSpent = false): string {
   if (context.ending) {
     const { outcome, culprit, what_happened, timeline, motive } = context.ending;
     const opening = outcome === "win" ? "You solved it!" : "The case ends here. This time the answer got away.";
@@ -197,16 +197,17 @@ function mockGraphVerdict(context: GraphVerdictContext): string {
   }
   const reply = context.reply;
   if (!reply) throw new Error("Mock AI failed accusation requires reply material");
+  const close = turnsSpent ? "Try your accusation again." : "What could you check next?";
   if (reply.kind === "flaw") {
     const flaw = "cleared_by" in reply
       ? `These clues conflict with that case: ${reply.cleared_by.map((entry) => entry.text).join(" ")}`
       : reply.retracted.map(({ statement, taken_back_by }) => `${taken_back_by} took back this statement: ${statement.text}`).join(" ");
-    return `[Mock] Not proven yet. ${flaw} What could you check next?`;
+    return `[Mock] Not proven yet. ${flaw} ${close}`;
   }
   const explanation = reply.kind === "alternative"
     ? `Those clues also fit ${reply.people.map((person) => person.name).join(" and ")}; they do not settle who did it.`
     : `Your case needs ${reply.fact_kind}.`;
-  return `[Mock] Not proven yet. ${explanation} ${reply.lead ? `Think about this: ${reply.lead} ` : ""}What could you check next?`;
+  return `[Mock] Not proven yet. ${explanation} ${reply.lead ? `Think about this: ${reply.lead} ` : ""}${close}`;
 }
 
 /** The mock's notebook line for a clue: its wording, marked as the narrator's, so a test can tell it from the fact. */
@@ -640,7 +641,7 @@ class MockAIProvider implements AIProvider {
       case "graph_ending": {
         const verdict = context.graph_accusation_context as GraphVerdictContext | undefined;
         if (!verdict) throw new Error(`Mock AI ${role} requires graph_accusation_context`);
-        return { narration: mockGraphVerdict(verdict) };
+        return { narration: mockGraphVerdict(verdict, context.forced_by_timeout) };
       }
       case "search": {
         const searchContext = context.search_context as

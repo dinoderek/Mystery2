@@ -131,16 +131,17 @@ The engine decides; the narrator (`graph_accusation`) only says who was named
 and which held clues they cited. Naming the culprit wins with the confession
 held (their gated true statements the culprit conclusion names), or with that
 conclusion holding on clues not taken back, one cited. Anything else, a right
-name included, spends one of the three accusations; the third failure loses.
+name included, spends one of three accusations; the third failure loses.
 
 A failure saves `reply_kind`: `flaw`, `alternative` or `missing`. The narrator
-(`graph_accusation_round`) gets only the citations and reply material:
+(`graph_accusation_round`) gets only citations and reply material:
 held clearing clues or retracted statements with their speaker (flaw first);
-people a cited culprit route still needs to clear (excluding accused
+people a cited culprit route must still clear (excluding accused
 and culprit), with a distinguishing lead; else a missing fact type and lead.
 Missing types follow the nearest non-confession culprit route, never its facts;
-leads avoid the culprit. Replies never confirm names. The closing scene
-(`graph_ending`) tells the timeline, culprit conclusion and motive.
+leads avoid the culprit, and lapse at zero turns. Replies never confirm
+names. The closing scene (`graph_ending`) tells the timeline, culprit
+conclusion and motive.
 
 ## The narrator's judgement
 

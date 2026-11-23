@@ -1276,6 +1276,7 @@ export function buildGraphVerdictAIContext(input: {
   const graph = graphOf(input.blueprint);
   const history = input.conversation_history ?? [];
   const resolved = input.verdict === "win" || input.verdict === "lose";
+  const turnsSpent = !resolved && input.session.time_remaining === 0;
   return buildContext({
     game_id: input.game_id,
     role_name: resolved ? "graph_ending" : "graph_accusation_round",
@@ -1283,7 +1284,8 @@ export function buildGraphVerdictAIContext(input: {
     blueprint: input.blueprint,
     player_input: input.player_input,
     conversation_history: history,
-    graph_accusation_context: verdictContext(graph, playOf(graph, history), input.verdict, { cited: input.cited ?? [], accused: input.accused ?? null }),
+    forced_by_timeout: turnsSpent,
+    graph_accusation_context: verdictContext(graph, playOf(graph, history), input.verdict, { cited: input.cited ?? [], accused: input.accused ?? null }, turnsSpent),
   });
 }
 

@@ -132,11 +132,11 @@ describe("what the clue-graph accusation narrator is given", () => {
     ...held.map((id) => graph.clues[id].fact),
   ];
 
-  async function request(role: "graph_accusation" | "graph_accusation_round" | "graph_ending", verdict?: AccusationVerdict) {
+  async function request(role: "graph_accusation" | "graph_accusation_round" | "graph_ending", verdict?: AccusationVerdict, turnsLeft = session.time_remaining) {
     return buildRoleRequest({
       game_id: "case",
       blueprint,
-      session,
+      session: { ...session, time_remaining: turnsLeft },
       role,
       player_input: "It was Toby.",
       accused: "toby",
@@ -166,6 +166,20 @@ describe("what the clue-graph accusation narrator is given", () => {
   it("points a failure at a lead while nothing held supports the culprit", async () => {
     const notYet = await request("graph_accusation_round", "not_yet");
     expect(notYet.context.graph_accusation_context).toMatchObject({ reply: { kind: "missing", lead: expect.stringMatching(/^You have not talked to /) } });
+  });
+
+  it("gives a failure no lead once the turns are spent, and tells the narrator so", async () => {
+    const spent = await request("graph_accusation_round", "not_yet", 0);
+    expect(spent.context.forced_by_timeout).toBe(true);
+    expect(spent.context.graph_accusation_context).toMatchObject({ reply: { kind: "missing", lead: null } });
+    expect(spent.prompt).toContain("When forced_by_timeout is true");
+    expect((await request("graph_accusation_round", "not_yet")).context.forced_by_timeout).toBe(false);
+    // The closing scene is the truth, whatever the turns.
+    expect((await request("graph_ending", "lose", 0)).context.forced_by_timeout).toBe(false);
+    const mock = createAIProviderFromProfile({ provider: "mock", model: "mock" });
+    const worded = await mock.generateRoleOutput({ role: "graph_accusation_round", prompt: spent.prompt, context: spent.context, parse: parseGraphAccusationRoundOutput });
+    expect(worded.narration).toContain("Try your accusation again.");
+    expect(worded.narration).not.toContain("Think about this");
   });
 
   it("tells the closing scene of a win which clues showed it, and of a loss none", () => {

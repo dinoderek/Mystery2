@@ -159,10 +159,12 @@ describe("game-turn endpoint", () => {
       const failed = await played(gameId, "accuse Toby");
       expect(failed.events[0]).toMatchObject({
         event_type: "accuse_failed",
-        payload: { judge_result: "continue", reply_kind: null, clue_graph_accusation: { accused: "toby", verdict: "not_yet" } },
+        payload: { judge_result: "continue", reply_kind: "missing", clue_graph_accusation: { accused: "toby", verdict: "not_yet" } },
       });
       expect(failed.state).toMatchObject({ mode: "explore", accusations_left: 2 });
       expect((await getGame(gameId)).state).toMatchObject({ mode: "explore", accusations_left: 2 });
+      expect(readStoredEvents(gameId).at(-1)?.payload?.reply_kind).toBe("missing");
+      expect((await getGame(gameId)).narration_events.find((event) => event.event_type === "accuse_failed")?.payload?.reply_kind).toBe("missing");
     });
   });
 

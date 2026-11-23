@@ -1,10 +1,10 @@
 # Clue Graph
 
-A case format beside [V2](../packages/shared/src/blueprint-schema-v2.ts) and
-[MSF](mystery-structure.md). Schema and checks:
+Beside [V2](../packages/shared/src/blueprint-schema-v2.ts) and
+[MSF](mystery-structure.md). Checks:
 `packages/shared/src/clue-graph-schema.ts`; play:
 `packages/game-engine/src/clue-graph/`; cases: `blueprints/clue-graph/`,
-generated ones' briefs in `blueprints/clue-graph/briefs/`.
+briefs: `blueprints/clue-graph/briefs/`.
 
 ## The model
 
@@ -39,8 +39,7 @@ Using a clue means showing it or making its point, not holding it.
 ## The case file
 
 One JSON file, `"format": "clue-graph/2"`, maps keyed by ID; unknown fields
-and formats are rejected by name. It holds facts, never the words a child
-reads. A fact states what it establishes completely: every name, time, place
+and formats are rejected by name. It holds facts, not narration. Each states every name, time, place
 and object. Beyond the schema:
 
 - `metadata.target_age`: the default reading age; the plot is sized to it.
@@ -49,7 +48,7 @@ and object. Beyond the schema:
 - `personality` and `demeanor` (by stance) direct the narrator; `knows`:
   true facts shared when asked, never clues.
 - `colour: true`: a clue nothing depends on.
-- Artwork, optional: `visual_direction`, `cover` and image IDs
+- Optional artwork: `visual_direction`, `cover` and image IDs
   ([generation flows](blueprint-generation-flows.md)).
 
 An earlier-format game stays listed; opening it answers `410`, logged once.
@@ -64,9 +63,7 @@ conclusion's routes.
 
 References must fit: `after`, `takes_back`, `hinted_by` and `seen.with` name the same character's clues;
 `points_at` and the cover name what the case holds;
-`clears` names a suspect; one culprit, named by one conclusion. Then, from the
-opening alone, adding each clue whose way in is held (never a bluff), it
-rejects:
+`clears` names a suspect; one culprit, named by one conclusion. From the opening, adding reachable clues without bluffs, it rejects:
 
 - a clue never reached, or an asked clue with no prompt;
 - a worded gate no tell hints at;
@@ -109,8 +106,7 @@ is false; such a route draws on it or its retraction.
 
 ## In play
 
-A start saves the case in `game_sessions.clue_graph_snapshot`, which resume
-and every turn play, without the story checks. Each turn that counts saves its event in
+Starting saves `game_sessions.clue_graph_snapshot`, played on resume and turns without story checks. Each turn that counts saves its event in
 `payload.clue_graph`; all else derives from it.
 
 - **Talk** (`graph_talk`): the narrator gets `talkState`, `knows` and
@@ -137,15 +133,19 @@ held (their gated true statements the culprit conclusion names), or with that
 conclusion holding on clues not taken back, one cited. Anything else, a right
 name included, spends one of the three accusations; the third failure loses.
 
-Until then a failure (`graph_accusation_round`) gets only the people, the
-notebook and, unless support is held, a lead off the confession's route,
-never whether the name was right. The closing scene (`graph_ending`), win or
-lose, tells `truth.timeline`, the culprit conclusion and `truth.motive`.
+A failure saves `reply_kind`: `flaw`, `alternative` or `missing`. The narrator
+(`graph_accusation_round`) gets only the citations and reply material:
+held clearing clues or retracted statements with their speaker (flaw first);
+people a cited culprit route still needs to clear (excluding accused
+and culprit), with a distinguishing lead; else a missing fact type and lead.
+Missing types follow the nearest non-confession culprit route, never its facts;
+leads avoid the culprit. Replies never confirm names. The closing scene
+(`graph_ending`) tells the timeline, culprit conclusion and motive.
 
 ## The narrator's judgement
 
-The narrator may add scenery and manner, never what looks like evidence or
-bears on who, when or where, keeping what earlier narration established. Asked
+The narrator adds scenery and manner, never evidence or facts about who, when
+or where, keeping earlier narration consistent. Asked
 anything beyond their clues and `knows` that bears on the case, a character
 says plainly they do not know. A clue that comes out is told whole in
 narration and line; an empty search adds nothing.

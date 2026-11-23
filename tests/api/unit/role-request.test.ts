@@ -130,6 +130,8 @@ function inputFor(role: RoleRequestName): any {
         session: { ...session({ mode: "accuse" }), current_location_id: "greenhouse" },
         player_input: "It was Toby.",
         verdict: role === "graph_ending" ? "lose" : "not_yet",
+        accused: "toby",
+        cited: [],
       };
     case "accusation_start":
       return { ...common, role, session: session({ mode: "accuse" }) };

@@ -543,7 +543,7 @@ describe("clue-graph sessions and turns", () => {
       player_reasoning: "It was Toby: the welly prints",
       judge_result: "continue",
       clue_graph_accusation: { accused: "toby", cited: [], verdict: "not_yet" },
-      reply_kind: null,
+      reply_kind: "missing",
     });
   });
 
@@ -693,10 +693,11 @@ describe("clue-graph sessions and turns", () => {
 
       await play(opened.game_id, "bye", noting);
       await play(opened.game_id, "accuse", noting);
-      await play(opened.game_id, "It was Toby", noting);
+      await play(opened.game_id, "It was Toby: clue_boot_prints", noting);
       for (const role of ["graph_accusation", "graph_accusation_round"]) {
         const { held } = (seen.get(role) as { graph_accusation_context: { held: Array<{ id: string; text: string }> } }).graph_accusation_context;
         expect(held.length, role).toBeGreaterThan(0);
+        if (role === "graph_accusation_round") expect(held.map((entry) => entry.id)).toEqual(["clue_boot_prints"]);
         for (const clue of held) expect(clue.text).toBe(noted(clue.id));
       }
     });

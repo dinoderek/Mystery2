@@ -195,7 +195,18 @@ function mockGraphVerdict(context: GraphVerdictContext): string {
     const opening = outcome === "win" ? "You solved it!" : "The case ends here. This time the answer got away.";
     return `[Mock] ${opening} ${culprit} did it. ${what_happened} ${timeline.join(" ")} Why: ${motive}`;
   }
-  return `[Mock] Not proven yet. ${context.lead ? `Think about this: ${context.lead} ` : ""}Who did it, and which of your clues shows it?`;
+  const reply = context.reply;
+  if (!reply) throw new Error("Mock AI failed accusation requires reply material");
+  if (reply.kind === "flaw") {
+    const flaw = "cleared_by" in reply
+      ? `These clues conflict with that case: ${reply.cleared_by.map((entry) => entry.text).join(" ")}`
+      : reply.retracted.map(({ statement, taken_back_by }) => `${taken_back_by} took back this statement: ${statement.text}`).join(" ");
+    return `[Mock] Not proven yet. ${flaw} What could you check next?`;
+  }
+  const explanation = reply.kind === "alternative"
+    ? `Those clues also fit ${reply.people.map((person) => person.name).join(" and ")}; they do not settle who did it.`
+    : `Your case needs ${reply.fact_kind}.`;
+  return `[Mock] Not proven yet. ${explanation} ${reply.lead ? `Think about this: ${reply.lead} ` : ""}What could you check next?`;
 }
 
 /** The mock's notebook line for a clue: its wording, marked as the narrator's, so a test can tell it from the fact. */

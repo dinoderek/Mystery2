@@ -7,6 +7,8 @@ import { describe, expect, it } from "vitest";
 import { buildClueGraphBlueprint, validateClueGraph, type ClueGraphCase } from "@my2/shared";
 import {
   confessionClues,
+  accusationReply,
+  culpritOf,
   decideAccusation,
   questionLead,
   supportingClues,
@@ -15,6 +17,10 @@ import {
 } from "../../../packages/game-engine/src/clue-graph/accusation.ts";
 import { startPlay, type ClueGraphEvent, type ClueGraphPlay } from "../../../packages/game-engine/src/clue-graph/play.ts";
 import { buildRoleRequest } from "../../../packages/game-engine/src/role-request.ts";
+import { notebook } from "../../../packages/game-engine/src/clue-graph/leads.ts";
+import { createAIProviderFromProfile } from "../../../packages/game-engine/src/ai-provider.ts";
+import { parseGraphAccusationRoundOutput } from "../../../packages/game-engine/src/ai-contracts.ts";
+import { loadPromptTemplate } from "../../../packages/game-engine/src/ai-prompts.ts";
 import { assertRoleContextSafety } from "../../../packages/game-engine/src/ai-context.ts";
 
 function greenhouse(): ClueGraphCase {
@@ -133,6 +139,8 @@ describe("what the clue-graph accusation narrator is given", () => {
       session,
       role,
       player_input: "It was Toby.",
+      accused: "toby",
+      cited: ["clue_welly_prints"],
       conversation_history: found,
       ...(verdict ? { verdict } : {}),
     } as Parameters<typeof buildRoleRequest>[0]);
@@ -144,7 +152,8 @@ describe("what the clue-graph accusation narrator is given", () => {
   ] as const)("gives %s only the clues held, as their saved lines, and nothing of the truth", async (_name, role, verdict) => {
     const { prompt, context } = await request(role, verdict);
     const given = context.graph_accusation_context!;
-    expect(given.held.map((entry) => [entry.id, entry.text])).toEqual(held.map((id) => [id, expect.stringMatching(/^Saved: /)]));
+    const visible = role === "graph_accusation" ? held : ["clue_welly_prints"];
+    expect(given.held.map((entry) => [entry.id, entry.text])).toEqual(visible.map((id) => [id, expect.stringMatching(/^Saved: /)]));
     expect("ending" in given).toBe(false);
     expect("verdict" in given).toBe(false);
     // Only the accusation so far: the investigation's narration stays in the notebook.
@@ -156,15 +165,15 @@ describe("what the clue-graph accusation narrator is given", () => {
 
   it("points a failure at a lead while nothing held supports the culprit", async () => {
     const notYet = await request("graph_accusation_round", "not_yet");
-    expect(notYet.context.graph_accusation_context).toMatchObject({ lead: expect.stringMatching(/^You have not talked to /) });
+    expect(notYet.context.graph_accusation_context).toMatchObject({ reply: { kind: "missing", lead: expect.stringMatching(/^You have not talked to /) } });
   });
 
   it("tells the closing scene of a win which clues showed it, and of a loss none", () => {
     const play = holding([...WELLY_ROUTE, "react_toby_trainers"]);
     // The trainers are held and cited but support nothing; only the welly prints showed it.
-    expect(verdictContext(graph, play, "win", ["clue_welly_prints", "react_toby_trainers"]).ending?.showed_it).toEqual(["clue_welly_prints"]);
-    expect(verdictContext(graph, holding(["toby_confession"]), "win", []).ending?.showed_it).toEqual(["toby_confession"]);
-    expect(verdictContext(graph, play, "lose", ["clue_welly_prints"]).ending?.showed_it).toEqual([]);
+    expect(verdictContext(graph, play, "win", { accused: "toby", cited: ["clue_welly_prints", "react_toby_trainers"] }).ending?.showed_it).toEqual(["clue_welly_prints"]);
+    expect(verdictContext(graph, holding(["toby_confession"]), "win").ending?.showed_it).toEqual(["toby_confession"]);
+    expect(verdictContext(graph, play, "lose", { accused: "mia", cited: ["clue_welly_prints"] }).ending?.showed_it).toEqual([]);
   });
 
   it("refuses an ending in any context but the closing scene's", async () => {
@@ -185,5 +194,104 @@ describe("what the clue-graph accusation narrator is given", () => {
         motive: graph.truth.motive,
       },
     });
+  });
+});
+
+
+const STORIES = [
+  { file: "greenhouse-prizewinner", accused: "thorne", other: "mia", clear: ["clue_dobbs_crash_time", "clue_thorne_mia_cake"], cited: "clue_welly_prints", statement: "thorne_never_set_foot", speaker: "Mr. Thorne", unrelated: "clue_snapped_bench" },
+  { file: "dragon-crown", accused: "sam", other: "nina", clear: ["clue_pike_saw_nina", "clue_script_cards"], cited: "clue_gold_on_steps", statement: "sam_alibi_nina", speaker: "Sam", unrelated: "clue_signin_sheet" },
+];
+
+describe.each(STORIES)("failed accusation replies on $file", (story) => {
+  const caseGraph = validateClueGraph(JSON.parse(fs.readFileSync(`blueprints/clue-graph/${story.file}.json`, "utf8")));
+  const culprit = culpritOf(caseGraph).character;
+  const play = (held: string[], retracted: string[] = []): ClueGraphPlay => ({
+    ...startPlay(caseGraph), held, retracted,
+    lines: Object.fromEntries(held.map((id) => [id, `Saved line for ${id}.`])),
+  });
+  const reply = (held: string[], accused: string | null, cited: string[], retracted: string[] = []) =>
+    accusationReply(caseGraph, play(held, retracted), { accused, cited });
+
+  it("uses only held, live clearing support for a flaw, ahead of missing or alternative", () => {
+    const state = play([...story.clear, story.unrelated]);
+    expect(accusationReply(caseGraph, state, { accused: story.other, cited: [story.unrelated] })).toEqual({
+      kind: "flaw", cleared_by: notebook(caseGraph, state).filter((entry) => story.clear.includes(entry.id)),
+    });
+    expect(reply(story.clear, story.other, [])).toMatchObject({ kind: "flaw" });
+    expect(reply(story.clear, story.other, [], [story.clear[0]]).kind).toBe("missing");
+  });
+
+  it("explains a cited retraction, with its speaker, ahead of other replies", () => {
+    const state = play([...story.clear, story.cited, story.statement], [story.statement]);
+    expect(accusationReply(caseGraph, state, { accused: story.accused, cited: [story.statement, story.cited] })).toEqual({
+      kind: "flaw", retracted: [{ statement: notebook(caseGraph, state).at(-1), taken_back_by: story.speaker }],
+    });
+    // Merely holding a retraction is not a flaw in an accusation that does not cite it.
+    expect(reply([story.statement], culprit, [], [story.statement]).kind).toBe("missing");
+  });
+
+  it("names only graph-linked alternatives, excluding the accused and culprit", () => {
+    expect(reply([story.cited], story.accused, [story.cited])).toEqual({
+      kind: "alternative", people: [{ id: story.other, name: caseGraph.characters[story.other].name }],
+      lead: expect.any(String),
+    });
+    // Even explicit links cannot admit the accused or the culprit as an alternative.
+    const linked = structuredClone(caseGraph);
+    linked.conclusions.extra_accused = { text: "Private", clears: story.accused, rule: { all: [story.cited, story.unrelated] } };
+    linked.conclusions.extra_culprit = { text: "Private", clears: culprit, rule: { all: [story.cited, story.unrelated] } };
+    const culpritRule = linked.conclusions[culpritOf(linked).conclusion];
+    culpritRule.rule = { any: [culpritRule.rule, { all: [story.cited, "extra_accused", "extra_culprit"] }] };
+    expect(accusationReply(linked, play([story.cited]), { accused: story.accused, cited: [story.cited] })).toMatchObject({
+      kind: "alternative", people: [{ id: story.other, name: caseGraph.characters[story.other].name }],
+    });
+  });
+
+  it("falls to missing when no alternative remains, including no name or no citation", () => {
+    expect(reply([story.cited], story.other, [story.cited]).kind).toBe("missing");
+    expect(reply([story.unrelated], story.accused, [story.unrelated]).kind).toBe("missing");
+    expect(reply([story.cited], story.accused, []).kind).toBe("missing");
+    expect(reply([story.cited], null, [story.cited]).kind).toBe("missing");
+    expect(reply([], story.accused, [story.cited]).kind).toBe("missing");
+    expect(reply([...story.clear, story.cited], story.accused, [story.cited]).kind).toBe("missing");
+  });
+
+  it("asks for a broad missing fact, identically for unsupported right and wrong names", () => {
+    const right = reply([], culprit, []);
+    expect(right).toEqual(reply([], story.accused, []));
+    expect(right).toEqual({ kind: "missing", fact_kind: "a physical finding that links someone to what happened", lead: expect.any(String) });
+    expect(JSON.stringify(right)).not.toContain(caseGraph.characters[culprit].name);
+  });
+
+  const scenarios = () => [
+    { name: "cleared", state: play(story.clear), accused: story.other, cited: [] },
+    { name: "retracted", state: play([story.statement], [story.statement]), accused: story.accused, cited: [story.statement] },
+    { name: "alternative", state: play([story.cited]), accused: story.accused, cited: [story.cited] },
+    { name: "missing", state: play([]), accused: culprit, cited: [] },
+  ];
+
+  it("records each reply's narrator prompt and minimal context, and the mock words its items", async () => {
+    const provider = createAIProviderFromProfile({ provider: "mock", model: "mock" });
+    for (const scenario of scenarios()) {
+      const context = verdictContext(caseGraph, scenario.state, "not_yet", { cited: scenario.cited, accused: scenario.accused });
+      expect(context.people).toEqual([{ id: scenario.accused, name: caseGraph.characters[scenario.accused].name }]);
+      expect(context.held.map((entry) => entry.id)).toEqual(scenario.cited);
+      expect(Object.keys(context).sort()).toEqual(["accused", "held", "people", "reply"]);
+      expect(JSON.stringify(context)).not.toMatch(/"(truth|rule|culprit|verdict|timeline|motive)"/);
+      for (const clue of Object.values(caseGraph.clues)) expect(JSON.stringify(context)).not.toContain(clue.fact);
+      const prompt = (await loadPromptTemplate("graph_accusation_round", 8, { clueGraph: true })).replace("{{player_input}}", "My case.");
+      await expect(JSON.stringify({ prompt, context }, null, 2)).toMatchFileSnapshot(`snapshots/narrator/${story.file}.reply-${scenario.name}.json`);
+      const output = await provider.generateRoleOutput({ role: "graph_accusation_round", prompt, context: { graph_accusation_context: context }, parse: parseGraphAccusationRoundOutput });
+      const material = context.reply!;
+      if (material.kind === "flaw" && "cleared_by" in material)
+        for (const clue of material.cleared_by) expect(output.narration).toContain(clue.text);
+      if (material.kind === "flaw" && "retracted" in material)
+        for (const clue of material.retracted) { expect(output.narration).toContain(clue.statement.text); expect(output.narration).toContain(clue.taken_back_by); }
+      if (material.kind === "alternative")
+        for (const person of material.people) expect(output.narration).toContain(person.name);
+      if (material.kind === "missing") expect(output.narration).toContain(material.fact_kind);
+      if ("lead" in material && material.lead) expect(output.narration).toContain(material.lead);
+      expect(output.narration).toMatch(/\?$/);
+    }
   });
 });

@@ -1270,6 +1270,7 @@ export function buildGraphVerdictAIContext(input: {
   verdict: AccusationVerdict;
   /** The held clues the judge found cited in this accusation. */
   cited?: string[];
+  accused?: string | null;
   conversation_history?: ConversationFragment[];
 }): AIContext {
   const graph = graphOf(input.blueprint);
@@ -1282,7 +1283,7 @@ export function buildGraphVerdictAIContext(input: {
     blueprint: input.blueprint,
     player_input: input.player_input,
     conversation_history: history,
-    graph_accusation_context: verdictContext(graph, playOf(graph, history), input.verdict, input.cited ?? []),
+    graph_accusation_context: verdictContext(graph, playOf(graph, history), input.verdict, { cited: input.cited ?? [], accused: input.accused ?? null }),
   });
 }
 

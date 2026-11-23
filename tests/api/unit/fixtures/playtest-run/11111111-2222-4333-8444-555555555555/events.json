@@ -19,7 +19,7 @@
     "type": "search",
     "payload": {
       "revealed_clue_id": "clue_crumbs",
-      "revealed_clue_text": "[Mock] A trail of cookie crumbs runs from the pantry to the laundry room door, not towards the living room.",
+      "revealed_clue_text": "[Mock] A trail of cookie crumbs runs from the pantry to the back of the kitchen, not towards the living room.",
       "diagnostics": {
         "time_after": 5
       }

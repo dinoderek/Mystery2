@@ -243,7 +243,7 @@ describe('report on a committed run folder', () => {
 			[5, 'ask', 'accuse Alice because of the crumbs']
 		]);
 		expect(game.turns[1]).toMatchObject({
-			clues: [{ id: 'clue_crumbs', text: '[Mock] A trail of cookie crumbs runs from the pantry to the laundry room door, not towards the living room.' }],
+			clues: [{ id: 'clue_crumbs', text: '[Mock] A trail of cookie crumbs runs from the pantry to the back of the kitchen, not towards the living room.' }],
 			grade: { value: 8, pass: false },
 			turnsLeft: 5
 		});

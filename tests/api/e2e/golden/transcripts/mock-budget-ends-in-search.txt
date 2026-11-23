@@ -24,7 +24,7 @@ pages
   page 1 location "Kitchen"
     step 1 | Narrator (narrator): "[Mock] You arrive at Kitchen. The kitchen is warm and smells of baking. Flour dusts the counter beside an empty baking tray. Alice is here."
     step 2 | You (investigator): "search"
-    step 2 | Narrator (narrator): "[Mock] You search Kitchen and uncover a clue: A trail of cookie crumbs runs from the pantry to the laundry room door, not towards the living room."
+    step 2 | Narrator (narrator): "[Mock] You search Kitchen and uncover a clue: A trail of cookie crumbs runs from the pantry to the back of the kitchen, not towards the living room."
     step 3 | You (investigator): "search"
     step 3 | Narrator (narrator): "[Mock] You search Kitchen, but find nothing new."
     step 4 | You (investigator): "search"

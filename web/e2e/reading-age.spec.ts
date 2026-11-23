@@ -3,10 +3,10 @@ import { listOnlyMockCase } from './session-helpers';
 import { signInAsTestProfile } from './test-profile';
 
 // A player sets the reading age on the settings page, against the real server,
-// and the next game they start is narrated for it.
+// and the next game they start is saved at it.
 
 test.describe('Reading age', () => {
-	test('a player sets the age, and the next game reads at it', async ({ page }) => {
+	test('a player sets the age, and the next game starts at it', async ({ page }) => {
 		const profile = await signInAsTestProfile(page, 'reading-age');
 
 		await listOnlyMockCase(page);

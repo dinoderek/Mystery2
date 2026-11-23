@@ -95,7 +95,7 @@
   "clues": {
     "clue_crumbs": {
       "kind": "evidence",
-      "fact": "A trail of cookie crumbs runs from the pantry to the laundry room door, not towards the living room.",
+      "fact": "A trail of cookie crumbs runs from the pantry to the back of the kitchen, not towards the living room.",
       "source": { "location": "loc-kitchen" }
     },
     "clue_jar": {

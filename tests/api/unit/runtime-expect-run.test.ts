@@ -14,6 +14,7 @@ import { runEval } from "../../../evaluation/core/dispatch.ts";
 import { readResult } from "../../../evaluation/core/result.ts";
 import { readRunIndex } from "../../../evaluation/core/run-folder.ts";
 import { readSummary } from "../../../evaluation/runtime/lib/expect-summary.ts";
+import { MOCK_CASE_PATH } from "../../testkit/src/mock-case.ts";
 
 const REPO_ROOT = process.cwd();
 const EXAMPLE = "evaluation/runtime/cases/expect-example.ts";
@@ -56,8 +57,11 @@ async function judgeTurn(args: string[], replies: unknown[] = [], config = confi
   return { code, output, runDir };
 }
 
-const found = (id: string) => ({ narration: "You find it.", revealed_clue_id: id, input_understood: true });
-const empty = { narration: "Nothing here.", revealed_clue_id: null, input_understood: true };
+// Search replies in the clue-graph search role's shape (`graph_search`), and in V2's for the V2 example cases.
+const found = (id: string) => ({ narration: "You find it.", revealed_clue_id: id, costs_turn: true, input_understood: true, notebook: [{ id, line: "You found it." }] });
+const empty = { narration: "Nothing here.", revealed_clue_id: null, costs_turn: true, input_understood: true, notebook: [] };
+const v2Found = (id: string) => ({ narration: "You find it.", revealed_clue_id: id, input_understood: true });
+const v2Empty = { narration: "Nothing here.", revealed_clue_id: null, input_understood: true };
 
 beforeAll(() => {
   scratch = fs.mkdtempSync(path.join(os.tmpdir(), "mystery-expect-run-"));
@@ -87,11 +91,11 @@ function searchOnly(extra: Record<string, unknown> = {}): string {
   const file = path.join(scratch, `search-${runs}-${Object.keys(extra).join("-")}.json`);
   fs.writeFileSync(file, JSON.stringify({
     id: "search-pantry",
-    blueprint: { path: "blueprints/mock-blueprint.json" },
+    blueprint: { path: MOCK_CASE_PATH },
     group: "should-reveal",
     given: { mode: "explore", location_id: "loc-kitchen", time_remaining: 8, history: [] },
     action: { type: "search", search_query: "the pantry shelf" },
-    expect: { revealed_clue_id: "clue-jar" },
+    expect: { revealed_clue_id: "clue_jar" },
     ...extra,
   }));
   return file;
@@ -99,7 +103,7 @@ function searchOnly(extra: Record<string, unknown> = {}): string {
 
 describe("judge turn on a case with expect", () => {
   it("replays it --samples times, grades each by code and writes the summary", async () => {
-    const { code, output, runDir } = await judgeTurn([searchOnly(), "--narrator", "narrator-stub", "--samples", "4"], [found("clue-jar"), empty, found("clue-crumb"), found("clue-jar")]);
+    const { code, output, runDir } = await judgeTurn([searchOnly(), "--narrator", "narrator-stub", "--samples", "4"], [found("clue_jar"), empty, found("clue_crumbs"), found("clue_jar")]);
     expect(code).toBe(2);
     expect(readRunIndex(runDir).subjects.map((subject) => subject.id)).toEqual(
       ["s1", "s2", "s3", "s4"].map((n) => `search-pantry__narrator-stub__${n}`),
@@ -116,15 +120,15 @@ describe("judge turn on a case with expect", () => {
   });
 
   it("takes 5 samples by default", async () => {
-    const { runDir } = await judgeTurn([searchOnly(), "--narrator", "narrator-stub"], [found("clue-jar")]);
+    const { runDir } = await judgeTurn([searchOnly(), "--narrator", "narrator-stub"], [found("clue_jar")]);
     expect(readSummary(runDir).narrators[0].cases[0]).toMatchObject({ samples: 5, right: 5, share: 1 });
   });
 
   it("runs the judges its expect names, even when --judges leaves them out, and grades on them", async () => {
     process.env.RUNTIME_JUDGE_STUB_VERDICT = JSON.stringify({ verdict: "fail", reasoning: "Conceded too much.", findings: [{ sequence: 1, severity: "major", kind: "unearned", quote: "x", why: "y" }] });
     try {
-      const file = searchOnly({ expect: { revealed_clue_id: "clue-jar", judges: { gm_roleplay: "given_away" } } });
-      const { runDir } = await judgeTurn([file, "--narrator", "narrator-stub", "--samples", "1", "--judges", "flesch"], [found("clue-jar")]);
+      const file = searchOnly({ expect: { revealed_clue_id: "clue_jar", judges: { gm_roleplay: "given_away" } } });
+      const { runDir } = await judgeTurn([file, "--narrator", "narrator-stub", "--samples", "1", "--judges", "flesch"], [found("clue_jar")]);
       const result = await readResult(path.join(runDir, "search-pantry-narrator-stub-s1", "result.json"));
       expect(result.verdicts.map((verdict) => verdict.id)).toEqual(["flesch", "gm_roleplay", "expect"]);
       expect(readSummary(runDir).narrators[0].cases[0]).toMatchObject({ right: 0, given_away: 1 });
@@ -152,7 +156,7 @@ describe("judge turn on a case with expect", () => {
   });
 
   it("judges a stored sample again without its grade, which the stored turn cannot carry", async () => {
-    const { runDir } = await judgeTurn([searchOnly(), "--narrator", "narrator-stub", "--samples", "1"], [found("clue-jar")]);
+    const { runDir } = await judgeTurn([searchOnly(), "--narrator", "narrator-stub", "--samples", "1"], [found("clue_jar")]);
     const again = await judgeTurn([path.join(runDir, "search-pantry-narrator-stub-s1", "turn.json")]);
     expect(again.code).toBe(0);
     const [subject] = readRunIndex(again.runDir).subjects;
@@ -197,6 +201,7 @@ describe("a clue-graph accusation", () => {
     expect(turn.response.narration_text).toContain("ten to nine");
   });
 
+  // A V2 blueprint: it leaves with V2.
   it("refuses an accusation's expect on a blueprint that is not a clue graph, before any call", async () => {
     const file = path.join(scratch, "v2-accuse.json");
     fs.writeFileSync(file, JSON.stringify({
@@ -243,10 +248,11 @@ describe("a case without expect", () => {
 });
 
 describe("baseline save and compare", () => {
+  // The example cases play the V2 mock (`evaluation/runtime/cases/expect-example.ts`): they leave with the V2 runtime cases.
   it("stores a run's summary and compares a later run against it per case and per group", async () => {
     const before = await judgeTurn([EXAMPLE, "--narrator", "narrator-stub", "--samples", "2"], [
-      found("clue-jar"),
-      empty,
+      v2Found("clue-jar"),
+      v2Empty,
       { narration: "Alice nods.", revealed_clue_ids: [], used_clue_ids: [] },
       { narration: "Alice nods.", revealed_clue_ids: [], used_clue_ids: [] },
     ]);
@@ -257,8 +263,8 @@ describe("baseline save and compare", () => {
     expect(readSummary(file)).toEqual(readSummary(before.runDir));
 
     const after = await judgeTurn([EXAMPLE, "--narrator", "narrator-stub", "--samples", "2"], [
-      found("clue-jar"),
-      found("clue-jar"),
+      v2Found("clue-jar"),
+      v2Found("clue-jar"),
       { narration: "Alice nods.", revealed_clue_ids: ["clue-alice-saw-bob"], used_clue_ids: [] },
       { narration: "Alice nods.", revealed_clue_ids: [], used_clue_ids: [] },
     ]);

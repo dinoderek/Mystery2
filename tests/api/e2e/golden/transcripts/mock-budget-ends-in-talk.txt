@@ -51,7 +51,7 @@ pages
     step 10 | You (investigator): "see you"
     step 10 | Narrator (narrator): "[Mock] You say goodbye to Alice and look around again."
     step 11 | You (investigator): "search"
-    step 11 | Narrator (narrator): "[Mock] You search Kitchen and uncover a clue: A trail of cookie crumbs runs from the pantry to the laundry room door, not towards the living room."
+    step 11 | Narrator (narrator): "[Mock] You search Kitchen and uncover a clue: A trail of cookie crumbs runs from the pantry to the back of the kitchen, not towards the living room."
     step 12 | You (investigator): "search under the kitchen sink"
     step 12 | Narrator (narrator): "[Mock] You search under the kitchen sink in Kitchen, but find nothing new."
   page 6 location "Living Room"

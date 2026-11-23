@@ -72,7 +72,7 @@ pages
     step 12 | You (investigator): "search xzqv"
     step 12 | Narrator (narrator): "[Mock] You poke around Kitchen, but you're not sure what you're even looking for."
     step 13 | You (investigator): "search"
-    step 13 | Narrator (narrator): "[Mock] You search Kitchen and uncover a clue: A trail of cookie crumbs runs from the pantry to the laundry room door, not towards the living room."
+    step 13 | Narrator (narrator): "[Mock] You search Kitchen and uncover a clue: A trail of cookie crumbs runs from the pantry to the back of the kitchen, not towards the living room."
     step 14 | You (investigator): "inspect the pantry shelf"
     step 14 | Narrator (narrator): "[Mock] You search the pantry shelf in Kitchen and uncover a clue: The cookie jar on the pantry shelf is empty, and its lid is covered in floury fingerprints."
     step 15 | You (investigator): "look around"

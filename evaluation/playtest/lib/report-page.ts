@@ -18,7 +18,7 @@ import fs from "node:fs";
 import path from "node:path";
 import url from "node:url";
 
-import { buildClueGraphWorld } from "../../../packages/shared/src/clue-graph-case.ts";
+import { buildClueGraphWorld, clueGraphCaseId } from "../../../packages/shared/src/clue-graph-case.ts";
 import { isClueGraphFile } from "../../../packages/shared/src/clue-graph-schema.ts";
 import { validateClueGraph } from "../../../packages/shared/src/clue-graph-validator.ts";
 import { InputError } from "../../core/errors.ts";
@@ -78,9 +78,16 @@ function findBlueprint(gameDirs: string[], blueprintId: string | undefined, repo
     if (!fs.existsSync(dir)) continue;
     for (const name of fs.readdirSync(dir).filter((file) => file.endsWith(".json"))) {
       const parsed = parseJson<unknown>(fs.readFileSync(path.join(dir, name), "utf8"), null);
-      // A clue-graph case is read through its world view, which lists every clue's fact.
-      const blueprint = (isClueGraphFile(parsed) ? buildClueGraphWorld(validateClueGraph(parsed)) : parsed) as ReportBlueprint | null;
-      if (blueprint?.id === blueprintId) return blueprint;
+      if (!isClueGraphFile(parsed)) {
+        if ((parsed as ReportBlueprint | null)?.id === blueprintId) return parsed as ReportBlueprint;
+        continue;
+      }
+      // A clue-graph case is named by its metadata.id, and read through its world view, which lists
+      // every clue's fact. Only the run's own is validated, without story checks, as a saved game is.
+      const caseId = (parsed as { metadata?: { id?: unknown } }).metadata?.id;
+      if (typeof caseId === "string" && clueGraphCaseId(caseId) === blueprintId) {
+        return buildClueGraphWorld(validateClueGraph(parsed, { story: false })) as unknown as ReportBlueprint;
+      }
     }
   }
   return null;

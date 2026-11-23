@@ -225,7 +225,7 @@ describe("a database from before the clean slate", () => {
     }
     expect(refusal).toBeInstanceOf(DatabaseTooOldError);
     expect((refusal as Error).message).toContain("schema version 6");
-    expect((refusal as Error).message).toContain(`Delete ${file} and start again`);
+    expect((refusal as Error).message).toContain(`Delete ${file} with its -wal and -shm files (\`npm run db:reset\` does)`);
   });
 
   it("is left exactly as it was", () => {

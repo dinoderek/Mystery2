@@ -70,9 +70,8 @@ export interface Db {
 export const SCHEMA_VERSION = 7;
 
 /**
- * The oldest schema a database is brought forward from. Saves started over at
- * version 7, when the clue graph became the one case format: nothing reads or
- * converts an older database, so opening one is refused with the message to
+ * The oldest schema a database is brought forward from. Nothing reads or
+ * converts an older database: opening one is refused with the message to
  * delete it (`DatabaseTooOldError`).
  */
 export const OLDEST_UPGRADABLE_VERSION = 7;
@@ -101,7 +100,8 @@ export class DatabaseTooOldError extends Error {
     super(
       `The database at ${databasePath} is at schema version ${version}, from before saves were ` +
         `started over at version ${OLDEST_UPGRADABLE_VERSION}, and this build does not read it. ` +
-        `Delete ${databasePath} and start again: a new one is created on the next start.`,
+        `Delete ${databasePath} with its -wal and -shm files (\`npm run db:reset\` does), and start ` +
+        "again: a new one is created on the next start.",
     );
     this.name = "DatabaseTooOldError";
   }

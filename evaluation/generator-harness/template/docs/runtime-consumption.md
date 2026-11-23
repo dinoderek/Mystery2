@@ -2,7 +2,7 @@
 
 > **CURATED EXTRACT — do not edit casually.**
 > Pinned sources:
-> - `docs/ai-runtime.md#narration-style` — `186211a0ef5d15a6bf5f13689e4f2b9570429e16`
+> - `docs/ai-runtime.md#narration-style` — `882aa34de90acd7f2cd83c030ee69847bf2febdb`
 > - `docs/ai-runtime.md#context-boundaries` — `8dd0e325f0a079c7c445e5de59cd3fac8c4c8d56`
 > - `docs/ai-runtime.md#clue-gating` — `e455a996689e5ecb40e6b9e6c71166747576bbe6`
 > - `docs/ai-runtime.md#game-enter` — `392824f2abc6087819c855b65f2031c3b6d46a46`

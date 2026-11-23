@@ -13,7 +13,8 @@ valid result; successful implementation is not itself evidence of improvement.
 
 1. Confirm the candidates, story split, samples, rubric, cost/usage cap and
    numerical thresholds still match the frozen experiment. Resolve any missing
-   authorisation or binding before model calls, not midway through the batch.
+   authorisation or binding before model calls. Future runs exclude OpenRouter;
+   reviews use Codex GPT-6.1 at Medium effort.
 2. Measure model and policy effects separately. For fixed turns, compare the
    original and grounded messages on identical state/history for each named
    model. No intermediate prompt tuning on the held-out material.

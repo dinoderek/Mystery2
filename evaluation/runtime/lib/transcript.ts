@@ -15,6 +15,7 @@
 
 import type { Speaker } from "./case.ts";
 import type { ActionSpec } from "./roles.ts";
+import type { AIRoleName } from "../../../packages/game-engine/src/ai-contracts.ts";
 
 export interface NarrationPart {
   text: string;
@@ -23,6 +24,8 @@ export interface NarrationPart {
 
 /** The normalized single-action response every narrator source produces. */
 export interface TurnResponse {
+  /** Contract requested by the caller, independent of the answer's shape. */
+  output_role?: AIRoleName;
   action: string;
   request: Record<string, unknown>;
   narration_parts: NarrationPart[];
@@ -65,15 +68,18 @@ export function makeResponse({
   parts,
   prompt = null,
   raw,
+  outputRole,
 }: {
   action: string;
   request?: Record<string, unknown>;
   parts?: NarrationPart[];
   prompt?: string | null;
   raw: unknown;
+  outputRole?: AIRoleName;
 }): TurnResponse {
   const narrationParts = parts ?? [];
   return {
+    ...(outputRole ? { output_role: outputRole } : {}),
     action,
     request: request ?? {},
     narration_parts: narrationParts,

@@ -49,7 +49,7 @@ import { EXPECT_VERDICT, expectJudges, gradeExpect, validateExpect, type ComesWi
 import { EXPECT_FILE, formatSummary, summarizeSamples, writeSummary } from "./lib/expect-summary.ts";
 import type { Sample } from "./lib/expect-summary.ts";
 import { judgeTurn } from "./lib/judges.ts";
-import { modelLabel, replayThroughNarrator } from "./lib/replay-cli.ts";
+import { modelLabel, NarratorReplayError, replayThroughNarrator } from "./lib/replay-cli.ts";
 import type { Collected } from "./lib/replay-cli.ts";
 import { ServerNarrator, startThrowawayServer } from "./lib/replay-server.ts";
 import type { StartServer } from "./lib/replay-server.ts";
@@ -384,7 +384,8 @@ async function runSubject(item: WorkItem, runtime: Runtime): Promise<Result> {
     }
     stages.push({ name: "judge", duration_ms: Math.round(performance.now() - judgeStart) });
   } catch (error) {
-    runError = { stage: turn ? "judge" : "replay", message: error instanceof Error ? error.message : String(error) };
+    if (error instanceof NarratorReplayError) calls = error.calls;
+    runError = { stage: error instanceof NarratorReplayError ? error.stage : turn ? "judge" : "replay", message: error instanceof Error ? error.message : String(error) };
     stages.push({ name: runError.stage, duration_ms: 0, failed: true });
   }
 

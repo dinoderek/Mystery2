@@ -49,12 +49,14 @@ describe("the evaluation tree", () => {
     expect(filesMatching(wrappers, modelName)).toEqual([]);
   });
 
-  it("starts a model subprocess or calls a model API only in the core", () => {
+  it("starts a model subprocess or calls a model API only in the core, or in a wrapper's own body", () => {
     const outsideCore = evaluationFiles.filter((file) => /\.(ts|sh)$/.test(file) && !file.startsWith("evaluation/core/"));
+    // A binding starts this wrapper body to make its one model call.
+    const wrapperBody = new Set(["evaluation/runtime/config/wrappers/openrouter-runtime.ts"]);
     // The self-play client talks to the throwaway game server, not to a model.
     const gameServerClient = new Set(["evaluation/playtest/lib/api.ts"]);
     const starter = /child_process|(?<![.\w])(spawn|spawnSync|execFile|execFileSync|execSync|exec)\(|runClaudeCli|openrouter\.ai|api\.openai\.com|(?<![.\w])fetch\(/;
-    const offenders = filesMatching(outsideCore, starter).filter((file) => !gameServerClient.has(file));
+    const offenders = filesMatching(outsideCore, starter).filter((file) => !wrapperBody.has(file) && !gameServerClient.has(file));
     expect(offenders).toEqual([]);
   });
 

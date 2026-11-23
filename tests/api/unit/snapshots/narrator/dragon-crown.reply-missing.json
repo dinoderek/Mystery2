@@ -11,7 +11,7 @@
     "accused": "leo",
     "reply": {
       "kind": "missing",
-      "fact_kind": "a physical finding that links someone to what happened",
+      "fact_kind": "something you can see or touch that links someone to what happened",
       "lead": "You have not talked to Nina yet."
     }
   }

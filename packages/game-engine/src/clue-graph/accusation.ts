@@ -180,7 +180,7 @@ function missingOnRoute(graph: ClueGraphCase, play: ClueGraphPlay, rule: ClueGra
 function missingReply(graph: ClueGraphCase, play: ClueGraphPlay): AccusationReply {
   const missing = missingOnRoute(graph, play, graph.conclusions[culpritOf(graph).conclusion].rule);
   const kind = missing.length ? graph.clues[missing[0]].kind : null;
-  const fact_kind = kind === "evidence" ? "a physical finding that links someone to what happened"
+  const fact_kind = kind === "evidence" ? "something you can see or touch that links someone to what happened"
     : kind === "statement" ? "an account of who was where when it happened"
     : kind === "tell" ? "an observed detail that connects someone to what happened"
     : "a link between the clues you hold and the person you accuse";

@@ -259,7 +259,7 @@ describe.each(STORIES)("failed accusation replies on $file", (story) => {
   it("asks for a broad missing fact, identically for unsupported right and wrong names", () => {
     const right = reply([], culprit, []);
     expect(right).toEqual(reply([], story.accused, []));
-    expect(right).toEqual({ kind: "missing", fact_kind: "a physical finding that links someone to what happened", lead: expect.any(String) });
+    expect(right).toEqual({ kind: "missing", fact_kind: "something you can see or touch that links someone to what happened", lead: expect.any(String) });
     expect(JSON.stringify(right)).not.toContain(caseGraph.characters[culprit].name);
   });
 

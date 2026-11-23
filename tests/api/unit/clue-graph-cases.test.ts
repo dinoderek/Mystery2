@@ -265,7 +265,7 @@ describe.each(STORIES)("the clue-graph $name accusation spellings", async (story
       const { verdict, reply_kind, handed } = turnCase.expect!;
       const named = handed!.filter((detail) => !STATED.includes(detail as string[])).map((detail) => (typeof detail === "string" ? detail : detail[0]));
       // Every word here is one a reply uses without stating the thing: a lead, a look, a taken crown.
-      const narration = `${named.join(" and ")} talked about it. Maybe ${named[0]} knows more. Who really took it, and who was there? Where will you look next, and what will you find?`;
+      const narration = `${named.join(" and ")} talked about it, and no longer looks cross. Maybe ${named[0]} knows more. What links ${named[0]} to this, and what ties it together? Who really took it, and who was there? Where will you look next, and what will you find?`;
       const base = makeTurn({ action: turnCase.action });
       const turn: StoredTurn = { ...base, response: { ...base.response, action: "accuse", narration_text: narration, raw: { clue_graph_accusation: { verdict }, reply_kind } } };
       const grade = gradeExpect({ verdict, reply_kind, handed }, turn, []);

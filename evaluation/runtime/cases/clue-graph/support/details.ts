@@ -8,11 +8,14 @@
 export const TAKEN_BACK = [
   "taken back", "took back", "takes back", "taking back", "took it back", "took that back", "taken that back", "took those words back", "took his words back",
   "taken those words back", "taken his words back", "taken her words back", "taken that story back", "taken his story back", "taken her story back",
-  "no longer", "withdrawn", "changed his story", "changed her story",
+  "no longer says", "no longer stands", "no longer counts", "no longer believes", "withdrawn", "changed his story", "changed her story",
 ];
 
 /** The kind of fact a case needs: an account of who was where when it happened. */
-export const WHO_WAS_WHERE = ["who was where", "where everyone was", "where was everyone", "where people were", "alibi", "everyone's story"];
+export const WHO_WAS_WHERE = ["who was where", "where everyone was", "where was everyone", "where people were", "alibi"];
 
 /** The kind of fact a case needs: a physical finding that links someone to what happened. */
-export const PHYSICAL_FINDING = ["physical", "see or touch", "touch", "link", "links", "linked", "ties", "connects", "mark or object"];
+export const PHYSICAL_FINDING = [
+  "physical", "touchable", "you can touch", "see or touch", "touch or see", "see or hold", "you can hold",
+  "real object", "object or mark", "mark or object", "an object or a mark",
+];

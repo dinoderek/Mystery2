@@ -5,7 +5,7 @@ Grades one narration on fixed state and history. Options: `evaluation/README.md`
 ## Determinism is the point
 
 A case is **one action** on a **fully specified prior state**: the history is
-part of the case, not played, so the input is identical on every run.
+given, not played, so every run gets identical input.
 
 ## Choosing a narrator
 
@@ -18,7 +18,7 @@ part of the case, not played, so the input is identical on every run.
 | `narrator-stub` | a canned shell script | nothing |
 
 To grade a model, use `narrator-claude` (no server or database); `--model-override narrator-claude=<model>` picks it. `server`
-puts the game in the loop, validating clue reveals.
+puts the game in the loop, validating clue reveals as the CLI path does not.
 
 The stub proves only the plumbing. `narrator-claude` runs with no
 tools, MCP servers or settings (`config/wrappers/claude-runtime.sh`), so the
@@ -138,8 +138,8 @@ a,b`, into a new run, with default options and no grade (`judgeConfig` and
 ### Cases from a played game
 
 `./dev eval cases <trace.json>` turns a stored trace (`evaluation/trace/README.md`)
-into cases: an event becomes one, its pre-event state and earlier events as
-`given`; see `--help`.
+into cases, one per event, its pre-event state and earlier events as `given`;
+see `--help`.
 
 Given the trace itself, `judge turn` judges each narrated turn's own narration
 with `flesch` and `age_appropriate_turn`, by event sequence, calling no narrator.

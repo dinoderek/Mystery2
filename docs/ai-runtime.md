@@ -42,16 +42,17 @@ roles of its own (`docs/clue-graph.md`).
 
 Every prompt's `{{style_guidance}}` slot is filled by `buildStyleGuidance`:
 
-- The **standard narrator style** applies to every role: second person,
-  present tense; warm, cozy, never scary; concrete sensory detail; characters
-  speak in the first person with action beats; no meta-commentary.
-- A blueprint may add `metadata.narration_style`, one sentence of voice or tone
-  direction, layered on top. It can flavour the voice; it cannot override the
-  point of view or the safety rules.
+- The **standard narrator style**: second person, present tense; warm, cozy,
+  never scary; concrete sensory detail; characters speak in the first person
+  with action beats, but in a clue-graph accusation round or ending only the
+  narrator speaks, never quoting itself (the ending may quote a character); no
+  meta-commentary.
+- A blueprint may add `metadata.narration_style`, one sentence of voice
+  direction, layered on top. It flavours the voice, never the point of view or
+  safety rules.
 - Style is **subordinate to the reading level**. "Wry, gothic, faintly archaic"
-  is a legitimate voice and no licence to raise vocabulary or sentence length,
-  so the prompt says the reading level wins where they pull apart. The
-  generator prompt holds the same line when authoring: `narration_style` may
+  is a voice, not licence for harder words or longer sentences: the reading
+  level wins. The generator prompt holds the same line: `narration_style` may
   direct tone, mood and imagery only, never archaic, ornate, technical or
   heavily figurative diction.
 <!-- /extract:narration-style -->

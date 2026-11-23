@@ -56,6 +56,26 @@ describe("ai-prompts", () => {
     );
   });
 
+  it("tells the clue-graph accusation round and ending that only the narrator speaks, and every other role keeps the dialogue rule", async () => {
+    const dialogue = "Characters always speak in direct first-person dialogue";
+    const narratorOnly = "No one speaks in this scene but you, the narrator";
+    for (const role of ["graph_accusation_round", "graph_ending"] as const) {
+      const template = await loadPromptTemplate(role, 7, { clueGraph: true, narrationStyle: "crunchy snow" });
+      expect(template).toContain(narratorOnly);
+      expect(template).not.toContain(dialogue);
+      expect(template).toContain("This mystery's own voice");
+      expect(template).toContain("Each is a fact to put in your own words");
+    }
+    // Only the ending retells the account, where a character's words may be quoted.
+    expect(await loadPromptTemplate("graph_ending", 7, { clueGraph: true })).toContain("What a character said in the account");
+    expect(await loadPromptTemplate("graph_accusation_round", 7, { clueGraph: true })).not.toContain("What a character said");
+    for (const role of ["graph_talk", "graph_search", "accusation_start", "accusation_judge"] as const) {
+      const template = await loadPromptTemplate(role, 7, { clueGraph: true });
+      expect(template).toContain(dialogue);
+      expect(template).not.toContain(narratorOnly);
+    }
+  });
+
   it("keeps the two search prompts' own rules within 2,256 characters", async () => {
     // The roles' own rules, without the shared age and style guidance they load.
     const ownLength = async (role: "search_bare" | "search_targeted") =>

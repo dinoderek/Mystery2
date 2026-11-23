@@ -49,8 +49,6 @@ export interface GameSessionRow {
 /** The subset of session columns the catalog endpoint reads. */
 export interface GameSessionSummaryRow {
   clue_graph_title?: string;
-  /** The saved clue-graph snapshot's format, when there is one: an old one cannot be opened. */
-  clue_graph_format?: string;
   id: string;
   blueprint_id: string;
   mode: GameMode;

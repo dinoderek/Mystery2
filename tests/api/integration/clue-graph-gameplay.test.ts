@@ -49,11 +49,9 @@ async function start(auth: Awaited<ReturnType<typeof setupApiTestAuth>>, id: str
 }
 
 describe("selectable clue-graph case", () => {
-  it("lists the greenhouse as its own case, after the V2 cases", async () => {
+  it("lists the greenhouse as its own case", async () => {
     const entries = (await (await fetch(`${API_URL}/blueprints-list`)).json()).blueprints as Array<{ id: string; title: string }>;
-    const listed = entries.findIndex((entry) => entry.id === GREENHOUSE);
-    expect(listed).toBeGreaterThan(entries.findIndex((entry) => entry.id === "7c3e9a52-4f1b-4d8e-9a6c-2b5f1e8d3a47"));
-    expect(entries[listed].title).toBe("The Smashed Prize Pumpkin — clue graph");
+    expect(entries.find((entry) => entry.id === GREENHOUSE)?.title).toBe("The Smashed Prize Pumpkin — clue graph");
   });
 
   it("starts, resumes and plays without artwork, from its snapshot after the file on disk changes", async () => {
@@ -98,38 +96,6 @@ describe("selectable clue-graph case", () => {
     expect(resumed.status).toBe(200);
     const turn = await sendLine(auth, started.game_id, "search the smashed pumpkin");
     expect(turn.status).toBe(200);
-  });
-
-  it("keeps a game saved with a clue-graph/1 snapshot listed, but will not open it", async () => {
-    const auth = await setupApiTestAuth("clue-graph-retired");
-    const started = await start(auth, GREENHOUSE);
-    const saved = JSON.parse(fs.readFileSync(path.join(process.cwd(), "blueprints/clue-graph/greenhouse-prizewinner.json"), "utf8"));
-    patchStoredSession(started.game_id, { clue_graph_snapshot: JSON.stringify({ ...saved, format: "clue-graph/1" }) });
-
-    const list = await (await fetch(`${API_URL}/game-sessions-list`, { headers: auth.headers })).json();
-    expect(list.in_progress).toEqual([
-      expect.objectContaining({
-        game_id: started.game_id,
-        mystery_title: "The Smashed Prize Pumpkin — clue graph",
-        mystery_available: true,
-        can_open: false,
-      }),
-    ]);
-    const message = 'This game was saved with the case format "clue-graph/1", which is no longer read, so it cannot be opened.';
-    const resumed = await fetch(`${API_URL}/game-get?game_id=${started.game_id}`, { headers: auth.headers });
-    expect(resumed.status).toBe(410);
-    expect(await resumed.json()).toEqual({ error: message });
-    const entered = await fetch(`${API_URL}/game-enter`, {
-      method: "POST",
-      headers: auth.headers,
-      body: JSON.stringify({ game_id: started.game_id }),
-    });
-    expect(entered.status).toBe(410);
-    expect(await entered.json()).toEqual({ error: message });
-    const turn = await sendLine(auth, started.game_id, "search the smashed pumpkin");
-    expect(turn.status).toBe(410);
-    expect(await turn.json()).toEqual({ error: message });
-    expect(readStoredEvents(started.game_id)).toHaveLength(1);
   });
 
   it("marks a lead new on its turn only, and a statement taken back once it is retracted", async () => {

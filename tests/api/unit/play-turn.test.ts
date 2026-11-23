@@ -16,8 +16,6 @@ import { playTurn, type TurnOptions } from "../../../packages/game-engine/src/tu
 import { NARRATOR_SPEAKER } from "../../testkit/src/fixtures.ts";
 import { MOCK_CASE_ID, readMockCaseGraph } from "../../testkit/src/mock-case.ts";
 
-/** The V2 fixture, for the V2-only judging and talk recording below: they leave with V2. */
-const V2_BLUEPRINT_ID = "123e4567-e89b-12d3-a456-426614174000";
 const REPO_ROOT = process.cwd();
 
 let dir: string;
@@ -56,24 +54,24 @@ beforeEach(async () => {
     databasePath: path.join(dir, "database", "test", "game.db"),
   });
   ctx = local.contextFor({ id: local.players.ensure("Ada").id });
-  await startGame(MOCK_CASE_ID);
+  await startGame();
 });
 
-/** Saves a fresh game on `blueprintId` at the kitchen, as `gameId`: the mock case with its snapshot, or the V2 fixture. */
-async function startGame(blueprintId: string) {
+/** Saves a fresh game on the mock case at the kitchen, with its snapshot, as `gameId`. */
+async function startGame() {
   gameId = crypto.randomUUID();
   await ctx.sessions.saveTurn({
     game_id: gameId,
     expected_sequence: 1,
     start: {
       player_id: ctx.player.id,
-      blueprint_id: blueprintId,
+      blueprint_id: MOCK_CASE_ID,
       ai_profile_id: "default",
       mode: "explore",
       current_location_id: "loc-kitchen",
       time_remaining: 10,
       reading_age: 8,
-      ...(blueprintId === MOCK_CASE_ID ? { clue_graph_snapshot: readMockCaseGraph() } : {}),
+      clue_graph_snapshot: readMockCaseGraph(),
     },
     events: [
       {
@@ -308,32 +306,6 @@ describe("playTurn, for each action", () => {
     expect(judged[1]).toMatchObject({ role: "graph_ending" });
   });
 
-  // The V2 judge: it leaves with V2.
-  it("retries a judge that answers outside what this accusation allows", async () => {
-    await startGame(V2_BLUEPRINT_ID);
-    const judging = (resolution: string) => (profile: EngineAIProfile): AIProvider => {
-      const inner = createAIProviderFromProfile(profile, { openrouterApiKey: null });
-      return {
-        profile: inner.profile,
-        get resolvedModel() {
-          return inner.resolvedModel;
-        },
-        generateNarration: (prompt, metadata) => inner.generateNarration(prompt, metadata),
-        generateRoleOutput: (request) =>
-          request.role === "accusation_judge"
-            ? Promise.resolve(request.parse({ narration: "Hmm.", accusation_resolution: resolution }))
-            : inner.generateRoleOutput(request),
-      };
-    };
-
-    // A loss before the last accusation, and a question on the last one, are the wrong scene.
-    await expect(play("accuse Bob", { createProvider: judging("lose") })).rejects.toBeInstanceOf(RetriableAIError);
-    await playAction("accuse Bob");
-    await playAction("accuse Bob");
-    await expect(play("accuse Bob", { createProvider: judging("continue") })).rejects.toBeInstanceOf(RetriableAIError);
-    expect(storedEvents().map((event) => event.event_type)).toEqual(["start", "accuse_failed", "accuse_failed"]);
-  });
-
   it("forces the accusation when the last turn is spent, in the same save", async () => {
     await ctx.sessions.update(gameId, { time_remaining: 1 });
 
@@ -345,69 +317,6 @@ describe("playTurn, for each action", () => {
       [3, "forced_endgame"],
     ]);
     expect(storedEvents().map((event) => event.event_type)).toEqual(["start", "move", "forced_endgame"]);
-  });
-});
-
-// V2 talk recording: it leaves with V2.
-describe("playTurn, recording what a character was shown", () => {
-  beforeEach(() => startGame(V2_BLUEPRINT_ID));
-
-  // The mock narrator, with its talk_conversation answer replaced by `answer`.
-  const answering = (answer: Record<string, unknown>) => (profile: EngineAIProfile): AIProvider => {
-    const inner = createAIProviderFromProfile(profile, { openrouterApiKey: null });
-    return {
-      profile: inner.profile,
-      get resolvedModel() {
-        return inner.resolvedModel;
-      },
-      generateNarration: (prompt, metadata) => inner.generateNarration(prompt, metadata),
-      generateRoleOutput: (request) =>
-        request.role === "talk_conversation"
-          ? Promise.resolve(request.parse({ narration: "Hmm.", revealed_clue_ids: [], ...answer }))
-          : inner.generateRoleOutput(request),
-    };
-  };
-
-  it("records only the character's gate clues the player holds, and logs the rest once", async () => {
-    await playAction("search");
-    await playAction("talk to Alice");
-    const log = vi.fn();
-
-    await playAction("The crumb says you were snacking.", {
-      logger: { log, logError: () => {} },
-      createProvider: answering({
-        used_clue_ids: ["clue-crumb", "clue-wrapper", "clue-alice-saw-bob"],
-        used_quote: null,
-        new_commitments: ["never snacks"],
-      }),
-    });
-
-    const ask = storedEvents().find((event) => event.event_type === "ask");
-    expect(ask?.payload).toMatchObject({
-      used_clue_ids: ["clue-crumb"],
-      used_quote: null,
-      new_commitments: ["never snacks"],
-    });
-    const dropped = log.mock.calls.filter(([event]) => event === "ask.used_clue_dropped");
-    expect(dropped).toHaveLength(1);
-    expect(dropped[0][1]).toMatchObject({
-      character_id: "char-alice",
-      dropped: [
-        { clue_id: "clue-wrapper", reason: "not_held_and_no_quote" },
-        { clue_id: "clue-alice-saw-bob", reason: "not_a_gate_clue" },
-      ],
-    });
-  });
-
-  it("records a bluff with a clue the player does not hold when the quote is their own words", async () => {
-    await playAction("talk to Alice");
-
-    await playAction("I bet there's a wrapper on the sofa!", {
-      createProvider: answering({ used_clue_ids: ["clue-wrapper"], used_quote: "a wrapper on the sofa" }),
-    });
-
-    const ask = storedEvents().find((event) => event.event_type === "ask");
-    expect(ask?.payload).toMatchObject({ used_clue_ids: ["clue-wrapper"], used_quote: "a wrapper on the sofa" });
   });
 });
 

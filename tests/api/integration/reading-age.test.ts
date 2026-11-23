@@ -3,16 +3,13 @@ import {
   API_URL,
   MOCK_BLUEPRINT_ID,
   setupApiTestAuth,
-  V2_MOCK_BLUEPRINT_ID,
   testDatabase,
   type ApiAuthContext,
 } from "./helpers";
 
 // A game's reading age: the case's own unless the profile set one, saved on
 // the session at its start. That every narrator prompt is written for it is
-// `tests/api/unit/reading-age.test.ts`; the mock narrates a V2 opening by
-// quoting the start of its prompt, where the age guidance sits, so a V2 game
-// also shows it end to end.
+// `tests/api/unit/reading-age.test.ts`.
 
 const CASE_AGE = 10; // blueprints/clue-graph/mock-case.json
 
@@ -62,13 +59,6 @@ describe("a game's reading age", () => {
     expect(game.readingAge).toBe(CASE_AGE);
     expect(storedAge(game.gameId)).toBe(CASE_AGE);
     expect(await resumedAge(ada, game.gameId)).toBe(CASE_AGE);
-  });
-
-  // The V2 opening quotes its prompt: it leaves with V2.
-  it("narrates a V2 opening for the game's age", async () => {
-    expect((await start(ada, V2_MOCK_BLUEPRINT_ID)).opening).toContain(`The reader is ${CASE_AGE} `);
-    await setAge(ada, 7);
-    expect((await start(ada, V2_MOCK_BLUEPRINT_ID)).opening).toContain("The reader is 7 ");
   });
 
   it("starts new games at the profile's age, and leaves a game already started at its own", async () => {

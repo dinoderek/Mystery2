@@ -75,7 +75,7 @@ export function readStringArray(payload: Record<string, unknown> | null | undefi
 // reveals differently per event type, and conflating them double-counts:
 //   - `search` stores this turn's single find in payload.revealed_clue_id;
 //     its payload.revealed_clue_ids is the CUMULATIVE list of everything
-//     revealed in that location so far (`turn/resolve-search.ts` in the engine), NOT a per-turn
+//     revealed in that location so far (`turn/resolve-clue-graph.ts` in the engine), NOT a per-turn
 //     delta — using it as a delta makes clue-accounting false-fail.
 //   - `ask` stores this turn's reveals as the payload.revealed_clue_ids array
 //     (`turn/resolve-talk.ts` in the engine).

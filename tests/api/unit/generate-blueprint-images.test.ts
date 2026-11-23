@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { copyFile, mkdtemp, readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
@@ -14,7 +14,8 @@ import {
   runImageGeneration,
 } from "../../../scripts/generate-blueprint-images.mjs";
 import { createImageId } from "../../../scripts/lib/image-prompt-builder.mjs";
-import { validBlueprintV2 } from "./fixtures/blueprint-v2.fixture.ts";
+
+const MOCK_CASE = path.resolve("blueprints/clue-graph/mock-case.json");
 
 const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
@@ -280,12 +281,12 @@ describe("runImageGeneration", () => {
   async function withBlueprint() {
     const dir = await mkdtemp(path.join(os.tmpdir(), "mystery-images-"));
     const blueprintPath = path.join(dir, "blueprint.json");
-    await writeFile(blueprintPath, JSON.stringify(validBlueprintV2), "utf-8");
+    await copyFile(MOCK_CASE, blueprintPath);
     return { dir, blueprintPath, outputDir: path.join(dir, "images") };
   }
 
-  const characterKey = validBlueprintV2.world.characters[0].id;
-  const blueprintName = validBlueprintV2.metadata.title;
+  const characterKey = "char-alice";
+  const blueprintName = "Mock Case";
 
   it("writes the decoded png and patches the blueprint", async () => {
     const { blueprintPath, outputDir } = await withBlueprint();
@@ -325,10 +326,7 @@ describe("runImageGeneration", () => {
     expect(sent).not.toHaveProperty("messages");
 
     const patched = JSON.parse(await readFile(blueprintPath, "utf-8"));
-    const character = patched.world.characters.find(
-      (c: { id: string }) => c.id === characterKey,
-    );
-    expect(character.portrait_image_id).toBe(expectedId);
+    expect(patched.characters[characterKey].portrait_image_id).toBe(expectedId);
   });
 
   it("reports a failed target without aborting the run", async () => {

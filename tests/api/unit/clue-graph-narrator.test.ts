@@ -6,7 +6,7 @@
 import fs from "node:fs";
 import { describe, expect, it } from "vitest";
 import { buildClueGraphWorld, clueGraphCaseId, validateClueGraph, type ClueGraphCase } from "@my2/shared";
-import { parseGraphTalkOutput, parseSearchOutput } from "../../../packages/game-engine/src/ai-contracts.ts";
+import { parseGraphSearchOutput, parseGraphTalkOutput } from "../../../packages/game-engine/src/ai-contracts.ts";
 import { createAIProviderFromProfile, mockGraphSearch, mockGraphTalk } from "../../../packages/game-engine/src/ai-provider.ts";
 import { applyEvent, availableGates, replay, type ClueGraphEvent } from "../../../packages/game-engine/src/clue-graph/play.ts";
 import {
@@ -195,10 +195,10 @@ describe("the clue-graph search outcome and mock", () => {
 
   it("answers a known outcome as given, finds nothing on a judged one, and nothing for gibberish", () => {
     const start = replay(graph, []);
-    const known = parseSearchOutput(mockGraphSearch(buildGraphSearchContext(graph, start, "the smashed pumpkin")));
+    const known = parseGraphSearchOutput(mockGraphSearch(buildGraphSearchContext(graph, start, "the smashed pumpkin")));
     expect(known).toMatchObject({ revealed_clue_id: "clue_welly_prints", input_understood: true });
-    expect(parseSearchOutput(mockGraphSearch(buildGraphSearchContext(graph, start, "the busted glass"))).revealed_clue_id).toBeNull();
-    expect(parseSearchOutput(mockGraphSearch(buildGraphSearchContext(graph, start, "xzqv")))).toMatchObject({
+    expect(parseGraphSearchOutput(mockGraphSearch(buildGraphSearchContext(graph, start, "the busted glass"))).revealed_clue_id).toBeNull();
+    expect(parseGraphSearchOutput(mockGraphSearch(buildGraphSearchContext(graph, start, "xzqv")))).toMatchObject({
       input_understood: false,
       costs_turn: false,
     });

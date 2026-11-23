@@ -5,24 +5,6 @@
 // this set kept in sync by the search/ask handlers; the event history remains the
 // source of truth, so these helpers reconstruct the set from history and are the
 // single place that knows how reveals are encoded in event payloads.
-//
-// A clue may also carry an optional `requires` gate (prerequisite clue ids that
-// must be discovered first); `isClueUnlocked` decides whether a gate is satisfied.
-
-export interface ClueRequires {
-  // `pointer`: an earlier clue says where to look or what to raise; `leverage`:
-  // the character must be shown it (`packages/shared/src/blueprint-schema-v2.ts`).
-  kind: "pointer" | "leverage";
-  clue_ids: string[];
-  rationale: string;
-  // A location clue's pointer: the sub-location it leads to.
-  target?: { location_id: string; sub_location_id: string };
-}
-
-export interface GatedClue {
-  id: string;
-  requires?: ClueRequires | null;
-}
 
 export interface DiscoveryHistoryRow {
   event_type: string;
@@ -51,8 +33,8 @@ function readString(
 }
 
 // The clue ids a single search, ask or talk event recorded as revealed (a
-// clue-graph greeting gives first words). Reads the v2 `revealed_clue_ids`
-// array plus the legacy single `revealed_clue_id`.
+// greeting gives first words). Reads the `revealed_clue_ids` array plus the
+// single `revealed_clue_id` a search also records.
 export function eventRevealedClueIds(event: DiscoveryHistoryRow): string[] {
   if (!["search", "ask", "talk"].includes(event.event_type)) return [];
   const ids = new Set(readStringArray(event.payload, "revealed_clue_ids"));
@@ -73,83 +55,37 @@ export function buildDiscoveredClueIdSet(
   return discovered;
 }
 
-// A clue is unlocked when every prerequisite clue has already been discovered.
-// Ungated clues (absent/null/empty requires) are always unlocked.
-export function isClueUnlocked(
-  clue: GatedClue,
-  discovered: Set<string>,
-): boolean {
-  const required = clue.requires?.clue_ids ?? [];
-  return required.every((id) => discovered.has(id));
-}
-
-// A sub-location stays hidden while every clue in it is locked and unfound:
-// nothing has pointed the player to it yet, so no narrator is told it exists,
-// and none can advertise it or narrate "nothing here" for it. A spot with no
-// clues is never hidden.
-export function isSpotHidden(
-  spot: { clues: GatedClue[] },
-  discovered: Set<string>,
-): boolean {
-  return (
-    spot.clues.length > 0 &&
-    spot.clues.every((clue) => !discovered.has(clue.id) && !isClueUnlocked(clue, discovered))
-  );
-}
-
-// --- Notebook: discovered-clue records grouped by mini-mystery thread ---
+// --- Notebook: discovered-clue records ---
 
 interface NotebookClue {
   id: string;
   text: string;
 }
 
-interface NotebookReasoningPath {
-  summary: string;
-  payoff?: string | null;
-  location_clue_ids: string[];
-  character_clue_ids: string[];
-}
-
 // The world shape needed to resolve a clue id to its text and where it came
-// from. A V2 world view and a clue graph's both satisfy it; sub-location clues take their parent location's origin.
+// from. Sub-location clues take their parent location's origin.
 export interface ClueOriginWorld {
   world: {
     locations: Array<{
       id: string;
       name: string;
       clues: NotebookClue[];
-      sub_locations?: Array<{ clues: NotebookClue[] }>;
+      sub_locations: Array<{ clues: NotebookClue[] }>;
     }>;
     characters: Array<{
       id: string;
+      /** A clue-graph character goes by one name. */
       first_name: string;
-      /** None for a clue-graph character, who goes by one name. */
-      last_name?: string;
       clues: NotebookClue[];
     }>;
   };
 }
 
-export interface NotebookBlueprint extends ClueOriginWorld {
-  solution_paths: NotebookReasoningPath[];
-  red_herrings: NotebookReasoningPath[];
-  suspect_elimination_paths: NotebookReasoningPath[];
-}
-
-export type DiscoveryThread =
-  | { kind: "solution"; label: string }
-  | { kind: "red_herring"; label: string }
-  | { kind: "eliminate"; label: string };
-
 export type DiscoveryOrigin =
   | { kind: "location"; location_id: string; location_name: string }
   | { kind: "character"; character_id: string; character_name: string };
 
-// Deliberately carries no reasoning-path information. Thread labels read
-// "Main solution" / "Red herring: <payoff>", so putting them on a record that
-// reaches the player's notebook told the child which of their own clues were
-// dead ends. The notebook groups by `origin` instead.
+// The notebook groups records by `origin`.
 export interface DiscoveredClueRecord {
   id: string;
   text: string;
@@ -157,35 +93,6 @@ export interface DiscoveredClueRecord {
   origin: DiscoveryOrigin;
   discovered_at: string | null;
   off_script: boolean;
-}
-
-// Which mini-mystery threads a clue serves, derived from reasoning-path
-// membership. NOT part of `DiscoveredClueRecord` and must never be sent to the
-// client mid-game — the labels spoil the mystery. Retained for post-resolution
-// surfaces (an end-of-game recap), where the answer is already out.
-export function mapClueToThreads(
-  blueprint: NotebookBlueprint,
-  clueId: string,
-): DiscoveryThread[] {
-  const threads: DiscoveryThread[] = [];
-  const inPath = (path: NotebookReasoningPath) =>
-    path.location_clue_ids.includes(clueId) ||
-    path.character_clue_ids.includes(clueId);
-
-  if (blueprint.solution_paths.some(inPath)) {
-    threads.push({ kind: "solution", label: "Main solution" });
-  }
-  for (const path of blueprint.red_herrings) {
-    if (inPath(path)) {
-      threads.push({ kind: "red_herring", label: `Red herring: ${path.payoff ?? path.summary}` });
-    }
-  }
-  for (const path of blueprint.suspect_elimination_paths) {
-    if (inPath(path)) {
-      threads.push({ kind: "eliminate", label: `Ruling out: ${path.payoff ?? path.summary}` });
-    }
-  }
-  return threads;
 }
 
 interface ClueIndexEntry {
@@ -202,7 +109,7 @@ function buildClueIndex(blueprint: ClueOriginWorld): Map<string, ClueIndexEntry>
       location_name: location.name,
     };
     for (const clue of location.clues) index.set(clue.id, { text: clue.text, origin });
-    for (const sub of location.sub_locations ?? []) {
+    for (const sub of location.sub_locations) {
       for (const clue of sub.clues) index.set(clue.id, { text: clue.text, origin });
     }
   }
@@ -210,7 +117,7 @@ function buildClueIndex(blueprint: ClueOriginWorld): Map<string, ClueIndexEntry>
     const origin: DiscoveryOrigin = {
       kind: "character",
       character_id: character.id,
-      character_name: `${character.first_name} ${character.last_name ?? ""}`.trim(),
+      character_name: character.first_name,
     };
     for (const clue of character.clues) index.set(clue.id, { text: clue.text, origin });
   }
@@ -218,8 +125,7 @@ function buildClueIndex(blueprint: ClueOriginWorld): Map<string, ClueIndexEntry>
 }
 
 // Build the player-facing notebook: one record per discovered clue, in discovery
-// order, annotated with where/when it was found, whether it was an off-script
-// grant, and which mini-mystery threads it serves.
+// order, annotated with where and when it was found.
 export function buildDiscoveryRecords(
   blueprint: ClueOriginWorld,
   historyRows: Array<DiscoveryHistoryRow & { created_at?: string | null }>,
@@ -248,92 +154,4 @@ export function buildDiscoveryRecords(
     }
   }
   return records;
-}
-
-// --- Accusation judge: what the investigator earned, and how far it gets them ---
-
-export interface KnownClueWithOrigin {
-  id: string;
-  text: string;
-  // Short human-readable provenance ("found at the Kitchen", "told by Alice
-  // Smith") so the judge can narrate the player's own case back to them.
-  origin_label: string;
-}
-
-// Resolve the discovered clue ids to text + provenance, preserving the caller's
-// iteration order (discovery order, when the set comes from event history).
-// Ids absent from the blueprint are dropped, matching `buildDiscoveryRecords`.
-export function buildKnownCluesWithOrigin(
-  world: ClueOriginWorld,
-  discovered: Iterable<string>,
-): KnownClueWithOrigin[] {
-  const index = buildClueIndex(world);
-  const known: KnownClueWithOrigin[] = [];
-  const seen = new Set<string>();
-  for (const id of discovered) {
-    if (seen.has(id)) continue;
-    seen.add(id);
-    const entry = index.get(id);
-    if (!entry) continue;
-    known.push({
-      id,
-      text: entry.text,
-      origin_label:
-        entry.origin.kind === "location"
-          ? `found at ${entry.origin.location_name}`
-          : `told by ${entry.origin.character_name}`,
-    });
-  }
-  return known;
-}
-
-export type PathCoverageKind = "solution" | "red_herring" | "eliminate";
-
-export interface PathCoverage {
-  path_id: string;
-  kind: PathCoverageKind;
-  summary: string;
-  found_clue_ids: string[];
-  missing_clue_ids: string[];
-}
-
-interface CoverageReasoningPath {
-  id: string;
-  summary: string;
-  location_clue_ids: string[];
-  character_clue_ids: string[];
-}
-
-export interface CoverageBlueprint {
-  solution_paths: CoverageReasoningPath[];
-  red_herrings: CoverageReasoningPath[];
-  suspect_elimination_paths: CoverageReasoningPath[];
-}
-
-// Split each reasoning path's clue ids by whether the investigator discovered
-// them. The judge already holds every path via the full blueprint; this is the
-// intersection with what the player actually found, precomputed so the model
-// does not have to do set math over a long context (the same reasoning behind
-// `player_can_use_prerequisites` in the talk context).
-export function buildPathCoverage(
-  blueprint: CoverageBlueprint,
-  discovered: Set<string>,
-): PathCoverage[] {
-  const coverage: PathCoverage[] = [];
-  const collect = (kind: PathCoverageKind, paths: CoverageReasoningPath[]) => {
-    for (const path of paths) {
-      const clueIds = [...path.location_clue_ids, ...path.character_clue_ids];
-      coverage.push({
-        path_id: path.id,
-        kind,
-        summary: path.summary,
-        found_clue_ids: clueIds.filter((id) => discovered.has(id)),
-        missing_clue_ids: clueIds.filter((id) => !discovered.has(id)),
-      });
-    }
-  };
-  collect("solution", blueprint.solution_paths);
-  collect("red_herring", blueprint.red_herrings);
-  collect("eliminate", blueprint.suspect_elimination_paths);
-  return coverage;
 }

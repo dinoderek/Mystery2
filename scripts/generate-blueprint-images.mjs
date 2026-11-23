@@ -866,16 +866,12 @@ export async function runImageGeneration(rawOptions, dependencies = {}) {
   );
 
   const blueprintRaw = await fs.readFile(options.blueprintPath, "utf-8");
-  let blueprint = JSON.parse(blueprintRaw);
-  if (blueprint.format === "clue-graph/2") {
-    const { ClueGraphCaseSchema } = await import("../packages/shared/src/clue-graph-schema.ts");
-    blueprint = projectClueGraphArtwork(ClueGraphCaseSchema.parse(blueprint));
-  } else if (blueprint.schema_version !== "v2") {
-    throw new Error(
-      `Blueprint schema_version must be "v2", got "${blueprint.schema_version ?? "undefined"}". ` +
-        "V1 blueprints are no longer supported by the image generator.",
-    );
+  const parsed = JSON.parse(blueprintRaw);
+  const { CLUE_GRAPH_FORMAT, ClueGraphCaseSchema } = await import("../packages/shared/src/clue-graph-schema.ts");
+  if (parsed?.format !== CLUE_GRAPH_FORMAT) {
+    throw new Error(`Unknown case format: ${parsed?.format ?? parsed?.schema_version ?? "none"}. The image generator reads ${CLUE_GRAPH_FORMAT} cases.`);
   }
+  const blueprint = projectClueGraphArtwork(ClueGraphCaseSchema.parse(parsed));
 
   const targets = resolveImageTargets(blueprint, {
     scope: options.scope,

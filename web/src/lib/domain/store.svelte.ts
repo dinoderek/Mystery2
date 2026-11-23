@@ -527,13 +527,13 @@ export class GameSessionStore {
     this.recentlyDiscovered = fresh;
   }
 
-  /** A clue-graph turn says where the leads stand and which clues are taken back; other cases say nothing. */
+  /** A turn says where the leads stand and which clues are taken back. */
   private applyNotebookMarks(answer: Pick<TurnPlayedResponse, 'leads' | 'taken_back'>) {
-    if (!this.state || !answer.leads) {
+    if (!this.state) {
       return;
     }
 
-    const takenBack = new Set(answer.taken_back ?? []);
+    const takenBack = new Set(answer.taken_back);
     this.state.leads = answer.leads;
     for (const clue of this.state.discovered_clues) {
       clue.taken_back = takenBack.has(clue.id);

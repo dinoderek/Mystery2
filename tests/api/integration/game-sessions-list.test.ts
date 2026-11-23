@@ -3,7 +3,6 @@ import {
   API_URL,
   MOCK_BLUEPRINT_ID,
   patchStoredSession,
-  V2_MOCK_BLUEPRINT_ID,
   setupApiTestAuth,
   type ApiAuthContext,
 } from './helpers';
@@ -128,14 +127,12 @@ describe('game-sessions-list endpoint', () => {
     expect(data.in_progress[0]).toMatchObject({
       mystery_title: expect.any(String),
       time_remaining: 8,
-      can_open: true,
       mystery_available: true,
       mode: 'talk',
     });
     expect(data.completed[0]).toMatchObject({
       mystery_title: expect.any(String),
       outcome: 'win',
-      can_open: true,
       mystery_available: true,
       mode: 'ended',
     });
@@ -148,15 +145,16 @@ describe('game-sessions-list endpoint', () => {
     const res = await fetch(`${API_URL}/game-sessions-list`, { method: 'GET', headers: auth.headers });
     expect(res.status).toBe(200);
     const row = (await res.json()).in_progress.find((entry: { game_id: string }) => entry.game_id === gameId);
-    expect(row).toMatchObject({ mystery_title: 'Mock Case — clue graph', mystery_available: true, can_open: true });
+    expect(row).toMatchObject({ mystery_title: 'Mock Case — clue graph', mystery_available: true });
   });
 
-  // A V2 session reads its title from the catalog: it leaves with V2.
+  // A session without a saved case reads its title from the catalog.
   it('keeps sessions with missing blueprints visible but disabled', async () => {
-    const gameId = await startSession(auth, V2_MOCK_BLUEPRINT_ID);
+    const gameId = await startSession(auth);
 
     patchSession(gameId, {
       blueprint_id: crypto.randomUUID(),
+      clue_graph_snapshot: null,
       mode: 'ended',
       outcome: null,
       updated_at: '2026-03-12T09:00:00.000Z',
@@ -174,7 +172,6 @@ describe('game-sessions-list endpoint', () => {
     expect(row).toMatchObject({
       mystery_title: 'Unknown Mystery',
       mystery_available: false,
-      can_open: false,
       mode: 'ended',
       outcome: null,
     });

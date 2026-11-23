@@ -25,7 +25,7 @@
       return;
     }
 
-    if (!selected.can_open) {
+    if (!selected.mystery_available) {
       message = 'Cannot open: mystery file is unavailable.';
       return;
     }
@@ -66,14 +66,14 @@
     {:else}
       <div class="space-y-3">
         {#each sessions as session, i}
-          <div class={`relative border p-4 ${session.can_open ? 'border-t-muted/20' : 'border-t-warning/40 opacity-70'}`}>
+          <div class={`relative border p-4 ${session.mystery_available ? 'border-t-muted/20' : 'border-t-warning/40 opacity-70'}`}>
             <div class="absolute -left-3 -top-3 w-6 h-6 bg-t-bg border border-t-primary flex items-center justify-center font-bold">
               {i + 1}
             </div>
             <p class="font-bold text-t-bright">{session.mystery_title}</p>
             <p class="text-sm text-t-muted/90">Turns left: {session.time_remaining}</p>
             <p class="text-xs text-t-muted/80">Last played: {formatLastPlayed(session.last_played_at)}</p>
-            {#if !session.can_open}
+            {#if !session.mystery_available}
               <p class="text-xs text-t-warning mt-2">Cannot open: mystery file is unavailable.</p>
             {/if}
           </div>

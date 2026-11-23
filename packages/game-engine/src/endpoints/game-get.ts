@@ -86,12 +86,12 @@ export async function handle(
 
     // The notebook: discovered clues grouped by mini-mystery thread. Built from
     // event history (the source of truth) and joined against the blueprint.
-    // A clue-graph case adds its leads and what was taken back.
+    // The leads and what was taken back come from the case's graph.
     const records = buildDiscoveryRecords(blueprint, events ?? []);
-    const marks = blueprint.clue_graph ? notebookMarks(blueprint.clue_graph, playedEvents(events ?? [])) : null;
+    const marks = notebookMarks(blueprint.clue_graph, playedEvents(events ?? []));
     const gameState = buildGameState(blueprint, {
-      discovered_clues: marks ? markClues(blueprint.clue_graph!, records, marks) : records,
-      ...(marks ? { leads: marks.leads } : {}),
+      discovered_clues: markClues(blueprint.clue_graph, records, marks),
+      leads: marks.leads,
       time_remaining: session.time_remaining,
       accusations_left: accusationsLeft(events ?? []),
       location: session.current_location_id,

@@ -4,6 +4,7 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+/** A clue-graph case with each generated image's id written where it belongs. */
 export function applyImageGenerationResults(blueprint, results) {
   const next = clone(blueprint);
 
@@ -19,9 +20,7 @@ export function applyImageGenerationResults(blueprint, results) {
     }
 
     if (result.target_type === "character" && result.target_key) {
-      const character = next.format === "clue-graph/2" ? next.characters[result.target_key] : next.world?.characters?.find(
-        (entry) => entry.id === result.target_key,
-      );
+      const character = next.characters?.[result.target_key];
       if (character) {
         character.portrait_image_id = result.image_id;
       }
@@ -29,9 +28,7 @@ export function applyImageGenerationResults(blueprint, results) {
     }
 
     if (result.target_type === "location" && result.target_key) {
-      const location = next.format === "clue-graph/2" ? next.locations[result.target_key] : next.world?.locations?.find(
-        (entry) => entry.id === result.target_key,
-      );
+      const location = next.locations?.[result.target_key];
       if (location) {
         location.location_image_id = result.image_id;
       }

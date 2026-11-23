@@ -8,9 +8,9 @@ contract; prompts: `docs/ai-runtime.md`, screens: `docs/ui.md`.
 
 - **The investigator** is the child, typing commands.
 - **The narrator** is the AI: it describes, speaks as each character,
-  judges searches and accusations, never contradicting the blueprint.
+  judges what searches and questions earn, never contradicting the blueprint.
 - **The blueprint** is the case: who did what, why, and where the clues are
-  ([V2](../packages/shared/src/blueprint-schema-v2.ts), [clue graph](clue-graph.md)).
+  ([clue graph](clue-graph.md)).
 - **The turn budget** (`metadata.time_budget`) bounds the investigation.
 - **The reading age** narration is written for is the profile's (settings
   page), else the case's `metadata.target_age`, saved when a game starts.
@@ -26,7 +26,7 @@ describes arrival at the starting location.
 | Command | Effect | Turns |
 |---|---|---|
 | `move to <place>`, `go <place>` | Arrive somewhere; see who is there | 1 |
-| `search` | Reveal the location's next clue | 1 |
+| `search` | Search the place itself | 1 |
 | `search <anything>` | Search a particular spot | 1, or 0 if nonsensical |
 | `talk to <name>` | Start a conversation | 1 |
 | any line while talking | Ask the character | 0 |
@@ -48,39 +48,33 @@ what is possible; `help` always works.
 
 ## Talking
 
-The character answers only from what they know, what they are willing to say,
-what they were really doing, and any deception the blueprint gives them. They
-remember earlier questions in the same game.
+The character answers only from what the case gives them, and says plainly
+when they do not know. They remember earlier questions in the same game.
 
 While talking, every line is said to the character except the end-talk words,
 `help`, `quit`/`exit` and `notebook`/`n`. That includes
 `accuse …`: "I think you took it!" is said to the suspect's face and answered in
 character. To accuse, say `bye` first.
 
-A character clue can be gated behind other clues. The character withholds it
-until the player uses them in the conversation, not merely holds them. A
-convincing bluff or deduction can stand in, unless the gate is physical. Such a
-reveal counts as a real discovery, so a clever player is never stuck.
-
-A suspect's cover gives way only as far as the player has earned it: each piece
-of evidence used draws its own concession, and no more. Accusing them earns
-nothing, and half the evidence gets half the story, never a confession.
+Some of what a character knows is gated. They hold it back until the player
+does what the gate asks: uses its clues in the conversation, not merely holds
+them, or takes its line of questioning. A convincing bluff can stand in, unless
+the gate is physical. Accusing them earns nothing. A statement given up may
+take back what they said before, and the notebook marks it taken back
+([clue graph](clue-graph.md)).
 
 ## Searching
 
-Each location has at most one clue found by a plain `search`, and two to four
-named sub-locations ("under the desk"), each holding at most one clue. Some
-hold none. Sub-locations are mentioned on arrival so the player knows what to
-look at, except a locked one, unmentioned until a clue points to it.
+Each location has clues in the place itself and in two to four named spots
+("under the desk"), some holding none. Spots are mentioned on arrival so the
+player knows what to look at, except a hidden one, unmentioned until a clue
+points to it.
 
-- `search` reveals the location's clue, then hints at sub-locations still
-  worth searching.
-- `search <anything>` is judged by the narrator against the sub-locations with
-  a game master's leeway; a creative description can match. A miss earns a
-  hint, and a nonsensical attempt costs no turn.
-- Search gates are hard: a clue whose prerequisites are not yet found cannot be
-  revealed by searching, and a plain search skips it. A search that names a
-  locked spot still finds its clue: working out where to look counts.
+- `search` searches the place itself; `search <anything>` searches the spot it
+  names, judged with a game master's leeway. Each search gives at most one
+  clue, and a nonsensical one costs no turn.
+- A hidden spot cannot be found before its clue is held: words that fit it find
+  nothing until then.
 - Once everything is found, searches still narrate but reveal nothing new.
 
 ## Moving
@@ -93,31 +87,24 @@ discovers — the two stay separate.
 
 A full-screen overlay, free and available in every mode, with four sections:
 **Story** (premise and what happened), **Places** (where everyone is),
-**People** (everyone met), and **Clues** (everything discovered, including
-off-script reveals).
+**People** (everyone met), and **Clues** (everything discovered, a statement
+taken back marked so), with leads on what to do next.
 
 Clues are grouped by where they came from — found at a place, or told by a
-person — and never by which line of reasoning they serve. Grouping by reasoning
-path would tell the child which of their own clues are dead ends.
+person — and never by which line of reasoning they serve, which would tell the
+child which of their own clues are dead ends.
 
 ## The accusation
 
-The investigator says who did it and why. It wins when they name the true
-culprit **and** either:
+The investigator says who did it and why, and the engine decides
+([rule](clue-graph.md#accusation)): naming the true culprit wins only with
+the case to back it, the confession or the culprit's conclusion holding on
+what they found, citing one of it. A lucky guess is not a win.
 
-- back it with discovered clues that follow one of the blueprint's solution
-  paths, or
-- correctly tell what happened: culprit, key events, motive.
-
-Confronting the accused earns a confession only when most of the facts are
-right; a lucky guess is not a win.
-
-A game has three accusations. A failed one spends one, encourages, asks what
-kind of fact is missing, and returns to exploring. The third failure loses the
-case, with a gentle reveal. Every explanation agrees with the timeline, alibis,
-clue placement and motives.
-
-A clue-graph case is won by [its own rule](clue-graph.md#accusation).
+A game has three accusations. A failed one spends one, encourages, says what
+is wrong or still missing without confirming any name, and returns to
+exploring. The third failure loses the case, with a gentle reveal of what
+happened.
 
 ## When a case ends
 

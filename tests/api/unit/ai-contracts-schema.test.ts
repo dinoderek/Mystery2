@@ -1,17 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   type AIRoleName,
-  parseAccusationJudgeOutput,
   parseAccusationStartOutput,
   parseGraphAccusationOutput,
   parseGraphAccusationRoundOutput,
   parseGraphEndingOutput,
   parseGraphSearchOutput,
   parseGraphTalkOutput,
-  parseSearchOutput,
-  parseTalkConversationOutput,
   parseTalkEndOutput,
-  parseTalkStartOutput,
   roleOutputJsonSchema,
 } from "../../../packages/game-engine/src/ai-contracts.ts";
 
@@ -21,56 +17,15 @@ const MINIMAL_OUTPUTS: Record<
   AIRoleName,
   { fields: string[]; sample: Record<string, unknown>; parse: (value: unknown) => unknown }
 > = {
-  talk_start: {
-    fields: ["narration"],
-    sample: { narration: "Hi." },
-    parse: parseTalkStartOutput,
-  },
-  talk_conversation: {
-    fields: [
-      "narration",
-      "revealed_clue_ids",
-      "revealed_off_script",
-      "input_understood",
-      "used_clue_ids",
-      "used_quote",
-      "new_commitments",
-    ],
-    sample: {
-      narration: "Hi.",
-      revealed_clue_ids: [],
-      revealed_off_script: [],
-      input_understood: true,
-      used_clue_ids: [],
-      used_quote: null,
-      new_commitments: [],
-    },
-    parse: parseTalkConversationOutput,
-  },
   talk_end: {
     fields: ["narration"],
     sample: { narration: "Bye." },
     parse: parseTalkEndOutput,
   },
-  search: {
-    fields: ["narration", "revealed_clue_id", "costs_turn", "input_understood"],
-    sample: {
-      narration: "Dust.",
-      revealed_clue_id: null,
-      costs_turn: true,
-      input_understood: true,
-    },
-    parse: parseSearchOutput,
-  },
   accusation_start: {
     fields: ["narration"],
     sample: { narration: "Really? Who did it?" },
     parse: parseAccusationStartOutput,
-  },
-  accusation_judge: {
-    fields: ["narration", "accusation_resolution"],
-    sample: { narration: "Yes.", accusation_resolution: "win" },
-    parse: parseAccusationJudgeOutput,
   },
   graph_talk: {
     fields: ["narration", "opened", "answered", "notebook", "input_understood"],
@@ -116,35 +71,31 @@ describe("role output JSON Schemas", () => {
   }
 
   it("describes the shapes the parsers enforce", () => {
-    const search = roleOutputJsonSchema("search").properties as Record<string, unknown>;
+    const search = roleOutputJsonSchema("graph_search").properties as Record<string, unknown>;
     expect(search.revealed_clue_id).toEqual({
       anyOf: [{ type: "string", minLength: 1 }, { type: "null" }],
     });
 
-    const judge = roleOutputJsonSchema("accusation_judge").properties as Record<
-      string,
-      unknown
-    >;
-    expect(judge.accusation_resolution).toEqual({
-      type: "string",
-      enum: ["win", "lose", "continue"],
+    const accusation = roleOutputJsonSchema("graph_accusation").properties as Record<string, unknown>;
+    expect(accusation.accused_character_id).toEqual({
+      anyOf: [{ type: "string", minLength: 1 }, { type: "null" }],
     });
   });
 });
 
 describe("role output parsing tolerance", () => {
   it("rejects anything but an object", () => {
-    expect(() => parseTalkStartOutput(null)).toThrow(
-      "Invalid AI talk_start output: expected object",
+    expect(() => parseTalkEndOutput(null)).toThrow(
+      "Invalid AI talk_end output: expected object",
     );
-    expect(() => parseTalkStartOutput(["narration"])).toThrow("expected object");
+    expect(() => parseTalkEndOutput(["narration"])).toThrow("expected object");
   });
 
   it("names the role and field in errors", () => {
     expect(() => parseAccusationStartOutput({ narration: " " })).toThrow(
       'Invalid AI accusation_start output: "narration" must be a non-empty string',
     );
-    expect(() => parseSearchOutput({ narration: "Hm.", revealed_clue_id: 42 })).toThrow(
+    expect(() => parseGraphSearchOutput({ narration: "Hm.", revealed_clue_id: 42 })).toThrow(
       '"revealed_clue_id" must be a non-empty string or null',
     );
   });
@@ -156,51 +107,25 @@ describe("role output parsing tolerance", () => {
 
   it("falls back to the default when a flag is not a boolean", () => {
     expect(
-      parseSearchOutput({ narration: "Dust.", costs_turn: "no", input_understood: "yes" }),
+      parseGraphSearchOutput({ narration: "Dust.", costs_turn: "no", input_understood: "yes" }),
     ).toEqual({
       narration: "Dust.",
       revealed_clue_id: null,
       costs_turn: true,
       input_understood: true,
+      notebook: [],
     });
   });
 
   it("ignores an invalid clue id on a search it did not understand", () => {
     expect(
-      parseSearchOutput({ narration: "What?", revealed_clue_id: 42, input_understood: false }),
+      parseGraphSearchOutput({ narration: "What?", revealed_clue_id: 42, input_understood: false }),
     ).toEqual({
       narration: "What?",
       revealed_clue_id: null,
       costs_turn: false,
       input_understood: false,
+      notebook: [],
     });
-  });
-
-  it("drops off-script ids when the input was not understood", () => {
-    expect(
-      parseTalkConversationOutput({
-        narration: "What?",
-        revealed_clue_ids: ["clue-a"],
-        revealed_off_script: ["clue-a"],
-        input_understood: false,
-      }),
-    ).toEqual({
-      narration: "What?",
-      revealed_clue_ids: [],
-      revealed_off_script: [],
-      input_understood: false,
-      used_clue_ids: [],
-      used_quote: null,
-      new_commitments: [],
-    });
-  });
-
-  it("trims the accusation resolution before checking it", () => {
-    expect(
-      parseAccusationJudgeOutput({
-        narration: "Yes.",
-        accusation_resolution: " lose ",
-      }).accusation_resolution,
-    ).toBe("lose");
   });
 });

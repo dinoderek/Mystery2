@@ -1,6 +1,6 @@
 import { CLUE_GRAPH_FORMAT, type ClueGraphCase } from "./clue-graph-schema.ts";
 
-/** What the catalog adds to a clue-graph case's title, to tell it from a V2 case of the same story. */
+/** What the catalog adds to a clue-graph case's title. */
 export const CLUE_GRAPH_TITLE_SUFFIX = " — clue graph";
 
 function fnv1a(text: string): number {

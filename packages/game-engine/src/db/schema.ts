@@ -18,7 +18,8 @@ export const SCHEMA_SQL = `
 -- the numbered steps in \`client.ts\`'s MIGRATIONS array, keyed on
 -- \`PRAGMA user_version\`; this file always describes the current shape so a new
 -- database never replays that chain. Keep the two in step: a change here needs
--- a matching MIGRATIONS entry and a bumped SCHEMA_VERSION.
+-- a bumped SCHEMA_VERSION, and a matching MIGRATIONS entry unless older saves
+-- are started over (OLDEST_UPGRADABLE_VERSION).
 --
 -- Type conventions:
 --   ids         TEXT holding a uuid (crypto.randomUUID())
@@ -57,10 +58,8 @@ create table game_sessions (
     outcome                   text,
     created_at                text not null,
     updated_at                text not null,
-    msf_snapshot              text,
     clue_graph_snapshot       text,
-    -- The age the game is narrated for, saved at its start. Null for a game
-    -- saved before games had one: it reads at its case's own age.
+    -- The age the game is narrated for, saved at its start.
     reading_age               integer
 );
 
@@ -83,9 +82,6 @@ create table game_events (
     model           text,
     created_at      text not null
 );
-
--- Dropped on the way over: \`game_events.clues_revealed\`. The runtime has never
--- written it (see evaluation/lib/game-events.ts) — reveals live in \`payload\`.
 
 create unique index game_events_session_sequence_idx
     on game_events(session_id, sequence);

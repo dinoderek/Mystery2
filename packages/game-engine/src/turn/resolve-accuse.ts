@@ -1,11 +1,10 @@
 // The accusation (`docs/game.md`, "The accusation"): the narrator sets the
 // scene, `back` leaves it for nothing, and each line of reasoning is one
 // accusation, judged once. A win or the last failure ends the case; any other
-// failure spends one and returns to exploring, or, out of turns, asks again. On
-// a clue-graph case the engine decides instead of the judge.
+// failure spends one and returns to exploring, or, out of turns, asks again.
+// The engine decides each accusation from the case's graph.
 
 import {
-  parseAccusationJudgeOutput,
   parseAccusationStartOutput,
   parseGraphAccusationOutput,
   parseGraphAccusationRoundOutput,
@@ -17,7 +16,6 @@ import {
   ACCUSE_RESOLVED,
   accusationRuleLine,
   accusationsLeft,
-  isLastAccusation,
 } from "../accusations.ts";
 import { accusationRole, replyKindOf, resolves, settleAccusation } from "../clue-graph/accusation.ts";
 import { playOf } from "../clue-graph/history.ts";
@@ -135,64 +133,15 @@ function judgedOutcome(
   };
 }
 
-export async function resolveAccusation(
-  game: TurnGame,
-  runtime: TurnRuntime,
-  reasoning: string,
-): Promise<ActionOutcome> {
-  if (game.blueprint.clue_graph) return resolveGraphAccusation(game, runtime, reasoning);
-  const last = isLastAccusation(game.history);
-  const { prompt, context } = await buildRoleRequest({
-    role: "accusation_judge",
-    game_id: game.game_id,
-    session: accusing(game),
-    blueprint: game.blueprint,
-    player_input: reasoning,
-    last_accusation: last,
-    forced_by_timeout: game.session.time_remaining === 0,
-    conversation_history: game.history,
-    history_mode: "all",
-  });
-  const output = await askRole(runtime, "accuse_reasoning", {
-    role: "accusation_judge",
-    prompt,
-    context,
-    parse: parseAccusationJudgeOutput,
-  });
-
-  // The last accusation is won or lost; any other is won or spent. A judge
-  // that answers otherwise has worded the wrong scene, so the turn is retried.
-  const resolution = output.accusation_resolution;
-  const allowed = last ? ["win", "lose"] : ["win", "continue"];
-  if (!allowed.includes(resolution)) {
-    rejectOutput(runtime, "accuse_reasoning", "Accusation judge answered outside what this accusation allows", {
-      resolution,
-      last_accusation: last,
-    });
-  }
-  const result = resolution === "continue" ? null : (resolution as "win" | "lose");
-
-  return judgedOutcome(game, result, {
-    payload: {
-      role: "accusation_judge",
-      player_reasoning: reasoning,
-      judge_result: resolution,
-      speaker: NARRATOR_SPEAKER,
-    },
-    narration_parts: [createNarrationPart(output.narration, NARRATOR_SPEAKER)],
-    model: runtime.provider.resolvedModel,
-  });
-}
-
 /**
- * A clue-graph accusation (`clue-graph/accusation.ts`): the narrator reports who was
+ * An accusation (`clue-graph/accusation.ts`): the narrator reports who was
  * named and what was cited, the engine decides, and the narrator words it, as
  * a failure given only what the investigator holds or as the closing scene. A
  * report naming someone the case does not hold fails the turn; a cited clue
  * the player does not hold is dropped.
  */
-async function resolveGraphAccusation(game: TurnGame, runtime: TurnRuntime, reasoning: string): Promise<ActionOutcome> {
-  const graph = game.blueprint.clue_graph!;
+export async function resolveAccusation(game: TurnGame, runtime: TurnRuntime, reasoning: string): Promise<ActionOutcome> {
+  const graph = game.blueprint.clue_graph;
   const session = accusing(game);
   const play = playOf(graph, game.history);
   const judge = await buildRoleRequest({

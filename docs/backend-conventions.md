@@ -25,8 +25,7 @@ bug: a second adapter must fit beside the first.
 - Add a **named operation** to the store interface rather than reaching past
   the seam.
 - **Errors:** a genuine backend failure **throws**; "does not exist" returns
-  `null` or empty. Handlers map a throw to `500` and a `null` to `404`/`400`;
-  a session saved with a case format no longer read throws `410`.
+  `null` or empty. Handlers map a throw to `500` and a `null` to `404`/`400`.
 - **One save per turn.** `ctx.sessions.saveTurn` writes the session change and
   every event in one transaction, after the model has answered, so a failed
   turn writes nothing and a session never disagrees with its history; a stale
@@ -44,8 +43,8 @@ bug: a second adapter must fit beside the first.
   two contexts are separate types: a handler without a profile has no session
   store to get wrong.
 - **Scope is a decision, not a default.** `db/players.ts` and
-  `db/ai-settings.ts` are app-global. An app-global store that should have been
-  scoped is the bug above.
+  `db/ai-settings.ts` are app-global; one that should be scoped is the bug
+  above.
 - **One driver import.** Only `db/client.ts` imports `better-sqlite3` (via
   `createRequire`, so no bundler inlines a native addon), and only
   `context-local.ts` and `db/` import `db/`; the `imports` gate step checks
@@ -59,12 +58,13 @@ bug: a second adapter must fit beside the first.
 - **Stored text is narrowed in one place:** `readGameMode()` alone turns a
   stored mode into a `GameMode`.
 - **Schema versions.** A `SCHEMA_VERSION` bump upgrades each existing database,
-  `prod` included, the first time any checkout opens it, with no undo; older
-  code then refuses that file, and `npm run db:reset` (`--force` for `prod`)
-  starts it again.
+  `prod` included, the first time any checkout opens it; older code then
+  refuses that file, and `npm run db:reset` (`--force` for `prod`)
+  starts it again. A database older than `OLDEST_UPGRADABLE_VERSION` (7) is
+  refused, untouched, saying to delete it.
 
 ## Content
 
 Blueprints, scene recipes and images are files. `content.ts` logs and skips anything
-unparseable rather than failing the catalog. Unknown tagged formats are rejected
-by filename. `paths.ts` alone decides where they live.
+unparseable rather than failing the catalog; only `clue-graph/2` is read, any
+other format rejected by name. `paths.ts` alone decides where they live.

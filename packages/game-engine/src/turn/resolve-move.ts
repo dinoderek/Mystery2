@@ -37,8 +37,8 @@ export async function resolveMove(
         location_name: place.name,
         location_image_id: imageId,
         speaker: NARRATOR_SPEAKER,
-        // A clue-graph case folds its play from these (`clue-graph/history.ts`).
-        ...(game.blueprint.clue_graph ? { clue_graph: { type: "move", location: place.id } } : {}),
+        // The play is folded from these (`clue-graph/history.ts`).
+        clue_graph: { type: "move", location: place.id },
       },
       narration_parts: [createNarrationPart(narration, NARRATOR_SPEAKER, imageId)],
       // Read now: a forced accusation's call would change it before the save.

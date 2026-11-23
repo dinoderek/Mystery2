@@ -117,13 +117,13 @@ export interface Interaction {
 const INTERACTIONS: Record<InteractionId, Interaction> = {
   intro: { id: "intro", label: "Opening narration", role: "buildGameStartPrompt" },
   ambience: { id: "ambience", label: "Arrival at a location", role: "buildGameMovePrompt" },
-  search_empty: { id: "search_empty", label: "Search — nothing found", role: "search_bare" },
-  search_find: { id: "search_find", label: "Search — clue found", role: "search_targeted" },
-  talk_greeting: { id: "talk_greeting", label: "Conversation — greeting", role: "talk_start" },
-  talk_round: { id: "talk_round", label: "Conversation — interrogation round", role: "talk_conversation" },
+  search_empty: { id: "search_empty", label: "Search — nothing found", role: "graph_search" },
+  search_find: { id: "search_find", label: "Search — clue found", role: "graph_search" },
+  talk_greeting: { id: "talk_greeting", label: "Conversation — greeting", role: "graph_talk" },
+  talk_round: { id: "talk_round", label: "Conversation — interrogation round", role: "graph_talk" },
   talk_farewell: { id: "talk_farewell", label: "Conversation — farewell", role: "talk_end" },
   accusation_open: { id: "accusation_open", label: "Accusation — opening", role: "accusation_start" },
-  accusation_verdict: { id: "accusation_verdict", label: "Accusation — verdict / payoff", role: "accusation_judge" },
+  accusation_verdict: { id: "accusation_verdict", label: "Accusation — verdict / payoff", role: "graph_accusation_round" },
 };
 
 /**

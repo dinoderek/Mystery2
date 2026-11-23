@@ -9,7 +9,6 @@
 // packages/game-engine/src/role-request.ts, shared with the server
 // handlers, so both paths pick the same role and build the same prompt.
 
-import { resolveAccusationRole } from "../../../packages/game-engine/src/role-request.ts";
 import type { BlueprintLike, Given, HistoryEntry, Speaker, TurnAction } from "./case.ts";
 import { ACCUSE_FAILED, ACCUSE_RESOLVED } from "../../../packages/game-engine/src/accusations.ts";
 
@@ -247,8 +246,8 @@ export const ACTIONS: Record<string, ActionSpec> = {
     endpoint: turnEndpoint(accusationLine),
     events: ["accuse_start", ACCUSE_FAILED, ACCUSE_RESOLVED],
     roleInput: (g, a, bp, history = []) => {
-      // A clue-graph accusation's one judgement is its first call: who was named, and what was cited.
-      const role = resolveAccusationRole(a.player_reasoning) === "accusation_judge" ? "graph_accusation" : "accusation_start";
+      // An accusation's one judgement is its first call: who was named, and what was cited. No reasoning opens the scene.
+      const role = a.player_reasoning?.trim() ? "graph_accusation" : "accusation_start";
       const base = {
         role,
         game_id: "case",

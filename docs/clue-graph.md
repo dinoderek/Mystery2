@@ -1,6 +1,6 @@
 # Clue Graph
 
-Beside [V2](../packages/shared/src/blueprint-schema-v2.ts). Checks:
+The one case format. Checks:
 `packages/shared/src/clue-graph-schema.ts`; world view (`ClueGraphWorld`):
 `packages/shared/src/clue-graph-case.ts`; play:
 `packages/game-engine/src/clue-graph/`; cases: `blueprints/clue-graph/`,
@@ -51,7 +51,7 @@ and object. Beyond the schema:
 - Optional artwork: `visual_direction`, `cover` and image IDs
   ([generation flows](blueprint-generation-flows.md)).
 
-An earlier-format game stays listed; opening it answers `410`, logged once.
+Older saves are refused ([conventions](backend-conventions.md)).
 
 ## Validation
 

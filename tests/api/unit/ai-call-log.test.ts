@@ -8,8 +8,8 @@ import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
-  parseSearchOutput,
-  parseTalkStartOutput,
+  parseGraphSearchOutput,
+  parseTalkEndOutput,
 } from "../../../packages/game-engine/src/ai-contracts.ts";
 import { createAIProviderFromProfile } from "../../../packages/game-engine/src/ai-provider.ts";
 
@@ -42,10 +42,16 @@ const METADATA = {
 };
 
 const SEARCH_REQUEST = {
-  role: "search" as const,
+  role: "graph_search" as const,
   prompt: "Search prompt",
-  context: { search_context: { location_name: "Kitchen", next_clue: null } },
-  parse: parseSearchOutput,
+  context: {
+    graph_search_context: {
+      location_name: "Kitchen",
+      search_query: null,
+      outcome: { kind: "known", spot: null, finds: null },
+    },
+  },
+  parse: parseGraphSearchOutput,
   metadata: METADATA,
 };
 
@@ -75,7 +81,7 @@ describe("AI call log", () => {
       endpoint: "game-turn",
       action: "search",
       request_id: "req-1",
-      role: "search",
+      role: "graph_search",
       provider: "mock",
       model: "mock/runtime-default",
       resolved_model: "mock/runtime-default",
@@ -86,6 +92,7 @@ describe("AI call log", () => {
         revealed_clue_id: null,
         costs_turn: true,
         input_understood: true,
+        notebook: [],
       },
       parsed_ok: true,
       error: null,
@@ -104,9 +111,9 @@ describe("AI call log", () => {
     await expect(
       provider.generateRoleOutput({
         ...SEARCH_REQUEST,
-        // A search payload read as talk_start's contract parses fine, so use a
+        // A search payload read as talk_end's contract parses fine, so use a
         // parser that always refuses to stand in for a contract violation.
-        parse: () => parseTalkStartOutput({ narration: "" }),
+        parse: () => parseTalkEndOutput({ narration: "" }),
       }),
     ).rejects.toThrow("narration");
 
@@ -144,6 +151,7 @@ describe("AI call log", () => {
         revealed_clue_id: null,
         costs_turn: true,
         input_understood: true,
+        notebook: [],
       }),
     );
     const provider = createAIProviderFromProfile(

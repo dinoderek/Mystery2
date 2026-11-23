@@ -56,7 +56,7 @@ export function makeTurn(overrides: Record<string, unknown> = {}): StoredTurn {
     },
     action: { type: "ask", player_input: "Then why are your hands shaking?" },
     response: {
-      output_role: "talk_conversation",
+      output_role: "graph_talk",
       action: "ask",
       request: {},
       narration_text: '"They are not!" Alice says, sitting on her hands.',
@@ -68,7 +68,7 @@ export function makeTurn(overrides: Record<string, unknown> = {}): StoredTurn {
       ],
       speaker: null,
       prompt: null,
-      raw: { narration: "…", revealed_clue_ids: [], revealed_off_script: [] },
+      raw: { narration: "…", opened: [], answered: [], notebook: [], input_understood: true },
     },
     timing: { total_ms: 1 },
     ...overrides,

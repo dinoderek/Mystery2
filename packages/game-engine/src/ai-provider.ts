@@ -1,4 +1,4 @@
-import type { AIRoleName, AccusationResolution } from "./ai-contracts.ts";
+import type { AIRoleName } from "./ai-contracts.ts";
 import { withCallLog } from "./ai-call-log.ts";
 import { buildNarrationMessages, buildRoleMessages } from "./role-request.ts";
 import { readArrivalPrompt, readOpeningFacts } from "./ai-prompts.ts";
@@ -7,7 +7,6 @@ import {
   type ClaudeCliRuntimeConfig,
 } from "./ai-provider-claude-cli.ts";
 import { RetriableAIError } from "./errors.ts";
-import { searchNamesSpot } from "./search-target.ts";
 import type { GraphSearchContext, GraphTalkContext } from "./clue-graph/narrator-context.ts";
 import type { GraphAccusationContext, GraphVerdictContext } from "./clue-graph/accusation.ts";
 import type { NamedSpot, Rider } from "./clue-graph/talk-state.ts";
@@ -114,41 +113,6 @@ function readOptionalContextString(
   return trimmed.length > 0 ? trimmed : null;
 }
 
-function readCharacterSex(value: unknown): "male" | "female" | null {
-  return value === "male" || value === "female" ? value : null;
-}
-
-function pronounForSex(sex: "male" | "female" | null): string {
-  return sex === "male" ? "he" : sex === "female" ? "she" : "they";
-}
-
-// The mock's stand-in for judging use: a gate clue is used when the player's
-// line names its id, and the line itself is the quote. A line that starts "did
-// you …" draws a denial, recorded as a commitment.
-function mockUseAndCommitments(
-  playerInput: string,
-  gateClues: Array<{ id?: string }>,
-  alreadyUsed: readonly string[],
-): { used_clue_ids: string[]; used_quote: string | null; new_commitments: string[] } {
-  const line = playerInput.toLowerCase();
-  // A use already in the character's state is never reported again.
-  const used = gateClues
-    .map((clue) => clue.id)
-    .filter((id): id is string => typeof id === "string" && line.includes(id.toLowerCase()) && !alreadyUsed.includes(id));
-  const denial = /^\s*did you ([^?.!]+)/i.exec(playerInput)?.[1]?.trim();
-  return {
-    used_clue_ids: used,
-    used_quote: used.length > 0 ? playerInput.trim() : null,
-    new_commitments: denial ? [`denies: ${denial}`] : [],
-  };
-}
-
-/**
- * Deterministic gibberish heuristic for the mock runtime so tests can exercise
- * the unintelligible-input path. A word made only of consonants (keyboard mash
- * like "asdfgh") reads as nonsense; anything with a vowel is treated as
- * understood. The live provider judges this via the prompt instead.
- */
 /** A clue as the mock words it: the fact as given, and a pointer's spot named. */
 function mockWording(text: string, spot?: NamedSpot): string {
   return spot ? `${text} (That points to ${spot.spot} in ${spot.location}.)` : text;
@@ -326,71 +290,18 @@ export function mockGraphSearch(context: GraphSearchContext): Record<string, unk
   };
 }
 
+/**
+ * Deterministic gibberish heuristic for the mock runtime so tests can exercise
+ * the unintelligible-input path. A word made only of consonants (keyboard mash
+ * like "asdfgh") reads as nonsense; anything with a vowel is treated as
+ * understood. The live provider judges this via the prompt instead.
+ */
 function looksUnintelligible(text: string): boolean {
   const letters = text.toLowerCase().replace(/[^a-z]/g, "");
   if (letters.length < 2) {
     return false;
   }
   return !/[aeiouy]/.test(letters);
-}
-
-function inferMentionedCharacter(
-  context: Record<string, unknown>,
-): string | null {
-  const playerInput = readOptionalContextString(context, "player_input");
-  if (!playerInput) {
-    return null;
-  }
-  const normalizedInput = playerInput.toLowerCase();
-
-  const accusationJudgeContext = context.accusation_judge_context;
-  if (
-    typeof accusationJudgeContext !== "object" ||
-    accusationJudgeContext === null ||
-    Array.isArray(accusationJudgeContext)
-  ) {
-    return null;
-  }
-
-  const fullBlueprint = (
-    accusationJudgeContext as Record<string, unknown>
-  ).full_blueprint;
-  if (
-    typeof fullBlueprint !== "object" ||
-    fullBlueprint === null ||
-    Array.isArray(fullBlueprint)
-  ) {
-    return null;
-  }
-
-  const world = (fullBlueprint as Record<string, unknown>).world;
-  if (typeof world !== "object" || world === null || Array.isArray(world)) {
-    return null;
-  }
-
-  const charactersRaw = (world as Record<string, unknown>).characters;
-  if (!Array.isArray(charactersRaw)) {
-    return null;
-  }
-
-  for (const value of charactersRaw) {
-    if (typeof value !== "object" || value === null || Array.isArray(value)) {
-      continue;
-    }
-    const firstNameRaw = (value as Record<string, unknown>).first_name;
-    if (typeof firstNameRaw !== "string") {
-      continue;
-    }
-    const firstName = firstNameRaw.trim();
-    if (!firstName) {
-      continue;
-    }
-    if (normalizedInput.includes(firstName.toLowerCase())) {
-      return firstName;
-    }
-  }
-
-  return null;
 }
 
 export function isLiveAIEnabled(env = getRuntimeEnv()): boolean {
@@ -469,16 +380,15 @@ class MockAIProvider implements AIProvider {
   }
 
   async generateNarration(prompt: string): Promise<string> {
-    // An arrival names the place and who is there — names only, so nothing
-    // from a present character's manner or tells ever reaches the transcript.
-    // A clue-graph arrival also states the place's facts, as given.
+    // An arrival names the place, states its facts as given, and names who is
+    // there: names only, so nothing else about them reaches the transcript.
     const arrival = readArrivalPrompt(prompt);
     if (arrival) {
       const facts = arrival.facts ? ` ${arrival.facts.join(" ")}` : "";
       const present = arrival.character_names.map((name) => ` ${name} is here.`).join("");
       return `[Mock] You arrive at ${arrival.destination_name}.${facts}${present}`;
     }
-    // A clue-graph opening states its facts, as given.
+    // An opening states its facts, as given.
     const opening = readOpeningFacts(prompt);
     if (opening) return `[Mock] ${opening.join(" ")}`;
     return `[Mock] Narration for: ${prompt.slice(0, 70)}...`;
@@ -494,123 +404,6 @@ class MockAIProvider implements AIProvider {
     context: Record<string, unknown>,
   ): Record<string, unknown> {
     switch (role) {
-      case "talk_start": {
-        const talkContext = context.talk_context as
-          | {
-            active_character?: {
-              first_name?: string | null;
-              appearance?: string | null;
-              background?: string | null;
-              sex?: unknown;
-              tells?: Array<{ text?: string; trigger?: { kind?: string } }>;
-            };
-            active_location_name?: string | null;
-          }
-          | undefined;
-        const characterName =
-          talkContext?.active_character?.first_name ??
-          requireContextString(role, context, "character_name");
-        const locationName =
-          talkContext?.active_location_name ??
-          requireContextString(role, context, "location_name");
-        const appearance = talkContext?.active_character?.appearance ?? "a familiar face";
-        const pronoun = pronounForSex(
-          readCharacterSex(talkContext?.active_character?.sex),
-        );
-        // A greeting has no player message, so only an `always` tell can
-        // show; condition- and clue-triggered tells are never earned here.
-        const ambientTell = talkContext?.active_character?.tells?.find(
-          (tell) => tell.trigger?.kind === "always" && tell.text,
-        );
-        return {
-          narration:
-            `[Mock] ${characterName} is here in ${locationName}. ${pronoun} looks ${appearance}.` +
-            (ambientTell ? ` (${ambientTell.text})` : ""),
-        };
-      }
-      case "talk_conversation": {
-        const talkCtx = context.talk_context as
-          | {
-            active_character?: {
-              first_name?: string | null;
-              clues?: Array<{
-                id?: string;
-                text?: string;
-                player_can_use_prerequisites?: boolean | null;
-                known_to_player?: boolean;
-              }>;
-              stated_alibi?: string | null;
-              gate_clues?: Array<{ id?: string; held?: boolean }>;
-              state?: { current_story?: string[]; used_clue_ids?: string[] };
-            };
-          }
-          | undefined;
-        const characterName =
-          talkCtx?.active_character?.first_name ??
-          requireContextString(role, context, "character_name");
-        const playerInput = requireContextString(role, context, "player_input");
-        if (looksUnintelligible(playerInput)) {
-          return {
-            narration: `[Mock] ${characterName} blinked. "Sorry — what?"`,
-            revealed_clue_ids: [],
-            revealed_off_script: [],
-            input_understood: false,
-            used_clue_ids: [],
-            used_quote: null,
-            new_commitments: [],
-          };
-        }
-        const reported = {
-          ...mockUseAndCommitments(
-            playerInput,
-            talkCtx?.active_character?.gate_clues ?? [],
-            talkCtx?.active_character?.state?.used_clue_ids ?? [],
-          ),
-          input_understood: true,
-        };
-        // The character keeps to the latest line of their story once a part
-        // has been earned, so a test can see the story carried between turns.
-        const latest = talkCtx?.active_character?.state?.current_story?.at(-1);
-        const keepsTo = latest && latest !== talkCtx?.active_character?.stated_alibi
-          ? ` (Keeps to: ${latest})`
-          : "";
-        // Clues the player already holds are never reported again.
-        const clues = (talkCtx?.active_character?.clues ?? []).filter(
-          (c) => c.known_to_player !== true,
-        );
-        // Deterministic brilliance trigger: a whole-word sentinel in the player's
-        // input ("aha"/"i bet") unlocks the first gated clue off-script. Word
-        // boundaries avoid matching inside ordinary words (e.g. "Sahara").
-        const isBrilliant = /\b(aha|i bet)\b/i.test(playerInput);
-        if (isBrilliant) {
-          const locked = clues.find((c) => c.player_can_use_prerequisites === false && c.id);
-          if (locked?.id) {
-            return {
-              narration: `[Mock] ${characterName} hesitates, then lets it slip: ${locked.text}${keepsTo}`,
-              revealed_clue_ids: [locked.id],
-              revealed_off_script: [locked.id],
-              ...reported,
-            };
-          }
-        }
-        // Otherwise reveal the first clue the player can earn: any understood
-        // question stands in for using the prerequisites they hold.
-        const unlocked = clues.find((c) => c.player_can_use_prerequisites !== false && c.id);
-        if (unlocked?.id) {
-          return {
-            narration: `[Mock] ${characterName} thinks, then says: ${unlocked.text}${keepsTo}`,
-            revealed_clue_ids: [unlocked.id],
-            revealed_off_script: [],
-            ...reported,
-          };
-        }
-        return {
-          narration: `[Mock] ${characterName} thinks about your question: "${playerInput}".${keepsTo}`,
-          revealed_clue_ids: [],
-          revealed_off_script: [],
-          ...reported,
-        };
-      }
       case "talk_end": {
         const talkCtx = context.talk_context as
           | { active_character?: { first_name?: string | null } }
@@ -644,77 +437,6 @@ class MockAIProvider implements AIProvider {
         if (!verdict) throw new Error(`Mock AI ${role} requires graph_accusation_context`);
         return { narration: mockGraphVerdict(verdict, context.forced_by_timeout === true) };
       }
-      case "search": {
-        const searchContext = context.search_context as
-          | {
-            location_name?: string | null;
-            next_clue?: { id?: string; text?: string } | string | null;
-            search_query?: string | null;
-            sub_locations?: Array<{
-              unrevealed_clues?: Array<{ id?: string; text?: string }>;
-              has_unrevealed_clues?: boolean;
-              name?: string;
-            }>;
-          }
-          | undefined;
-        const locationName =
-          (typeof searchContext?.location_name === "string"
-            ? searchContext.location_name
-            : null) ??
-          requireContextString(role, context, "location_name");
-        const rawNextClue = searchContext?.next_clue;
-        const nextClueObj =
-          rawNextClue && typeof rawNextClue === "object" && "text" in rawNextClue
-            ? rawNextClue
-            : null;
-        const nextClueText = nextClueObj?.text?.trim() || (
-          typeof rawNextClue === "string" && rawNextClue.trim().length > 0
-            ? rawNextClue.trim()
-            : null
-        );
-        const nextClueId = nextClueObj?.id ?? null;
-        const searchQuery = searchContext?.search_query ?? null;
-
-        // For targeted search, try to match the first sub-location with unrevealed clues
-        if (searchQuery && searchContext?.sub_locations) {
-          if (looksUnintelligible(searchQuery)) {
-            return {
-              narration: `[Mock] You poke around ${locationName}, but you're not sure what you're even looking for.`,
-              revealed_clue_id: null,
-              costs_turn: false,
-              input_understood: false,
-            };
-          }
-          // A spot the query names wins; otherwise the mock is generous.
-          const open = searchContext.sub_locations.filter((sl) => sl.has_unrevealed_clues);
-          const matchedSub =
-            open.find((sl) => searchNamesSpot(searchQuery, sl.name ?? "", locationName)) ?? open[0];
-          if (matchedSub?.unrevealed_clues?.[0]) {
-            const clue = matchedSub.unrevealed_clues[0];
-            return {
-              narration: `[Mock] You search ${matchedSub.name} in ${locationName} and uncover a clue: ${clue.text}`,
-              revealed_clue_id: clue.id ?? null,
-              costs_turn: true,
-              input_understood: true,
-            };
-          }
-          return {
-            narration: `[Mock] You look through ${locationName} for "${searchQuery}", but find nothing.`,
-            revealed_clue_id: null,
-            costs_turn: false,
-            input_understood: true,
-          };
-        }
-
-        return {
-          narration: nextClueText
-            ? `[Mock] You search ${locationName} and uncover a clue: ${nextClueText}`
-            : `[Mock] You search ${locationName} again, but discover no new clue.`,
-          revealed_clue_id: nextClueId ?? null,
-          costs_turn: true,
-          input_understood: true,
-        };
-      }
       case "accusation_start": {
         const forcedByTimeout = context.forced_by_timeout === true;
         const stagePrompt = forcedByTimeout
@@ -724,65 +446,8 @@ class MockAIProvider implements AIProvider {
           narration: `[Mock] ${stagePrompt} Who did it, and how do you know?`,
         };
       }
-      case "accusation_judge": {
-        const accusationJudgeContext = context.accusation_judge_context as
-          | {
-            last_accusation?: boolean;
-            full_blueprint?: { world?: { characters?: Array<Record<string, unknown>> } };
-            path_coverage?: Array<{ kind?: string; summary?: string; missing_clue_ids?: string[] }>;
-          }
-          | undefined;
-        const last = accusationJudgeContext?.last_accusation === true;
-        const mentionedCharacter = inferMentionedCharacter(context);
-        if (!mentionedCharacter) {
-          return last
-            ? { narration: "[Mock] The case ends here. This time the answer got away.", accusation_resolution: "lose" }
-            : {
-              narration: "[Mock] I am not sure yet. Who do you think did it, and what clue shows it?",
-              accusation_resolution: "continue",
-            };
-        }
-
-        const normalizedCharacter = mentionedCharacter.toLowerCase();
-        const culpritFirstName = Array.isArray(
-            accusationJudgeContext?.full_blueprint?.world?.characters,
-          )
-          ? accusationJudgeContext?.full_blueprint?.world?.characters.find(
-              (entry) => entry.is_culprit === true,
-            )?.first_name
-          : null;
-        const isCulprit = typeof culpritFirstName === "string"
-          ? culpritFirstName.trim().toLowerCase() === normalizedCharacter
-          : normalizedCharacter !== "bob";
-        // Mirrors the live judge semantics: the true culprit with support
-        // wins; anything else spends the accusation ("continue"), and on the
-        // last one ends the case ("lose").
-        const accusationResolution: AccusationResolution = isCulprit
-          ? "win"
-          : last
-          ? "lose"
-          : "continue";
-
-        // Mirrors the live judge's use of path_coverage: on a rejection, steer
-        // the closing question at a solution path the investigator has not
-        // finished, rather than asking a generic one.
-        const unfinishedSolutionPath = accusationJudgeContext?.path_coverage?.find(
-          (entry) =>
-            entry?.kind === "solution" && (entry.missing_clue_ids?.length ?? 0) > 0,
-        );
-
-        return {
-          narration:
-            accusationResolution === "win"
-              ? "[Mock] The clues all fit. You got it right!"
-              : accusationResolution === "lose"
-              ? "[Mock] The case ends here. This time the answer got away."
-              : unfinishedSolutionPath?.summary
-              ? `[Mock] Not yet. There is more to know about ${unfinishedSolutionPath.summary}. What clue shows it was them?`
-              : "[Mock] Not yet. Look at your clues again. Do you want to have another go?",
-          accusation_resolution: accusationResolution,
-        };
-      }
+      default:
+        throw new Error(`Mock AI has no handler for role ${String(role)}`);
     }
   }
 }

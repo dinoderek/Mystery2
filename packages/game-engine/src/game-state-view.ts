@@ -2,52 +2,30 @@
 // data (premise, places, people) joined with where the game stands now.
 
 import type { GameState } from "../../shared/src/mystery-api-contracts.ts";
+import type { PlayableCase } from "../../shared/src/playable-case.ts";
 
 export type GameStanding = Pick<
   GameState,
   "discovered_clues" | "leads" | "time_remaining" | "accusations_left" | "location" | "mode" | "current_talk_character"
 >;
 
-/** What the notebook reads of a case: a V2 world view or a clue graph's, whose characters go by one name. */
-export interface StateWorld {
-  narrative: {
-    premise: string;
-    starting_knowledge?: {
-      mystery_summary: string;
-      locations?: Array<{ location_id: string; summary: string }>;
-      characters?: Array<{ character_id: string; summary: string }>;
-    };
-  };
-  world: {
-    locations: Array<{ id: string; name: string }>;
-    characters: Array<{ id: string; first_name: string; last_name?: string; location_id: string; sex: "male" | "female" }>;
-  };
-}
+/** What the notebook reads of a case. */
+export type StateWorld = Pick<PlayableCase, "narrative" | "world">;
 
 export function buildGameState(blueprint: StateWorld, standing: GameStanding): GameState {
-  const startingKnowledge = blueprint.narrative.starting_knowledge;
-  const locationSummaries = new Map(
-    (startingKnowledge?.locations ?? []).map((l) => [l.location_id, l.summary]),
-  );
-  const characterSummaries = new Map(
-    (startingKnowledge?.characters ?? []).map((c) => [c.character_id, c.summary]),
-  );
-
   return {
-    mystery_summary: startingKnowledge?.mystery_summary ?? null,
+    mystery_summary: blueprint.narrative.starting_knowledge.mystery_summary,
     premise: blueprint.narrative.premise,
-    locations: blueprint.world.locations.map((l) => ({
-      id: l.id,
-      name: l.name,
-      summary: locationSummaries.get(l.id) ?? null,
-    })),
+    // A clue-graph case writes no one-line summary of a place or a person.
+    locations: blueprint.world.locations.map((l) => ({ id: l.id, name: l.name, summary: null })),
     characters: blueprint.world.characters.map((c) => ({
       id: c.id,
       first_name: c.first_name,
-      last_name: c.last_name ?? "",
+      // A clue-graph character goes by one name.
+      last_name: "",
       location_id: c.location_id,
       sex: c.sex,
-      summary: characterSummaries.get(c.id) ?? null,
+      summary: null,
     })),
     ...standing,
   };

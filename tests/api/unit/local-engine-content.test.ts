@@ -15,11 +15,12 @@ import {
   resolveImageFile,
 } from "../../../packages/game-engine/src/content.ts";
 import type { LogWriter } from "../../../packages/game-engine/src/logging.ts";
-import { validBlueprintV2 } from "./fixtures/blueprint-v2.fixture.ts";
-import { readMockCase } from "../../testkit/src/mock-case.ts";
+import { CLUE_GRAPH_TITLE_SUFFIX } from "../../../packages/shared/src/clue-graph-case.ts";
+import { MOCK_CASE_ID, readMockCase, readMockCaseGraph } from "../../testkit/src/mock-case.ts";
 import { createProceduralScene, createSceneManifest } from "../../testkit/src/fixtures.ts";
 
-const BLUEPRINT_ID = validBlueprintV2.id;
+const CASE_FILE = readMockCaseGraph();
+const BLUEPRINT_ID = MOCK_CASE_ID;
 
 let tempDir: string;
 let primaryDir: string;
@@ -47,7 +48,7 @@ function store(dirs: string[] = [primaryDir, fallbackDir]) {
 function writeBlueprint(dir: string, filename: string, overrides = {}) {
   fs.writeFileSync(
     path.join(dir, filename),
-    JSON.stringify({ ...validBlueprintV2, ...overrides }),
+    JSON.stringify({ ...CASE_FILE, ...overrides }),
   );
 }
 
@@ -70,12 +71,22 @@ describe("listBlueprints", () => {
     const logger = recordingLogger();
     const entries = await store([path.resolve("blueprints")]).listBlueprints(logger);
     expect(entries.length).toBeGreaterThan(0);
-    expect(entries.every(({ blueprint }) => ["v2", "clue-graph/2"].includes(blueprint.schema_version))).toBe(true);
+    expect(entries.every(({ blueprint }) => blueprint.schema_version === "clue-graph/2")).toBe(true);
     expect(logger.entries).toEqual([]);
   });
 
-  it("rejects an unknown tagged format by filename, even with otherwise valid V2 fields", async () => {
-    writeBlueprint(primaryDir, "retired.json", { $format: "retired-case/1" });
+  it("rejects a V2 case by its format's name, as an unknown format", async () => {
+    writeBlueprint(primaryDir, "v2.json", { format: undefined, schema_version: "v2" });
+    const logger = recordingLogger();
+    expect(await store().listBlueprints(logger)).toEqual([]);
+    expect(logger.entries).toEqual([{
+      event: "blueprint.parse_failed",
+      details: { object: "v2.json", error: "Unknown case format: v2" },
+    }]);
+  });
+
+  it("rejects an unknown tagged format by filename", async () => {
+    writeBlueprint(primaryDir, "retired.json", { format: undefined, $format: "retired-case/1" });
     const logger = recordingLogger();
     expect(await store().listBlueprints(logger)).toEqual([]);
     expect(logger.entries).toEqual([{
@@ -112,7 +123,7 @@ describe("listBlueprints", () => {
     expect(logger.entries[0].details).toMatchObject({ object: "broken.json" });
   });
 
-  it("skips a clue-graph/1 case and logs it once, naming the format", async () => {
+  it("skips a clue-graph/1 case and logs it once, as an unknown format", async () => {
     const graphDir = path.join(primaryDir, "clue-graph");
     fs.mkdirSync(graphDir);
     const greenhouse = JSON.parse(fs.readFileSync("blueprints/clue-graph/greenhouse-prizewinner.json", "utf8"));
@@ -123,28 +134,28 @@ describe("listBlueprints", () => {
     expect(logger.entries).toEqual([
       {
         event: "blueprint.parse_failed",
-        details: { object: "old.json", error: expect.stringContaining('Format \\"clue-graph/1\\" is not read') },
+        details: { object: "old.json", error: "Unknown case format: clue-graph/1" },
       },
     ]);
   });
 
   it("lets the first directory win when a blueprint id appears twice", async () => {
     writeBlueprint(primaryDir, "authored.json", {
-      metadata: { ...validBlueprintV2.metadata, title: "From the config root" },
+      metadata: { ...CASE_FILE.metadata, title: "From the config root" },
     });
     writeBlueprint(fallbackDir, `${BLUEPRINT_ID}.json`);
 
     const entries = await store().listBlueprints();
 
     expect(entries).toHaveLength(1);
-    expect(entries[0].blueprint.metadata.title).toBe("From the config root");
+    expect(entries[0].blueprint.metadata.title).toBe(`From the config root${CLUE_GRAPH_TITLE_SUFFIX}`);
   });
 
   it("returns a stable, name-ascending order", async () => {
     // Directory read order is filesystem-dependent; the catalog must not be.
     for (const [index, name] of ["zebra", "alpha", "mango"].entries()) {
       writeBlueprint(primaryDir, `${name}.json`, {
-        id: `0000000${index}-e89b-12d3-a456-426614174000`,
+        metadata: { ...CASE_FILE.metadata, id: `case-${index}` },
       });
     }
 
@@ -175,7 +186,7 @@ describe("loadBlueprint", () => {
     writeBlueprint(primaryDir, "the-missing-cookies.json");
 
     const blueprint = await store().loadBlueprint(BLUEPRINT_ID, recordingLogger());
-    expect(blueprint?.metadata.title).toBe(validBlueprintV2.metadata.title);
+    expect(blueprint?.metadata.title).toBe(`${CASE_FILE.metadata.title}${CLUE_GRAPH_TITLE_SUFFIX}`);
   });
 
   it("returns null for an unknown id, and for one that tries to escape the directory", async () => {
@@ -191,15 +202,15 @@ describe("loadBlueprint", () => {
     const content = store();
 
     expect((await content.loadBlueprint(BLUEPRINT_ID, recordingLogger()))?.metadata.title)
-      .toBe(validBlueprintV2.metadata.title);
+      .toBe(`${CASE_FILE.metadata.title}${CLUE_GRAPH_TITLE_SUFFIX}`);
 
     writeBlueprint(primaryDir, `${BLUEPRINT_ID}.json`, {
-      metadata: { ...validBlueprintV2.metadata, title: "Edited In Place" },
+      metadata: { ...CASE_FILE.metadata, title: "Edited In Place" },
     });
     // The cache is keyed on the file's mtime and size, and mtime has
     // millisecond resolution — make sure the size differs too.
     expect((await content.loadBlueprint(BLUEPRINT_ID, recordingLogger()))?.metadata.title)
-      .toBe("Edited In Place");
+      .toBe(`Edited In Place${CLUE_GRAPH_TITLE_SUFFIX}`);
   });
 });
 

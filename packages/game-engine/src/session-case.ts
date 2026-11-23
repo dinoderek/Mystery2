@@ -1,6 +1,6 @@
-// The case a session plays: the private snapshot saved when it started, for
-// the formats that keep one, else the blueprint as it is on disk today, read
-// at the game's own reading age.
+// The case a session plays: the private clue-graph snapshot saved when it
+// started, else the blueprint as it is on disk today, read at the game's own
+// reading age.
 
 import { buildClueGraphWorld } from "../../shared/src/clue-graph-case.ts";
 import type { PlayableCase } from "../../shared/src/playable-case.ts";

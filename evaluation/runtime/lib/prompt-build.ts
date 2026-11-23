@@ -34,8 +34,7 @@ export interface ModelRequest {
  *          blueprint, session, history and role-specific fields.
  */
 export async function buildRoleRequest(input: TemplateRoleInput): Promise<ModelRequest> {
-  const { role: promptRole, prompt, context } = await shared.buildRoleRequest(input);
-  const role = shared.outputRoleForPrompt(promptRole);
+  const { role, prompt, context } = await shared.buildRoleRequest(input);
   return {
     role,
     ...shared.buildRoleMessages({ role, prompt, context }),
@@ -50,6 +49,3 @@ export function buildNarrationPrompt(input: NarrationRoleInput): string {
 }
 
 export const { buildNarrationMessages } = shared;
-
-/** Re-exported so callers resolve roles the same way the handlers do. */
-export const { resolveSearchRole, resolveAccusationRole } = shared;

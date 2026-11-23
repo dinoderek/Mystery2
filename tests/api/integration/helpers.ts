@@ -17,9 +17,6 @@ export {
 /** The default fixture, the clue-graph mock case (`tests/testkit/src/mock-case.ts`). */
 export const MOCK_BLUEPRINT_ID = MOCK_CASE_ID;
 
-/** The V2 fixture in `blueprints/mock-blueprint.json`, for the tests of V2-only play that leave with V2. */
-export const V2_MOCK_BLUEPRINT_ID = '123e4567-e89b-12d3-a456-426614174000';
-
 export type ApiAuthContext = TestPlayer;
 
 /** A fresh local profile to run one test's requests as. */

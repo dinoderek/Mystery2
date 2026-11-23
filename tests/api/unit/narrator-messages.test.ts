@@ -4,7 +4,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createAIProviderFromProfile } from "../../../packages/game-engine/src/ai-provider.ts";
 import { NARRATOR_GROUNDING } from "../../../packages/game-engine/src/narrator-grounding.ts";
-import { allRoleRequestNames, buildNarrationPrompt, buildRoleRequest, outputRoleForPrompt, type TemplateRoleInput, type NarrationRoleInput } from "../../../packages/game-engine/src/role-request.ts";
+import { allRoleRequestNames, buildNarrationPrompt, buildRoleRequest, type TemplateRoleInput, type NarrationRoleInput } from "../../../packages/game-engine/src/role-request.ts";
 import * as replay from "../../../evaluation/runtime/lib/prompt-build.ts";
 import { readBlueprint } from "../../../evaluation/runtime/lib/case.ts";
 import { gradeExpect } from "../../../evaluation/runtime/lib/expect.ts";
@@ -39,8 +39,7 @@ describe("captured live and replay messages", () => {
     ];
     const mock = createAIProviderFromProfile({ provider: "mock", model: "mock" });
     try {
-      const graph = !!blueprint.clue_graph;
-      for (const role of allRoleRequestNames().filter((role) => graph ? role !== "accusation_judge" && !role.startsWith("search_") && !["talk_start", "talk_conversation"].includes(role) : !role.startsWith("graph_"))) {
+      for (const role of allRoleRequestNames()) {
         const location = blueprint.world.locations[0].id;
         const character = blueprint.world.characters[0].id;
         const input = {
@@ -66,7 +65,7 @@ describe("captured live and replay messages", () => {
           expect(requests.at(-1)?.response_format).toBeUndefined();
         } else {
           const { prompt, context } = await buildRoleRequest(input as unknown as TemplateRoleInput);
-          const outputRole = outputRoleForPrompt(role);
+          const outputRole = role;
           messages = { system: `You are a strict JSON API for role "${outputRole}". Output JSON only.\n\n${NARRATOR_GROUNDING}`, user: JSON.stringify({ prompt, context }) };
           expect(await replay.buildRoleRequest(input as unknown as TemplateRoleInput)).toMatchObject(messages);
           expect(prompt).not.toContain("Return a confession");

@@ -25,7 +25,7 @@ import type {
   TemplateRoleInput,
 } from "../../../packages/game-engine/src/role-request.ts";
 import type { BlueprintLike, TurnCase } from "./case.ts";
-import { buildNarrationMessages, buildNarrationPrompt, buildRoleRequest, resolveAccusationRole } from "./prompt-build.ts";
+import { buildNarrationMessages, buildNarrationPrompt, buildRoleRequest } from "./prompt-build.ts";
 import { getAction, normalizeHistory } from "./roles.ts";
 import { makeResponse } from "./transcript.ts";
 import type { TurnResponse } from "./transcript.ts";
@@ -82,7 +82,8 @@ export function modelLabel(binding: ResolvedBinding): string {
 
 export async function replayThroughNarrator(replay: CliReplayRequest): Promise<Collected> {
   const { testCase, blueprint, binding, logDir } = replay;
-  if (testCase.action.type === "accuse" && resolveAccusationRole(testCase.action.player_reasoning) === "accusation_judge") return replayGraphAccusation(replay);
+  // An accusation with reasoning is judged in two calls; without, it opens the scene.
+  if (testCase.action.type === "accuse" && testCase.action.player_reasoning?.trim()) return replayGraphAccusation(replay);
   const action = getAction(testCase.action.type);
   const { request, narration } = await composeRequest(testCase, blueprint);
 

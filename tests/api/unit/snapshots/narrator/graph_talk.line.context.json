@@ -21,10 +21,8 @@
     "target_age": 10
   },
   "move_context": null,
-  "search_context": null,
   "talk_context": null,
   "accusation_start_context": null,
-  "accusation_judge_context": null,
   "graph_talk_context": {
     "character": {
       "id": "thorne",

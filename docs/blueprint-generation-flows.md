@@ -1,7 +1,6 @@
 # Blueprint Generation Flows
 
-Case format: [clue graph](clue-graph.md); V2 schema:
-`packages/shared/src/blueprint-schema-v2.ts`; narrator context:
+Case format: [clue graph](clue-graph.md); narrator context:
 `docs/ai-runtime.md`.
 “Input” goes to the model; “attached” pairs with its output; sessions
 store ids.
@@ -54,30 +53,27 @@ executable fields and unknown references. Manifests live in
 
 ## Narration at play
 
-Every row also receives `metadata.target_age` and `metadata.narration_style`.
+Every row also receives the game's reading age as `metadata.target_age`.
 
-| Output | Source (role) | Blueprint input | Other input | Attached |
+| Output | Source (role) | Case input | Other input | Attached |
 |---|---|---|---|---|
-| Opening | `game-start` | `narrative.premise` | — | `metadata.image_id` |
-| Arrival | the move action, `game-enter` (`ambience`) | The destination's `name`, `description`, unhidden sub-location names; for each character there, their looks, `personality`, attitude, `always` tells, and a manner per live agenda | The last arrival's narration there, whether it was visited before | `location_image_id` |
-| Search | the search action (`search_bare`, `search_targeted`) | The location's `description` and unlocked `clues`; each unhidden sub-location's `name`, `hint` and unlocked clues | History at that location; the player's `search_query` | — |
-| Conversation | the talk, ask and end-talk actions (`talk_*`) | Location summaries; every character's public face; the active character's private fields — `background`, `clues`, `flavor_knowledge`, `actual_actions` (only steps safe to say), `agendas` (reactions and confession once earned), `tells`, alibi, motive, personality, attitude | History with that character, and their state; `player_known_clues` | `portrait_image_id` (start, ask) |
+| Opening | `game-start` (`intro`) | `opening.facts` | — | `metadata.image_id` |
+| Arrival | the move action, `game-enter` (`ambience`) | The destination's name, `facts` and visible spot names; each character there's public face, `personality` and attitude | The last arrival's narration there, whether it was visited before | `location_image_id` |
+| Search | the search action (`graph_search`) | The location's name, `facts` and visible spots; the clue the named spot holds, or the candidates to choose from | History at that location; the player's `search_query` | — |
+| Talk | the talk and ask actions (`graph_talk`) | The character's state: first words, answers, tells, gates and what they keep back; `knows`; first-meeting appearance | History with that character; the line, and earlier lines of this conversation | `portrait_image_id` (talk) |
+| Farewell | the end-talk action (`talk_end`) | Location summaries; the public roster; the character's `personality`, attitude and found clues as their notebook lines | History with that character | `location_image_id` |
 | Accusation start | the accuse action (`accusation_start`), or a forced endgame | Location and timing; the public roster | All history, or none | — |
-| Accusation judge | the accuse action (`accusation_judge`) | The **full** blueprint, including `ground_truth`, `solution_paths`, `red_herrings`, `suspect_elimination_paths` | All history, or none; the reasoning; `last_accusation`; `player_known_clues`, `path_coverage` | — |
+| Accusation | the accuse action (`graph_accusation`, then `graph_accusation_round` or `graph_ending`) | The people and the held clues; then the engine's reply material, or the timeline, culprit conclusion and motive | The accusation so far; the reasoning | — |
 
-A character's **public face** is `first_name`, `last_name`, `sex`,
-`appearance`, and their `starting_knowledge` summary. Private
-fields reach only that character's own conversation.
+A character's **public face** is their name, `sex` and `appearance`.
+Everything else about them reaches only their own conversation, through the
+graph; saved lines stand for found clues.
 
-`narrative.starting_knowledge` is never narrated: `game-start` and `game-get`
-return it as the notebook's case facts (`mystery_summary`, and a `summary` per
-location and character).
-
-A clue-graph case gives facts to word, talk `knows` and first-meeting
-appearance; saved lines stand for found clues. The engine chooses accusation
-verdicts and reply material ([clue graph](clue-graph.md)). The
+`narrative.starting_knowledge.mystery_summary` is never narrated: `game-start`
+and `game-get` return it as the notebook's case facts. The engine chooses
+accusation verdicts and reply material ([clue graph](clue-graph.md)). The
 [grounding policy](ai-runtime.md#grounding-policy) governs how the narrator uses
-those facts within its role.
+the case's facts within its role.
 
 ## Evaluation
 

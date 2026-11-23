@@ -211,15 +211,13 @@ export function outputSays(turn: StoredTurn): Said {
   if (!role) throw new Error("the capture does not name its requested output role");
   const output = parseRoleOutput(role, turn.response.raw);
   if (action === "accuse" && (role === "graph_accusation_round" || role === "graph_ending")) return accusationSays(turn.response.raw);
-  if (role === "search" || role === "graph_search") {
-    if (!("revealed_clue_id" in output)) throw new Error("not a search output");
-    return { revealed: output.revealed_clue_id ? [output.revealed_clue_id] : [], used: [], understood: output.input_understood, lines: "notebook" in output ? linesOf(output.notebook) : {} };
+  // A reply carries a notebook line for each clue it brings out.
+  if (role === "graph_search" && "revealed_clue_id" in output) {
+    return { revealed: output.revealed_clue_id ? [output.revealed_clue_id] : [], used: [], understood: output.input_understood, lines: linesOf(output.notebook) };
   }
+  // A talk reply lists the gates it opened and the questions it answered.
   if (role === "graph_talk" && "opened" in output) {
     return { revealed: [...output.opened, ...output.answered], used: [], understood: output.input_understood, lines: linesOf(output.notebook) };
-  }
-  if (role === "talk_conversation" && "used_clue_ids" in output) {
-    return { revealed: output.revealed_clue_ids, used: output.used_clue_ids, understood: output.input_understood, lines: {} };
   }
   throw new Error(`cannot grade ${action} with requested role ${role}`);
 }

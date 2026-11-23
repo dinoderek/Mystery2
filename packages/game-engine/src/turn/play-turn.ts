@@ -11,7 +11,7 @@
 // 7. Save once.
 // 8. Answer from what was saved.
 
-import { lastNameOf, type PlayableCase } from "../../../shared/src/playable-case.ts";
+import type { PlayableCase } from "../../../shared/src/playable-case.ts";
 import { markClues, notebookMarks } from "../clue-graph/notebook-view.ts";
 import { sessionCase } from "../session-case.ts";
 import type { GameTurnResponse, TurnPlayedResponse } from "../../../shared/src/mystery-api-contracts.ts";
@@ -30,9 +30,8 @@ import { planAction } from "./plan.ts";
 import { accusationForced } from "../accusations.ts";
 import { resolveAccusation, resolveAccuseBack, resolveAccuseStart } from "./resolve-accuse.ts";
 import { resolveMove } from "./resolve-move.ts";
-import { resolveSearch } from "./resolve-search.ts";
 import { resolveGraphLine, resolveGraphSearch, resolveGraphTalk } from "./resolve-clue-graph.ts";
-import { resolveAsk, resolveEndTalk, resolveTalk } from "./resolve-talk.ts";
+import { resolveEndTalk } from "./resolve-talk.ts";
 import type { ActionOutcome, PlannedAction, TurnGame, TurnRuntime } from "./types.ts";
 
 export interface TurnRequest {
@@ -62,7 +61,8 @@ export function grammarStateOf(session: GameSessionRow, blueprint: PlayableCase)
     characters: blueprint.world.characters.map((character) => ({
       id: character.id,
       first_name: character.first_name,
-      last_name: lastNameOf(character),
+      // A clue-graph character goes by one name.
+      last_name: "",
       location_name: character.location_id,
     })),
   };
@@ -91,9 +91,9 @@ export function answerWithoutPlaying(meaning: Interpretation): GameTurnResponse 
  * The history is read before the session. The save expects the sequence after
  * the last event read here, so a turn saved after that read, before or after
  * the session is read, makes this one's save conflict rather than land on a
- * stale session. One saved between the two reads conflicts here, before a
- * format that checks the session against its history (the clue graph) finds
- * them disagreeing. The narrator is shown the events the game master took part
+ * stale session. One saved between the two reads conflicts here, before the
+ * clue graph, which checks the session against its history, finds them
+ * disagreeing. The narrator is shown the events the game master took part
  * in; the sequence counts every saved one.
  */
 async function loadGame(ctx: EngineContext, gameId: string, logger: LogWriter): Promise<TurnGame> {
@@ -127,17 +127,16 @@ async function loadProvider(ctx: EngineContext, session: GameSessionRow, options
 }
 
 function resolveAction(game: TurnGame, runtime: TurnRuntime, action: PlannedAction): Promise<ActionOutcome> {
-  // A clue-graph case plays talk and search from its graph (`resolve-clue-graph.ts`).
-  const graph = game.blueprint.clue_graph !== undefined;
+  // Talk and search play from the case's graph (`resolve-clue-graph.ts`).
   switch (action.kind) {
     case "move":
       return resolveMove(game, runtime, action.destination);
     case "search":
-      return graph ? resolveGraphSearch(game, runtime, action.query) : resolveSearch(game, runtime, action.query);
+      return resolveGraphSearch(game, runtime, action.query);
     case "talk":
-      return graph ? resolveGraphTalk(game, runtime, action.character_id) : resolveTalk(game, runtime, action.character_id);
+      return resolveGraphTalk(game, runtime, action.character_id);
     case "ask":
-      return graph ? resolveGraphLine(game, runtime, action) : resolveAsk(game, runtime, action);
+      return resolveGraphLine(game, runtime, action);
     case "end_talk":
       return resolveEndTalk(game, runtime, action.character_id);
     case "accuse_start":
@@ -200,9 +199,9 @@ async function answerAndKeep(
 }
 
 function answerFromSave(game: TurnGame, outcome: ActionOutcome, effect: TurnEffect): TurnPlayedResponse {
-  // A clue-graph case adds its leads and every clue taken back; the clues the turn found say what they are.
+  // The leads and every clue taken back; the clues the turn found say what they are.
   const graph = game.blueprint.clue_graph;
-  const marks = graph ? notebookMarks(graph, [...game.history, ...effect.events.map(({ event }) => ({ payload: event.payload }))]) : null;
+  const marks = notebookMarks(graph, [...game.history, ...effect.events.map(({ event }) => ({ payload: event.payload }))]);
   return {
     kind: "turn",
     events: effect.events.map(({ sequence, event }) => ({
@@ -212,8 +211,9 @@ function answerFromSave(game: TurnGame, outcome: ActionOutcome, effect: TurnEffe
       narration_parts: event.narration_parts,
     })),
     state: effect.state,
-    revealed_clues: graph && marks ? markClues(graph, outcome.revealed_clues, marks) : outcome.revealed_clues,
-    ...(marks ? { leads: marks.leads, taken_back: marks.taken_back } : {}),
+    revealed_clues: markClues(graph, outcome.revealed_clues, marks),
+    leads: marks.leads,
+    taken_back: marks.taken_back,
     result: outcome.result,
   };
 }

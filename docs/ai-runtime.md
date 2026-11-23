@@ -1,27 +1,28 @@
 # AI Runtime
 
-Narrator contracts and validation before saving. Formats:
-[Clue graph](clue-graph.md). Profiles and providers are
-`docs/ai-configuration.md`; which blueprint fields reach which output is
-`docs/blueprint-generation-flows.md`.
+Narrator contracts and validation before saving. The case format is the
+[clue graph](clue-graph.md), whose talk, search and accusation rules are its
+own. Profiles and providers are `docs/ai-configuration.md`; which case fields
+reach which output is `docs/blueprint-generation-flows.md`.
 
 ## How a request is assembled
 
-Pure `packages/game-engine/src/role-request.ts` selects roles, builds authorised
-context and renders prompts with the game's age and style. `buildRoleMessages`
-and `buildNarrationMessages` construct the system/user pair for live OpenRouter,
-live Claude CLI and replay, including plain `intro` and `ambience`. Search
-prompt keys map to the `search` output contract. Provider schemas and calls,
-including both clue-graph accusation stages, remain distinct from messages.
-The system message carries the output instruction and grounding policy.
-The user message carries the role task and its data. Structured calls read
-player words and history from context, with any current-visit excerpt labelled
-as data. Openings and arrivals label and quote case facts and previous prose.
-Tests compare live and replay messages byte for byte.
+Pure `packages/game-engine/src/role-request.ts` builds each role's authorised
+context (`ai-context.ts`) and renders its prompt (`ai-prompts.ts`) at the
+game's `target_age`; it imports no database, so the eval harness calls it too
+(`tests/api/unit/role-request.test.ts`). `buildRoleMessages` and
+`buildNarrationMessages` construct the system/user pair for live OpenRouter,
+live Claude CLI and replay, including plain `intro` and `ambience`. Provider
+schemas and calls, including both accusation stages, remain distinct from
+messages. The system message carries the output instruction and grounding
+policy. The user message carries the role task and its data. Structured calls
+read player words and history from context, with any current-visit excerpt
+labelled as data. Openings and arrivals label and quote case facts and
+previous prose. Tests compare live and replay messages byte for byte
+(`tests/api/unit/narrator-messages.test.ts`).
 
-Voice and reading level are shared. `talk-prompt.ts` selects the character's
-agendas, locks, tells and open fallback. Recorded state leaves the narrator
-to judge whether a clue was used.
+Voice and reading level are shared. Recorded state replaces refereeing: the
+engine derives what a turn can bring out from the graph and the events.
 
 ## Grounding policy
 
@@ -45,60 +46,47 @@ and [Prompting best practices](https://platform.claude.com/docs/en/build-with-cl
 
 ## Roles
 
-`ai-contracts.ts` owns the role contracts. The legacy `search` contract has
-two prompts. A bare search gets the budget for its known outcome. A targeted
-search gets both budgets because the model judges it. The legacy accusation
-rules are in [The game](game.md#the-accusation). Talk greetings and farewells
-move nobody. Clue-graph role mechanics are in [Clue Graph](clue-graph.md#in-play).
+The roles and their output contracts are `ai-contracts.ts`. `graph_talk` plays
+a greeting and every line of a conversation, and `graph_search` a search; both
+return notebook lines. `graph_search` states both word budgets unless the
+engine already knows the outcome (`OUTCOME_LENGTH_BY_ROLE` in
+`ai-prompts.ts`). `graph_accusation` reports who was named and what was cited;
+`graph_accusation_round` words the engine's flaw, alternative or missing-fact
+reply, from only its supplied material, and `graph_ending` the closing scene
+([accusation](clue-graph.md#accusation)). `accusation_start` opens the scene,
+and `talk_end` closes a conversation. `talk_end` moves nobody; `gm_fabrication`
+reports invented movement.
 
 ## Narration style
 
 `buildStyleGuidance` gives the narrator a warm, cozy voice in second person
 and present tense. Characters speak in first person with brief action beats.
-The narrator alone speaks after a failed clue-graph accusation or at the
-ending, which may quote a character. `metadata.narration_style` can flavour
-tone, mood and imagery within the reading level, point of view and safety rules.
+The narrator alone speaks after a failed accusation or at the ending, which may
+quote a character. A scene may add harmless scenery and manner within its
+role's limits ([the narrator's judgement](clue-graph.md#the-narrators-judgement)).
+The reading level always wins.
 
 ## What each role sees
 
-Which blueprint fields reach which role is the "Narration at play" table in
+Which case fields reach which role is the "Narration at play" table in
 `docs/blueprint-generation-flows.md`. The rules and reasons behind it:
 
-- Only `accusation_judge` sees the full blueprint; `assertRoleContextSafety`
-  enforces that for every other role. Knowledge about *other* characters
-  travels only through explicit clues (`about_character_id`).
-- A talk clue carries its gate's `requires_rationale` (the in-fiction reason it
-  is withheld), `requires_kind`, `known_to_player`, and
-  `player_can_use_prerequisites`: the player holds the prerequisites, a
-  precondition for using them, never permission. Prerequisite ids are not sent,
-  so the model gates on the reason, not set arithmetic.
-- **The speaker hears only steps safe to say.** A talk pack's `actual_actions`
-  drops every step a self-protect cover `hides_steps`, until an earned part's
-  `concedes_steps` or the confession gives it up.
-- **Tells are reactions, not defaults.** Each has visible `text` and a
-  `trigger`: `always`, `condition` (free text the narrator judges), or `clue`
-  (fires only when the player uses a referenced clue). A cue surfaces only when
-  its trigger fires, or, with none authored, when the player touches something
-  sensitive. A `talk_start` greeting comes before the player says anything, so a
-  `clue` tell never fires there, and a `condition` tell fires only if the
-  history already meets it.
+- Talk and search contexts come from the graph and the events
+  (`clue-graph/narrator-context.ts`): what a character may say now, and what a
+  search can find. What a character knows reaches another only through the
+  graph.
+- Only the closing scene is told the truth; `assertRoleContextSafety` enforces
+  that for every other role.
+- **A farewell sees only found clues**, as their saved notebook lines, and the
+  roster sees identity and looks.
 - **Arrival gets only what an arrival can use.** Each present character comes
-  with name, `sex`, appearance, personality, attitude, `always` tells, and a
-  `manner` line per unbroken agenda, from its type and target. No clue,
-  motive, alibi, action, background, flavour or `condition` tell (each awaits
-  the investigator's words). It steers toward people, never things: any could
-  be a hiding place. A return gets the last arrival's narration.
-- **Search never sees a locked clue**, nor a spot whose clues are all locked,
-  so no search or arrival weaves in, advertises or narrates "nothing here" for
-  either. A targeted search naming that spot (`search-target.ts`) shows it and
-  admits its clue (`search.clue_admitted_by_target`): specificity, not
-  possession. No search clue carries its `requires`: the engine has decided, and
-  a gate's reason reads as "withhold".
-- **The judge gets what the investigator earned**: `player_known_clues` (in
-  order, each with an `origin_label`) and `path_coverage` (per reasoning path,
-  found and missing clue ids). Without them it cannot tell an earned case from
-  a lucky one. Both are rebuilt from event history, and `path_coverage` is
-  precomputed so the model does not intersect sets across a long context.
+  with name, `sex`, appearance, personality and attitude; nothing they know or
+  hold. A return gets the last arrival's narration. `role-request.ts` derives
+  it from history (`tests/api/unit/arrival-prompt.test.ts`).
+- **A hidden spot is never shown** to a search or an arrival until its pointer
+  is held; before then, words that fit it best find nothing. The engine
+  decides which spot the words name (`search-target.ts`), since the narrator
+  never hears of a hidden one.
 - Character summaries carry `sex` for the shared pronoun rule.
 
 ## Trusting the output
@@ -111,85 +99,38 @@ role, never by answer shape; parser acceptance does not imply engine admissibili
 - The parser forgives noise (missing flags default, junk ids drop, doubled
   quote escapes go); the JSON Schema asks for the clean shape, all fields
   required.
-- The backend re-checks every revealed clue id against what the role was
-  allowed to reveal (the active character's clues, the location's unlocked
-  clues), and a locked search reveal is rejected and logged
-  (`search.clue_locked`).
+- The backend re-checks every reported clue against what the state offered
+  (`turn/resolve-clue-graph.ts`): a report not offered, or notebook lines that
+  are not exactly the clues that came out, fail the turn before anything is
+  saved.
 - When the model reports `input_understood: false` (gibberish), the parser
-  empties the reveals, uses and commitments, and a search costs no turn.
+  empties what the turn earned, and a search costs no turn.
 - Rules that span fields are the parser's, never asked of the model.
 
-## Clue discovery and gating
+## Clue discovery
 
-Discovery is event-sourced: a clue is discovered once a `search` or `ask`
-event records its id. `packages/game-engine/src/clue-discovery.ts` is the only
-place that knows how a reveal is recorded and whether a gate is met.
+Discovery is event-sourced: a clue is discovered once a `search`, `ask` or
+`talk` event records its id. `packages/game-engine/src/clue-discovery.ts` is
+the only place that knows how a reveal is recorded.
 `game_sessions.discovered_clues` is a cache; `game-get` rebuilds the notebook
 from history.
 
-A clue is discovered once. A narrator's reveal list names only clues the turn
-reveals for the first time: a character may restate or elaborate on a clue the
-player already holds (the talk context marks it `known_to_player`), but does
-not list it again. The ask and search actions both drop an id the session has
-already discovered before recording the event or answering, and log it
-(`ask.clue_already_discovered`, `search.clue_validation_failed`).
-
-Gates use each clue's optional `requires`:
-
-- **Search — hard.** A bare search reveals the first unrevealed *and* unlocked
-  location-level clue, skipping locked ones. The backend rejects a locked
-  reveal, except a named hidden spot's clue, declared off-script.
-- **Conversation — earned by use.** A gated clue is given once the player uses
-  its prerequisites; holding them never grants it. A bluff or deduction that
-  uses them earns it off-script unless the gate is physical. Such reveals are
-  listed in `revealed_off_script` and recorded as real discoveries.
-- **Accusation — judged, not mechanical.** Nothing in the accuse action rejects an
-  accusation on coverage. The judge prompt applies three scoping rules:
-  - The discovered set limits the **evidence-chain** route only. The true-
-    account route and an earned confession need no discovered clues, so a child
-    who intuits the answer can still win.
-  - `missing_clue_ids` steers the closing question; it is not a checklist to
-    reject against.
-  - The set is what the player may **cite**, not a fence around what they may
-    reason. A correctly deduced fact they were never handed is credited.
-
-The notebook's records (`DiscoveredClueRecord`: `origin`, `source`,
-`discovered_at`, `off_script`) carry no reasoning-path information, and the
-client groups by origin. `mapClueToThreads` exists but no player-facing path
-may use it before the case resolves: its labels ("Red herring: …") name the
-answer.
+A clue is discovered once. A character may restate a clue the player already
+holds, but it is not recorded again: the restated report is dropped and logged
+(`ask.clue_already_discovered`, `notebook.line_for_held_clue`). The notebook's
+records (`DiscoveredClueRecord`: `origin`, `source`, `discovered_at`) are
+grouped by origin in the client.
 
 ## Earned, not free
 
-Every conversational gate (a self-protection part, earned by any of its
-`clue_ids`; a reveal's `yields_to_clue_ids`; a `requires` gate; a `clue` tell)
-opens only on **use**.
-
-- **Use, defined once** here and in the prompt's "Using a clue": the player
-  shows this character the clue, or makes its point at them. Could the
-  character react as if shown it? A word, or holding the clue, is not
-  enough; a specific, plausible bluff or deduction stating its substance
-  is. "Do you have snowshoes?" does not use the prints; "Why are there
-  snowshoe prints by the luggage car?" does.
-- **Some things never earn a part:** naming the character as culprit,
-  insisting, repeating a demand, asking to look, or a case built only on other
-  parts.
-- **The character yields in proportion, that turn.** A used part earns its
-  `reaction`, conceding what its clues show, even against the alibi; a used
-  `requires` gate gives its clue unless held back; every part earns the
-  `confession`. The alibi comes up only when asked where or when. After
-  questions in three visits (`fallback_open`), the character may yield a partial truth
-  or gated clue, never a confession.
-- **Use is recorded.** `talk_conversation` reports the clues used
-  (`used_clue_ids`, `used_quote`) and new claims (`new_commitments`). The
-  backend keeps a used gate clue the player holds, or bluffs in quoted words,
-  and logs the rest (`ask.used_clue_dropped`). `character-state.ts` rebuilds
-  from every visit's `ask` events the clues used, parts earned, current story
-  (alibi, then earned reactions) and last five commitments. It only grows, and
-  reaches the context as `state` (reactions once earned, the confession once all
-  are); nothing in the prompt, agendas included, takes one back.
-- **An untriggered tell stays hidden, even softened** ("one quick puff" for
-  "her tail puffs up").
+A gate opens only on what the investigator does (`docs/clue-graph.md`):
+showing the character its clues, or making their point at them, in this line
+or an earlier one of the conversation; taking the line of questioning it
+names; or asking plainly, where it allows that. Holding a clue is not using it.
+A bluffable gate also opens on a believable bluff claiming what a clue proves;
+a physical one never does. A clue shown and dodged opens on a follow-up. The
+character's mood never decides what opens, and the engine accepts a gate
+opened only when the state offered it.
 
 `gm_roleplay` judges against the same definition of earned.
 

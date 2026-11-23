@@ -11,8 +11,8 @@ import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
-  parseAccusationJudgeOutput,
-  parseTalkConversationOutput,
+  parseGraphTalkOutput,
+  parseTalkEndOutput,
   roleOutputJsonSchema,
 } from "../../../packages/game-engine/src/ai-contracts.ts";
 import {
@@ -66,10 +66,10 @@ function flagValue(args: string[], flag: string): string | undefined {
 }
 
 const TALK_REQUEST = {
-  role: "talk_conversation" as const,
+  role: "graph_talk" as const,
   prompt: "Answer the investigator in character.",
-  context: { talk_context: { active_character: { first_name: "Sam" } } },
-  parse: parseTalkConversationOutput,
+  context: { graph_talk_context: { character: { name: "Sam" } } },
+  parse: parseGraphTalkOutput,
 };
 
 describe("claude-cli provider requests", () => {
@@ -78,8 +78,9 @@ describe("claude-cli provider requests", () => {
       "FAKE_CLAUDE_OUTPUT",
       JSON.stringify({
         narration: "I saw a fox.",
-        revealed_clue_ids: ["clue-fox"],
-        revealed_off_script: [],
+        opened: [],
+        answered: ["clue-fox"],
+        notebook: [{ id: "clue-fox", line: "Sam saw a fox." }],
         input_understood: true,
       }),
     );
@@ -88,18 +89,16 @@ describe("claude-cli provider requests", () => {
 
     expect(output).toEqual({
       narration: "I saw a fox.",
-      revealed_clue_ids: ["clue-fox"],
-      revealed_off_script: [],
+      opened: [],
+      answered: ["clue-fox"],
+      notebook: [{ id: "clue-fox", line: "Sam saw a fox." }],
       input_understood: true,
-      used_clue_ids: [],
-      used_quote: null,
-      new_commitments: [],
     });
 
     const [call] = recordedCalls();
     expect(call.args.slice(0, 5)).toEqual(["--print", "--model", "sonnet", "--output-format", "json"]);
     expect(flagValue(call.args, "--system-prompt")).toBe(
-      `You are a strict JSON API for role "talk_conversation". Output JSON only.\n\n${NARRATOR_GROUNDING}`,
+      `You are a strict JSON API for role "graph_talk". Output JSON only.\n\n${NARRATOR_GROUNDING}`,
     );
     expect(flagValue(call.args, "--tools")).toBe("");
     expect(flagValue(call.args, "--setting-sources")).toBe("");
@@ -107,7 +106,7 @@ describe("claude-cli provider requests", () => {
     expect(call.args).toContain("--no-session-persistence");
     expect(call.args).not.toContain("--append-system-prompt");
     expect(JSON.parse(flagValue(call.args, "--json-schema")!)).toEqual(
-      roleOutputJsonSchema("talk_conversation"),
+      roleOutputJsonSchema("graph_talk"),
     );
     expect(JSON.parse(call.stdin)).toEqual({
       prompt: TALK_REQUEST.prompt,
@@ -250,16 +249,15 @@ describe("claude-cli provider failures", () => {
       "FAKE_CLAUDE_OUTPUT",
       JSON.stringify({
         narration: "   ",
-        accusation_resolution: "continue",
       }),
     );
 
     const error = await provider()
       .generateRoleOutput({
-        role: "accusation_judge",
-        prompt: "Judge the accusation.",
+        role: "talk_end",
+        prompt: "Close the conversation.",
         context: {},
-        parse: parseAccusationJudgeOutput,
+        parse: parseTalkEndOutput,
       })
       .catch((caught: unknown) => caught);
 

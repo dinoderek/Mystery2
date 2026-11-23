@@ -63,27 +63,15 @@ export class BadRequestError extends Error {
  * the reason to log.
  */
 export class RequestRejectedError extends Error {
-  readonly status: 400 | 404 | 410 | 500;
+  readonly status: 400 | 404 | 500;
   readonly reason: string;
 
-  constructor(status: 400 | 404 | 410 | 500, message: string, reason: string) {
+  constructor(status: 400 | 404 | 500, message: string, reason: string) {
     super(message);
     this.name = "RequestRejectedError";
     this.status = status;
     this.reason = reason;
   }
-}
-
-/**
- * A saved game whose case snapshot is in a format the engine no longer reads.
- * It stays listed, marked as unable to open; opening it answers this.
- */
-export function retiredCaseFormat(format: string): RequestRejectedError {
-  return new RequestRejectedError(
-    410,
-    `This game was saved with the case format "${format}", which is no longer read, so it cannot be opened.`,
-    "case_format_retired",
-  );
 }
 
 export function asRejectedResponse(error: unknown): Response | null {

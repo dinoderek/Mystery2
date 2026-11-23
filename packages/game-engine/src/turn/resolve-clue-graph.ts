@@ -29,7 +29,6 @@ import { askRole, rejectOutput } from "./narrator.ts";
 import type { ActionOutcome, TurnGame, TurnRuntime } from "./types.ts";
 
 function graphOf(game: TurnGame): ClueGraphCase {
-  if (!game.blueprint.clue_graph) throw new Error("Not a clue-graph case");
   return game.blueprint.clue_graph;
 }
 

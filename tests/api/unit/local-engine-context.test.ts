@@ -18,7 +18,7 @@ import {
   resolveDatabasePath,
 } from "../../../packages/game-engine/src/paths.ts";
 import type { LogWriter } from "../../../packages/game-engine/src/logging.ts";
-import { validBlueprintV2 } from "./fixtures/blueprint-v2.fixture.ts";
+import { MOCK_CASE_ID, readMockCaseGraph } from "../../testkit/src/mock-case.ts";
 
 const silentLogger: LogWriter = { log: () => {}, logError: () => {} };
 
@@ -36,8 +36,8 @@ beforeEach(() => {
   repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "mystery-engine-ctx-"));
   fs.mkdirSync(path.join(repoRoot, "blueprints"), { recursive: true });
   fs.writeFileSync(
-    path.join(repoRoot, "blueprints", `${validBlueprintV2.id}.json`),
-    JSON.stringify(validBlueprintV2),
+    path.join(repoRoot, "blueprints", "mock-case.json"),
+    JSON.stringify(readMockCaseGraph()),
   );
 });
 
@@ -56,10 +56,10 @@ describe("createLocalEngine", () => {
       expect(profile).toMatchObject({ id: "default", provider: "mock" });
 
       const blueprint = await ctx.content.loadBlueprint(
-        validBlueprintV2.id,
+        MOCK_CASE_ID,
         silentLogger,
       );
-      expect(blueprint?.id).toBe(validBlueprintV2.id);
+      expect(blueprint?.id).toBe(MOCK_CASE_ID);
 
       const gameId = await ctx.sessions.create({
         player_id: player.id,
@@ -90,7 +90,7 @@ describe("createLocalEngine", () => {
       expect((await ctx.sessions.listForPlayer()).map((s) => s.id)).toEqual([gameId]);
       expect(await ctx.events.listBySession(gameId)).toHaveLength(1);
       expect((await ctx.content.listBlueprints()).map((e) => e.blueprint.id)).toEqual([
-        validBlueprintV2.id,
+        MOCK_CASE_ID,
       ]);
     } finally {
       local.close();
@@ -108,10 +108,10 @@ describe("createLocalEngine", () => {
 
       const gameId = await adaCtx.sessions.create({
         player_id: ada.id,
-        blueprint_id: validBlueprintV2.id,
+        blueprint_id: MOCK_CASE_ID,
         ai_profile_id: "default",
         mode: "explore",
-        current_location_id: "loc_kitchen",
+        current_location_id: "loc-kitchen",
         time_remaining: 12,
         reading_age: 8,
       });

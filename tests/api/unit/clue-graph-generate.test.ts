@@ -240,6 +240,17 @@ describe("generate, clue graph", () => {
     expect(await main(["generate", ...argv], { root: process.cwd(), out: (t: string) => out.push(t), err: (t: string) => err.push(t), env: {} })).toBe(0);
     const results = fs.readdirSync(path.join(dir, "out"), { recursive: true, encoding: "utf8" }).filter((file) => file.endsWith("result.json"));
     expect(results.map((file) => path.basename(path.dirname(file))).sort()).toEqual(["brief-m-one", "brief-m-two", "second-m-one", "second-m-two"]);
+    const sent = await Promise.all(results.map((file) => readResult(path.join(dir, "out", file))));
+    expect(sent.map((result) => result.production?.calls[0].model).sort()).toEqual(["m/one", "m/one", "m/two", "m/two"]);
+    // Two models leave the recorded binding's model open.
+    expect(sent[0].run.bindings["generator-agent"].model).toBeNull();
+  });
+
+  it("records the model a single-model run used on the binding, ahead of an exported AI_MODEL", async () => {
+    expect(await generate(["--config", stubConfig([good]), "--model", "only/one"], { AI_MODEL: "vendor/exported" })).toBe(0);
+    const { result } = await onlyResult();
+    expect(result.run.bindings["generator-agent"].model).toBe("only/one");
+    expect(result.production?.calls[0].model).toBe("only/one");
   });
 });
 

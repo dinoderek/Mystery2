@@ -45,7 +45,8 @@
             </li>
             <li>
               <span class="text-t-bright">accuse [statement]</span>
-              - Say who did it, and why you think so
+              - Say who did it, and why you think so. You have three accusations: each one you
+              try uses one up
             </li>
             <li>
               <span class="text-t-bright">locations / where can i go</span>
@@ -67,6 +68,20 @@
             <li>
               <span class="text-t-bright">bye / leave / end / goodbye / see you</span>
               - End the conversation
+            </li>
+          </ul>
+        </section>
+
+        <section>
+          <h3 class="text-t-primary font-bold mb-1">ACCUSE MODE</h3>
+          <ul class="list-disc list-inside pl-4 space-y-1">
+            <li>
+              <span class="text-t-bright">[who did it and why]</span> - One accusation. If it is
+              wrong, it is used up and you go back to investigating
+            </li>
+            <li>
+              <span class="text-t-bright">back / cancel / never mind</span> - Leave without
+              accusing: this is free. Not allowed once time is up
             </li>
           </ul>
         </section>

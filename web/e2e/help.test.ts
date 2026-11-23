@@ -76,6 +76,10 @@ test.describe('Help and inline guidance', () => {
     await expect(page.getByText(/travel to/)).toBeVisible();
     await expect(page.getByText(/where can i go/)).toBeVisible();
     await expect(page.getByText(/quit \/ exit/)).toBeVisible();
+    // The rule: three accusations, each one tried uses one up, and back is free.
+    await expect(page.getByRole('listitem').filter({ hasText: /three accusations:\s+each one you\s+try uses one up/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'ACCUSE MODE' })).toBeVisible();
+    await expect(page.getByRole('listitem').filter({ hasText: /Leave without\s+accusing:\s+this is free/ })).toBeVisible();
 
     await page.locator('button:has-text("[ CLOSE ]")').click();
     await expect(page.getByRole('heading', { name: 'COMMAND REFERENCE' })).toBeHidden();

@@ -1,14 +1,20 @@
 // The clue-graph cases played start to finish over HTTP on the mock narrator:
-// the greenhouse to a win on a supported culprit and to a loss told in full,
-// the kid-7 self-play loss replayed into a win, and the dragon crown to a win
-// through a retracted alibi and a hidden spot.
+// the greenhouse to a win after a failed accusation, to a loss on the third
+// failure told in full, and to its last accusations out of turns; the kid-7
+// self-play loss replayed into a win, and the dragon crown to a win through a
+// retracted alibi and a hidden spot.
 
 import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import { clueGraphCaseId, GameTurnResponseSchema, validateClueGraph } from "@my2/shared";
-import { API_URL, readStoredEvents, sendLine, setupApiTestAuth } from "../integration/helpers";
+import { API_URL, readStoredEvents, sendLine, setStoredTimeRemaining, setupApiTestAuth } from "../integration/helpers";
 
-async function playThrough(tag: string, lines: string[], caseId = "greenhouse-prizewinner") {
+async function playThrough(
+  tag: string,
+  lines: string[],
+  caseId = "greenhouse-prizewinner",
+  prepare: (gameId: string) => void = () => {},
+) {
   const auth = await setupApiTestAuth(tag);
   const started = await fetch(`${API_URL}/game-start`, {
     method: "POST",
@@ -19,56 +25,78 @@ async function playThrough(tag: string, lines: string[], caseId = "greenhouse-pr
   const { game_id: gameId } = await started.json();
   const enter = await fetch(`${API_URL}/game-enter`, { method: "POST", headers: auth.headers, body: JSON.stringify({ game_id: gameId }) });
   expect(enter.status).toBe(200);
+  prepare(gameId);
   const clues: string[] = [];
   const takenBack: string[] = [];
   let last = null;
+  const answers = [];
   for (const line of lines) {
     const response = await sendLine(auth, gameId, line);
     expect(response.status, line).toBe(200);
     last = GameTurnResponseSchema.parse(await response.json());
+    answers.push(last);
     if (last.kind === "turn") {
       clues.push(...last.revealed_clues.map((clue) => clue.id));
       takenBack.push(...(last.taken_back ?? []));
     }
   }
   const narration = last?.kind === "turn" ? last.events.flatMap((event) => event.narration_parts.map((part) => part.text)).join(" ") : "";
-  return { last, clues, takenBack, narration, gameId };
+  return { last, clues, takenBack, narration, gameId, answers };
 }
 
 const greenhouse = () =>
   validateClueGraph(JSON.parse(fs.readFileSync("blueprints/clue-graph/greenhouse-prizewinner.json", "utf8")));
 
 describe("the greenhouse clue-graph case", () => {
-  it("is won on the welly prints with Mia cleared", async () => {
-    const { last, clues } = await playThrough("clue-graph-win", [
+  it("is won on the welly prints with Mia cleared, after a failed accusation and more exploring", async () => {
+    const { last, clues, answers } = await playThrough("clue-graph-win", [
       "search the smashed pumpkin",
       "go to the workshop",
       "talk to Mr. Dobbs",
       "What about the noise last night?",
       "bye",
+      "accuse",
+      "It was Toby.",
       "go to the garden",
       "talk to Mr. Thorne",
       "bye",
-      "accuse",
-      "It was Toby.",
-      "Toby did it: his welly prints are in the pumpkin.",
+      "accuse Toby did it: his welly prints are in the pumpkin.",
     ]);
+    const failed = answers[6];
+    expect(failed.kind === "turn" && failed.events[0].event_type).toBe("accuse_failed");
+    expect(failed.kind === "turn" && failed.state).toMatchObject({ mode: "explore", accusations_left: 2 });
     expect(clues).toEqual(expect.arrayContaining(["clue_welly_prints", "clue_dobbs_crash_time", "clue_thorne_mia_cake"]));
     expect(last?.kind === "turn" && last.result).toBe("win");
-    expect(last?.kind === "turn" && last.state.mode).toBe("ended");
+    expect(last?.kind === "turn" && last.state).toMatchObject({ mode: "ended", accusations_left: 2 });
   });
 
-  it("is lost on an unsupported guess and the wrong suspect, and the ending tells the whole account", async () => {
-    const { last, narration } = await playThrough("clue-graph-loss", [
+  it("is lost on the third failed accusation, and the ending tells the whole account", async () => {
+    const { last, narration, answers } = await playThrough("clue-graph-loss", [
       "accuse",
       "It was Toby",
-      "Toby, because I say so",
-      "Then it was Mr. Thorne",
-      "Mr. Thorne, I am sure",
+      "accuse Toby, because I say so",
+      "accuse Mr. Thorne, I am sure",
     ]);
+    expect(answers.map((answer) => answer.kind === "turn" && answer.state.accusations_left)).toEqual([3, 2, 1, 0]);
     expect(last?.kind === "turn" && last.result).toBe("lose");
     const { truth, conclusions } = greenhouse();
     for (const told of [conclusions.culprit_toby.text, truth.motive, ...truth.timeline]) expect(narration).toContain(told);
+  });
+
+  it("out of turns, refuses the way back and spends the accusations left back to back", async () => {
+    const { last, answers } = await playThrough(
+      "clue-graph-out-of-turns",
+      ["search", "back", "It was Mia", "It was Mr. Thorne", "It was Mr. Dobbs"],
+      "greenhouse-prizewinner",
+      (gameId) => setStoredTimeRemaining(gameId, 1),
+    );
+    expect(answers[0].kind === "turn" && answers[0].state).toMatchObject({ mode: "accuse", time_remaining: 0, accusations_left: 3 });
+    expect(answers[1]).toMatchObject({ kind: "refused", reason: "no-way-back" });
+    expect(answers.slice(2, 4).map((answer) => answer.kind === "turn" && answer.state)).toEqual([
+      expect.objectContaining({ mode: "accuse", accusations_left: 2 }),
+      expect.objectContaining({ mode: "accuse", accusations_left: 1 }),
+    ]);
+    expect(last?.kind === "turn" && last.result).toBe("lose");
   });
 
   // A self-play game lost when the narrator judged the accusation: kid-7 accused
@@ -97,7 +125,7 @@ describe("the greenhouse clue-graph case", () => {
       "bye",
       "accuse",
       "It was Mr. Dobbs. He would not give me a straight answer.",
-      "No, Toby did it! The key was hidden in the water butt, and he kept patting his pocket.",
+      "accuse Toby! The key was hidden in the water butt, and he kept patting his pocket.",
     ]);
     expect(clues).toEqual(
       expect.arrayContaining([
@@ -146,7 +174,7 @@ describe("the dragon-crown clue-graph case", () => {
         "search behind the big paper dragon",
         "accuse",
         "It was Leo.",
-        "Leo did it: Mr. Pike saw him hide the crown behind the dragon, and it is there.",
+        "accuse Leo did it: Mr. Pike saw him hide the crown behind the dragon, and it is there.",
       ],
       "dragon-crown",
     );
@@ -163,7 +191,7 @@ describe("the dragon-crown clue-graph case", () => {
   it("is lost on Nina, whom the alibi never really cleared", async () => {
     const { last } = await playThrough(
       "clue-graph-dragon-crown-loss",
-      ["accuse", "It was Nina", "Nina, because I say so", "Then it was Sam", "Sam, I am sure"],
+      ["accuse", "It was Nina", "accuse Nina, because I say so", "accuse Sam, I am sure"],
       "dragon-crown",
     );
     expect(last?.kind === "turn" && last.result).toBe("lose");

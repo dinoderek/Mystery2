@@ -100,19 +100,6 @@ function requireContextString(
   return value.trim();
 }
 
-function requireContextNumber(
-  role: AIRoleName,
-  context: Record<string, unknown>,
-  key: string,
-): number {
-  const value = context[key];
-  if (typeof value !== "number" || Number.isNaN(value)) {
-    throw new Error(`Missing required ${role} numeric context field: ${key}`);
-  }
-
-  return value;
-}
-
 function readOptionalContextString(
   context: Record<string, unknown>,
   key: string,
@@ -175,8 +162,8 @@ function mockWords(text: string): Set<string> {
 
 /**
  * The mock's reading of an accusation: the person named earliest in the line,
- * and the held clues the investigator cited, in this line or an earlier one:
- * named by ID, or sharing two telling words with the clue's line.
+ * and the held clues the investigator cited: named by ID, or sharing two
+ * telling words with the clue's line.
  */
 function mockGraphAccusation(context: GraphAccusationContext, playerInput: string): Record<string, unknown> {
   const line = playerInput.toLowerCase();
@@ -189,7 +176,7 @@ function mockGraphAccusation(context: GraphAccusationContext, playerInput: strin
     .filter((person) => Number.isFinite(person.at))
     .sort((a, b) => a.at - b.at);
   const names = new Set(context.people.flatMap((person) => nameWords(person.name)));
-  const said = [playerInput, ...(context.earlier_reasoning ?? [])].join(" ");
+  const said = playerInput;
   const saidWords = mockWords(said);
   const cited = context.held
     .filter((entry) => {
@@ -201,7 +188,7 @@ function mockGraphAccusation(context: GraphAccusationContext, playerInput: strin
   return { accused_character_id: named[0]?.id ?? null, cited_clue_ids: cited };
 }
 
-/** The mock's wording of what the engine decided: a round, or the whole account at the end. */
+/** The mock's wording of what the engine decided: a failed accusation, or the whole account at the end. */
 function mockGraphVerdict(context: GraphVerdictContext): string {
   if (context.ending) {
     const { outcome, culprit, what_happened, timeline, motive } = context.ending;
@@ -727,20 +714,21 @@ class MockAIProvider implements AIProvider {
       case "accusation_judge": {
         const accusationJudgeContext = context.accusation_judge_context as
           | {
-            round?: number;
+            last_accusation?: boolean;
             full_blueprint?: { world?: { characters?: Array<Record<string, unknown>> } };
             path_coverage?: Array<{ kind?: string; summary?: string; missing_clue_ids?: string[] }>;
             msf_progress?: { solution_supported: boolean };
           }
           | undefined;
-        const round = accusationJudgeContext?.round ??
-          requireContextNumber(role, context, "round");
+        const last = accusationJudgeContext?.last_accusation === true;
         const mentionedCharacter = inferMentionedCharacter(context);
         if (!mentionedCharacter) {
-          return {
-            narration: "[Mock] I am not sure yet. Who do you think did it, and what clue shows it?",
-            accusation_resolution: "continue",
-          };
+          return last
+            ? { narration: "[Mock] The case ends here. This time the answer got away.", accusation_resolution: "lose" }
+            : {
+              narration: "[Mock] I am not sure yet. Who do you think did it, and what clue shows it?",
+              accusation_resolution: "continue",
+            };
         }
 
         const normalizedCharacter = mentionedCharacter.toLowerCase();
@@ -754,17 +742,15 @@ class MockAIProvider implements AIProvider {
         const isCulprit = typeof culpritFirstName === "string"
           ? culpritFirstName.trim().toLowerCase() === normalizedCharacter
           : normalizedCharacter !== "bob";
-        // Mirrors the live judge semantics: a wrong or unsupported accusation
-        // is rejected with encouragement ("continue") until round 3, when the
-        // case finally resolves "lose". A correct culprit wins from round 1.
+        // Mirrors the live judge semantics: the true culprit with support
+        // wins; anything else spends the accusation ("continue"), and on the
+        // last one ends the case ("lose").
         // This paired-case mock recognizes a full reconstruction as well as graph-earned evidence.
         const msfSupported = !accusationJudgeContext?.msf_progress || accusationJudgeContext.msf_progress.solution_supported ||
           (/\blens\b/i.test(String(context.player_input)) && /\b(tide|causeway)\b/i.test(String(context.player_input)) && /\b(beacon|vote)\b/i.test(String(context.player_input)));
-        const accusationResolution: AccusationResolution = round < 1
-          ? "continue"
-          : isCulprit && msfSupported
+        const accusationResolution: AccusationResolution = isCulprit && msfSupported
           ? "win"
-          : round >= 3
+          : last
           ? "lose"
           : "continue";
 
@@ -782,8 +768,6 @@ class MockAIProvider implements AIProvider {
               ? "[Mock] The clues all fit. You got it right!"
               : accusationResolution === "lose"
               ? "[Mock] The case ends here. This time the answer got away."
-              : round < 1
-              ? "[Mock] I need one more clue before I can be sure. What else do you know?"
               : unfinishedSolutionPath?.summary
               ? `[Mock] Not yet. There is more to know about ${unfinishedSolutionPath.summary}. What clue shows it was them?`
               : "[Mock] Not yet. Look at your clues again. Do you want to have another go?",

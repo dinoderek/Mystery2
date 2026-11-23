@@ -105,7 +105,7 @@ function playedLines(gameDir: string): string[] {
 describe('play on stub bindings', () => {
 	it('replays a recorded V2 lighthouse game on its paired native MSF case and grades the pinned graph', async () => {
 		const script = path.join(scratch, 'lighthouse-script.json');
-		const inputs = ['talk to Ada', 'What did you hear?', 'Why did you set your alarm?', 'bye', 'go keepers_cottage', 'search tide schedule', 'talk to Finn', 'What happened?', 'Who was in the cottage?', 'bye', 'go village_quay', 'search', 'search harbour tide board', 'search causeway steps', 'Roz took the lens', 'Roz took the lens'];
+		const inputs = ['talk to Ada', 'What did you hear?', 'Why did you set your alarm?', 'bye', 'go keepers_cottage', 'search tide schedule', 'talk to Finn', 'What happened?', 'Who was in the cottage?', 'bye', 'go village_quay', 'search', 'search harbour tide board', 'search causeway steps', 'Roz took the lens'];
 		fs.writeFileSync(script, JSON.stringify({ blueprint_id: '7c3e9a52-4f1b-4d8e-9a6c-2b5f1e8d3a47', persona: 'comparison', inputs }));
 		const baseline = await play(['--replay', script, '--narrator', 'mock']);
 		expect(baseline.code, baseline.output).toBe(0);
@@ -123,7 +123,7 @@ describe('play on stub bindings', () => {
 
 	it('plays the clue-graph greenhouse by path, ID and title on the mock, and grades it', async () => {
 		const script = path.join(scratch, 'greenhouse-script.json');
-		const inputs = ['search the smashed pumpkin', 'go to the workshop', 'talk to Mr. Dobbs', 'What about the noise last night?', 'bye', 'go to the garden', 'talk to Mr. Thorne', 'bye', 'accuse', 'It was Toby.', 'Toby did it: his welly prints are in the pumpkin.'];
+		const inputs = ['search the smashed pumpkin', 'go to the workshop', 'talk to Mr. Dobbs', 'What about the noise last night?', 'bye', 'go to the garden', 'talk to Mr. Thorne', 'bye', 'accuse', 'It was Toby.', 'accuse Toby did it: his welly prints are in the pumpkin.'];
 		const caseId = '9afa1ef4-b543-81b5-a50f-4a366ec7e2ef';
 		fs.writeFileSync(script, JSON.stringify({ blueprint_id: caseId, persona: 'kid-7', inputs }));
 		for (const query of ['blueprints/clue-graph/greenhouse-prizewinner.json', caseId, 'The Smashed Prize Pumpkin — clue graph']) {

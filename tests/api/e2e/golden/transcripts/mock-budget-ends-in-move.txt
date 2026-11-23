@@ -16,9 +16,9 @@ steps
   11  "move to kitchen"  mode=accuse turns=0
   12  "n"  mode=accuse turns=0 opens=notebook
   13  "I do not know"  mode=accuse turns=0
-  14  "Bob took it"  mode=accuse turns=0
-  15  "Bob again"  mode=accuse turns=0
-  16  "Bob, Bob, Bob"  mode=ended turns=0 result=lose
+  14  "never mind"  mode=accuse turns=0
+  15  "Bob took it"  mode=accuse turns=0
+  16  "Bob again"  mode=ended turns=0 result=lose
 
 pages
   page 0 opening "Mock Blueprint"
@@ -59,9 +59,9 @@ pages
     step 11 | Narrator (narrator): "[Mock] Time is up. You must make your accusation now. Who did it, and how do you know?"
     step 13 | You (investigator): "I do not know"
     step 13 | Narrator (narrator): "[Mock] I am not sure yet. Who do you think did it, and what clue shows it?"
-    step 14 | You (investigator): "Bob took it"
-    step 14 | Narrator (narrator): "[Mock] Not yet. There is more to know about Crumbs in the kitchen and Alice's motive point to her as the culprit.. What clue shows it was them?"
-    step 15 | You (investigator): "Bob again"
+    step 14 | You (investigator): "never mind"
+    step 14 | System (system): "Time is up, so there is no going back now. Who did it, and how do you know?"
+    step 15 | You (investigator): "Bob took it"
     step 15 | Narrator (narrator): "[Mock] Not yet. There is more to know about Crumbs in the kitchen and Alice's motive point to her as the culprit.. What clue shows it was them?"
-    step 16 | You (investigator): "Bob, Bob, Bob"
+    step 16 | You (investigator): "Bob again"
     step 16 | Narrator (narrator): "[Mock] The case ends here. This time the answer got away."

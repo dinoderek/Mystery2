@@ -459,7 +459,7 @@ test.describe('Command Input', () => {
             after: [{ event_type: 'forced_endgame', text: 'Time is up; accusation begins now.' }],
           });
         default:
-          return playedTurn('accuse_round', 'Your reasoning is noted.', {
+          return playedTurn('accuse_failed', 'Your reasoning is noted.', {
             state: { mode: 'accuse', time_remaining: 0, current_talk_character: null },
           });
       }
@@ -492,20 +492,21 @@ test.describe('Command Input', () => {
     ]);
   });
 
-  test('sends every accuse-round line as typed, even one that reads like a command', async ({ page }) => {
+  test('sends every line in the accusation as typed, even one that reads like a command', async ({ page }) => {
     const requests = await stubTurns(page, (_request, count) => {
       if (count === 1) {
         return playedTurn('accuse_start', 'You accuse Mayor Fox. Explain your reasoning.', {
-          state: { mode: 'accuse', time_remaining: 8 },
+          state: { mode: 'accuse', time_remaining: 0 },
         });
       }
       if (count === 2) {
-        return playedTurn('accuse_round', 'I need stronger evidence. Keep explaining.', {
-          state: { mode: 'accuse', time_remaining: 8 },
+        // Out of turns, a failed accusation stays in the accusation.
+        return playedTurn('accuse_failed', 'I need stronger evidence. Keep explaining.', {
+          state: { mode: 'accuse', time_remaining: 0 },
         });
       }
       return playedTurn('accuse_resolved', 'Final verdict reached.', {
-        state: { mode: 'ended', time_remaining: 8 },
+        state: { mode: 'ended', time_remaining: 0 },
         result: 'win',
       });
     });

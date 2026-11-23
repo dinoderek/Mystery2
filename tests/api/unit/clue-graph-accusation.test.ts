@@ -28,9 +28,12 @@ function holding(held: string[], retracted: string[] = []): ClueGraphPlay {
   return { ...startPlay(graph), held, retracted };
 }
 
-/** Earlier accusation rounds, each saved with its decision. */
-function rounds(...verdicts: AccusationVerdict[]) {
-  return verdicts.map((verdict) => ({ event_type: "accuse_round", payload: { clue_graph_accusation: { accused: null, cited: [], verdict } } }));
+/** Earlier failed accusations, each saved with its decision. */
+function failures(count: number) {
+  return Array.from({ length: count }, () => ({
+    event_type: "accuse_failed",
+    payload: { judge_result: "continue", clue_graph_accusation: { accused: null, cited: [], verdict: "not_yet" } },
+  }));
 }
 
 const WELLY_ROUTE = ["clue_welly_prints", "clue_dobbs_crash_time", "clue_thorne_mia_cake"];
@@ -47,34 +50,36 @@ describe("the clue-graph accusation rule", () => {
     expect(decideAccusation(graph, holding(["toby_confession"]), [], { accused: "toby", cited: [] })).toBe("win");
   });
 
-  it("asks its one question when support is held but not cited", () => {
-    expect(decideAccusation(graph, holding(WELLY_ROUTE), [], { accused: "toby", cited: [] })).toBe("question");
+  it("fails a right name with support held but not cited, as any other failure", () => {
+    expect(decideAccusation(graph, holding(WELLY_ROUTE), [], { accused: "toby", cited: [] })).toBe("not_yet");
     // A cited clue must support the culprit: Mia's cake clears Mia, it does not name Toby on its own.
-    expect(decideAccusation(graph, holding(["clue_thorne_mia_cake"]), [], { accused: "toby", cited: ["clue_thorne_mia_cake"] })).toBe("question");
+    expect(decideAccusation(graph, holding(["clue_thorne_mia_cake"]), [], { accused: "toby", cited: ["clue_thorne_mia_cake"] })).toBe("not_yet");
   });
 
-  it("asks the question once for a right name with no support, then keeps V2's rounds", () => {
+  it("fails a right name with no support, with no question of its own, and loses it on the last accusation", () => {
     const play = holding(["clue_hale_key_last_seen"]);
-    expect(decideAccusation(graph, play, [], { accused: "toby", cited: ["clue_hale_key_last_seen"] })).toBe("question");
-    expect(decideAccusation(graph, play, rounds("question"), { accused: "toby", cited: [] })).toBe("not_yet");
-    expect(decideAccusation(graph, play, rounds("question", "not_yet", "not_yet"), { accused: "toby", cited: [] })).toBe("lose");
+    expect(decideAccusation(graph, play, [], { accused: "toby", cited: ["clue_hale_key_last_seen"] })).toBe("not_yet");
+    expect(decideAccusation(graph, play, failures(1), { accused: "toby", cited: [] })).toBe("not_yet");
+    expect(decideAccusation(graph, play, failures(2), { accused: "toby", cited: [] })).toBe("lose");
   });
 
-  it("loses a wrong name as V2 does: rounds go on, and from the third the case is lost", () => {
+  it("spends one accusation on each failure, and the third failure loses", () => {
     const play = holding(WELLY_ROUTE);
     expect(decideAccusation(graph, play, [], { accused: "dobbs", cited: ["clue_welly_prints"] })).toBe("not_yet");
-    expect(decideAccusation(graph, play, rounds("not_yet", "not_yet"), { accused: "mia", cited: [] })).toBe("not_yet");
-    expect(decideAccusation(graph, play, rounds("not_yet", "not_yet", "not_yet"), { accused: "mia", cited: [] })).toBe("lose");
+    expect(decideAccusation(graph, play, failures(1), { accused: "mia", cited: [] })).toBe("not_yet");
+    expect(decideAccusation(graph, play, failures(2), { accused: "mia", cited: [] })).toBe("lose");
     expect(decideAccusation(graph, play, [], { accused: null, cited: [] })).toBe("not_yet");
+    // A win is decided as before, on the last accusation too.
+    expect(decideAccusation(graph, play, failures(2), { accused: "toby", cited: ["clue_welly_prints"] })).toBe("win");
   });
 
   it("never counts a clue taken back as support", () => {
     const play = holding(WELLY_ROUTE, ["clue_thorne_mia_cake"]);
     expect(supportingClues(graph, play)).toEqual([]);
-    expect(decideAccusation(graph, play, [], { accused: "toby", cited: ["clue_welly_prints"] })).toBe("question");
+    expect(decideAccusation(graph, play, [], { accused: "toby", cited: ["clue_welly_prints"] })).toBe("not_yet");
   });
 
-  it("points the question at a lead on the way to the culprit before any other", () => {
+  it("points a failure at a lead on the way to the culprit before any other", () => {
     // Mr. Thorne, met first, leads nowhere new; Ms. Hale, unmet, holds the key's last sighting.
     const play = { ...holding(["thorne_alibi"]), met: ["thorne"] };
     expect(questionLead(graph, play)).toBe("You have not talked to Ms. Hale yet.");
@@ -135,8 +140,7 @@ describe("what the clue-graph accusation narrator is given", () => {
 
   it.each([
     ["the judge", "graph_accusation", undefined],
-    ["a round's question", "graph_accusation_round", "question"],
-    ["a round not yet won", "graph_accusation_round", "not_yet"],
+    ["a failed accusation", "graph_accusation_round", "not_yet"],
   ] as const)("gives %s only the clues held, as their saved lines, and nothing of the truth", async (_name, role, verdict) => {
     const { prompt, context } = await request(role, verdict);
     const given = context.graph_accusation_context!;
@@ -150,13 +154,9 @@ describe("what the clue-graph accusation narrator is given", () => {
     expect(seen).not.toMatch(/"(truth|rule|culprit|timeline|motive)"/);
   });
 
-  it("reads a right name and a wrong one the same before the case is resolved", async () => {
-    const question = await request("graph_accusation_round", "question");
+  it("points a failure at a lead while nothing held supports the culprit", async () => {
     const notYet = await request("graph_accusation_round", "not_yet");
-    expect(question.prompt).toBe(notYet.prompt);
-    expect(question.context).toEqual(notYet.context);
-    // Nothing held supports the culprit yet, so the round points at a lead.
-    expect(question.context.graph_accusation_context).toMatchObject({ lead: expect.stringMatching(/^You have not talked to /) });
+    expect(notYet.context.graph_accusation_context).toMatchObject({ lead: expect.stringMatching(/^You have not talked to /) });
   });
 
   it("tells the closing scene of a win which clues showed it, and of a loss none", () => {

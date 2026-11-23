@@ -35,9 +35,9 @@ const INPUTS = [
 	'bye',
 	'go to living room',
 	'accuse',
-	'Alice did it, the crumbs lead to her.',
-	// The mock judge asks for more on the first round, then rules.
-	'Alice took the cookies: the crumbs and the empty jar both point to her.',
+	// A failed accusation returns to exploring; the next is made in one line.
+	'Bob did it, he was in the living room.',
+	'accuse Alice took the cookies: the crumbs and the empty jar both point to her.',
 	'this line is never reached'
 ];
 // The game ends on the line before the last, which is never sent.
@@ -107,11 +107,11 @@ describe('playtest loop', () => {
 		expect(played('go to living room')).toEqual({ kind: 'turn', event_type: 'move' });
 		expect(played('accuse')).toEqual({ kind: 'turn', event_type: 'accuse_start' });
 		// Free text in accuse mode is reasoning.
-		expect(played('Alice did it, the crumbs lead to her.')).toEqual({
+		expect(played('Bob did it, he was in the living room.')).toEqual({
 			kind: 'turn',
-			event_type: 'accuse_round'
+			event_type: 'accuse_failed'
 		});
-		expect(played('Alice took the cookies: the crumbs and the empty jar both point to her.')).toEqual({
+		expect(played('accuse Alice took the cookies: the crumbs and the empty jar both point to her.')).toEqual({
 			kind: 'turn',
 			event_type: 'accuse_resolved'
 		});
@@ -230,7 +230,7 @@ describe('playtest loop', () => {
 			differences: { mode: { expected: 'accuse', actual: 'ended' } }
 		});
 
-		// ...or the script runs out before the game is settled.
+		// ...or the script runs out before the game is settled: after a failed accusation, exploring again.
 		const accusing = original.script.length - 1;
 		const unsettled = await playGame({
 			api: await signIn(BASE_URL, 'playtest-replay-unsettled'),
@@ -244,7 +244,7 @@ describe('playtest loop', () => {
 		expect(unsettled.divergence).toEqual({
 			step: accusing + 1,
 			input: null,
-			differences: { mode: { expected: 'ended', actual: 'accuse' } }
+			differences: { mode: { expected: 'ended', actual: 'explore' } }
 		});
 
 		scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'mystery-playtest-'));

@@ -34,17 +34,20 @@ describes arrival at the starting location.
 | `talk to <name>` | Start a conversation | 1 |
 | any line while talking | Ask the character | 0 |
 | `bye`, `goodbye`, `see you`, `leave`, `end` | End the conversation | 0 |
-| `accuse [statement]` | Start the accusation | 0 |
+| `accuse` | Open the accusation | 0 |
+| `accuse <who> because <why>`, or a line in it | One accusation, judged | 0 |
+| `back`, `cancel`, `never mind`, `nevermind` | Leave it, spending none | 0 |
 | `notebook`, `n`, `Tab` | Open the case notebook | 0 |
 | `locations`, `characters` | Open the notebook at Places or People | 0 |
 | `help` | Help | 0 |
 | `quit`, `exit` | Leave the case | — |
 
-When the budget reaches zero, the action that spent the last turn still
-resolves; then the game moves straight into the accusation.
+At zero turns, the action that spent the last one still resolves; then the game
+moves into the accusation and stays: `back` is refused, and each failure asks
+again.
 
-Parsing is strict so the rules stay simple: an unknown command gets a friendly
-error and the list of what is possible, and `help` always works.
+Parsing is strict: an unknown command gets a friendly error and the list of
+what is possible; `help` always works.
 <!-- /extract:commands -->
 
 ## Talking
@@ -112,25 +115,23 @@ path would tell the child which of their own clues are dead ends.
 ## The accusation
 <!-- extract:accusation -->
 
-The narrator sets the scene; the investigator says who did it and why. The
-accusation is accepted when the investigator names the true culprit **and**
-either:
+The investigator says who did it and why. It wins when they name the true
+culprit **and** either:
 
-- backs it with a chain of clues they actually discovered that follows one of
-  the blueprint's solution paths, or
-- correctly tells what happened: culprit, key events, motive.
+- back it with discovered clues that follow one of the blueprint's solution
+  paths, or
+- correctly tell what happened: culprit, key events, motive.
 
-Confronting the accused can earn a confession, but only when most of the facts
-are already right. A lucky guess with no reasoning is not a win.
+Confronting the accused earns a confession only when most of the facts are
+right; a lucky guess is not a win.
 
-A wrong or thin accusation gets encouragement and a question pointing at what
-kind of fact is missing. From the third round a still-failing accusation ends
-the case as a loss, with a gentle reveal. Either way the explanation must agree
-with the timeline, alibis, clue placement and motives.
+A game has three accusations. A failed one spends one, encourages, asks what
+kind of fact is missing, and returns to exploring. The third failure loses the
+case, with a gentle reveal. Every explanation agrees with the timeline, alibis,
+clue placement and motives.
 <!-- /extract:accusation -->
 
-A clue-graph case is won by [its own rule](clue-graph.md#accusation); its
-ending tells everything.
+A clue-graph case is won by [its own rule](clue-graph.md#accusation).
 
 ## When a case ends
 

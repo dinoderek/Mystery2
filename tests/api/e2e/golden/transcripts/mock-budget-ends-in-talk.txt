@@ -17,8 +17,8 @@ steps
   12  "go to the kitchen"  mode=explore turns=1
   13  "talk to Alice"  mode=accuse turns=0
   14  "help"  mode=accuse turns=0 opens=help
-  15  "Alice did it"  mode=accuse turns=0
-  16  "Alice, because of the clues I found"  mode=ended turns=0 result=win
+  15  "back"  mode=accuse turns=0
+  16  "Alice did it"  mode=ended turns=0 result=win
 
 pages
   page 0 opening "Mock Blueprint"
@@ -60,7 +60,7 @@ pages
     step 13 | Narrator (narrator): "[Mock] Time is up. You must make your accusation now. Who did it, and how do you know?"
     step 14 | You (investigator): "help"
     step 14 | System (system): "Help menu opened."
-    step 15 | You (investigator): "Alice did it"
-    step 15 | Narrator (narrator): "[Mock] I need one more clue before I can be sure. What else do you know?"
-    step 16 | You (investigator): "Alice, because of the clues I found"
+    step 15 | You (investigator): "back"
+    step 15 | System (system): "Time is up, so there is no going back now. Who did it, and how do you know?"
+    step 16 | You (investigator): "Alice did it"
     step 16 | Narrator (narrator): "[Mock] The clues all fit. You got it right!"

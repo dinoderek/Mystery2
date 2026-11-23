@@ -1,9 +1,10 @@
 // The scripted games whose transcripts are committed in `transcripts/`.
 //
 // Together they play every command in docs/game.md under every alias, every
-// refusal, `help`, the turn budget running out by each kind of last turn, and a
-// won and a lost accusation, on the two fixture blueprints; and the greenhouse
-// clue-graph case played to a win and to a loss.
+// refusal, `help`, the turn budget running out by each kind of last turn and the
+// last accusations spent back to back, a failed accusation explored past into a
+// win, and three failures into a loss, on the two fixture blueprints; and the
+// greenhouse clue-graph case played to a win and to a loss.
 
 import type { ScriptStep } from "../../../testkit/src/golden/screen";
 
@@ -24,7 +25,8 @@ const ENTER = { enter: true } as const;
 
 export const GOLDEN_GAMES: GoldenGame[] = [
   {
-    // Every refusal, the views, searching, talking and a win, within the budget.
+    // Every refusal, the views, searching, talking, the ways back, a failed
+    // accusation, and a win once the budget runs out.
     name: "mock-investigation-won",
     blueprint: "mock-blueprint",
     script: [
@@ -63,20 +65,31 @@ export const GOLDEN_GAMES: GoldenGame[] = [
       "accuse",
       "help",
       "notebook",
+      "back",
+      "accuse",
+      "cancel",
+      "accuse",
+      "never mind",
+      "accuse",
+      "nevermind",
+      "back",
+      "accuse",
       "Maybe it was Bob?",
+      // Back to exploring; the search spends the last turn, and the accusation is forced.
+      "search",
       "I think it was Alice, because of the empty cookie jar.",
     ],
   },
   {
-    // An accusation given with the command, refused three times into a loss.
+    // Accusations given with the command, failed three times into a loss.
     name: "mock-accusation-lost",
     blueprint: "mock-blueprint",
     script: [
       ENTER,
       "accuse Bob took the cookies",
       "It was Bob",
-      "It was definitely Bob",
-      "Bob, I am sure",
+      "accuse It was definitely Bob",
+      "accuse Bob, I am sure",
     ],
   },
   {
@@ -98,12 +111,12 @@ export const GOLDEN_GAMES: GoldenGame[] = [
       "go to the kitchen",
       "talk to Alice",
       "help",
+      "back",
       "Alice did it",
-      "Alice, because of the clues I found",
     ],
   },
   {
-    // Ten turns, the last one a move, then a lost accusation.
+    // Ten turns, the last one a move, then the three accusations back to back into a loss.
     name: "mock-budget-ends-in-move",
     blueprint: "mock-blueprint",
     script: [
@@ -120,9 +133,9 @@ export const GOLDEN_GAMES: GoldenGame[] = [
       "move to kitchen",
       "n",
       "I do not know",
+      "never mind",
       "Bob took it",
       "Bob again",
-      "Bob, Bob, Bob",
     ],
   },
   {
@@ -202,13 +215,13 @@ export const GOLDEN_GAMES: GoldenGame[] = [
       "notebook",
       "accuse",
       "It was Toby.",
-      "Toby did it: his welly prints are in the pumpkin, and Mia was at the cake tent.",
+      "accuse Toby did it: his welly prints are in the pumpkin, and Mia was at the cake tent.",
     ],
   },
   {
-    // The culprit named with nothing to support it, then the wrong suspect, into a loss.
+    // The culprit named twice with nothing to support it, then the wrong suspect, into a loss.
     name: "clue-graph-lost",
     blueprint: "greenhouse-clue-graph",
-    script: [ENTER, "talk to Ms. Hale", "What about the missing key?", "bye", "accuse", "It was Toby", "Toby, because I say so", "Then it was Mr. Thorne", "Mr. Thorne, I am sure"],
+    script: [ENTER, "talk to Ms. Hale", "What about the missing key?", "bye", "accuse", "It was Toby", "accuse Toby, because I say so", "accuse Mr. Thorne, I am sure"],
   },
 ];

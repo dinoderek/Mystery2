@@ -159,12 +159,28 @@ describe("buildJudgeUserMessage", () => {
     expect(roleOf({ type: "search", search_query: "look in the bin" })).toBe("search_targeted");
   });
 
-  it("marks an accusation turn so the spoiler judge stands down", () => {
+  it("marks only the closing scene so the spoiler judge stands down, never a failed accusation", () => {
     const given = { mode: "accuse", location_id: "loc-kitchen", history: [] };
     const action = { type: "accuse", player_reasoning: "It was Alice, the crumbs prove it." };
-    const message = JSON.parse(buildJudgeUserMessage("gm_spoiler", makeTurn({ given, action }), mockBlueprint()));
-    const judged = message.subject.turns.at(-1);
-    expect(judged.role_name).toBe("accusation_judge");
-    expect(judged.is_accusation_phase).toBe(true);
+    const judgedAs = (eventType: string) => {
+      const response = { ...makeTurn().response, raw: { events: [{ event_type: eventType }] } };
+      const message = JSON.parse(buildJudgeUserMessage("gm_spoiler", makeTurn({ given, action, response }), mockBlueprint()));
+      return message.subject.turns.at(-1);
+    };
+    expect(judgedAs("accuse_resolved")).toMatchObject({ role_name: "accusation_judge", is_accusation_phase: true });
+    expect(judgedAs("accuse_failed")).toMatchObject({ role_name: "accusation_judge", is_accusation_phase: false });
+    // A turn taken from a stored game has no raw answer: its action names the event.
+    const stored = (eventType: string) => {
+      const response = { ...makeTurn().response, action: eventType, raw: null };
+      return JSON.parse(buildJudgeUserMessage("gm_spoiler", makeTurn({ given, action, response }), mockBlueprint())).subject.turns.at(-1);
+    };
+    expect(stored("accuse_resolved").is_accusation_phase).toBe(true);
+    expect(stored("accuse_failed").is_accusation_phase).toBe(false);
+    // A turn replayed on a model CLI holds the judge's own output, its action the case's.
+    const replayed = (resolution: string) => {
+      const response = { ...makeTurn().response, action: "accuse", raw: { narration: "…", accusation_resolution: resolution } };
+      return JSON.parse(buildJudgeUserMessage("gm_spoiler", makeTurn({ given, action, response }), mockBlueprint())).subject.turns.at(-1);
+    };
+    expect(["win", "lose", "continue"].map((resolution) => replayed(resolution).is_accusation_phase)).toEqual([true, true, false]);
   });
 });

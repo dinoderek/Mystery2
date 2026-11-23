@@ -53,10 +53,13 @@ function outcome(overrides: Partial<ActionOutcome> = {}): ActionOutcome {
 
 const FORCED = { narration_parts: [{ text: "Time is up.", speaker: NARRATOR_SPEAKER }], model: "mock/model" };
 
-function effectOf(game: GameSessionRow, played: ActionOutcome, forced = false) {
+type HistoryRow = { event_type: string; payload: Record<string, unknown> | null };
+
+function effectOf(game: GameSessionRow, played: ActionOutcome, forced = false, history: HistoryRow[] = []) {
   return turnEffect({
     game_id: "g1",
     session: game,
+    history,
     outcome: played,
     cost: spendTurn(game.time_remaining, played.costs_turn),
     forced: forced ? FORCED : null,
@@ -98,7 +101,13 @@ describe("turnEffect", () => {
       input: "go to the hall",
       diagnostics: { sequence: 7, time_before: 5, time_after: 4, time_consumed: true, forced_endgame: false },
     });
-    expect(effect.state).toEqual({ mode: "explore", time_remaining: 4, location: "loc-hall", current_talk_character: null });
+    expect(effect.state).toEqual({
+      mode: "explore",
+      time_remaining: 4,
+      accusations_left: 3,
+      location: "loc-hall",
+      current_talk_character: null,
+    });
   });
 
   it("keeps the turns and the conversation when the action costs nothing", () => {
@@ -117,6 +126,7 @@ describe("turnEffect", () => {
     expect(effect.state).toEqual({
       mode: "talk",
       time_remaining: 5,
+      accusations_left: 3,
       location: "loc-kitchen",
       current_talk_character: "char-alice",
     });
@@ -162,6 +172,32 @@ describe("turnEffect", () => {
 
     expect(effect.patch).toMatchObject({ mode: "ended", outcome: "win", time_remaining: 5 });
     expect(effect.events[0].event.payload).toMatchObject({ diagnostics: { mode: "accuse", resulting_mode: "ended" } });
+    expect(effect.state.accusations_left).toBe(3);
+  });
+
+  it("counts the accusations left from the events, this turn's included", () => {
+    const failed = (): HistoryRow => ({ event_type: "accuse_failed", payload: { judge_result: "continue" } });
+    const failure = outcome({
+      event: { ...outcome().event, event_type: "accuse_failed", payload: { judge_result: "continue" }, action: "accuse_reasoning", mode: "accuse" },
+      costs_turn: false,
+      resulting_mode: "explore",
+      patch: { outcome: null, current_talk_character_id: null },
+      endgame: null,
+    });
+    expect(effectOf(session(), outcome()).state.accusations_left).toBe(3);
+    expect(effectOf(session({ mode: "accuse" }), failure).state).toMatchObject({ mode: "explore", accusations_left: 2 });
+    expect(effectOf(session({ mode: "accuse" }), failure, false, [failed()]).state.accusations_left).toBe(1);
+
+    const lost = outcome({
+      event: { ...failure.event, event_type: "accuse_resolved", payload: { judge_result: "lose" } },
+      resulting_mode: "ended",
+      patch: { outcome: "lose", current_talk_character_id: null },
+      result: "lose",
+    });
+    expect(effectOf(session({ mode: "accuse" }), lost, false, [failed(), failed()]).state).toMatchObject({
+      mode: "ended",
+      accusations_left: 0,
+    });
   });
 
   it("refuses to force the accusation without its narration", () => {
@@ -177,12 +213,17 @@ describe("planAction", () => {
     expect(planAction({ type: "talk", character_id: "char-alice" }, explore)).toEqual({ kind: "talk", character_id: "char-alice" });
   });
 
-  it("starts the accusation, or plays its first round when the line carries the reasoning", () => {
+  it("starts the accusation, or judges it at once when the line carries the reasoning", () => {
     expect(planAction({ type: "accuse", reasoning: null }, session())).toEqual({ kind: "accuse_start" });
     expect(planAction({ type: "accuse", reasoning: "Bob did it" }, session())).toEqual({
-      kind: "accuse_round",
+      kind: "accusation",
       reasoning: "Bob did it",
     });
+  });
+
+  it("goes back from the accusation, and only from there", () => {
+    expect(planAction({ type: "back" }, session({ mode: "accuse" }))).toEqual({ kind: "accuse_back" });
+    expect(() => planAction({ type: "back" }, session())).toThrow(BadRequestError);
   });
 
   it("says a line to the person being talked to, or to the accusation", () => {
@@ -194,7 +235,7 @@ describe("planAction", () => {
     });
     expect(planAction({ type: "end_talk" }, talking)).toEqual({ kind: "end_talk", character_id: "char-alice" });
     expect(planAction({ type: "ask", question: "It was Bob" }, session({ mode: "accuse" }))).toEqual({
-      kind: "accuse_round",
+      kind: "accusation",
       reasoning: "It was Bob",
     });
   });

@@ -11,7 +11,7 @@ export type AIRoleName =
   | "graph_talk"
   // A clue-graph search: the "search" contract, plus a notebook line.
   | "graph_search"
-  // A clue-graph accusation round: who was named and what was cited, then the
+  // A clue-graph accusation: who was named and what was cited, then the
   // narration of what the engine decided, before or at the end of the case.
   | "graph_accusation"
   | "graph_accusation_round"
@@ -107,13 +107,13 @@ export interface AccusationJudgeOutput {
 
 // What the narrator reads from a clue-graph accusation: the character named,
 // or null, and the held clues the investigator cited. No narration: the engine
-// decides the round (`clue-graph/accusation.ts`), and another call words it.
+// decides the accusation (`clue-graph/accusation.ts`), and another call words it.
 export interface GraphAccusationOutput {
   accused_character_id: string | null;
   cited_clue_ids: string[];
 }
 
-// The narration of a clue-graph accusation round, or of its closing scene.
+// The narration of a failed clue-graph accusation, or of its closing scene.
 export interface GraphVerdictOutput {
   narration: string;
 }

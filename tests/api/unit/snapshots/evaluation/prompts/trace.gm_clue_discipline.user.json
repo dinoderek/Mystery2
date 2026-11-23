@@ -262,7 +262,7 @@
         "revealed_clue_ids": [],
         "revealed_off_script": [],
         "narration": "It is time to name the culprit.",
-        "is_accusation_phase": true,
+        "is_accusation_phase": false,
         "prior_revealed_clue_ids": [
           "clue_hall_1",
           "clue_mara_1",

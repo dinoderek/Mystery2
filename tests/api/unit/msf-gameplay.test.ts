@@ -288,7 +288,7 @@ describe("native MSF representation", () => {
       session: { ...session, mode: "accuse" },
       blueprint,
       player_input: "Roz",
-      round: 0,
+      last_accusation: false,
     });
     expect(judge.context.accusation_judge_context?.full_blueprint.msf).toEqual(
       file,
@@ -582,13 +582,15 @@ describe("MSF sessions and turns", () => {
   it("rejects a lucky culprit guess and accepts a correct reconstruction without a completed graph path", async () => {
     const opened = await start();
     await play(opened.game_id, "accuse");
-    expect((await play(opened.game_id, "Roz")).result).toBeNull();
-    expect((await play(opened.game_id, "Roz")).result).toBeNull();
+    const guess = await play(opened.game_id, "Roz");
+    expect(guess.result).toBeNull();
+    expect(guess.state).toMatchObject({ mode: "explore", accusations_left: 2 });
+    expect((await play(opened.game_id, "accuse Roz")).result).toBeNull();
     expect(
       (
         await play(
           opened.game_id,
-          "Roz took the lens across the causeway at low tide so her beacon would win the vote.",
+          "accuse Roz took the lens across the causeway at low tide so her beacon would win the vote.",
         )
       ).result,
     ).toBe("win");
@@ -629,9 +631,6 @@ describe("MSF sessions and turns", () => {
             row.discovered_clues,
           ).solution_supported,
         ).toBe(true);
-      expect(
-        (await play(opened.game_id, "Roz took the lens")).result,
-      ).toBeNull();
       expect((await play(opened.game_id, "Roz took the lens")).result).toBe(
         "win",
       );

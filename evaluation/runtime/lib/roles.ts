@@ -14,6 +14,7 @@ import {
   resolveSearchRole,
 } from "../../../packages/game-engine/src/role-request.ts";
 import type { BlueprintLike, Given, HistoryEntry, Speaker, TurnAction } from "./case.ts";
+import { ACCUSE_FAILED, ACCUSE_RESOLVED, isLastAccusation } from "../../../packages/game-engine/src/accusations.ts";
 
 /** A history row with every field a context builder reads filled in. */
 export interface HistoryRow {
@@ -253,9 +254,9 @@ export const ACTIONS: Record<string, ActionSpec> = {
     requiredMode: "accuse",
     line: accusationLine,
     endpoint: turnEndpoint(accusationLine),
-    events: ["accuse_start", "accuse_round", "accuse_resolved"],
+    events: ["accuse_start", ACCUSE_FAILED, ACCUSE_RESOLVED],
     roleInput: (g, a, bp, history = []) => {
-      // A clue-graph round's one judgement is its first call: who was named, and what was cited.
+      // A clue-graph accusation's one judgement is its first call: who was named, and what was cited.
       const role = bp.clue_graph && resolveAccusationRole(a.player_reasoning) === "accusation_judge"
         ? "graph_accusation"
         : resolveAccusationRole(a.player_reasoning);
@@ -272,7 +273,8 @@ export const ACTIONS: Record<string, ActionSpec> = {
         ? {
           ...base,
           player_input: a.player_reasoning,
-          round: history.filter((e) => e.event_type === "accuse_round").length,
+          last_accusation: isLastAccusation(history),
+          forced_by_timeout: g.time_remaining === 0,
         }
         : base;
     },
@@ -315,11 +317,6 @@ export function resolveRoleName(
   const role = getAction(actionType).roleInput(given, action, blueprint, normalizeHistory(history)).role;
   // A clue-graph search is judged as a `search`, the role the game saves it under.
   return role === "graph_search" ? "search" : role;
-}
-
-/** Whether a role name belongs to the endgame, where the solution is discussed. */
-export function isAccusationRole(roleName: unknown): boolean {
-  return typeof roleName === "string" && (roleName.startsWith("accusation") || roleName.startsWith("graph_accusation") || roleName === "graph_ending");
 }
 
 export function getAction(type: string): ActionSpec {

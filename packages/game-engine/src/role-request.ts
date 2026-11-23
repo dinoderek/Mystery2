@@ -141,7 +141,7 @@ export type RoleRequestInput =
     player_input: string | null;
   } & SessionInput)
   | ({ role: "graph_search"; location_id: string; search_query: string | null } & SessionInput)
-  // A clue-graph accusation round: the judge, then what the engine decided, worded.
+  // A clue-graph accusation: the judge, then what the engine decided, worded.
   | ({ role: "graph_accusation"; player_input: string } & SessionInput)
   | ({ role: "graph_accusation_round"; player_input: string; verdict: AccusationVerdict } & SessionInput)
   | ({ role: "graph_ending"; player_input: string; verdict: AccusationVerdict; cited: string[] } & SessionInput)
@@ -154,7 +154,10 @@ export type RoleRequestInput =
   | ({
     role: "accusation_judge";
     player_input: string;
-    round: number;
+    /** This accusation is the game's last: a failure ends the case. */
+    last_accusation: boolean;
+    /** Out of turns: the investigator cannot go back to exploring. */
+    forced_by_timeout?: boolean;
     history_mode?: "all" | "none";
   } & SessionInput);
 
@@ -443,7 +446,8 @@ const REGISTRY: Record<RoleRequestName, any> = {
         session: input.session,
         blueprint: input.blueprint,
         player_input: input.player_input,
-        round: input.round,
+        last_accusation: input.last_accusation,
+        forced_by_timeout: input.forced_by_timeout,
         conversation_history: input.conversation_history,
         history_mode: input.history_mode,
       });

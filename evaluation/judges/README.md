@@ -20,7 +20,7 @@ A failure on a played trace can be frozen into a runtime case
 | `gm_roleplay` | Does the game master perform the authored character, and the required narrator voice? | An unearned persona flip; a concession from a mere mention, beyond the evidence used, or taken back; firing a gated tell early |
 | `gm_clue_discipline` | Were the right clues released, at the right time, and recorded? | Narration delivers a clue that was not recorded (or records one it never delivered); a `requires`-gated clue released before its prerequisites are used, undeclared |
 | `gm_fabrication` | Did the game master invent material facts the blueprint does not support? | An invented person, place, or searchable object; a claim contradicting the blueprint or the game master's own earlier turn |
-| `gm_spoiler` | Did pre-accusation narration give away ground truth? | Naming the culprit; stating the motive or mechanism as fact; confirming the player's guess before the endgame |
+| `gm_spoiler` | Did narration before the closing scene give away ground truth? | Naming the culprit; stating the motive or mechanism as fact; confirming a guess |
 
 Four narrow judges, not one "blueprint adherence" judge
 (`docs/evaluation-pipeline.md`, "Three tiers of check"), each stating its

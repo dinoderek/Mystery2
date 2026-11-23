@@ -41,8 +41,8 @@ export interface SessionPageContext {
 
 /**
  * Event types that begin a new interaction. Everything else -- `ask`, `search`,
- * the accusation rounds, and the client-side `input` / `system_response` /
- * `error` lines -- continues the page already open.
+ * a judged accusation, and the client-side `input` / `system_response` /
+ * `error` lines -- continues the page already open, with one exception below.
  *
  * `end_talk` opens a page because leaving a conversation puts the player back
  * in the location, which is a different scene with a different picture.
@@ -54,6 +54,26 @@ export const PAGE_OPENING_EVENT_TYPES: ReadonlySet<string> = new Set([
   'end_talk',
   'accuse_start',
 ]);
+
+/**
+ * What stays on an accusation page. A failed accusation or `back` returns the
+ * player to exploring, so whatever they do next there opens a location page.
+ */
+const ACCUSATION_PAGE_EVENT_TYPES: ReadonlySet<string> = new Set([
+  'accuse_failed',
+  'accuse_resolved',
+  'accuse_back',
+  'forced_endgame',
+  'no_turn_line',
+  'input',
+  'system_response',
+  'error',
+]);
+
+function opensPage(open: SessionPage | undefined, eventType: string): boolean {
+  if (!open || PAGE_OPENING_EVENT_TYPES.has(eventType)) return true;
+  return open.kind === 'accusation' && !ACCUSATION_PAGE_EVENT_TYPES.has(eventType);
+}
 
 const KIND_BY_EVENT_TYPE: Record<string, SessionPageKind> = {
   start: 'opening',
@@ -116,7 +136,7 @@ export function buildSessionPages(
   for (const event of events) {
     const open = pages[pages.length - 1];
 
-    if (open && !PAGE_OPENING_EVENT_TYPES.has(event.event_type)) {
+    if (open && !opensPage(open, event.event_type)) {
       open.events.push(event);
       open.imageId ??= imageIdOf(event);
       continue;

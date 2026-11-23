@@ -217,11 +217,18 @@ describe("ACTIONS local-replay mapping", () => {
       given,
       { type: "accuse", player_reasoning: "It was Ann" },
       blueprint,
-      [{ event_type: "accuse_round" }] as never,
+      [{ event_type: "accuse_failed" }] as never,
     );
     expect(judge.role).toBe("accusation_judge");
     expect(judge.player_input).toBe("It was Ann");
-    expect(judge.round).toBe(1);
+    expect(judge.last_accusation).toBe(false);
+    const last = ACTIONS.accuse.roleInput(
+      given,
+      { type: "accuse", player_reasoning: "It was Ann" },
+      blueprint,
+      [{ event_type: "accuse_failed" }, { event_type: "accuse_failed" }] as never,
+    );
+    expect(last.last_accusation).toBe(true);
   });
 });
 

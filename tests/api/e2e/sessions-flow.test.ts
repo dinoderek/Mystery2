@@ -3,6 +3,8 @@ import {
   API_URL,
   MOCK_BLUEPRINT_ID,
   playLine,
+  sendLine,
+  setStoredTimeRemaining,
   setupApiTestAuth,
   type ApiAuthContext,
 } from '../integration/helpers';
@@ -94,10 +96,10 @@ describe('session list resume/view API flows', () => {
     await playLine(auth, gameId, playerReasoning);
 
     const resumed = await loadSessionTranscript(auth, gameId);
-    // Find the accuse event that carries player reasoning (accuse_round or accuse_resolved)
+    // Find the accuse event that carries player reasoning (accuse_failed or accuse_resolved)
     const accuseEvent = resumed.narration_events.find(
       (e: { event_type: string }) =>
-        e.event_type === 'accuse_round' || e.event_type === 'accuse_resolved',
+        e.event_type === 'accuse_failed' || e.event_type === 'accuse_resolved',
     );
     expect(accuseEvent).toBeDefined();
 
@@ -147,8 +149,7 @@ describe('session list resume/view API flows', () => {
   it('opens a completed session in ended mode with persisted history', async () => {
     const gameId = await startSession(auth);
 
-    await playLine(auth, gameId, 'accuse Alice based on motive and opportunity.');
-    const verdict = await playLine(auth, gameId, 'Alice lied about where she was and had crumbs on her coat.');
+    const verdict = await playLine(auth, gameId, 'accuse Alice based on motive and opportunity.');
     expect(verdict.state.mode).toBe('ended');
 
     const preResumeData = await loadSessionTranscript(auth, gameId);
@@ -174,7 +175,66 @@ describe('session list resume/view API flows', () => {
     expect(lastEventParts.some((p: { speaker: { kind: string } }) => p.speaker.kind === 'narrator')).toBe(true);
     expect(
       getData.narration_events.map((entry: { event_type: string }) => entry.event_type),
-    ).toEqual(['start', 'accuse_round', 'accuse_resolved']);
+    ).toEqual(['start', 'accuse_resolved']);
     expect(getData.narration_events).toEqual(preResumeData.narration_events);
+  });
+});
+
+describe('three accusations, each one shot', () => {
+  let auth: ApiAuthContext;
+
+  beforeEach(async () => {
+    auth = await setupApiTestAuth('accusations-flow');
+  });
+
+  it('fails one accusation, explores again, and wins', async () => {
+    const gameId = await startSession(auth);
+
+    const failed = await playLine(auth, gameId, 'accuse Bob because he was in the living room');
+    expect(failed.events[0].event_type).toBe('accuse_failed');
+    expect(failed.state).toMatchObject({ mode: 'explore', accusations_left: 2 });
+
+    const searched = await playLine(auth, gameId, 'search');
+    expect(searched.state).toMatchObject({ mode: 'explore', time_remaining: 9, accusations_left: 2 });
+
+    await playLine(auth, gameId, 'accuse');
+    const won = await playLine(auth, gameId, 'Alice took them: the crumb was in the kitchen.');
+    expect(won.result).toBe('win');
+    expect(won.state).toMatchObject({ mode: 'ended', accusations_left: 2 });
+  });
+
+  it('fails three times and ends lost, with the closing scene', async () => {
+    const gameId = await startSession(auth);
+
+    const left: number[] = [];
+    for (const line of ['accuse Bob', 'accuse Bob, again', 'accuse Bob, for sure']) {
+      left.push((await playLine(auth, gameId, line)).state.accusations_left);
+    }
+    expect(left).toEqual([2, 1, 0]);
+
+    const resumed = await loadSessionTranscript(auth, gameId);
+    expect(resumed.state).toMatchObject({ mode: 'ended', accusations_left: 0 });
+    expect(resumed.narration_events.map((event: { event_type: string }) => event.event_type)).toEqual([
+      'start',
+      'accuse_failed',
+      'accuse_failed',
+      'accuse_resolved',
+    ]);
+    expect(resumed.narration_events.at(-1).payload).toMatchObject({ judge_result: 'lose' });
+  });
+
+  it('runs out of turns and spends its accusations back to back', async () => {
+    const gameId = await startSession(auth);
+    setStoredTimeRemaining(gameId, 1);
+
+    expect((await playLine(auth, gameId, 'search')).state).toMatchObject({ mode: 'accuse', time_remaining: 0, accusations_left: 3 });
+    const back = await (await sendLine(auth, gameId, 'back')).json();
+    expect(back).toMatchObject({ kind: 'refused', reason: 'no-way-back' });
+
+    expect((await playLine(auth, gameId, 'It was Bob')).state).toMatchObject({ mode: 'accuse', accusations_left: 2 });
+    expect((await playLine(auth, gameId, 'It was Bob, I said')).state).toMatchObject({ mode: 'accuse', accusations_left: 1 });
+    const lost = await playLine(auth, gameId, 'Bob!');
+    expect(lost.result).toBe('lose');
+    expect(lost.state).toMatchObject({ mode: 'ended', accusations_left: 0 });
   });
 });

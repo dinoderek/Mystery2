@@ -7,25 +7,21 @@
 import { ruleMet } from "../../../shared/src/clue-graph-reach.ts";
 import { relevantClues } from "../../../shared/src/clue-graph-route.ts";
 import type { ClueGraphCase, ClueGraphRule } from "../../../shared/src/clue-graph-schema.ts";
+import { isLastAccusation } from "../accusations.ts";
 import { currentLeads, notebook, type NotebookEntry } from "./leads.ts";
 import { isLive, searchKey, sourceCharacter, supportedConclusions, type ClueGraphPlay } from "./play.ts";
 
-/** The rounds after which a failing accusation ends the case, as V2's judge counts them. */
-export const LAST_ROUND = 3;
-
-/** What the narrator reports of one round: who was named, and which held clues were cited. */
+/** What the narrator reports of one accusation: who was named, and which held clues were cited. */
 export interface AccusationReport {
   accused: string | null;
   cited: string[];
 }
 
 /**
- * What the engine decided: `win`; `question`, the one question a right name
- * without support earns, a round even at the limit; `not_yet`, any other
- * failing round; `lose`, a failing round at the limit. The narrator words
- * `question` and `not_yet` alike.
+ * What the engine decided: `win`; `not_yet`, a failure that spends one
+ * accusation; `lose`, a failure on the last one.
  */
-export type AccusationVerdict = "win" | "question" | "not_yet" | "lose";
+export type AccusationVerdict = "win" | "not_yet" | "lose";
 
 /** What an accusation event saves, beside the player's reasoning. */
 export interface SavedAccusation extends AccusationReport {
@@ -79,20 +75,11 @@ export function confessionClues(graph: ClueGraphCase): string[] {
   });
 }
 
-/** The rounds so far and whether the one question was already asked. */
-function roundsSoFar(history: HistoryRow[]): { round: number; questioned: boolean } {
-  const rounds = history.filter((row) => row.event_type === "accuse_round");
-  const questioned = rounds.some(
-    (row) => (row.payload?.clue_graph_accusation as SavedAccusation | undefined)?.verdict === "question",
-  );
-  return { round: rounds.length, questioned };
-}
-
 /**
  * The rule. The true culprit named wins when the player holds the confession,
- * or a culprit conclusion holds and they cited one of its clues. The first
- * time the right name falls short, it earns the question; anything else keeps
- * V2's rounds: go on, and lose from round `LAST_ROUND`.
+ * or a culprit conclusion holds and they cited one of its clues. Anything else,
+ * a right name without support included, is a failure, which loses on the last
+ * accusation.
  */
 export function decideAccusation(
   graph: ClueGraphCase,
@@ -100,15 +87,12 @@ export function decideAccusation(
   history: HistoryRow[],
   report: AccusationReport,
 ): AccusationVerdict {
-  const rightName = report.accused === culpritOf(graph).character;
-  if (rightName) {
+  if (report.accused === culpritOf(graph).character) {
     if (confessionClues(graph).some((id) => isLive(play, id))) return "win";
     const support = new Set(supportingClues(graph, play));
     if (report.cited.some((id) => support.has(id))) return "win";
   }
-  const { round, questioned } = roundsSoFar(history);
-  if (rightName && !questioned) return "question";
-  return round >= LAST_ROUND ? "lose" : "not_yet";
+  return isLastAccusation(history) ? "lose" : "not_yet";
 }
 
 /** The clues a lead is about: the character's, or the spot's. */
@@ -123,7 +107,7 @@ function leadClues(graph: ClueGraphCase, key: string): string[] {
 }
 
 /**
- * The lead the question points at: of the notebook's leads, the first whose
+ * The lead a failed accusation points at: of the notebook's leads, the first whose
  * person or spot holds a clue not yet held on a way to the culprit other than
  * the confession, else the first lead; null when there is none. It names who
  * or where, as every lead does.
@@ -150,8 +134,6 @@ export interface GraphAccusationContext {
   people: AccusablePerson[];
   /** The notebook: every held clue as its saved line. */
   held: NotebookEntry[];
-  /** What the investigator said in this accusation's earlier rounds. */
-  earlier_reasoning?: string[];
 }
 
 /** The closing scene's truth: the whole account. */
@@ -167,7 +149,7 @@ export interface GraphEnding {
 }
 
 /**
- * What the narrator words a round from. Before the case is resolved it never
+ * What the narrator words an accusation from. Before the case is resolved it never
  * says what the engine decided, so a right name and a wrong one read the same:
  * the case is not proven, with a lead to think about unless support is held.
  * Once resolved, it carries the ending.

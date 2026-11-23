@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * Spoiler discipline: did pre-accusation narration give away ground truth?
+ * Spoiler discipline: did narration before the closing scene give away ground truth?
  * Complements the mechanical spoiler_leak check, which only catches long
  * verbatim copying — this judge covers paraphrase, implication, and
  * confirmation.

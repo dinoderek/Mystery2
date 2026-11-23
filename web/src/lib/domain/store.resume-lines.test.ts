@@ -102,7 +102,7 @@ describe('resuming a game that holds lines which cost no turn', () => {
       'go to the garden',
       createTurnPlayedResponse({
         events: [{ sequence: 5, event_type: 'move', payload: { location_name: 'Garden', input: 'go to the garden' }, narration_parts: [{ text: 'The garden.', speaker: NARRATOR_SPEAKER }] }],
-        state: { mode: 'explore', time_remaining: 9, location: 'loc-garden', current_talk_character: null },
+        state: { mode: 'explore', time_remaining: 9, accusations_left: 3, location: 'loc-garden', current_talk_character: null },
       }),
     );
     await say('help', createTurnViewResponse({ view: 'help', note: HELP }));

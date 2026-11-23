@@ -30,9 +30,9 @@ The roles and their output contracts are `ai-contracts.ts`. `search` is one
 contract; V2 uses two prompts: `search_bare` uses the `search_find` word budget
 when the backend already knows a clue will be revealed, else `search_empty`;
 `search_targeted` carries both, because the model decides the outcome
-(`OUTCOME_LENGTH_BY_ROLE` in `ai-prompts.ts`). `accusation_judge` answers each
-round `continue`, `win` or `lose` by the rule in "The accusation" in
-`docs/game.md`. `talk_start` and `talk_end` move nobody; `gm_fabrication`
+(`OUTCOME_LENGTH_BY_ROLE` in `ai-prompts.ts`). `accusation_judge` judges each
+accusation once, `win` or `continue`; on the last `win` or `lose`
+(`docs/game.md`, "The accusation"). `talk_start` and `talk_end` move nobody; `gm_fabrication`
 reports invented movement. A clue-graph case's `graph_talk` and `graph_search`
 also return a notebook line per clue revealed, and its accusation has three
 roles of its own (`docs/clue-graph.md`).
@@ -44,7 +44,7 @@ Every prompt's `{{style_guidance}}` slot is filled by `buildStyleGuidance`:
 
 - The **standard narrator style**: second person, present tense; warm, cozy,
   never scary; concrete sensory detail; characters speak in the first person
-  with action beats, but in a clue-graph accusation round or ending only the
+  with action beats, but in a clue-graph failed accusation or ending only the
   narrator speaks, never quoting itself (the ending may quote a character); no
   meta-commentary.
 - A blueprint may add `metadata.narration_style`, one sentence of voice

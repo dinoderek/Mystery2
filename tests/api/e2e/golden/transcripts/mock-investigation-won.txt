@@ -38,8 +38,18 @@ steps
   33  "accuse"  mode=accuse turns=1
   34  "help"  mode=accuse turns=1 opens=help
   35  "notebook"  mode=accuse turns=1 opens=notebook
-  36  "Maybe it was Bob?"  mode=accuse turns=1
-  37  "I think it was Alice, because of the empty cookie jar."  mode=ended turns=1 result=win
+  36  "back"  mode=explore turns=1
+  37  "accuse"  mode=accuse turns=1
+  38  "cancel"  mode=explore turns=1
+  39  "accuse"  mode=accuse turns=1
+  40  "never mind"  mode=explore turns=1
+  41  "accuse"  mode=accuse turns=1
+  42  "nevermind"  mode=explore turns=1
+  43  "back"  mode=explore turns=1
+  44  "accuse"  mode=accuse turns=1
+  45  "Maybe it was Bob?"  mode=explore turns=1
+  46  "search"  mode=accuse turns=0
+  47  "I think it was Alice, because of the empty cookie jar."  mode=ended turns=0 result=win
 
 pages
   page 0 opening "Mock Blueprint"
@@ -110,7 +120,33 @@ pages
     step 33 | Narrator (narrator): "[Mock] The final accusation begins. Who did it, and how do you know?"
     step 34 | You (investigator): "help"
     step 34 | System (system): "Help menu opened."
-    step 36 | You (investigator): "Maybe it was Bob?"
-    step 36 | Narrator (narrator): "[Mock] I need one more clue before I can be sure. What else do you know?"
-    step 37 | You (investigator): "I think it was Alice, because of the empty cookie jar."
-    step 37 | Narrator (narrator): "[Mock] The clues all fit. You got it right!"
+    step 36 | You (investigator): "back"
+    step 36 | System (system): "You put the accusation aside and go back to investigating. Nothing is spent."
+  page 9 accusation "The accusation"
+    step 37 | You (investigator): "accuse"
+    step 37 | Narrator (narrator): "[Mock] The final accusation begins. Who did it, and how do you know?"
+    step 38 | You (investigator): "cancel"
+    step 38 | System (system): "You put the accusation aside and go back to investigating. Nothing is spent."
+  page 10 accusation "The accusation"
+    step 39 | You (investigator): "accuse"
+    step 39 | Narrator (narrator): "[Mock] The final accusation begins. Who did it, and how do you know?"
+    step 40 | You (investigator): "never mind"
+    step 40 | System (system): "You put the accusation aside and go back to investigating. Nothing is spent."
+  page 11 accusation "The accusation"
+    step 41 | You (investigator): "accuse"
+    step 41 | Narrator (narrator): "[Mock] The final accusation begins. Who did it, and how do you know?"
+    step 42 | You (investigator): "nevermind"
+    step 42 | System (system): "You put the accusation aside and go back to investigating. Nothing is spent."
+    step 43 | You (investigator): "back"
+    step 43 | System (system): "Commands: move to/go to <location>, talk to <character>, search, accuse [statement], locations, characters, notebook, help, quit. Type 'help' for details."
+  page 12 accusation "The accusation"
+    step 44 | You (investigator): "accuse"
+    step 44 | Narrator (narrator): "[Mock] The final accusation begins. Who did it, and how do you know?"
+    step 45 | You (investigator): "Maybe it was Bob?"
+    step 45 | Narrator (narrator): "[Mock] Not yet. Look at your clues again. Do you want to have another go?"
+  page 13 location "Location"
+    step 46 | You (investigator): "search"
+    step 46 | Narrator (narrator): "[Mock] You search Kitchen again, but discover no new clue."
+    step 46 | Narrator (narrator): "[Mock] Time is up. You must make your accusation now. Who did it, and how do you know?"
+    step 47 | You (investigator): "I think it was Alice, because of the empty cookie jar."
+    step 47 | Narrator (narrator): "[Mock] The clues all fit. You got it right!"

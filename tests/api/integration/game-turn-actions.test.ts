@@ -345,18 +345,13 @@ describe("game-turn actions", () => {
   });
 
   describe("accusing", () => {
-    it("judges a reasoned accusation over rounds and resolves to a win", async () => {
+    it("judges a reasoned accusation at once and resolves to a win", async () => {
       const gameId = await startMockGame(auth);
 
-      const roundOne = await play(gameId, "accuse Alice because she had crumbs and no alibi.");
-      expect(roundOne.state.mode).toBe("accuse");
-      expect(roundOne.result).toBeNull();
-      expect(roundOne.events[0].narration_parts[0].speaker.kind).toBe("narrator");
-
-      const roundTwo = await play(gameId, "Alice had motive and access, and the clues match her timeline.");
-      expect(roundTwo.state.mode).toBe("ended");
-      expect(roundTwo.result).toBe("win");
-      expect(roundTwo.events[0].narration_parts[0].speaker.kind).toBe("narrator");
+      const won = await play(gameId, "accuse Alice because she had crumbs and no alibi.");
+      expect(won.state.mode).toBe("ended");
+      expect(won.result).toBe("win");
+      expect(won.events[0].narration_parts[0].speaker.kind).toBe("narrator");
 
       expect(readStoredSession(gameId)).toMatchObject({ mode: "ended", outcome: "win" });
     });
@@ -364,7 +359,6 @@ describe("game-turn actions", () => {
     it("plays nothing once the case has ended, and only keeps the line", async () => {
       const gameId = await startMockGame(auth);
       await play(gameId, "accuse Alice because she had crumbs and no alibi.");
-      await play(gameId, "Alice had motive and access, and the clues match her timeline.");
       const events = readStoredEvents(gameId).length;
 
       const res = await sendLine(auth, gameId, "accuse Bob because I changed my mind");
@@ -377,7 +371,7 @@ describe("game-turn actions", () => {
       expect(readStoredSession(gameId)).toMatchObject({ mode: "ended", outcome: "win" });
     });
 
-    it("opens accusation mode without reasoning, then takes the rounds", async () => {
+    it("opens accusation mode without reasoning, then judges the line typed there", async () => {
       const gameId = await startMockGame(auth);
 
       const open = await play(gameId, "accuse");
@@ -386,13 +380,12 @@ describe("game-turn actions", () => {
       expect(open.result).toBeNull();
       expect(open.events[0].narration_parts[0].speaker.kind).toBe("narrator");
 
-      await play(gameId, "I accuse Alice. She panicked when I asked about the cookies.");
-      const roundTwo = await play(gameId, "The timeline and clues point to Alice.");
-      expect(roundTwo.state.mode).toBe("ended");
-      expect(roundTwo.events[0].narration_parts[0].speaker.kind).toBe("narrator");
+      const won = await play(gameId, "I accuse Alice. She panicked when I asked about the cookies.");
+      expect(won.state.mode).toBe("ended");
+      expect(won.events[0].narration_parts[0].speaker.kind).toBe("narrator");
     });
 
-    it("keeps the rounds working after the turns run out and force the accusation", async () => {
+    it("stays in the accusation after a failure once the turns run out and force it", async () => {
       const gameId = await startMockGame(auth);
 
       let mode = "explore";
@@ -402,25 +395,25 @@ describe("game-turn actions", () => {
       expect(mode).toBe("accuse");
       expect(readStoredSession(gameId)).toMatchObject({ mode: "accuse", time_remaining: 0 });
 
-      const round = await play(gameId, "I accuse Alice because the clues match her timeline.");
+      const failed = await play(gameId, "I accuse Bob because he was near the scene.");
 
-      expect(round.state.mode).toBe("accuse");
-      expect(round.events[0].narration_parts[0].speaker.kind).toBe("narrator");
+      expect(failed.state).toMatchObject({ mode: "accuse", accusations_left: 2 });
+      expect(failed.events[0].narration_parts[0].speaker.kind).toBe("narrator");
     });
 
-    it("turns a wrong suspect away with encouragement, then resolves to a loss from round 3", async () => {
+    it("turns a wrong suspect away with encouragement, then loses on the third failure", async () => {
       const gameId = await startMockGame(auth);
 
-      // Rounds 0–2: a wrong accusation is rejected with a retry invitation.
-      for (let round = 0; round < 3; round += 1) {
+      // The first two wrong accusations each spend one and return to exploring.
+      for (const left of [2, 1]) {
         const answer = await play(gameId, "accuse Bob because he was near the scene.");
-        expect(answer.state.mode).toBe("accuse");
+        expect(answer.state).toMatchObject({ mode: "explore", accusations_left: left });
         expect(answer.result).toBeNull();
       }
 
-      // Round 3: a still-wrong accusation finally resolves to lose.
-      const verdict = await play(gameId, "Final reasoning: Bob is guilty.");
-      expect(verdict.state.mode).toBe("ended");
+      // The third still-wrong accusation resolves to lose.
+      const verdict = await play(gameId, "accuse Bob: final reasoning, Bob is guilty.");
+      expect(verdict.state).toMatchObject({ mode: "ended", accusations_left: 0 });
       expect(verdict.result).toBe("lose");
       expect(verdict.events[0].narration_parts[0].speaker.kind).toBe("narrator");
 

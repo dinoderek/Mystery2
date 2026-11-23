@@ -86,7 +86,7 @@ export function buildAgeGuidance(role: AIPromptKey, targetAge: number): string {
 const PRONOUNS = "Choose pronouns from each character's sex, never by guessing.";
 const NEVER_INVENT = `- Use only the characters, places and facts you are given; never invent more. ${PRONOUNS}`;
 const DIALOGUE = "- Characters always speak in direct first-person dialogue with brief action beats.";
-// The clue-graph accusation round and ending have no one speaking but the
+// A clue-graph failed accusation and ending have no one speaking but the
 // narrator. Told the dialogue rule there, the model quotes its own words and
 // gives them to the investigator ("you say warmly"), so it is replaced. The
 // ending retells the account, where a character's words may matter as said.
@@ -258,7 +258,7 @@ Return JSON:
 {
   "narration": "..."
 }`,
-  accusation_judge: `You are the adjudication narrator for the final accusation in a children's mystery game.
+  accusation_judge: `You are the adjudication narrator for an accusation in a children's mystery game.
 {{age_guidance}}
 {{style_guidance}}
 
@@ -277,10 +277,12 @@ the player may never have found. Do not assume they know any of it.
   and \`missing_clue_ids\` for you, so you do not have to work it out yourself.
 
 Read \`path_coverage\` to gauge how strong their case is:
-- Most of a solution path found → they have essentially cracked it. Accept, or
-  ask ONE targeted question about a fact in \`missing_clue_ids\`.
+- Most of a solution path found → they have essentially cracked it. Accept, or,
+  unless \`last_accusation\` is true, ask ONE targeted question about a fact in
+  \`missing_clue_ids\`; on the last accusation, decide "win" or "lose".
 - Their case leans on a red_herring path → they were misled. Nudge them ("are
-  you certain about the boots?"), never punish.
+  you certain about the boots?"), never punish; on the last accusation it is
+  still "lose", told gently.
 - Little found on any path → they are guessing rather than reasoning.
 
 Three rules about this data:
@@ -312,15 +314,14 @@ happened or of the evidence against them. A confession earned this way is a
 "win". Confronted with weak or wrong facts, the culprit deflects.
 
 ## When to reject (resolution "continue" or "lose")
-- Wrong suspect, or right suspect with too few facts: return "continue".
-  Reject warmly in the narration — say the case is not proven yet, hint at what
-  KIND of fact is missing (never reveal the answer), and end with
-  one short, direct question that invites the player to try again. The player
-  is still in the accusation: ask about what they know or can reason out, never
-  send them somewhere to look.
-- The provided round counts the player's completed reasoning attempts. From
-  round 3 onward, if the accusation still fails, return "lose" with a gentle,
-  hopeful closing that kindly reveals the truth.
+- Wrong suspect, or right suspect with too few facts: the accusation fails.
+- \`last_accusation\` false: return "continue". Reject warmly in the narration —
+  say the case is not proven yet, hint at what KIND of fact is missing (never
+  reveal the answer), and end with one short, direct question. The player goes
+  back to investigating, so it may point at what to look for next; when
+  \`forced_by_timeout\` is true there is no more looking, so invite them to try again.
+- \`last_accusation\` true: this was their last accusation, so return "lose"
+  with a gentle, hopeful closing that kindly reveals the truth.
 - On "win" or "lose" the case is over: do not end with a question.
 - Use suspect_elimination_paths to check whether the player ruled out innocent
   suspects, and red_herrings to recognize when they were misled.

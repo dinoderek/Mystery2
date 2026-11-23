@@ -237,19 +237,19 @@ describe("ai-provider mock role output", () => {
     expect(output.narration).toContain("she");
   });
 
-  it("supports accusation continue and resolved rounds", async () => {
+  it("wins the culprit named at the first accusation", async () => {
     const provider = createAIProviderFromProfile({
       provider: "mock",
       model: "mock/default",
     });
 
-    const firstRound = await provider.generateRoleOutput({
+    const first = await provider.generateRoleOutput({
       role: "accusation_judge",
       prompt: "prompt",
       context: {
         player_input: "I accuse Alice because she had crumbs on her sleeves.",
         accusation_judge_context: {
-          round: 0,
+          last_accusation: false,
           full_blueprint: {
             world: {
               characters: [
@@ -262,42 +262,20 @@ describe("ai-provider mock role output", () => {
       },
       parse: parseAccusationJudgeOutput,
     });
-    expect(firstRound.accusation_resolution).toBe("continue");
-    expect(firstRound).not.toHaveProperty("follow_up_prompt");
-
-    const secondRound = await provider.generateRoleOutput({
-      role: "accusation_judge",
-      prompt: "prompt",
-      context: {
-        player_input: "Alice had motive and opportunity.",
-        accusation_judge_context: {
-          round: 1,
-          full_blueprint: {
-            world: {
-              characters: [
-                { first_name: "Alice", is_culprit: true },
-                { first_name: "Bob", is_culprit: false },
-              ],
-            },
-          },
-        },
-      },
-      parse: parseAccusationJudgeOutput,
-    });
-    expect(secondRound.accusation_resolution).toBe("win");
-    expect(secondRound).not.toHaveProperty("follow_up_prompt");
+    expect(first.accusation_resolution).toBe("win");
+    expect(first).not.toHaveProperty("follow_up_prompt");
   });
 
-  it("rejects a wrong accusation with encouragement, losing only from round 3", async () => {
+  it("rejects a wrong accusation with encouragement, losing only on the last", async () => {
     const provider = createAIProviderFromProfile({
       provider: "mock",
       model: "mock/default",
     });
 
-    const judgeContext = (round: number) => ({
-      player_input: "It was Bob, I'm sure of it.",
+    const judgeContext = (last: boolean, input = "It was Bob, I'm sure of it.") => ({
+      player_input: input,
       accusation_judge_context: {
-        round,
+        last_accusation: last,
         full_blueprint: {
           world: {
             characters: [
@@ -309,26 +287,27 @@ describe("ai-provider mock role output", () => {
       },
     });
 
-    // Early wrong accusations are rejected with an invitation to try again.
-    const earlyRound = await provider.generateRoleOutput({
+    // A wrong accusation before the last is rejected with an invitation to try again.
+    const early = await provider.generateRoleOutput({
       role: "accusation_judge",
       prompt: "prompt",
-      context: judgeContext(1),
+      context: judgeContext(false),
       parse: parseAccusationJudgeOutput,
     });
-    expect(earlyRound.accusation_resolution).toBe("continue");
-    expect(earlyRound).not.toHaveProperty("follow_up_prompt");
-    expect(earlyRound.narration).toContain("have another go");
+    expect(early.accusation_resolution).toBe("continue");
+    expect(early).not.toHaveProperty("follow_up_prompt");
+    expect(early.narration).toContain("have another go");
 
-    // From round 3 a still-wrong accusation finally resolves to lose.
-    const finalRound = await provider.generateRoleOutput({
-      role: "accusation_judge",
-      prompt: "prompt",
-      context: judgeContext(3),
-      parse: parseAccusationJudgeOutput,
-    });
-    expect(finalRound.accusation_resolution).toBe("lose");
-    expect(finalRound).not.toHaveProperty("follow_up_prompt");
+    // On the last accusation a wrong one, or one naming nobody, resolves to lose.
+    for (const input of ["It was Bob, I'm sure of it.", "I do not know."]) {
+      const last = await provider.generateRoleOutput({
+        role: "accusation_judge",
+        prompt: "prompt",
+        context: judgeContext(true, input),
+        parse: parseAccusationJudgeOutput,
+      });
+      expect(last.accusation_resolution).toBe("lose");
+    }
   });
 
   it("points a rejection's closing question at an unfinished solution path", async () => {
@@ -339,7 +318,7 @@ describe("ai-provider mock role output", () => {
       context: {
         player_input: "It was Bob.",
         accusation_judge_context: {
-          round: 1,
+          last_accusation: false,
           full_blueprint: {
             world: { characters: [{ first_name: "Alice", is_culprit: true }, { first_name: "Bob" }] },
           },

@@ -116,6 +116,20 @@ describe("spoiler_leak", () => {
     expect(leak.details?.violations?.[0]).toMatchObject({ sequence: 6 });
   });
 
+  it("flags a failed accusation's reply that copies ground truth: only the closing scene may tell it", () => {
+    const failed: TraceEventRow = {
+      ...makeMultiStepEvents()[3],
+      narration: "Not yet, but think: Dorn slipped into the hall and took the medal while everyone was at dinner.",
+    };
+    const [resolved] = makeEvents().slice(8);
+    const events = [...makeEvents().slice(0, 8), { ...failed, sequence: 9 }, { ...resolved, sequence: 10 }];
+    const checks = runTraceMechanicalChecks({ rawTrace: makeRawTrace({ events }) });
+    const leak = checkById(checks, "spoiler_leak");
+    expect(leak.status).toBe("fail");
+    // The failed accusation is flagged; the closing scene, which copies the same truth, is not.
+    expect(leak.details?.violations?.map((violation) => violation.sequence)).toEqual([9]);
+  });
+
   it("does not flag the accusation resolution that legitimately reveals the truth", () => {
     // The fixture's seq-9 accuse_resolved narration copies what_happened, but
     // accusation events are exempt.

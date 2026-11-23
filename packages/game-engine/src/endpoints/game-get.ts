@@ -9,6 +9,7 @@ import { buildGameState } from "../game-state-view.ts";
 import { sessionCase } from "../session-case.ts";
 import { markClues, notebookMarks } from "../clue-graph/notebook-view.ts";
 import { playedEvents } from "../turn/no-turn.ts";
+import { accusationsLeft } from "../accusations.ts";
 
 export async function handle(
   req: Request,
@@ -92,6 +93,7 @@ export async function handle(
       discovered_clues: marks ? markClues(blueprint.clue_graph!, records, marks) : records,
       ...(marks ? { leads: marks.leads } : {}),
       time_remaining: session.time_remaining,
+      accusations_left: accusationsLeft(events ?? []),
       location: session.current_location_id,
       mode: session.mode,
       current_talk_character: session.current_talk_character_id || null,

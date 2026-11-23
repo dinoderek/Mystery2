@@ -63,10 +63,10 @@ describe("narration event helpers", () => {
     expect(event.narration_parts[1].text).toBe("Alice responds thoughtfully.");
   });
 
-  it("prepends player reasoning as investigator narration part for accuse_round events", () => {
+  it("prepends player reasoning as investigator narration part for accuse_failed events", () => {
     const event = readNarrationEvent({
       sequence: 7,
-      event_type: "accuse_round",
+      event_type: "accuse_failed",
       narration: "The judge considers your argument.",
       narration_parts: [
         createNarrationPart("The judge considers your argument.", NARRATOR_SPEAKER),

@@ -27,7 +27,8 @@ import { spendTurn, turnEffect, type TurnEffect } from "./effect.ts";
 import { narrateForcedEndgame } from "./narrator.ts";
 import { nextSequenceAfter, noTurnEvent, playedEvents } from "./no-turn.ts";
 import { planAction } from "./plan.ts";
-import { resolveAccuseRound, resolveAccuseStart } from "./resolve-accuse.ts";
+import { accusationForced } from "../accusations.ts";
+import { resolveAccusation, resolveAccuseBack, resolveAccuseStart } from "./resolve-accuse.ts";
 import { resolveMove } from "./resolve-move.ts";
 import { resolveSearch } from "./resolve-search.ts";
 import { resolveGraphLine, resolveGraphSearch, resolveGraphTalk } from "./resolve-clue-graph.ts";
@@ -55,6 +56,7 @@ function defaultProvider(profile: EngineAIProfile): AIProvider {
 export function grammarStateOf(session: GameSessionRow, blueprint: PlayableBlueprint): GrammarState {
   return {
     mode: session.mode,
+    accusation_forced: accusationForced(session),
     location: session.current_location_id,
     locations: blueprint.world.locations.map((location) => ({ id: location.id, name: location.name })),
     characters: blueprint.world.characters.map((character) => ({
@@ -136,8 +138,10 @@ function resolveAction(game: TurnGame, runtime: TurnRuntime, action: PlannedActi
       return resolveEndTalk(game, runtime, action.character_id);
     case "accuse_start":
       return resolveAccuseStart(game, runtime);
-    case "accuse_round":
-      return resolveAccuseRound(game, runtime, action.reasoning);
+    case "accuse_back":
+      return Promise.resolve(resolveAccuseBack());
+    case "accusation":
+      return resolveAccusation(game, runtime, action.reasoning);
   }
 }
 
@@ -250,6 +254,7 @@ export async function playTurn(
   const effect = turnEffect({
     game_id: request.game_id,
     session,
+    history: game.history,
     outcome,
     cost,
     forced,

@@ -10,7 +10,7 @@
 //   clue_accounting — every revealed clue id is real and in scope for the
 //                     action that revealed it; bare-search reveals stay an
 //                     ordered, non-repeating prefix of the location's clues.
-//   spoiler_leak    — no pre-accusation narration copies a long verbatim run of
+//   spoiler_leak    — no narration before the closing scene copies a long verbatim run of
 //                     ground-truth text (what_happened / why / timeline /
 //                     culprit actual_actions). Verbatim only, by design: a high
 //                     contiguous-word threshold keeps precision high; paraphrase
@@ -21,7 +21,7 @@ import { collectClues } from "../../checks/lib/clue-graph.ts";
 import { isClueUnlocked } from "../../../packages/game-engine/src/clue-discovery.ts";
 import { clueGraphEvents } from "../../../packages/game-engine/src/clue-graph/history.ts";
 import { applyEvent, startPlay, type ClueGraphPlay } from "../../../packages/game-engine/src/clue-graph/play.ts";
-import { playedEvents } from "../../lib/game-events.ts";
+import { CLOSING_SCENE_EVENT_TYPES, playedEvents } from "../../lib/game-events.ts";
 import type { RawEvent, RawTrace } from "./normalize.ts";
 import { revealedClueIdsForEvent } from "./reconstruct.ts";
 
@@ -248,8 +248,8 @@ function longestCommonRun(a: string[], b: string[]): number {
 }
 
 // spoiler_leak: the game master must not hand the solution to the player before
-// the accusation. We detect VERBATIM leakage only — a long contiguous run of
-// ground-truth words copied into a pre-accusation narration.
+// the closing scene. We detect VERBATIM leakage only — a long contiguous run of
+// ground-truth words copied into any narration before it.
 function checkSpoilerLeak(rawTrace: RawTrace, minRun = DEFAULT_SPOILER_MIN_RUN): TraceCheckResult {
   const blueprint = rawTrace.blueprint;
   const events = playedEvents(rawTrace.events).sort((a: RawEvent, b: RawEvent) => a.sequence - b.sequence) as RawEvent[];
@@ -274,18 +274,12 @@ function checkSpoilerLeak(rawTrace: RawTrace, minRun = DEFAULT_SPOILER_MIN_RUN):
     .map((s) => normalizeWords(s))
     .filter((w) => w.length >= minRun);
 
-  // Narration produced before the accusation phase begins is player-facing and
-  // must stay spoiler-safe. Accusation roles are where the truth is revealed.
-  const accusationTypes = new Set([
-    "accuse_start",
-    "accuse_round",
-    "accuse_resolved",
-    "forced_endgame",
-  ]);
-
+  // Everything before the closing scene is player-facing and must stay
+  // spoiler-safe, a failed accusation's reply included: only the closing scene
+  // reveals the truth.
   const violations: Array<Record<string, unknown>> = [];
   for (const event of events) {
-    if (accusationTypes.has(event.event_type)) continue;
+    if (CLOSING_SCENE_EVENT_TYPES.has(event.event_type)) continue;
     const narrationWords = normalizeWords(event.narration);
     if (narrationWords.length < minRun) continue;
     for (let i = 0; i < secretWordLists.length; i += 1) {

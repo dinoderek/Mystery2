@@ -3,12 +3,12 @@
 > **CURATED EXTRACT — do not edit casually.**
 > Pinned sources:
 > - `docs/game.md#starting` — `fbb3445847cfa7cdcd303a96b4b228854d6e87c8`
-> - `docs/game.md#commands` — `ef885086ce83226ee0d329bfb329d4f51bc10cb0`
+> - `docs/game.md#commands` — `c4c8096fb0a88c7fb942fbf082318f2b772995a6`
 > - `docs/game.md#talking` — `3d486efcc5cc4f235571188489a8f49bb99da0a2`
 > - `docs/game.md#searching` — `2532c2c3ffb8ffe642e0f538a4b504862fde06c6`
 > - `docs/game.md#moving` — `da36d9c4d8be3b68a4aeae1d6c0d66fa9c7b050e`
 > - `docs/game.md#notebook` — `712576263594de7b4a572a69cd0e483159cbf3e0`
-> - `docs/game.md#accusation` — `9fdf410a153a4b20c85b4e756c3bee8ffd8305d8`
+> - `docs/game.md#accusation` — `21cb15ca1e6783f6f168e8e5cc8fc26a31302a64`
 > Verifier: `npm run check:curated-docs`
 > A `#section` pin covers only the `<!-- extract:… -->` section of that name. If a pinned source changes in a way that affects blueprint authoring, update this file before recording the new hash.
 
@@ -32,7 +32,8 @@ a suspect before the turn budget runs out. An AI narrator runs the world.
   if so; 1 turn (waivable for nonsensical attempts)
 - `notebook` / `n` / `Tab` — opens the case notebook overlay; free, works in
   every mode
-- `accuse <name>` — endgame; iterative judge rounds until win or lose
+- `accuse <who> because <why>` — one of three accusations, judged once; a
+  failure spends one and returns to exploring
 - when the turn budget hits zero, the game forces accuse mode
 
 ## Clue gating (the discovery graph)
@@ -168,8 +169,7 @@ entry, or correctly tells the story of what happened (culprit + key sequence +
 motive). Confronting the accused can earn a confession, but only once most of
 the facts are already right.
 
-Wrong or under-supported accusations return `continue` with encouragement to
-keep investigating; from round 3 onward a still-failing accusation resolves as a
+A wrong or under-supported accusation returns `continue`; the third failure is a
 loss with a gentle reveal. This is why `solution_paths` and
 `suspect_elimination_paths` have to be genuinely walkable from clues the player
 can actually discover — they are the judge's accept criteria, not decoration.

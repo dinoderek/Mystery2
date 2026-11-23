@@ -47,8 +47,8 @@ Each turn carries:
   bypass of a clue's `requires` gate (a "brilliance override").
 - `prior_revealed_clue_ids` — every clue id established before this turn. Treat
   this as the authoritative record of what the player already knows.
-- `is_accusation_phase` — true once the endgame begins, where the solution is
-  legitimately discussed.
+- `is_accusation_phase` — true only for the closing scene, where the solution is
+  legitimately told. A failed accusation's reply is not the closing scene.
 
 ## How to judge
 
@@ -93,7 +93,7 @@ tier: 1
 
 ## What this dimension asks
 
-Before the accusation, did the game master **give away the answer**?
+Before the closing scene, did the game master **give away the answer**?
 
 The mystery only works if the player deduces it. Ground truth — who did it, why,
 and how — is authored in `ground_truth` and in the culprit's `actual_actions`,
@@ -111,12 +111,12 @@ is what it cannot see: **paraphrase, implication, and confirmation.**
   `actual_actions` (what they really did, as opposed to `stated_alibi`).
 - `blueprint.solution_paths` — the reasoning the player is meant to assemble.
 - `subject.turns` — each with `is_accusation_phase`. **Only turns where
-  `is_accusation_phase` is false can carry findings**: once the endgame begins,
-  discussing the solution is the point.
+  `is_accusation_phase` is false can carry findings**: it is true only for the
+  closing scene, where telling the solution is the point.
 
 ## Judge instructions
 
-For each judged, pre-accusation turn, ask what a player would *know* after
+For each judged turn before the closing scene, ask what a player would *know* after
 reading it that they should have had to earn.
 
 1. **Culprit disclosure** (`kind: "culprit"`). The narration identifies or
@@ -138,9 +138,9 @@ reading it that they should have had to earn.
    elimination path was earned. `major` when it lands on the culprit; `minor`
    when it merely over-summarizes clues the player already has.
 6. **Confirmation** (`kind: "confirmation"`). The player guesses or asserts a
-   solution element and the game master confirms it as true outside the
-   accusation phase — including by a narrator aside, or a character conceding
-   something the fiction has not earned. `major`.
+   solution element and the game master confirms it as true before the
+   closing scene — a failed accusation's reply, a narrator aside, or a
+   character conceding what the fiction has not earned. `major`.
 
 Severity floor: if the player could act on the leak to skip real investigation,
 it is `major`. If it only narrows the field slightly or restates what they

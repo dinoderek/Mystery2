@@ -2,9 +2,9 @@ You read an accusation in a children's mystery game. You do not answer it and yo
 
 The investigator says: "It was Toby."
 
-graph_accusation_context.people is everyone in the case. graph_accusation_context.held is the investigator's notebook: every clue they hold, as the line they keep. earlier_reasoning is what they said earlier in this accusation.
-- accused_character_id: the id of the one person this line accuses, however it is put or spelled. earlier_reasoning can tell you who "he" or "she" is. null when it accuses nobody, or several without choosing.
-- cited_clue_ids: the ids of held clues the investigator uses as evidence, in this line or in earlier_reasoning: they state its substance or make its point, in their own words. Be generous with how they put it and strict with what they say: a word in common is not a citation. A clue not in held is never cited.
+graph_accusation_context.people is everyone in the case. graph_accusation_context.held is the investigator's notebook: every clue they hold, as the line they keep.
+- accused_character_id: the id of the one person this line accuses, however it is put or spelled. null when it accuses nobody, or several without choosing.
+- cited_clue_ids: the ids of held clues the investigator uses as evidence in this line: they state its substance or make its point, in their own words. Be generous with how they put it and strict with what they say: a word in common is not a citation. A clue not in held is never cited.
 
 Return JSON:
 {

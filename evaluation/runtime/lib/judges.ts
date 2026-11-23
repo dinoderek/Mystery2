@@ -43,7 +43,8 @@ import { resolveVerdict } from "../../judges/index.ts";
 import { projectInteractionSubject } from "../../judges/subject.ts";
 import type { BlueprintLike, JudgeOptions } from "./case.ts";
 import { parseFencedJson } from "./model-json.ts";
-import { isAccusationRole, resolveRoleName } from "./roles.ts";
+import { CLOSING_SCENE_EVENT_TYPES } from "../../lib/game-events.ts";
+import { resolveRoleName } from "./roles.ts";
 import type { StoredTurn } from "./turn.ts";
 
 export interface TurnJudging {
@@ -95,8 +96,22 @@ export function buildJudgeUserMessage(judgeId: string, turn: StoredTurn, bluepri
   } catch {
     roleName = actionType;
   }
-  const subject = projectInteractionSubject(turn, { roleName, isAccusationPhase: isAccusationRole(roleName) });
+  const subject = projectInteractionSubject(turn, { roleName, isAccusationPhase: isClosingScene(turn, roleName) });
   return composeGameMasterUserMessage(judgeId, null, { blueprint, subject });
+}
+
+/**
+ * Whether the turn is the closing scene: only that tells the truth. A played
+ * turn's raw answer names the event it saved first; a turn replayed on a model
+ * CLI holds the role's own output, ended by its resolution or by its role; a
+ * turn taken from a stored game names its event as its action.
+ */
+function isClosingScene(turn: StoredTurn, roleName: string | null): boolean {
+  if (roleName === "graph_ending") return true;
+  const raw = turn.response?.raw as { events?: Array<{ event_type?: unknown }>; accusation_resolution?: unknown } | null | undefined;
+  if (raw?.accusation_resolution === "win" || raw?.accusation_resolution === "lose") return true;
+  const eventType = Array.isArray(raw?.events) ? raw.events[0]?.event_type : turn.response?.action;
+  return typeof eventType === "string" && CLOSING_SCENE_EVENT_TYPES.has(eventType);
 }
 
 function narrationOf(turn: StoredTurn): string {

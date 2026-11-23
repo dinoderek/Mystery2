@@ -308,6 +308,14 @@ async function ridersFor(testCase: TurnCase, runtime: Runtime): Promise<ComesWit
   return graph ? (id) => ridersOf(graph, id) : () => [];
 }
 
+/** An accusation's `expect` grades what a clue-graph engine decided, so a case on any other blueprint is refused before a call is made. */
+async function assertAccusationGraded(testCase: TurnCase, root: string): Promise<void> {
+  if (testCase.action.type !== "accuse" || testCase.expect === undefined) return;
+  if (!(await readBlueprint(testCase.blueprint.path, root)).blueprint.clue_graph) {
+    throw new UsageError(`case ${testCase.id}: expect grades an accusation only on a clue-graph blueprint`);
+  }
+}
+
 async function replayCase(narrator: string, testCase: TurnCase, runtime: Runtime, logDir: string): Promise<Collected> {
   const { blueprint, blueprintPath } = await readBlueprint(testCase.blueprint.path, runtime.context.root);
   if (narrator === SERVER_NARRATOR) {
@@ -439,6 +447,7 @@ export function createJudgeTurnCommand({ startServer = startThrowawayServer }: J
         if (input.kind !== "case") continue;
         validateCase(input.testCase, input.testCase.id);
         validateExpect(input.testCase);
+        await assertAccusationGraded(input.testCase, context.root);
       }
 
       const items = await workItems(inputs, narrators, chosenJudges, samples);

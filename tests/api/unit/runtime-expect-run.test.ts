@@ -197,6 +197,21 @@ describe("a clue-graph accusation", () => {
     expect(turn.response.narration_text).toContain("ten to nine");
   });
 
+  it("refuses an accusation's expect on a blueprint that is not a clue graph, before any call", async () => {
+    const file = path.join(scratch, "v2-accuse.json");
+    fs.writeFileSync(file, JSON.stringify({
+      id: "v2-accuse",
+      blueprint: { path: "blueprints/mock-blueprint.json" },
+      given: { mode: "accuse", location_id: "loc-kitchen", time_remaining: 4, history: [] },
+      action: { type: "accuse", player_reasoning: "It was Alice." },
+      expect: { verdict: "win" },
+    }));
+    const { code, output, runDir } = await judgeTurn([file, "--narrator", "narrator-stub", "--samples", "1"]);
+    expect(code).not.toBe(0);
+    expect(output).toMatch(/only on a clue-graph blueprint/);
+    expect(runDir).toBe("");
+  });
+
   it("words a won accusation as the closing scene, with no kind of reply", async () => {
     const replies = [report("toby", ["clue_welly_prints"]), { narration: "You solved it! Toby's bench fell on Bertha, and the key went in the water butt." }];
     const { code, runDir } = await judgeTurn([libraryCase("accuse-toby-won"), "--narrator", "narrator-stub", "--samples", "1"], replies);

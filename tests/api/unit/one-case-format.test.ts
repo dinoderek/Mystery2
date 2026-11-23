@@ -111,9 +111,10 @@ describe("the world view", () => {
 });
 
 // A retired format's name, as code, tests or docs would spell it. The names are
-// matched without regard to case, except the two type names; `msf` only as its
-// own word part, so `msf_snapshot` and `MSF-CASE/1` match and `itemsFor` does not.
-const MSF = /(?<![a-z])msf(?![a-z])/i;
+// matched without regard to case, except the two type names and MSF, which is
+// matched as a word part in any of its spellings (`MSF-CASE/1`, `msf_snapshot`,
+// `validateMsfCaseFile`, `isMsf`) but not inside a word (`itemsFor`).
+const MSF = /Msf|MSF|(?<![a-z])msf/;
 const RETIRED_NAMES: readonly RegExp[] = [
   /blueprint-schema-v2/i,
   MSF,
@@ -149,6 +150,15 @@ const mayNameV2 = (file: string) => file.startsWith("tests/") || file.endsWith("
 const GENERATED = new Set(["package-lock.json"]);
 
 describe("the retired formats", () => {
+  it("are matched as MSF spells them, and not inside an ordinary word", () => {
+    for (const name of ["MSF-CASE/1", "msf_snapshot", "msf-case.ts", "validateMsfCaseFile", "MsfCaseFile", "msfSnapshot", "isMsf"]) {
+      expect(MSF.test(name), name).toBe(true);
+    }
+    for (const word of ["itemsFor", "paramsFrom", "termsFound", "atomsfile"]) {
+      expect(MSF.test(word), word).toBe(false);
+    }
+  });
+
   it("leave no module behind", () => {
     const gone = [
       "packages/shared/src/blueprint-schema-v2.ts",

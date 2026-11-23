@@ -37,6 +37,7 @@ const INPUTS = [
 	'accuse',
 	// A failed accusation returns to exploring; the next is made in one line.
 	'Bob did it, he was in the living room.',
+	'search',
 	'accuse Alice took the cookies: the crumbs and the empty jar both point to her.',
 	'this line is never reached'
 ];
@@ -115,8 +116,11 @@ describe('playtest loop', () => {
 			kind: 'turn',
 			event_type: 'accuse_resolved'
 		});
-		// The failed accusation left the game exploring with two accusations; the view says so.
+		// The failed accusation left the game exploring with two accusations; the view says so,
+		// and the next line is a turn played in explore mode.
 		const afterFailure = steps[PLAYED.indexOf('Bob did it, he was in the living room.') + 1];
+		expect(afterFailure.mode_before).toBe('explore');
+		expect(afterFailure.action).toEqual({ kind: 'turn', event_type: 'search' });
 		expect(afterFailure.view).toContain('Mode: Exploring');
 		expect(afterFailure.view).toContain('Accusations left: 2 of 3');
 		expect(steps[PLAYED.indexOf('accuse')].view).toContain('Accusations left: 3 of 3');

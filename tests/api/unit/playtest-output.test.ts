@@ -183,7 +183,7 @@ describe('counting accusations', () => {
 		expect(countAccusations(steps, 'lose')).toEqual({ accusations_spent: 3, won_on_third_accusation: false });
 	});
 
-	it('goes into the summary and the transcript', () => {
+	it('goes into the summary', () => {
 		const played = game({ steps: [turn('accuse_failed'), turn('accuse_failed'), turn('accuse_resolved')] });
 		const summary = summarizeGame({ ...FOLDER, game: played, calls: [] });
 		expect(summary).toMatchObject({ accusations_spent: 2, won_on_third_accusation: true });

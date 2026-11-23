@@ -64,6 +64,7 @@ describe("ai-prompts", () => {
       expect(template).toContain(narratorOnly);
       expect(template).not.toContain(dialogue);
       expect(template).toContain("This mystery's own voice");
+      expect(template).toContain("Each is a fact to put in your own words");
     }
     // Only the ending retells the account, where a character's words may be quoted.
     expect(await loadPromptTemplate("graph_ending", 7, { clueGraph: true })).toContain("What a character said in the account");

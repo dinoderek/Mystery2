@@ -25,6 +25,8 @@ import { readMockCase } from "../../testkit/src/mock-case.ts";
 const TARGET_AGE = 10; // the target_age of the V2 mock, the greenhouse and the mock case
 const NARRATION_STYLE = "salty harbor air and gull cries";
 
+// The V2 fixture, for the V2 roles (talk_start, talk_conversation, search_*,
+// accusation_judge) and the narration_style a V2 case layers: they leave with V2.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let blueprint: any;
 // The clue-graph roles play the greenhouse, also for a reader of 10.
@@ -51,6 +53,19 @@ function session(overrides: Record<string, unknown> = {}) {
     current_talk_character_id: null,
     time_remaining: 10,
     ...overrides,
+  };
+}
+
+/** A shared role's input, moved onto the mock case's kitchen and Alice. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function onMockCase(input: any): any {
+  return {
+    ...input,
+    blueprint: mockCase,
+    ...(input.session ? { session: { ...input.session, current_location_id: "loc-kitchen" } } : {}),
+    ...("destination_id" in input ? { destination_id: "loc-kitchen" } : {}),
+    ...("location_id" in input ? { location_id: "loc-kitchen" } : {}),
+    ...("character_id" in input ? { character_id: "char-alice" } : {}),
   };
 }
 
@@ -203,6 +218,7 @@ describe("every assembled prompt carries the blueprint's age and voice", () => {
     expect(prompt).not.toContain("is 6 years old");
   });
 
+  // A V2 case's narration_style: it leaves with V2.
   it.each(
     ["intro", "ambience", "talk_start", "talk_conversation", "talk_end",
       "search_bare", "search_targeted", "accusation_start", "accusation_judge"] as RoleRequestName[],
@@ -213,15 +229,7 @@ describe("every assembled prompt carries the blueprint's age and voice", () => {
   it.each(["intro", "ambience", "talk_end", "accusation_start"] as RoleRequestName[])(
     "%s renders a clue graph's target_age too",
     async (role) => {
-      const input = inputFor(role);
-      const onGraph = {
-        ...input,
-        blueprint: mockCase,
-        ...(input.session ? { session: { ...input.session, current_location_id: "loc-kitchen" } } : {}),
-        ...("destination_id" in input ? { destination_id: "loc-kitchen" } : {}),
-        ...("location_id" in input ? { location_id: "loc-kitchen" } : {}),
-        ...("character_id" in input ? { character_id: "char-alice" } : {}),
-      };
+      const onGraph = onMockCase(inputFor(role));
       const prompt = role === "intro" || role === "ambience"
         ? buildNarrationPrompt(onGraph)
         : (await buildRoleRequest(onGraph)).prompt;
@@ -274,21 +282,21 @@ describe("role-output requests carry a context", () => {
   });
 
   it("names the talk's location in the talk_end prompt, where the investigator stays", async () => {
-    const input = inputFor("talk_end");
-    const location = blueprint.world.locations.find((candidate: { id: string }) => candidate.id === input.location_id);
+    const input = onMockCase(inputFor("talk_end"));
+    const location = mockCase.world.locations.find((candidate) => candidate.id === input.location_id);
     const { prompt } = await buildRoleRequest(input);
     expect(prompt).toContain(`still in ${location?.name}`);
     expect(prompt).not.toContain("{{location_name}}");
   });
 
   it("refuses to assemble a narration role as a role-output request", async () => {
-    await expect(buildRoleRequest(inputFor("intro"))).rejects.toThrow(
+    await expect(buildRoleRequest(onMockCase(inputFor("intro")))).rejects.toThrow(
       /narration role/,
     );
   });
 
   it("refuses to assemble a role-output role as a narration prompt", () => {
-    expect(() => buildNarrationPrompt(inputFor("talk_start"))).toThrow(
+    expect(() => buildNarrationPrompt(onMockCase(inputFor("graph_talk")))).toThrow(
       /role-output role/,
     );
   });
@@ -309,6 +317,7 @@ describe("role resolution is shared, so handler and harness agree", () => {
   });
 });
 
+// V2's search roles: they leave with V2.
 describe("search word budget follows the outcome the backend already knows", () => {
   it("uses the roomier clue-reveal budget when a bare search will reveal a clue", async () => {
     const wordTarget = (s: string) =>

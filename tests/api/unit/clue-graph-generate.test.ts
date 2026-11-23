@@ -222,7 +222,7 @@ describe("generate, clue graph", () => {
     for (const option of [["--format", "v2"], ["--backend", "api"]]) {
       err = [];
       expect(await generate(option)).toBe(1);
-      expect(err.join("\n")).toContain(option[0]);
+      expect(err.join("\n")).toContain(`Unknown option '${option[0]}'`);
     }
   });
 

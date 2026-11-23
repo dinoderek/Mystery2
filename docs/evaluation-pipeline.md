@@ -80,7 +80,7 @@ kind each applies to (`blueprint`, `game`, `turn`). Ids are unique across it. A
 `candidate` judge runs only when named.
 
 A case judge is two files and a registry entry. The brief,
-`evaluation/dimensions/<id>.md`, states the judge's questions. The Zod schema,
+`evaluation/dimensions/<id>.md` (underscores become hyphens), states the judge's questions. The Zod schema,
 `<id>.schema.ts`, is appended to the prompt as JSON Schema and validates the
 answer; it wins over the brief. The entry gives the verdict rule and
 `idChecks`, the case ids the answer may cite.

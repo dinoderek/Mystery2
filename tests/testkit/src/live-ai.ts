@@ -31,7 +31,7 @@ export function requireLiveAIName(
   const name = resolveLiveAIName(env);
   if (!name) {
     throw new Error(
-      "A live suite calls the AI it is given and has none: run it with `npm run test:integration:live -- <ai>`, `test:e2e:live` or `test:blueprint:live`.",
+      "A live suite calls the AI it is given and has none: run it with `npm run test:integration:live -- <ai>` or `test:e2e:live`.",
     );
   }
   return name;

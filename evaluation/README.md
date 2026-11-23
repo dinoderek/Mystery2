@@ -25,7 +25,7 @@ affecting the result. A turn judge hands its answer schema in
 ## Judges
 
 `evaluation/core/registry.ts` lists the case's check and four judges; each
-judge's question is its brief, `evaluation/dimensions/<id>.md`. `--judges` and
+judge's question is its brief, `evaluation/dimensions/<id>.md` (underscores become hyphens). `--judges` and
 `--no-judges` mark unselected judges skipped; candidates run only when named.
 To iterate on a judge, run `judge blueprint` on a saved case and edit its
 files.

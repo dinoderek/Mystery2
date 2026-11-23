@@ -88,10 +88,14 @@ const NEVER_INVENT = `- Use only the characters, places and facts you are given;
 const DIALOGUE = "- Characters always speak in direct first-person dialogue with brief action beats.";
 // The clue-graph accusation round and ending have no one speaking but the
 // narrator. Told the dialogue rule there, the model quotes its own words and
-// gives them to the investigator ("you say warmly"), so it is replaced.
+// gives them to the investigator ("you say warmly"), so it is replaced. The
+// ending retells the account, where a character's words may matter as said.
 const NARRATOR_VOICE =
   "- No one speaks in this scene but you, the narrator: put none of your own words in quotation marks, and never give a line to the investigator, to yourself or to a voice.";
-const NARRATOR_VOICE_ROLES: ReadonlySet<string> = new Set(["graph_accusation_round", "graph_ending"]);
+const NARRATOR_VOICE_BY_ROLE: Partial<Record<AIPromptKey, string>> = {
+  graph_accusation_round: NARRATOR_VOICE,
+  graph_ending: `${NARRATOR_VOICE} What a character said in the account may be quoted as they said it.`,
+};
 const STANDARD_NARRATION_STYLE = [
   "## Narration style",
   '- Address the player as "you", the investigator, in the present tense.',
@@ -121,9 +125,11 @@ const CLUE_GRAPH_INVENTION = [
  */
 export function buildStyleGuidance(
   narrationStyle?: string | null,
-  options: { clueGraph?: boolean; narratorOnly?: boolean } = {},
+  options: { clueGraph?: boolean; narratorVoice?: string } = {},
 ): string {
-  const voiced = options.narratorOnly ? STANDARD_NARRATION_STYLE.replace(DIALOGUE, NARRATOR_VOICE) : STANDARD_NARRATION_STYLE;
+  const voiced = options.narratorVoice
+    ? STANDARD_NARRATION_STYLE.replace(DIALOGUE, options.narratorVoice)
+    : STANDARD_NARRATION_STYLE;
   const standard = options.clueGraph ? voiced.replace(NEVER_INVENT, CLUE_GRAPH_FACTS) : voiced;
   const custom = narrationStyle?.trim();
   const style = !custom
@@ -379,7 +385,7 @@ export async function loadPromptTemplate(
       "{{style_guidance}}",
       buildStyleGuidance(options.narrationStyle, {
         clueGraph: options.clueGraph,
-        narratorOnly: NARRATOR_VOICE_ROLES.has(role),
+        narratorVoice: NARRATOR_VOICE_BY_ROLE[role],
       }),
     );
 }

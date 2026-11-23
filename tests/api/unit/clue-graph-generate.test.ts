@@ -423,7 +423,7 @@ describe("the clue-graph workspace", () => {
     const again = spawnSync("bash", [SETUP, target], { encoding: "utf8" });
     expect(again.status).toBe(2);
     expect(again.stderr).toContain("refusing to overwrite existing workspace");
-    const other = spawnSync("bash", [SETUP, path.join(dir, "other"), "msf"], { encoding: "utf8" });
+    const other = spawnSync("bash", [SETUP, path.join(dir, "other"), "unknown"], { encoding: "utf8" });
     expect(other.status).toBe(1);
     expect(other.stderr).toContain("usage:");
   });

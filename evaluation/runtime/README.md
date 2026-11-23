@@ -20,8 +20,8 @@ given, not played, so every run gets identical input.
 `--model-override narrator-claude=<model>` selects the Claude model. `server`
 additionally applies engine reveal checks.
 
-The stub proves plumbing. Claude runs without tools, MCP or settings; OpenRouter
-uses `config/wrappers/openrouter-runtime.sh` with its model and key.
+Claude runs without tools, MCP or settings. The historical OpenRouter wrapper
+is `config/wrappers/openrouter-runtime.sh`.
 
 ### The throwaway server
 
@@ -103,9 +103,10 @@ retain their model baselines.
 ## Frozen grounding experiment
 
 `experiments/grounding/manifest.json` freezes the split, rubric, models, samples,
-order, human review and thresholds; the baseline index sits beside it.
-Raw artifacts remain under the output root. Held-out mysteries stay sealed
-until candidate freeze; tuning retires them.
+order, human review and thresholds; [baseline](experiments/grounding/baseline.json)
+retains results. Raw artifacts stay under the output root. Held-out mysteries
+stay sealed until candidate freeze; tuning retires them. Future runs exclude
+OpenRouter; reviews use Codex GPT-6.1 at Medium effort.
 
 CLI replay records
 `output_role` and uses its normal parser; it measures **parsed role output**,

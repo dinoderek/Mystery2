@@ -1,5 +1,5 @@
 {
-  "status": "Twelve-sample diagnostic captured; blinded operator review pending",
+  "status": "Complete original-policy diagnostic capture and blinded operator review",
   "manifest_sha256": "16216f6983afbbd843b7fba0bb0e0111eca64c2cc5fd2d9e6627e12165b585f7",
   "archive": "experiments/narrator-grounding-2026-11-23",
   "pilot": {
@@ -36,19 +36,161 @@
       "cost_usd": 4.108706000000001
     },
     "partial_run": "runs/2026-11-23/20-43-22-judge-turn",
-    "human_adjudication": "Pending; no acceptance conclusion",
+    "human_adjudication": "Not adjudicated; retained pilot only, no acceptance conclusion",
     "heldout": "Six mysteries and 72 fixtures sealed; zero held-out narrator calls",
     "original_status": "INCOMPLETE: funding required; measurement remains open"
   },
   "human_review": {
-    "status": "Pending operator ratings; no human verdicts inferred from mechanical checks",
+    "status": "Complete; all twelve primary samples rated by the operator before unblinding",
     "samples": 12,
     "packet": "human-review/review.html",
     "packet_json": "human-review/packet.json",
     "packet_sha256": "4307b908cb72f06e75977a44afd6786158eb94b6684b30ed976f204cdfa9150f",
     "packet_sha256_basis": "UTF-8 packet.json text excluding its final newline, matching review-index.json and downloaded ratings",
     "identity_key": "human-review/identity-key.json",
-    "expected_download": "grounding-review-4307b908.json"
+    "ratings": "human-review/ratings.json",
+    "ratings_sha256": "f4a26244b763bc731ed522057283d13f45e3668d094a8063929da7ccfc0935e8",
+    "summary": "human-review/summary.json",
+    "summary_sha256": "3c106203f125bc3de7830aa1ef6cfa461583dc92dcf664ac7fd7da8e69c3e4c1",
+    "overall": {
+      "reviewed": 12,
+      "major_violations": 0,
+      "major_uncertain": 0,
+      "age_suitable": 12,
+      "age_unsuitable": 0,
+      "age_uncertain": 0,
+      "quality_histogram": {
+        "1": 0,
+        "2": 1,
+        "3": 2,
+        "4": 9,
+        "5": 0
+      },
+      "median_quality": 4.0
+    },
+    "quality_finding": "The operator rated one failed-accusation reply 2/5 for unnecessary duplicated scene-setting. This is retained as a quality finding, with no major violation marked. No narrator policy or story-specific patch was made.",
+    "sample_ratings": [
+      {
+        "id": "R01",
+        "major": "false",
+        "age_suitable": "true",
+        "quality": 4,
+        "notes": "",
+        "binding": "narrator-astra",
+        "subject": "greenhouse-prizewinner-11-accuse-dobbs-nothing-cited-r1__narrator-astra__s1",
+        "behaviour": "accuse-nothing-cited"
+      },
+      {
+        "id": "R02",
+        "major": "false",
+        "age_suitable": "true",
+        "quality": 4,
+        "notes": "",
+        "binding": "narrator-astra",
+        "subject": "greenhouse-prizewinner-8-toby-pushed-just-tell-me-r1__narrator-astra__s1",
+        "behaviour": "hold-pushed"
+      },
+      {
+        "id": "R03",
+        "major": "false",
+        "age_suitable": "true",
+        "quality": 4,
+        "notes": "",
+        "binding": "narrator-opus",
+        "subject": "greenhouse-prizewinner-5-search-find-r1__narrator-opus__s1",
+        "behaviour": "search-find"
+      },
+      {
+        "id": "R04",
+        "major": "false",
+        "age_suitable": "true",
+        "quality": 4,
+        "notes": "",
+        "binding": "narrator-opus",
+        "subject": "greenhouse-prizewinner-9-thorne-boots-by-implication-r1__narrator-opus__s1",
+        "behaviour": "shown"
+      },
+      {
+        "id": "R05",
+        "major": "false",
+        "age_suitable": "true",
+        "quality": 4,
+        "notes": "",
+        "binding": "narrator-opus",
+        "subject": "greenhouse-prizewinner-8-toby-pushed-just-tell-me-r1__narrator-opus__s1",
+        "behaviour": "hold-pushed"
+      },
+      {
+        "id": "R06",
+        "major": "false",
+        "age_suitable": "true",
+        "quality": 3,
+        "notes": "",
+        "binding": "narrator-astra",
+        "subject": "greenhouse-prizewinner-9-thorne-boots-by-implication-r1__narrator-astra__s1",
+        "behaviour": "shown"
+      },
+      {
+        "id": "R07",
+        "major": "false",
+        "age_suitable": "true",
+        "quality": 4,
+        "notes": "",
+        "binding": "narrator-sonnet",
+        "subject": "greenhouse-prizewinner-5-search-find-r1__narrator-sonnet__s1",
+        "behaviour": "search-find"
+      },
+      {
+        "id": "R08",
+        "major": "false",
+        "age_suitable": "true",
+        "quality": 2,
+        "notes": "This is probably an unnecessary (and duplicative) description that has already been given:\n`The greenhouse is warm and smells of damp soil. `",
+        "binding": "narrator-sonnet",
+        "subject": "greenhouse-prizewinner-11-accuse-dobbs-nothing-cited-r1__narrator-sonnet__s1",
+        "behaviour": "accuse-nothing-cited"
+      },
+      {
+        "id": "R09",
+        "major": "false",
+        "age_suitable": "true",
+        "quality": 4,
+        "notes": "",
+        "binding": "narrator-sonnet",
+        "subject": "greenhouse-prizewinner-9-thorne-boots-by-implication-r1__narrator-sonnet__s1",
+        "behaviour": "shown"
+      },
+      {
+        "id": "R10",
+        "major": "false",
+        "age_suitable": "true",
+        "quality": 4,
+        "notes": "",
+        "binding": "narrator-astra",
+        "subject": "greenhouse-prizewinner-5-search-find-r1__narrator-astra__s1",
+        "behaviour": "search-find"
+      },
+      {
+        "id": "R11",
+        "major": "false",
+        "age_suitable": "true",
+        "quality": 4,
+        "notes": "",
+        "binding": "narrator-opus",
+        "subject": "greenhouse-prizewinner-11-accuse-dobbs-nothing-cited-r1__narrator-opus__s1",
+        "behaviour": "accuse-nothing-cited"
+      },
+      {
+        "id": "R12",
+        "major": "false",
+        "age_suitable": "true",
+        "quality": 3,
+        "notes": "",
+        "binding": "narrator-sonnet",
+        "subject": "greenhouse-prizewinner-8-toby-pushed-just-tell-me-r1__narrator-sonnet__s1",
+        "behaviour": "hold-pushed"
+      }
+    ]
   },
   "primary": {
     "measurement_commit": "34b63818743e9b18138da16161d014ebd3bf055b",
@@ -95,6 +237,23 @@
           "minimum": 3160,
           "median": 3849.0,
           "maximum": 5955
+        },
+        "human_review": {
+          "reviewed": 4,
+          "major_violations": 0,
+          "major_uncertain": 0,
+          "age_suitable": 4,
+          "age_unsuitable": 0,
+          "age_uncertain": 0,
+          "quality_histogram": {
+            "1": 0,
+            "2": 0,
+            "3": 1,
+            "4": 3,
+            "5": 0
+          },
+          "median_quality": 4.0,
+          "diagnostic_median_quality_threshold_met": true
         }
       },
       {
@@ -111,6 +270,23 @@
           "minimum": 4618,
           "median": 5204.0,
           "maximum": 5483
+        },
+        "human_review": {
+          "reviewed": 4,
+          "major_violations": 0,
+          "major_uncertain": 0,
+          "age_suitable": 4,
+          "age_unsuitable": 0,
+          "age_uncertain": 0,
+          "quality_histogram": {
+            "1": 0,
+            "2": 0,
+            "3": 0,
+            "4": 4,
+            "5": 0
+          },
+          "median_quality": 4.0,
+          "diagnostic_median_quality_threshold_met": true
         }
       },
       {
@@ -127,6 +303,23 @@
           "minimum": 2495,
           "median": 3643.0,
           "maximum": 5387
+        },
+        "human_review": {
+          "reviewed": 4,
+          "major_violations": 0,
+          "major_uncertain": 0,
+          "age_suitable": 4,
+          "age_unsuitable": 0,
+          "age_uncertain": 0,
+          "quality_histogram": {
+            "1": 0,
+            "2": 1,
+            "3": 1,
+            "4": 2,
+            "5": 0
+          },
+          "median_quality": 3.5,
+          "diagnostic_median_quality_threshold_met": false
         }
       }
     ]
@@ -145,7 +338,9 @@
     "inventory": "capture-artifacts.sha256",
     "inventory_sha256": "ce885ea1871474dede4cc4cef0a3a2fb6c0835bc2108f5378ff870cee617d80d",
     "files": 2983,
-    "covers": "Original pilot, primary capture, transport requests/responses/usage/timing, frozen input files, drivers and blinded review packet; human ratings will be retained separately when supplied."
+    "covers": "The capture inventory retains the original pilot, primary capture, transport records, frozen inputs, drivers and blinded packet. The separate human-review inventory retains the supplied raw ratings, unblinded summary and validated import script.",
+    "human_review_inventory": "human-review-artifacts.sha256",
+    "human_review_inventory_sha256": "5bcef9f14317b4573242fd59fc16085c83d29104a1ba03ceb84339cf136ed07f"
   },
   "heldout": {
     "mysteries": 6,
@@ -158,7 +353,7 @@
     "narrator_calls": 0,
     "status": "Sealed for later acceptance; no held-out outputs generated or used for tuning"
   },
-  "interpretation": "Descriptive original-policy development baseline: four fixed states of one purposively selected age-10 mystery, one sample per model/state. Mechanical checks are not a grounding or age-suitability verdict. Human assessment remains pending. Unseen-mystery reliability and a population 95% interval are not estimable from this diagnostic cohort; achievement of the final acceptance thresholds is not established.",
+  "interpretation": "Descriptive original-policy development baseline: four fixed states of one purposively selected age-10 mystery, one sample per model/state. The operator observed no major violations and rated all twelve age-suitable; quality median was 4 overall, 4 for Astra and Opus, and 3.5 for Sonnet. Sonnet missed the frozen median-quality threshold even on this diagnostic. Mechanical checks alone do not establish grounding or age suitability. Unseen-mystery reliability and a population 95% interval are not estimable from this cohort; final acceptance has not been demonstrated. No model or deployment change is recommended from these data.",
   "main_integration": {
     "base_commit": "62b8e3ec24833717bee7a186418a575b0cf4874d",
     "frozen_capture_commit": "34b63818743e9b18138da16161d014ebd3bf055b",
@@ -169,5 +364,12 @@
     "sha256": "8bb7d2080ace7522ee2115b52dd54cacbfee002228d0374af35ae916c6304b60",
     "verification_driver": "verify-main-integration.mjs",
     "verification_driver_sha256": "ff3a2517ecb458d42d06e6e4dc1c1aad7532cf4ef64f9b7eee9f07da706e9c77"
+  },
+  "future_execution": {
+    "recorded_at": "2026-11-23",
+    "operator_constraint": "No further OpenRouter calls; historical bindings and captures remain unchanged.",
+    "review_model": "Codex GPT-6.1",
+    "review_effort": "Medium",
+    "next_measurement": "Agree compatible non-OpenRouter bindings and a separate budget before future model batches."
   }
 }

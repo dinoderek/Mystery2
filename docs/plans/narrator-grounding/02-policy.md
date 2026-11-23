@@ -65,7 +65,8 @@ and [prompting](https://platform.claude.com/docs/en/build-with-claude/prompt-eng
   role visibility preserved. Do not invent a new reveal to correct it.
 - How draft review fits each existing call without conflicting with
   JSON-only output, authorised lies or simple narration.
-- Any live development measurement needs a separately agreed budget.
+- Future runs exclude OpenRouter; agree new bindings and a separate budget.
+  Reviews use Codex GPT-6.1 at Medium effort.
   Report model and policy effects separately; do not select a deployment yet.
 
 ## Validation and completion

@@ -17,8 +17,7 @@ import { readSummary } from "../../../evaluation/runtime/lib/expect-summary.ts";
 import { MOCK_CASE_PATH } from "../../testkit/src/mock-case.ts";
 
 const REPO_ROOT = process.cwd();
-const EXAMPLE = "evaluation/runtime/cases/expect-example.ts";
-const NO_EXPECT = "evaluation/runtime/cases/age-readability.ts";
+const NO_EXPECT = "evaluation/runtime/cases/clue-graph/mock-case/readability.ts";
 
 let scratch = "";
 let configFile = "";
@@ -57,11 +56,9 @@ async function judgeTurn(args: string[], replies: unknown[] = [], config = confi
   return { code, output, runDir };
 }
 
-// Search replies in the clue-graph search role's shape (`graph_search`), and in V2's for the V2 example cases.
+// Search replies in the clue-graph search role's shape (`graph_search`).
 const found = (id: string) => ({ narration: "You find it.", revealed_clue_id: id, costs_turn: true, input_understood: true, notebook: [{ id, line: "You found it." }] });
 const empty = { narration: "Nothing here.", revealed_clue_id: null, costs_turn: true, input_understood: true, notebook: [] };
-const v2Found = (id: string) => ({ narration: "You find it.", revealed_clue_id: id, input_understood: true });
-const v2Empty = { narration: "Nothing here.", revealed_clue_id: null, input_understood: true };
 
 beforeAll(() => {
   scratch = fs.mkdtempSync(path.join(os.tmpdir(), "mystery-expect-run-"));
@@ -243,20 +240,26 @@ describe("a clue-graph accusation", () => {
     expect(result.production?.calls[0].attempts[0].outcome).toBe("ok");
   });
 
-  // A V2 blueprint: it leaves with V2.
-  it("refuses an accusation's expect on a blueprint that is not a clue graph, before any call", async () => {
+  it("refuses a case on a blueprint that is not a clue graph, by name and before any call", async () => {
+    const v2 = path.join(scratch, "retired-case.json");
+    fs.writeFileSync(v2, JSON.stringify({ schema_version: "v2", id: "retired-case", world: { characters: [], locations: [] } }));
     const file = path.join(scratch, "v2-accuse.json");
     fs.writeFileSync(file, JSON.stringify({
       id: "v2-accuse",
-      blueprint: { path: "blueprints/mock-blueprint.json" },
+      blueprint: { path: v2 },
       given: { mode: "accuse", location_id: "loc-kitchen", time_remaining: 4, history: [] },
       action: { type: "accuse", player_reasoning: "It was Alice." },
       expect: { verdict: "win" },
     }));
     const { code, output, runDir } = await judgeTurn([file, "--narrator", "narrator-stub", "--samples", "1"]);
     expect(code).not.toBe(0);
-    expect(output).toMatch(/only on a clue-graph blueprint/);
+    expect(output).toContain(`${v2} is not a clue-graph case (v2)`);
     expect(runDir).toBe("");
+  });
+
+  it("accepts a clue-graph case", async () => {
+    const { code } = await judgeTurn([searchOnly(), "--narrator", "narrator-stub", "--samples", "1"], [found("clue_jar")]);
+    expect(code).toBe(0);
   });
 
   it("words a won accusation as the closing scene, with no kind of reply", async () => {
@@ -290,13 +293,18 @@ describe("a case without expect", () => {
 });
 
 describe("baseline save and compare", () => {
-  // The example cases play the V2 mock (`evaluation/runtime/cases/expect-example.ts`): they leave with the V2 runtime cases.
+  /** Two search cases in one run, each in its own group. */
+  const pair = () => [
+    searchOnly(),
+    searchOnly({ id: "search-bare", group: "should-give", action: { type: "search" }, expect: { revealed_clue_id: "clue_crumbs" } }),
+  ];
+
   it("stores a run's summary and compares a later run against it per case and per group", async () => {
-    const before = await judgeTurn([EXAMPLE, "--narrator", "narrator-stub", "--samples", "2"], [
-      v2Found("clue-jar"),
-      v2Empty,
-      { narration: "Alice nods.", revealed_clue_ids: [], used_clue_ids: [] },
-      { narration: "Alice nods.", revealed_clue_ids: [], used_clue_ids: [] },
+    const before = await judgeTurn([...pair(), "--narrator", "narrator-stub", "--samples", "2"], [
+      found("clue_jar"),
+      empty,
+      empty,
+      empty,
     ]);
     const file = path.join(scratch, "cases", "baselines", "narrator-stub.json");
     const saved = await evalCommand(["baseline", "save", before.runDir, file]);
@@ -304,17 +312,17 @@ describe("baseline save and compare", () => {
     expect(saved.output).toContain("narrator-stub (narrator-stub): 2 case(s), 2 samples per case");
     expect(readSummary(file)).toEqual(readSummary(before.runDir));
 
-    const after = await judgeTurn([EXAMPLE, "--narrator", "narrator-stub", "--samples", "2"], [
-      v2Found("clue-jar"),
-      v2Found("clue-jar"),
-      { narration: "Alice nods.", revealed_clue_ids: ["clue-alice-saw-bob"], used_clue_ids: [] },
-      { narration: "Alice nods.", revealed_clue_ids: [], used_clue_ids: [] },
+    const after = await judgeTurn([...pair(), "--narrator", "narrator-stub", "--samples", "2"], [
+      found("clue_jar"),
+      found("clue_jar"),
+      found("clue_crumbs"),
+      empty,
     ]);
     const compared = await evalCommand(["baseline", "compare", file, path.join(after.runDir, "expect.json")]);
     expect(compared.code).toBe(0);
-    expect(compared.output).toMatch(/search-pantry-shelf-reveals-jar\s+example-should-reveal\s+50%\s+100%\s+\+50 pts/);
-    expect(compared.output).toMatch(/ask-alice-about-bob-shares-sighting\s+example-should-give\s+0%\s+50%\s+\+50 pts/);
-    expect(compared.output).toMatch(/example-should-reveal\s+50%\s+100%\s+\+50 pts/);
+    expect(compared.output).toMatch(/search-pantry\s+should-reveal\s+50%\s+100%\s+\+50 pts/);
+    expect(compared.output).toMatch(/search-bare\s+should-give\s+0%\s+50%\s+\+50 pts/);
+    expect(compared.output).toMatch(/should-reveal\s+50%\s+100%\s+\+50 pts/);
   });
 
   it("refuses to store an incomplete run", async () => {

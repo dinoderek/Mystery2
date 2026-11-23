@@ -15,7 +15,7 @@ prompt keys map to the `search` output contract. Provider schemas and calls,
 including both clue-graph accusation stages, remain distinct from messages.
 The original policy keeps its existing priority; request data stays in the
 user message. Captured messages are compared byte for byte across providers
-and case formats in `tests/api/unit/narrator-messages.test.ts`.
+on clue graphs in `tests/api/unit/narrator-messages.test.ts`.
 
 **Lean prompts.** Each rule is stated once and no two conflict
 (`tests/api/unit/talk-prompt.test.ts`). Voice, reading level and grounding

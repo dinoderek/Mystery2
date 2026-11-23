@@ -22,8 +22,8 @@ import { createJudgeTurnCommand } from "../../../evaluation/runtime/judge-turn.t
 import type { StartServer, ThrowawayServer } from "../../../evaluation/runtime/lib/replay-server.ts";
 
 const REPO_ROOT = process.cwd();
-const CASES = "evaluation/runtime/cases/age-readability.ts";
-const EXPECT_CASES = "evaluation/runtime/cases/expect-example.ts";
+const CASES = "evaluation/runtime/cases/clue-graph/mock-case/readability.ts";
+const EXPECT_CASES = "evaluation/runtime/cases/clue-graph/mock-case/expect.ts";
 
 /** What the suite's own runner points its server at, so this one cannot reach a real model either. */
 const MOCK_ONLY_ENV = {
@@ -93,8 +93,8 @@ describe("judge turn through a throwaway server", () => {
     expect(server).not.toBeNull();
     expect(server?.databaseFile.startsWith(server?.configRoot as string)).toBe(true);
     expect(seeded.map((session) => session.ai_profile_id)).toEqual(["mock", "mock"]);
-    // Each case's history plus the line that was played: the ask has two prior events, the talk none.
-    expect(played.map((event) => event.event_type).sort()).toEqual(["ask", "ask", "talk", "talk"]);
+    // Each case's history plus the line that was played: the ask has two prior events, the talk one.
+    expect(played.map((event) => event.event_type).sort()).toEqual(["ask", "ask", "move", "talk", "talk"]);
 
     // The server and its root are gone, and nothing else was opened.
     expect(fs.existsSync(server?.configRoot as string)).toBe(false);
@@ -134,14 +134,16 @@ describe("judge turn through a throwaway server", () => {
     const summary = readSummary(path.join(outputRoot, day, run));
     expect(summary.complete).toBe(true);
     expect(summary.narrators.map((entry) => [entry.narrator, entry.model])).toEqual([["server", "mock"]]);
-    // The mock reveals the clue in the spot a search names, and the first clue Alice can share.
+    // The mock reveals the clue in the spot a search names, the answer Alice gives about noon, and a win for a well-argued accusation.
     expect(summary.narrators[0].cases.map((entry) => [entry.id, entry.right, entry.graded])).toEqual([
       ["search-pantry-shelf-reveals-jar", 2, 2],
-      ["ask-alice-about-bob-shares-sighting", 2, 2],
+      ["ask-alice-noon-shares-pantry", 2, 2],
+      ["accuse-alice-won", 2, 2],
     ]);
     expect(summary.narrators[0].groups.map((entry) => [entry.group, entry.share])).toEqual([
       ["example-should-reveal", 1],
       ["example-should-give", 1],
+      ["example-accuse", 1],
     ]);
   }, 60_000);
 

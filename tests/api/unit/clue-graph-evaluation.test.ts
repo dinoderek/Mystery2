@@ -27,7 +27,6 @@ import { createLocalTraceSource, extractSessionTrace } from "../../../evaluation
 import { runTraceMechanicalChecks } from "../../../evaluation/trace/lib/mechanical.ts";
 import { reconstructTrace } from "../../../evaluation/trace/lib/reconstruct.ts";
 import type { RawTrace } from "../../../evaluation/trace/lib/normalize.ts";
-import { makeBlueprint } from "./trace-fixtures.ts";
 
 const ROOT = process.cwd();
 const GREENHOUSE_FILE = "blueprints/clue-graph/greenhouse-prizewinner.json";
@@ -180,8 +179,8 @@ describe("what the game-master judges are told", () => {
     expect(says("gm_roleplay")).toContain("demeanor");
   });
 
-  it("leaves every other blueprint and every other judge's message as it was", () => {
-    const blueprint = makeBlueprint();
+  it("leaves a blueprint with no graph and every other judge's message as it was", () => {
+    const blueprint = { metadata: { title: "No graph" } };
     for (const id of GM) {
       expect(JSON.parse(composeJudgeUserMessage(id, null, { blueprint, subject: {} }))).not.toHaveProperty("format_guidance");
     }

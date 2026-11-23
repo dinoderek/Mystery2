@@ -15,7 +15,7 @@
 // attached best-effort (guarded per turn) and is the foundation for turning a
 // flagged turn into a replayable fixture later.
 
-import { ACCUSE_BACK, ACCUSE_FAILED, isLastAccusation } from "../../../packages/game-engine/src/accusations.ts";
+import { ACCUSE_BACK, ACCUSE_FAILED } from "../../../packages/game-engine/src/accusations.ts";
 import {
   EVENT_ROLE,
   LEGACY_ACCUSE_ROUND,
@@ -34,22 +34,16 @@ import type {
   SessionSnapshot,
 } from "../../../packages/game-engine/src/ai-context.ts";
 import {
-  buildAccusationJudgeContext,
   buildAccusationStartContext,
   buildGraphSearchAIContext,
   buildGraphTalkAIContext,
   buildGraphVerdictAIContext,
   buildMoveContext,
-  buildSearchContext,
-  buildTalkConversationContext,
   buildTalkEndContext,
-  buildTalkStartContext,
-  findLocationById,
   selectLocationConversationHistory,
 } from "../../../packages/game-engine/src/ai-context.ts";
-import { buildDiscoveredClueIdSet } from "../../../packages/game-engine/src/clue-discovery.ts";
 import type { AccusationVerdict, SavedAccusation } from "../../../packages/game-engine/src/clue-graph/accusation.ts";
-import type { Payload, RawEvent, RawTrace } from "./normalize.ts";
+import { assertClueGraphBlueprint, type Payload, type RawEvent, type RawTrace } from "./normalize.ts";
 
 // Re-exported so this module stays the trace pipeline's entry point for
 // per-event reveal reading (mechanical.ts imports it from here).
@@ -74,34 +68,6 @@ function toFragment(event: RawEvent): ConversationFragment {
   };
 }
 
-// Location-level revealed clue ids for a location, derived from the events that
-// preceded this turn. Mirrors the edge runtime: a clue counts as revealed for a
-// location when a prior search/ask event in that location revealed it and it is
-// one of the location's (or its sub-locations') clue ids.
-function revealedLocationClueIds(
-  blueprint: BlueprintContext,
-  locationId: string,
-  priorEvents: RawEvent[],
-): string[] {
-  const location = findLocationById(blueprint, locationId);
-  if (!location) return [];
-  const valid = new Set();
-  for (const clue of location.clues ?? []) valid.add(clue.id);
-  for (const sub of location.sub_locations ?? []) {
-    for (const clue of sub.clues ?? []) valid.add(clue.id);
-  }
-  const revealed: string[] = [];
-  for (const event of priorEvents) {
-    if (event.event_type !== "search") continue;
-    const scope = readField(event.payload, "location_id") ?? locationId;
-    if (scope !== locationId) continue;
-    for (const id of revealedClueIdsForEvent(event)) {
-      if (valid.has(id) && !revealed.includes(id)) revealed.push(id);
-    }
-  }
-  return revealed;
-}
-
 interface ReconstructInput {
   gameId: string;
   blueprint: BlueprintContext;
@@ -111,10 +77,7 @@ interface ReconstructInput {
   playerInput: string | null;
   searchQuery: string | null;
   history: ConversationFragment[];
-  priorEvents: RawEvent[];
   forcedByTimeout: boolean;
-  /** The accusation judged was the game's last. */
-  lastAccusation: boolean;
   /** A clue-graph accusation's saved decision. */
   verdict: AccusationVerdict | null;
   cited: string[];
@@ -132,69 +95,23 @@ function reconstructContext(roleName: string, ctx: ReconstructInput): AIContext 
 
   // A clue-graph case's talk and search turns are built from the graph and the
   // events (`docs/clue-graph.md`); every other role reads the world view as usual.
-  if (blueprint.clue_graph) {
-    if (roleName === "talk_start" || roleName === "talk_conversation") {
+  switch (roleName) {
+    case "talk_start":
+    case "talk_conversation":
       return buildGraphTalkAIContext({
         ...common,
         character_id: characterId,
         location_id: locationId,
         player_input: roleName === "talk_start" ? null : (playerInput ?? ""),
       });
-    }
-    if (roleName === "search") {
+    case "search":
       return buildGraphSearchAIContext({ ...common, location_id: locationId, search_query: ctx.searchQuery ?? null });
-    }
-    // An accusation is worded from the engine's saved decision. One saved before the
-    // engine decided was judged on the full blueprint, which is not rebuilt.
-    if (roleName === "accusation_judge") {
-      if (!ctx.verdict) return null;
-      return buildGraphVerdictAIContext({ ...accuseCommon, player_input: playerInput ?? "", verdict: ctx.verdict, cited: ctx.cited });
-    }
-  }
-
-  switch (roleName) {
-    case "talk_start":
-      return buildTalkStartContext({
-        ...common,
-        character_id: characterId,
-        location_id: locationId,
-      });
-    case "talk_conversation":
-      return buildTalkConversationContext({
-        ...common,
-        character_id: characterId,
-        location_id: locationId,
-        player_input: playerInput ?? "",
-      });
     case "talk_end":
       return buildTalkEndContext({
         ...common,
         character_id: characterId,
         location_id: locationId,
       });
-    case "search": {
-      const revealed = revealedLocationClueIds(
-        blueprint,
-        locationId,
-        ctx.priorEvents,
-      );
-      const location = findLocationById(blueprint, locationId);
-      const locationLevel = (location?.clues ?? []).filter((c) =>
-        revealed.includes(c.id),
-      );
-      const nextClue = ctx.searchQuery
-        ? null
-        : (location?.clues ?? [])[locationLevel.length] ?? null;
-      return buildSearchContext({
-        ...common,
-        location_id: locationId,
-        revealed_clue_ids: revealed,
-        // Gates read the whole session, as the game does.
-        discovered_clue_ids: [...buildDiscoveredClueIdSet(ctx.priorEvents)],
-        next_clue: nextClue,
-        search_query: ctx.searchQuery ?? null,
-      });
-    }
     case "move":
       return buildMoveContext({
         ...common,
@@ -212,13 +129,11 @@ function reconstructContext(roleName: string, ctx: ReconstructInput): AIContext 
         forced_by_timeout: ctx.forcedByTimeout ?? false,
         player_input: playerInput ?? null,
       });
+    // An accusation is worded from the engine's saved decision. One saved before the
+    // engine decided was judged on the full blueprint, which is not rebuilt.
     case "accusation_judge":
-      return buildAccusationJudgeContext({
-        ...accuseCommon,
-        player_input: playerInput ?? "",
-        last_accusation: ctx.lastAccusation,
-        forced_by_timeout: session.time_remaining === 0,
-      });
+      if (!ctx.verdict) return null;
+      return buildGraphVerdictAIContext({ ...accuseCommon, player_input: playerInput ?? "", verdict: ctx.verdict, cited: ctx.cited });
     default:
       return null;
   }
@@ -281,6 +196,7 @@ export interface Reconstruction {
 }
 
 export function reconstructTrace(rawTrace: RawTrace): Reconstruction {
+  assertClueGraphBlueprint(rawTrace.blueprint, "reconstructTrace");
   const blueprint = rawTrace.blueprint;
   const events = (playedEvents(rawTrace.events) as RawEvent[]).sort((a, b) => a.sequence - b.sequence);
 
@@ -309,13 +225,6 @@ export function reconstructTrace(rawTrace: RawTrace): Reconstruction {
     const playerInput =
       readField(payload, "player_reasoning") ?? readField(payload, "player_input");
     const forcedByTimeout = event.event_type === "forced_endgame";
-    // Match the runtime: the accusations spent before this one decide whether
-    // it is the last (`turn/resolve-accuse.ts` in the engine). A legacy round
-    // counts as a failed accusation.
-    const lastAccusation = isLastAccusation(
-      priorEvents.map((e) => (e.event_type === LEGACY_ACCUSE_ROUND ? { ...e, event_type: ACCUSE_FAILED } : e)),
-    );
-
     // Resolve the scope (location/character) for this turn from the pre-state,
     // falling back to payload hints.
     let locationId = state.current_location_id;
@@ -341,9 +250,7 @@ export function reconstructTrace(rawTrace: RawTrace): Reconstruction {
           playerInput,
           searchQuery,
           history: priorEvents.map(toFragment),
-          priorEvents,
           forcedByTimeout,
-          lastAccusation,
           verdict: (payload?.clue_graph_accusation as SavedAccusation | undefined)?.verdict ?? null,
           cited: (payload?.clue_graph_accusation as SavedAccusation | undefined)?.cited ?? [],
         });

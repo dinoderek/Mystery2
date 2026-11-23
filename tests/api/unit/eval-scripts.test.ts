@@ -139,7 +139,7 @@ describe('validate-judge-output', () => {
 describe('the baseline cases', () => {
 	it('loads every case with a unique id, each naming an action the replay knows', async () => {
 		const cases = await loadCasesFrom(path.join(REPO_ROOT, 'evaluation/runtime/cases'));
-		const baseline = await loadCasesFrom(path.join(REPO_ROOT, 'evaluation/runtime/cases/all-interactions.ts'));
+		const baseline = await loadCasesFrom(path.join(REPO_ROOT, 'evaluation/runtime/cases/clue-graph/mock-case/all-interactions.ts'));
 
 		expect(new Set(cases.map((c) => c.id)).size).toBe(cases.length);
 		expect(baseline.length).toBeGreaterThan(5);

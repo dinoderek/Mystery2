@@ -12,8 +12,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readAIConfig } from '../../../packages/game-engine/src/ai-config.ts';
 import { runEval } from '../../../evaluation/core/dispatch.ts';
 import { parseReply } from '../../../evaluation/playtest/lib/investigator.ts';
-import { createPlayCommand } from '../../../evaluation/playtest/play.ts';
+import { createPlayCommand, findBlueprint } from '../../../evaluation/playtest/play.ts';
 import { reportCommand } from '../../../evaluation/playtest/report.ts';
+import { MOCK_CASE_ID, MOCK_CASE_SLUG } from '../../testkit/src/mock-case.ts';
 
 const REPO_ROOT = process.cwd();
 const FIXTURE_RUN = path.join(REPO_ROOT, 'tests', 'api', 'unit', 'fixtures', 'playtest-run');
@@ -45,6 +46,43 @@ async function run(command: Parameters<typeof runEval>[2][number], argv: string[
 	);
 	return { code, output: lines.join('\n') };
 }
+
+describe("self-play's case lookup loads clue graphs only", () => {
+	const roots = path.join(REPO_ROOT, 'blueprints');
+	/** A case file of the retired format, in a blueprints folder of its own beside a clue-graph case. */
+	function retiredRoot(): { root: string; file: string } {
+		const root = path.join(scratch, 'blueprints');
+		fs.mkdirSync(path.join(root, 'clue-graph'), { recursive: true });
+		fs.copyFileSync(path.join(roots, 'clue-graph', 'mock-case.json'), path.join(root, 'clue-graph', 'mock-case.json'));
+		const file = path.join(root, 'the-missing-heartwood.json');
+		fs.writeFileSync(file, JSON.stringify({ schema_version: 'v2', id: 'the-missing-heartwood', world: {} }));
+		return { root, file };
+	}
+
+	it('finds a clue-graph case by path and by ID', () => {
+		const byPath = findBlueprint(path.join(roots, 'clue-graph', 'mock-case.json'), roots, '');
+		expect(byPath.blueprint.id).toBe(MOCK_CASE_ID);
+		expect(findBlueprint(MOCK_CASE_ID, roots, '').blueprint.clue_graph.metadata.id).toBe(MOCK_CASE_SLUG);
+	});
+
+	it('refuses a file of another format by name, given as a path', () => {
+		const { root, file } = retiredRoot();
+		expect(() => findBlueprint(file, root, '')).toThrow(`${file} is not a clue-graph case (v2)`);
+	});
+
+	it('refuses a case of another format that the query names, rather than not finding it', () => {
+		const { root, file } = retiredRoot();
+		expect(() => findBlueprint('the-missing-heartwood', root, '')).toThrow(`${file} is not a clue-graph case (v2)`);
+		expect(() => findBlueprint('no-such-case', root, '')).toThrow('No blueprint matches "no-such-case"');
+	});
+
+	it('refuses a case of another format by its id when the file is named otherwise', () => {
+		const { root, file } = retiredRoot();
+		const renamed = path.join(root, 'old-story.json');
+		fs.renameSync(file, renamed);
+		expect(() => findBlueprint('the-missing-heartwood', root, '')).toThrow(`${renamed} is not a clue-graph case (v2)`);
+	});
+});
 
 describe('play refuses what it cannot run, before it starts a server', () => {
 	const startServer = vi.fn();
@@ -164,7 +202,7 @@ describe('play refuses what it cannot run, before it starts a server', () => {
 		fs.writeFileSync(path.join(scratch, 'ai.json'), JSON.stringify({ ais: { measured: { backend: 'openrouter', model: 'test-model', key: 'test-key' }, unused: { backend: 'openrouter', model: 'other', key: 'other-key' } } }));
 		startServer.mockRejectedValue(new Error('no server in this test'));
 		const command = createPlayCommand({ startServer });
-		const args = ['play', '--blueprint', 'mock-blueprint', '--ai-profile', 'measured', '--config', writeConfig({ investigator: STUB_BINDING }), '--output-root', path.join(scratch, 'out')];
+		const args = ['play', '--blueprint', MOCK_CASE_SLUG, '--ai-profile', 'measured', '--config', writeConfig({ investigator: STUB_BINDING }), '--output-root', path.join(scratch, 'out')];
 		await run(command, args, { MYSTERY_CONFIG_ROOT: scratch });
 		const [options] = startServer.mock.calls[0];
 		expect(options.env.AI_PROFILE).toBe('measured');

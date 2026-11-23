@@ -12,7 +12,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { UsageError } from "../../core/errors.ts";
-import { buildClueGraphWorld } from "../../../packages/shared/src/clue-graph-case.ts";
+import { buildClueGraphWorld, type ClueGraphWorld } from "../../../packages/shared/src/clue-graph-case.ts";
 import { isClueGraphFile, type ClueGraphCase } from "../../../packages/shared/src/clue-graph-schema.ts";
 import { validateClueGraph } from "../../../packages/shared/src/clue-graph-validator.ts";
 
@@ -119,18 +119,14 @@ interface Named {
   id: string;
 }
 
+/** The parts of a clue-graph case's world view the harness reads. */
 export interface BlueprintLike {
-  clue_graph?: ClueGraphCase;
+  clue_graph: ClueGraphCase;
   id?: string;
   metadata?: { target_age?: number; title?: string };
   world: {
-    characters: Array<Named & { first_name: string; last_name?: string }>;
-    locations: Array<
-      Named & {
-        name: string;
-        clues?: Array<Named & { requires?: { clue_ids?: string[] } | null }>;
-      }
-    >;
+    characters: Array<Named & { first_name: string }>;
+    locations: Array<Named & { name: string }>;
   };
 }
 
@@ -142,7 +138,23 @@ export function validateCase(testCase: unknown, source: string): TurnCase {
   return candidate as TurnCase;
 }
 
-/** Reads a blueprint, which must have a top-level `id`. Relative paths are against `root`. */
+/**
+ * A case file as the game reads it: its world view, with the graph in
+ * `clue_graph`. Any other file is refused by name; the harness plays clue
+ * graphs only.
+ */
+export function readCaseWorld(candidate: unknown, file: string): ClueGraphWorld {
+  if (!isClueGraphFile(candidate)) {
+    const format = (candidate as { format?: unknown; schema_version?: unknown } | null);
+    const named = format?.format ?? format?.schema_version;
+    throw new UsageError(
+      `${file} is not a clue-graph case${typeof named === "string" ? ` (${named})` : ""}: the harness loads clue graphs only`,
+    );
+  }
+  return buildClueGraphWorld(validateClueGraph(candidate));
+}
+
+/** Reads a blueprint, which must be a clue-graph case. Relative paths are against `root`. */
 export async function readBlueprint(
   blueprintPath: string,
   root: string,
@@ -150,14 +162,12 @@ export async function readBlueprint(
   const absolute = path.resolve(root, blueprintPath);
   let blueprint: BlueprintLike;
   try {
-    const candidate = JSON.parse(await fs.readFile(absolute, "utf8"));
-    blueprint = isClueGraphFile(candidate)
-      ? buildClueGraphWorld(validateClueGraph(candidate))
-      : candidate as BlueprintLike;
+    blueprint = readCaseWorld(JSON.parse(await fs.readFile(absolute, "utf8")), absolute);
   } catch (error) {
+    if (error instanceof UsageError) throw error;
     throw new UsageError(`cannot read blueprint ${absolute}: ${(error as Error).message}`);
   }
-  if (!blueprint?.id) throw new UsageError(`Blueprint ${absolute} is missing a top-level "id" field`);
+  if (!blueprint.id) throw new UsageError(`Blueprint ${absolute} is missing a top-level "id" field`);
   return { blueprint, blueprintPath: absolute };
 }
 

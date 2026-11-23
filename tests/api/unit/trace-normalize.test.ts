@@ -6,7 +6,11 @@ import {
   buildRawTrace,
 } from "../../../evaluation/trace/lib/normalize.ts";
 import { extractSessionTrace } from "../../../evaluation/trace/lib/datasource.ts";
+import { readMockCaseGraph } from "../../testkit/src/mock-case.ts";
 import { makeBlueprint, makeEvents, makeSession } from "./trace-fixtures";
+
+/** A blueprint with no clue graph: the shape a V2 case had. */
+const v2Blueprint = () => ({ id: "the-missing-heartwood", metadata: { title: "The Missing Heartwood" }, world: { locations: [], characters: [] } });
 
 describe("buildRawTrace", () => {
   it("produces a versioned, sorted raw artifact", () => {
@@ -21,8 +25,8 @@ describe("buildRawTrace", () => {
 
     expect(trace.schema_version).toBe(TRACE_SCHEMA_VERSION);
     expect(trace.events.map((e: { sequence: number }) => e.sequence)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
-    // The stored name, and the model of the events: only event 2 is served by a model.
-    expect(trace.ai_profile).toEqual({ id: "default", model: "anthropic/claude-actual" });
+    // The stored name, and the model of the events: every event but the start is served by a model.
+    expect(trace.ai_profile).toEqual({ id: "default", model: "mock" });
   });
 
   it("lists every model a game's events carry, in the order they first appear", () => {
@@ -52,7 +56,7 @@ describe("buildRawTrace", () => {
     const bySequence = (seq: number) =>
       trace.events.find((e: { sequence: number }) => e.sequence === seq);
     // Event 2 carries an AI-served model; event 1 (start) has none.
-    expect(bySequence(2)?.model).toBe("anthropic/claude-actual");
+    expect(bySequence(2)?.model).toBe("mock");
     expect(bySequence(1)?.model).toBeNull();
   });
 
@@ -61,6 +65,15 @@ describe("buildRawTrace", () => {
     expect(() => buildRawTrace({ session: {}, events: {}, blueprint: {} })).toThrow(/events/);
     expect(() => buildRawTrace({ session: {}, events: [], blueprint: null })).toThrow(/blueprint/);
   });
+
+  it("refuses a blueprint that is not a clue graph, by name", () => {
+    expect(() => buildRawTrace({ session: makeSession(), events: makeEvents(), blueprint: v2Blueprint() })).toThrow(
+      /blueprint the-missing-heartwood is not a clue-graph case/,
+    );
+    expect(() => buildRawTrace({ session: makeSession(), events: [], blueprint: { metadata: { title: "Old Tale" } } })).toThrow(
+      /blueprint Old Tale is not a clue-graph case/,
+    );
+  });
 });
 
 describe("assertRawTrace", () => {
@@ -68,26 +81,30 @@ describe("assertRawTrace", () => {
     const trace = buildRawTrace({ session: makeSession(), events: makeEvents(), blueprint: makeBlueprint() });
     expect(assertRawTrace(trace)).toBe(trace);
     expect(() => assertRawTrace({})).toThrow(/schema_version/);
-    expect(() => assertRawTrace({ schema_version: "x", session: {}, blueprint: {} })).toThrow(/events/);
+    expect(() => assertRawTrace({ schema_version: "x", session: {}, blueprint: makeBlueprint() })).toThrow(/events/);
+  });
+
+  it("refuses a stored trace of a blueprint that is not a clue graph, by name", () => {
+    expect(() => assertRawTrace({ schema_version: "x", session: {}, blueprint: v2Blueprint(), events: [] })).toThrow(
+      /Raw trace: blueprint the-missing-heartwood is not a clue-graph case/,
+    );
   });
 });
 
 describe("extractSessionTrace", () => {
-  it("orchestrates a source's three methods into a raw trace", async () => {
+  const graphSession = () => ({ ...makeSession(), clue_graph_snapshot: JSON.stringify(readMockCaseGraph()) });
+
+  it("orchestrates a source's session and events into a raw trace of the snapshot's case", async () => {
     const calls: string[] = [];
     const fakeSource = {
       databasePath: "/tmp/mystery/game.db",
       async fetchSession(id: string) {
         calls.push(`session:${id}`);
-        return makeSession();
+        return graphSession();
       },
       async fetchEvents(id: string) {
         calls.push(`events:${id}`);
         return makeEvents();
-      },
-      async downloadBlueprint(id: string) {
-        calls.push(`blueprint:${id}`);
-        return makeBlueprint();
       },
     };
 
@@ -95,6 +112,22 @@ describe("extractSessionTrace", () => {
     expect(trace.session.id).toBe("sess-1");
     expect(trace.events).toHaveLength(9);
     expect(trace.source).toEqual({ kind: "local", database: "/tmp/mystery/game.db" });
-    expect(calls).toEqual(["session:sess-1", "events:sess-1", "blueprint:bp-1"]);
+    expect(trace.blueprint.clue_graph?.metadata.id).toBe("mock-case");
+    expect(trace.clue_graph).toMatchObject({ format: "clue-graph/2", revision: 1 });
+    expect(calls).toEqual(["session:sess-1", "events:sess-1"]);
+  });
+
+  it("refuses a game saved without a clue graph, naming the blueprint it played", async () => {
+    const fakeSource = {
+      async fetchSession() {
+        return makeSession();
+      },
+      async fetchEvents() {
+        return makeEvents();
+      },
+    };
+    await expect(extractSessionTrace(fakeSource, "sess-1")).rejects.toThrow(
+      /game sess-1 played blueprint bp-1, which is not a clue-graph case/,
+    );
   });
 });

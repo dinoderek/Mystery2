@@ -76,7 +76,7 @@ describe("registry entries", () => {
       "age_appropriate_turn",
     ]);
     expect(checksFor("blueprint").map((c) => c.id)).toEqual(["clue_graph_valid"]);
-    expect(checksFor("game").map((c) => c.id)).toEqual(["clue_accounting", "spoiler_leak", "clue_requires_violation"]);
+    expect(checksFor("game").map((c) => c.id)).toEqual(["clue_accounting", "spoiler_leak"]);
     expect(checksFor("turn").map((c) => c.id)).toEqual(["flesch"]);
     expect(REGISTRY.map((e) => e.id)).toEqual([
       "clue_graph_valid",
@@ -86,7 +86,6 @@ describe("registry entries", () => {
       "cg_step_sense",
       "clue_accounting",
       "spoiler_leak",
-      "clue_requires_violation",
       "gm_roleplay",
       "gm_clue_discipline",
       "gm_fabrication",
@@ -160,7 +159,7 @@ describe("loader", () => {
 describe("composer reproduces the prompt snapshots through the registry", () => {
   const filed = judges.filter((j) => j.prompt.kind === "files");
   const cases = filed.flatMap((judge) => {
-    const prefixes = judge.subjects.map((s) => ({ blueprint: "blueprint", game: "trace", turn: "runtime" })[s]);
+    const prefixes = judge.subjects.map((s) => ({ blueprint: "blueprint", game: "trace-clue-graph", turn: "runtime-clue-graph" })[s]);
     return prefixes.map((prefix) => ({ id: judge.id, snapshot: `${prefix}.${judge.id}` }));
   });
 
@@ -180,8 +179,8 @@ describe("composer reproduces the prompt snapshots through the registry", () => 
   });
 
   it("composes the turn-level age judge's prompt from the age profile", () => {
-    const message = JSON.parse(stored("runtime.age_appropriate.user.json")) as { target_age: number };
-    expect(composeTurnAgeSystemPrompt(message.target_age)).toBe(stored("runtime.age_appropriate.system.txt"));
+    const message = JSON.parse(stored("runtime-clue-graph.age_appropriate.user.json")) as { target_age: number };
+    expect(composeTurnAgeSystemPrompt(message.target_age)).toBe(stored("runtime-clue-graph.age_appropriate.system.txt"));
   });
 
   it("refuses to compose a file prompt for a judge built in code", async () => {

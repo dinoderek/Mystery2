@@ -18,7 +18,7 @@ import {
   type ClueGraphPlay,
 } from "../../../../../packages/game-engine/src/clue-graph/play.ts";
 import { ACCUSATIONS, accusationRuleLine } from "../../../../../packages/game-engine/src/accusations.ts";
-import type { Expect, HistoryEntry, TurnCase } from "../../../lib/case.ts";
+import type { Expect, HistoryEntry, JudgeOptions, TurnAction, TurnCase } from "../../../lib/case.ts";
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../../..");
 
@@ -99,11 +99,14 @@ export function played(graph: ClueGraphCase, steps: Step[]): Played {
   return { graph, play, history: history.map((row, index) => ({ sequence: index + 2, actor: "system", ...row })) };
 }
 
+/** What a case is called, graded on and judged by; a case with no `expect` is only replayed. */
 interface Labels {
   id: string;
-  group: string;
-  expect: Expect;
+  group?: string;
+  expect?: Expect;
   ungraded?: boolean;
+  judges?: string[];
+  judgeConfig?: Record<string, JudgeOptions>;
 }
 
 function given(file: string, { graph, play, history }: Played, mode: "explore" | "talk" | "accuse") {
@@ -118,6 +121,17 @@ function given(file: string, { graph, play, history }: Played, mode: "explore" |
       history,
     },
   };
+}
+
+/** The opening narration: `start` makes its own session, so there is no prior state. */
+export function startCase(file: string, labels: Labels): TurnCase {
+  return { ...labels, blueprint: { path: file }, given: {}, action: { type: "start" } };
+}
+
+/** Any one action where the play stands, in the mode it is in: a move, a talk, a farewell, the scene `accuse` opens. */
+export function actionCase(file: string, steps: Step[], action: TurnAction, labels: Labels): TurnCase {
+  const before = played(readGraph(file), steps);
+  return { ...labels, ...given(file, before, before.play.talking ? "talk" : "explore"), action };
 }
 
 /** A line said to the character the play is talking to. */

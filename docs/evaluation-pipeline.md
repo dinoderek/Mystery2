@@ -23,6 +23,8 @@ How they connect:
 - **Playtest** produces sessions, not grades: an AI investigator plays the
   real server. `--judge` hands the games to trace.
 
+Trace, runtime and playtest load clue-graph cases only; a case of any other format is refused by name.
+
 Played-game readers skip `no_turn_line` events (`playedEvents`, `evaluation/lib/game-events.ts`).
 
 ## Why the blueprint pipeline is shaped this way

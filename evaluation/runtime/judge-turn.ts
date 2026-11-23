@@ -302,18 +302,10 @@ function gradedSamples(items: readonly WorkItem[], results: readonly Result[], r
   });
 }
 
-/** What comes out with a clue in the case's blueprint: a clue graph's riders, else nothing. */
+/** What comes out with a clue in the case's blueprint: the graph's riders. */
 async function ridersFor(testCase: TurnCase, runtime: Runtime): Promise<ComesWith> {
   const graph = (await readBlueprint(testCase.blueprint.path, runtime.context.root)).blueprint.clue_graph;
-  return graph ? (id) => ridersOf(graph, id) : () => [];
-}
-
-/** An accusation's `expect` grades what a clue-graph engine decided, so a case on any other blueprint is refused before a call is made. */
-async function assertAccusationGraded(testCase: TurnCase, root: string): Promise<void> {
-  if (testCase.action.type !== "accuse" || testCase.expect === undefined) return;
-  if (!(await readBlueprint(testCase.blueprint.path, root)).blueprint.clue_graph) {
-    throw new UsageError(`case ${testCase.id}: expect grades an accusation only on a clue-graph blueprint`);
-  }
+  return (id) => ridersOf(graph, id);
 }
 
 async function replayCase(narrator: string, testCase: TurnCase, runtime: Runtime, logDir: string): Promise<Collected> {
@@ -448,7 +440,8 @@ export function createJudgeTurnCommand({ startServer = startThrowawayServer }: J
         if (input.kind !== "case") continue;
         validateCase(input.testCase, input.testCase.id);
         validateExpect(input.testCase);
-        await assertAccusationGraded(input.testCase, context.root);
+        // A case on anything but a clue graph is refused by name before a call is made.
+        await readBlueprint(input.testCase.blueprint.path, context.root);
       }
 
       const items = await workItems(inputs, narrators, chosenJudges, samples);

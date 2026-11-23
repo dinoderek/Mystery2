@@ -143,8 +143,8 @@
   },
   "retention": {
     "inventory": "capture-artifacts.sha256",
-    "inventory_sha256": "12605a183cf5e6e99786eeb324bb81e24f2ea2842ceb3523ceed8d2fdf5010c4",
-    "files": 2982,
+    "inventory_sha256": "ce885ea1871474dede4cc4cef0a3a2fb6c0835bc2108f5378ff870cee617d80d",
+    "files": 2983,
     "covers": "Original pilot, primary capture, transport requests/responses/usage/timing, frozen input files, drivers and blinded review packet; human ratings will be retained separately when supplied."
   },
   "heldout": {
@@ -160,12 +160,14 @@
   },
   "interpretation": "Descriptive original-policy development baseline: four fixed states of one purposively selected age-10 mystery, one sample per model/state. Mechanical checks are not a grounding or age-suitability verdict. Human assessment remains pending. Unseen-mystery reliability and a population 95% interval are not estimable from this diagnostic cohort; final acceptance thresholds are not established.",
   "main_integration": {
-    "base_commit": "3139e21",
+    "base_commit": "62b8e3ec24833717bee7a186418a575b0cf4874d",
     "frozen_capture_commit": "34b63818743e9b18138da16161d014ebd3bf055b",
     "development_messages_compared": 36,
     "primary_call_message_pairs_compared": 15,
     "result": "Byte-identical system and user messages, including engine-derived accusation replies; no model calls.",
     "artifact": "main-integration-parity.json",
-    "sha256": "b07d85cdfc717d7bdb4843bc197b196516213258f0d7085bd63713e2988f1ca6"
+    "sha256": "8bb7d2080ace7522ee2115b52dd54cacbfee002228d0374af35ae916c6304b60",
+    "verification_driver": "verify-main-integration.mjs",
+    "verification_driver_sha256": "ff3a2517ecb458d42d06e6e4dc1c1aad7532cf4ef64f9b7eee9f07da706e9c77"
   }
 }

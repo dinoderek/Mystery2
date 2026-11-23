@@ -12,7 +12,7 @@ import { makeTurn } from "./runtime-turn-helpers.ts";
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.restoreAllMocks(); });
 
 describe("captured live and replay messages", () => {
-  it.each(["evaluation/runtime/fixtures/greenhouse-prizewinner/blueprint.json", "blueprints/clue-graph/mock-case.json", "blueprints/clue-graph/greenhouse-prizewinner.json"])("preserves every interaction's bytes and priority on %s", async (file) => {
+  it.each(["blueprints/clue-graph/mock-case.json", "blueprints/clue-graph/greenhouse-prizewinner.json"])("preserves every interaction's bytes and priority on %s", async (file) => {
     const { blueprint } = await readBlueprint(file, process.cwd());
     Object.assign(blueprint.metadata!, { narration_style: "Warm harbor tales." });
     const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "narrator-messages-"));

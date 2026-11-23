@@ -1,29 +1,29 @@
 {
-  "case_id": "ask-alice",
+  "case_id": "ask-toby",
   "narrator": "narrator-stub",
   "model": "narrator-stub",
-  "narration": "\"Of course,\" comes the friendly reply. \"Ask me whatever you like.\"",
+  "narration": "You take a slow look around. Nothing new catches your eye just yet.",
   "judges": [
     {
       "id": "flesch",
       "tier": "mechanical",
       "status": "pass",
-      "score": 4.79,
+      "score": 0.56,
       "details": {
-        "target_age": 8,
-        "expected_grade": 3,
+        "target_age": 10,
+        "expected_grade": 5,
         "tolerance": 2,
-        "threshold": 5,
+        "threshold": 7,
         "action": "ask",
-        "words": 11,
-        "preview": "\"Of course,\" comes the friendly reply. \"Ask me whatever you like.\"",
+        "words": 13,
+        "preview": "You take a slow look around. Nothing new catches your eye just yet.",
         "parts": [
           {
-            "grade": 4.79,
+            "grade": 0.56,
             "pass": true,
-            "words": 11,
+            "words": 13,
             "speaker": "character",
-            "preview": "\"Of course,\" comes the friendly reply. \"Ask me whatever you like.\""
+            "preview": "You take a slow look around. Nothing new catches your eye just yet."
           }
         ]
       },
@@ -36,7 +36,7 @@
       "status": "pass",
       "score": 9,
       "details": {
-        "target_age": 8,
+        "target_age": 10,
         "estimated_reading_age": 9,
         "reasoning": "Close to the target age."
       },
@@ -137,11 +137,37 @@
       "attempts": [
         "ok"
       ]
+    },
+    {
+      "id": "gm_broad",
+      "tier": "judge",
+      "status": "pass",
+      "score": 0,
+      "details": {
+        "major_count": 0,
+        "minor_count": 1,
+        "model_verdict": "pass",
+        "verdict_disagreement": false,
+        "reasoning": "Readable and in character."
+      },
+      "findings": [
+        {
+          "sequence": 2,
+          "severity": "minor",
+          "kind": "not_age_fit",
+          "quote": "a quick, tight smile",
+          "why": "A figurative turn a little past the age, in an otherwise readable turn.",
+          "refers_to": null
+        }
+      ],
+      "attempts": [
+        "ok"
+      ]
     }
   ],
   "summary": {
     "counts": {
-      "pass": 4,
+      "pass": 5,
       "fail": 2,
       "error": 0,
       "skipped": 0

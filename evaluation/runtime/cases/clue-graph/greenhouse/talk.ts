@@ -14,9 +14,6 @@
 // - confession: the last step, a plain question once every crack is out.
 // - hold-*: nothing is used, so nothing opens: pushing, a topic word only, small
 //   talk, a clue held but not used, gibberish.
-//
-// Cases whose ID matches one in `talk-reveals/` port that greenhouse case, so
-// `baseline compare` sets them side by side.
 
 import { lineCase, type Step } from "../support/play.ts";
 

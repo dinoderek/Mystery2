@@ -30,9 +30,9 @@
   "readability": {
     "target_age": 9,
     "threshold": 6,
-    "pass": 9,
-    "total": 9,
-    "mean_grade": 2.2,
-    "max_grade": 4.83
+    "pass": 5,
+    "total": 5,
+    "mean_grade": 0.75,
+    "max_grade": 2.88
   }
 }

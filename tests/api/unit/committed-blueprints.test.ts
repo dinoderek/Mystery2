@@ -51,7 +51,6 @@ describe("every committed blueprint", () => {
     const files = new Set(found.map(({ file }) => file));
     for (const expected of [
       "blueprints/mock-blueprint.json",
-      "evaluation/runtime/fixtures/large-snow-foxes/blueprint.json",
       "tests/api/unit/fixtures/snow-foxes-trace.json",
     ]) {
       expect(files.has(expected), expected).toBe(true);

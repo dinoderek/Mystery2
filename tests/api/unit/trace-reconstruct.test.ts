@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { reconstructTrace, revealedClueIdsForEvent } from "../../../evaluation/trace/lib/reconstruct.ts";
 import { runTraceMechanicalChecks } from "../../../evaluation/trace/lib/mechanical.ts";
-import { makeBlueprint, makeEvents, makeMultiStepEvents, makeRawTrace, type TraceEventRow } from "./trace-fixtures";
+import { makeBlueprint, makeEvents, makeMultiStepEvents, makeRawTrace, playedRows, type TraceEventRow } from "./trace-fixtures";
 
 function moveEvent(seq: number, locationId: string): TraceEventRow {
   return { id: `m${seq}`, sequence: seq, event_type: "move", actor: "narrator", payload: { location_id: locationId }, narration: `At ${locationId}.`, narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:00:00Z" };
@@ -18,15 +18,15 @@ type Turn = {
   pre_state: { mode: string; current_location_id: string | null };
   reconstructed_context: {
     mode?: string;
-    search_context?: { location_id?: string; next_clue?: { id?: string } | null } | null;
-    talk_context?: { active_character?: { id?: string; state?: { commitments: string[] } } } | null;
+    graph_search_context?: { location_name?: string; visible_spots?: string[] } | null;
+    graph_talk_context?: { character?: { id?: string } } | null;
+    graph_accusation_context?: { reply?: { kind?: string } } | null;
     move_context?: { has_visited_before?: boolean } | null;
-    accusation_judge_context?: unknown | null;
   } | null;
 };
 
-function turnBySeq(turns: Turn[], seq: number): Turn {
-  const found = turns.find((t) => t.sequence === seq);
+function turnBySeq(turns: readonly unknown[], seq: number): Turn {
+  const found = (turns as Turn[]).find((t) => t.sequence === seq);
   if (!found) throw new Error(`no turn ${seq}`);
   return found;
 }
@@ -74,32 +74,36 @@ describe("reconstructTrace", () => {
     expect(turnBySeq(turns, 3).role_name).toBe("talk_start");
     expect(turnBySeq(turns, 4).role_name).toBe("talk_conversation");
     expect(turnBySeq(turns, 6).role_name).toBe("move");
-    expect(turnBySeq(turns, 9).role_name).toBe("accusation_judge");
+    // A closing scene names its own role.
+    expect(turnBySeq(turns, 9).role_name).toBe("graph_ending");
+    expect(issues).toHaveLength(0);
   });
 
   it("folds session state (location, talk character, mode) across the trace", () => {
-    // Pre-state of the garden search reflects the earlier move.
-    expect(turnBySeq(turns, 7).pre_state.current_location_id).toBe("loc_garden");
+    // Pre-state of the living-room search reflects the earlier move.
+    expect(turnBySeq(turns, 7).pre_state.current_location_id).toBe("loc-living-room");
     // While talking, the ask turn is scoped to the active character.
-    expect(turnBySeq(turns, 4).character_id).toBe("char_mara");
+    expect(turnBySeq(turns, 4).character_id).toBe("char-alice");
+    expect(turnBySeq(turns, 4).pre_state.mode).toBe("talk");
     expect(final_state.mode).toBe("ended");
   });
 
-  it("reconstructs the search context with the real builder", () => {
+  it("reconstructs the search context with the clue-graph builder", () => {
     const search = turnBySeq(turns, 2);
     expect(search.context_error).toBeNull();
-    expect(search.reconstructed_context?.search_context?.location_id).toBe("loc_hall");
-    // First bare search in the hall: next_clue is the first location clue.
-    expect(search.reconstructed_context?.search_context?.next_clue?.id).toBe("clue_hall_1");
+    expect(search.reconstructed_context?.graph_search_context?.location_name).toBe("Kitchen");
   });
 
-  it("reconstructs talk context scoped to the active character", () => {
-    const talk = turnBySeq(turns, 3);
-    expect(talk.context_error).toBeNull();
-    expect(talk.reconstructed_context?.talk_context?.active_character?.id).toBe("char_mara");
+  it("reconstructs talk context scoped to the active character, for the greeting and for a line", () => {
+    for (const sequence of [3, 4]) {
+      const talk = turnBySeq(turns, sequence);
+      expect(talk.context_error).toBeNull();
+      expect(talk.reconstructed_context?.graph_talk_context?.character?.id).toBe("char-alice");
+    }
+    expect(turnBySeq(turns, 4).reconstructed_context?.mode).toBe("talk");
   });
 
-  it("reads what an ask turn recorded about the character, and rebuilds the talk state from it", () => {
+  it("reads what an ask turn recorded about the character", () => {
     // The fixture's ask predates recorded use, so nothing is read from it.
     expect(turnBySeq(turns, 4).recorded_use).toBeNull();
     expect(turnBySeq(turns, 2).recorded_use).toBeNull();
@@ -115,18 +119,20 @@ describe("reconstructTrace", () => {
       used_quote: null,
       new_commitments: ["saw only a shadow"],
     });
-    // Saying goodbye to Mara, her rebuilt state holds the commitment.
-    expect(turnBySeq(replayed, 5).reconstructed_context?.talk_context?.active_character?.state?.commitments).toEqual([
-      "saw only a shadow",
-    ]);
   });
 
-  it("keeps full-blueprint ground truth only in the accusation judge context", () => {
-    expect(turnBySeq(turns, 9).reconstructed_context?.accusation_judge_context).not.toBeNull();
-    // Non-judge roles must never carry the judge-only context (spoiler safety,
-    // enforced by the real builder's assertRoleContextSafety).
-    expect(turnBySeq(turns, 2).reconstructed_context?.accusation_judge_context).toBeNull();
-    expect(issues).toHaveLength(0);
+  it("builds the verdict context only for an accusation turn, and never for another role", () => {
+    expect(turnBySeq(turns, 9).reconstructed_context?.graph_accusation_context).toBeTruthy();
+    // Spoiler safety, enforced by the real builder's assertRoleContextSafety.
+    expect(turnBySeq(turns, 2).reconstructed_context?.graph_accusation_context).toBeUndefined();
+    expect(turnBySeq(turns, 3).reconstructed_context?.graph_accusation_context).toBeUndefined();
+  });
+
+  it("refuses a trace whose blueprint is not a clue graph, by name", () => {
+    const v2 = { ...makeBlueprint(), clue_graph: undefined };
+    expect(() => reconstructTrace(makeRawTrace({ blueprint: { ...v2, id: "the-missing-heartwood" } }))).toThrow(
+      /blueprint the-missing-heartwood is not a clue-graph case/,
+    );
   });
 });
 
@@ -134,33 +140,29 @@ describe("reconstructTrace — accusation fidelity", () => {
   const { turns } = reconstructTrace(makeRawTrace({ events: makeMultiStepEvents() }));
 
   it("reads accusation player reasoning from player_reasoning (not player_input)", () => {
-    expect(turnBySeq(turns, 4).player_input).toBe("I think it was Mara.");
-    expect(turnBySeq(turns, 5).player_input).toBe("No — it was Dorn, his glove was by the case.");
+    expect(turnBySeq(turns, 5).player_input).toBe("I think it was Bob.");
+    expect(turnBySeq(turns, 6).player_input).toBe("No, it was Alice. Her fingerprints are on the jar.");
   });
 
-  type JudgeCtx = { accusation_judge_context?: { last_accusation?: boolean } | null };
-  const lastOf = (found: typeof turns, sequence: number) =>
-    (turnBySeq(found, sequence).reconstructed_context as JudgeCtx)?.accusation_judge_context?.last_accusation;
+  it("words a failed accusation from the engine's saved decision", () => {
+    const failed = turnBySeq(turns, 5);
+    expect(failed.role_name).toBe("graph_accusation_round");
+    expect(failed.context_error).toBeNull();
+    expect(failed.reconstructed_context?.graph_accusation_context?.reply?.kind).toBe("missing");
+  });
 
-  it("tells the judge whether an accusation is the last, like the runtime: from the failures before it", () => {
-    expect(lastOf(turns, 4)).toBe(false);
-    expect(lastOf(turns, 5)).toBe(false); // one failure before it: two left
-    const [start, ...rest] = makeMultiStepEvents().slice(2);
-    const failed = rest[0];
-    const third = reconstructTrace(
-      makeRawTrace({ events: [start, failed, { ...failed, id: "m5", sequence: 5 }, { ...rest[1], id: "m6", sequence: 6 }] }),
-    ).turns;
-    expect(lastOf(third, 6)).toBe(true);
-    // A game recorded with rounds counts each as a failed accusation.
-    const legacy = { ...failed, event_type: "accuse_round" };
-    const rounds = reconstructTrace(
-      makeRawTrace({ events: [start, legacy, { ...legacy, id: "m5", sequence: 5 }, { ...rest[1], id: "m6", sequence: 6 }] }),
-    ).turns;
-    expect(lastOf(rounds, 6)).toBe(true);
+  it("rebuilds no context for an accusation saved before the engine decided it, and reports no error", () => {
+    const events = makeMultiStepEvents().map((event) =>
+      event.sequence === 5 ? { ...event, payload: { ...event.payload, clue_graph_accusation: undefined } } : event,
+    );
+    const failed = turnBySeq(reconstructTrace(makeRawTrace({ events })).turns, 5);
+    expect(failed.reconstructed_context).toBeNull();
+    expect(failed.context_error).toBeNull();
   });
 
   it("folds a failed accusation back to exploring", () => {
-    expect(turnBySeq(turns, 5).pre_state).toMatchObject({ mode: "explore" });
+    expect(turnBySeq(turns, 5).pre_state).toMatchObject({ mode: "accuse" });
+    expect(turnBySeq(turns, 6).pre_state).toMatchObject({ mode: "explore" });
   });
 });
 
@@ -169,7 +171,7 @@ describe("reconstructTrace — context mode & revisit fidelity", () => {
     // forced_endgame and immediate-accusation both build context in accuse mode
     // at runtime, even though the pre-state is still explore.
     const events: TraceEventRow[] = [
-      moveEvent(1, "loc_hall"),
+      moveEvent(1, "loc-living-room"),
       { id: "fe", sequence: 2, event_type: "forced_endgame", actor: "narrator", payload: {}, narration: "Time is up — name the culprit.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:01:00Z" },
     ];
     const forced = turnBySeq(reconstructTrace(makeRawTrace({ events })).turns, 2);
@@ -178,7 +180,7 @@ describe("reconstructTrace — context mode & revisit fidelity", () => {
   });
 
   it("computes has_visited_before from prior location history, not a visited set", () => {
-    const events: TraceEventRow[] = [moveEvent(1, "loc_garden"), moveEvent(2, "loc_garden")];
+    const events: TraceEventRow[] = [moveEvent(1, "loc-living-room"), moveEvent(2, "loc-living-room")];
     const { turns } = reconstructTrace(makeRawTrace({ events }));
     expect(turnBySeq(turns, 1).reconstructed_context?.move_context?.has_visited_before).toBe(false);
     expect(turnBySeq(turns, 2).reconstructed_context?.move_context?.has_visited_before).toBe(true);
@@ -189,12 +191,12 @@ describe("events that store the line as typed", () => {
   // The player's own words beside what the turn did, under `input`.
   const TYPED: Record<string, string> = {
     search: "search",
-    talk: "talk to Mara",
-    ask: "Did you see anything?",
+    talk: "talk to Alice",
+    ask: "Where were you at noon?",
     end_talk: "bye",
-    move: "go to the garden",
+    move: "go to the living room",
     accuse_start: "accuse",
-    accuse_resolved: "Dorn did it.",
+    accuse_resolved: "Alice did it.",
   };
 
   function withTypedLines(): TraceEventRow[] {
@@ -212,69 +214,28 @@ describe("events that store the line as typed", () => {
   });
 });
 
-describe("reconstructTrace, for a spot whose pointer was found elsewhere", () => {
-  // The garden's shed is locked behind the hall footprint, found in the hall.
-  function pointedBlueprint() {
-    const bp = makeBlueprint();
-    return {
-      ...bp,
-      world: {
-        ...bp.world,
-        locations: bp.world.locations.map((loc) =>
-          loc.id === "loc_garden"
-            ? {
-                ...loc,
-                sub_locations: [
-                  {
-                    id: "sl_shed",
-                    name: "the potting shed",
-                    hint: "A shed door.",
-                    clues: [
-                      {
-                        id: "clue_shed_1",
-                        text: "A trowel with fresh mud.",
-                        requires: {
-                          kind: "pointer" as const,
-                          clue_ids: ["clue_hall_1"],
-                          rationale: "The footprint leads to the shed.",
-                          target: { location_id: "loc_garden", sub_location_id: "sl_shed" },
-                        },
-                      },
-                    ],
-                  },
-                ],
-              }
-            : loc,
-        ),
-      },
-    };
-  }
-  const search = (seq: number, location: string, payload: Record<string, unknown>): TraceEventRow => ({
-    id: `s${seq}`, sequence: seq, event_type: "search", actor: "system",
-    payload: { location_id: location, ...payload },
-    narration: "You look around.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:00:00Z",
-  });
-  const spotsAt = (events: TraceEventRow[]) => {
-    const { turns } = reconstructTrace(makeRawTrace({ blueprint: pointedBlueprint(), events }));
-    const context = turnBySeq(turns, events.at(-1)!.sequence).reconstructed_context as {
-      search_context?: { sub_locations?: Array<{ id: string }> };
-    } | null;
-    return context?.search_context?.sub_locations?.map((spot) => spot.id);
+describe("reconstructTrace, for a spot revealed by a clue found elsewhere", () => {
+  // The laundry basket shows once Bob has said what he saw, in the living room.
+  const spotsAfter = (steps: Parameters<typeof playedRows>[0]) => {
+    const events = playedRows([...steps, { move: "loc-kitchen" }, { search: null }]);
+    const { turns } = reconstructTrace(makeRawTrace({ events }));
+    return turns.at(-1)?.reconstructed_context?.graph_search_context?.visible_spots;
   };
 
-  it("shows the spot once the session holds its pointer, as the game did", () => {
+  it("shows the spot once the session holds its clue, as the game did", () => {
     expect(
-      spotsAt([
-        search(1, "loc_hall", { revealed_clue_id: "clue_hall_1", revealed_clue_ids: ["clue_hall_1"] }),
-        moveEvent(2, "loc_garden"),
-        search(3, "loc_garden", { revealed_clue_id: null, revealed_clue_ids: [] }),
+      spotsAfter([
+        { move: "loc-living-room" },
+        { talk: "char-bob", narration: "Bob waves." },
+        { say: "Did you see Alice?", reply: "Yes, the apron.", asked: ["bob_saw_apron"] },
       ]),
-    ).toEqual(["sl_shed"]);
+    ).toContain("the laundry basket");
   });
 
   it("hides it before then", () => {
-    expect(
-      spotsAt([moveEvent(1, "loc_garden"), search(2, "loc_garden", { revealed_clue_id: null, revealed_clue_ids: [] })]),
-    ).toEqual([]);
+    expect(spotsAfter([{ move: "loc-living-room" }, { talk: "char-bob", narration: "Bob waves." }])).toEqual([
+      "the pantry shelf",
+      "under the kitchen sink",
+    ]);
   });
 });

@@ -65,6 +65,6 @@ export default [
     id: "accuse-leo-won",
     group: "accuse-won",
     // The closing scene tells the whole account: who, how it was squashed, where it was hidden.
-    expect: { verdict: "win", handed: ["Leo", ["sat on", "sat down on", "sitting on"], ["paper dragon", "behind the dragon"]] },
+    expect: { verdict: "win", handed: ["Leo", ["sat on", "sat down on", "sitting on", "sits on", "sits down on"], ["paper dragon", "behind the dragon"]] },
   }),
 ];

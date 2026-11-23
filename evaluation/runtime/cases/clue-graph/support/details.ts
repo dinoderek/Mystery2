@@ -6,7 +6,8 @@
 
 /** That a statement was taken back. */
 export const TAKEN_BACK = [
-  "taken back", "took back", "takes back", "taking back", "took it back", "took that back", "taken that back", "took those words back", "took his words back",
+  "taken back", "took back", "takes back", "taking back", "took it back", "took that back", "taken that back", "took those words back", "took his words back", "took that statement back",
+  "taken it back", "takes it back", "take it back", "take back",
   "taken those words back", "taken his words back", "taken her words back", "taken that story back", "taken his story back", "taken her story back",
   "no longer says", "no longer stands", "no longer counts", "no longer believes", "withdrawn", "changed his story", "changed her story", "changed his mind", "changed her mind",
 ];

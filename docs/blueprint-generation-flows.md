@@ -75,7 +75,9 @@ location and character).
 
 A clue-graph case gives facts to word, talk `knows` and first-meeting
 appearance; saved lines stand for found clues. The engine chooses accusation
-verdicts and reply material ([clue graph](clue-graph.md)).
+verdicts and reply material ([clue graph](clue-graph.md)). The
+[grounding policy](ai-runtime.md#grounding-policy) governs how the narrator uses
+those facts within its role.
 
 ## Evaluation
 

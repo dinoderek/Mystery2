@@ -62,6 +62,7 @@ import {
   renderPrompt,
 } from "./ai-prompts.ts";
 import { talkPromptProfile } from "./talk-prompt.ts";
+import { NARRATOR_GROUNDING } from "./narrator-grounding.ts";
 import { clueGraphRoleGuidance } from "./clue-graph/judge-guidance.ts";
 import { GRAPH_TALK_EARLIER_LINES, GRAPH_TALK_GREETING_TURN, GRAPH_TALK_LINE_TURN } from "./clue-graph/prompts.ts";
 import { linesThisConversation, playOf } from "./clue-graph/history.ts";
@@ -78,7 +79,7 @@ export type NarrationRoleName = "intro" | "ambience";
 
 export type RoleRequestName = AIPromptKey | NarrationRoleName;
 
-/** Transport-independent messages. Keep policy at its existing priority. */
+/** Transport-independent messages. Only stable policy and output instructions go in system. */
 export interface NarratorMessages {
   system: string;
   user: string;
@@ -86,7 +87,7 @@ export interface NarratorMessages {
 
 export function buildNarrationMessages(prompt: string): NarratorMessages {
   return {
-    system: "You are the narrator for a kids mystery game. Return plain text only.",
+    system: `You are the narrator for a kids mystery game. Return plain text only.\n\n${NARRATOR_GROUNDING}`,
     user: prompt,
   };
 }
@@ -97,7 +98,7 @@ export function outputRoleForPrompt(role: AIPromptKey): AIRoleName {
 
 export function buildRoleMessages(request: { role: AIRoleName; prompt: string; context: Record<string, unknown> }): NarratorMessages {
   return {
-    system: `You are a strict JSON API for role "${request.role}". Output JSON only.`,
+    system: `You are a strict JSON API for role "${request.role}". Output JSON only.\n\n${NARRATOR_GROUNDING}`,
     user: JSON.stringify({ prompt: request.prompt, context: request.context }),
   };
 }
@@ -326,7 +327,6 @@ const REGISTRY: Record<RoleRequestName, any> = {
       }),
     vars: (input: InputFor<"talk_conversation">) => ({
       character_name: characterNameFor(input.blueprint, input.character_id),
-      player_input: input.player_input,
       target_age: input.blueprint.metadata.target_age,
     }),
   } satisfies TemplateRoleSpec<"talk_conversation">,
@@ -384,11 +384,10 @@ const REGISTRY: Record<RoleRequestName, any> = {
       const earlier = linesThisConversation(input.conversation_history ?? [], input.character_id);
       const names = {
         character_name: characterName,
-        player_input: input.player_input ?? "",
         earlier_lines:
           earlier.length === 0
             ? ""
-            : renderPrompt(GRAPH_TALK_EARLIER_LINES, { character_name: characterName, lines: earlier.map((line) => `- "${line}"`).join("\n") }),
+            : renderPrompt(GRAPH_TALK_EARLIER_LINES, { lines: JSON.stringify(earlier) }),
       };
       return {
         ...names,
@@ -413,8 +412,6 @@ const REGISTRY: Record<RoleRequestName, any> = {
         conversation_history: input.conversation_history,
       }),
     vars: (input: InputFor<"graph_search">) => ({
-      location_name: locationNameFor(input.blueprint, input.location_id),
-      search_target: input.search_query ? `: "${input.search_query}"` : "",
       notebook_words: notebookWords(input.blueprint),
     }),
     // A known outcome has one budget; a judged one states both.
@@ -445,19 +442,19 @@ const REGISTRY: Record<RoleRequestName, any> = {
   graph_accusation: {
     kind: "template",
     context: (input: InputFor<"graph_accusation">) => buildGraphAccusationAIContext(input),
-    vars: (input: InputFor<"graph_accusation">) => ({ player_input: input.player_input }),
+    vars: () => ({}),
   } satisfies TemplateRoleSpec<"graph_accusation">,
 
   graph_accusation_round: {
     kind: "template",
     context: (input: InputFor<"graph_accusation_round">) => buildGraphVerdictAIContext(input),
-    vars: (input: InputFor<"graph_accusation_round">) => ({ player_input: input.player_input }),
+    vars: () => ({}),
   } satisfies TemplateRoleSpec<"graph_accusation_round">,
 
   graph_ending: {
     kind: "template",
     context: (input: InputFor<"graph_ending">) => buildGraphVerdictAIContext(input),
-    vars: (input: InputFor<"graph_ending">) => ({ player_input: input.player_input }),
+    vars: () => ({}),
   } satisfies TemplateRoleSpec<"graph_ending">,
 
   accusation_judge: {
@@ -503,7 +500,6 @@ function searchVars(input: SearchInput) {
   return {
     location_name: locationNameFor(input.blueprint, input.location_id),
     target_age: input.blueprint.metadata.target_age,
-    search_query: input.search_query ?? "",
   };
 }
 

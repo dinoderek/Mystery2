@@ -36,11 +36,11 @@ function writeConfig(bindings: Record<string, unknown>): string {
 }
 
 /** Runs a command with the options, and says what it printed and returned. */
-async function run(command: Parameters<typeof runEval>[2][number], argv: string[]) {
+async function run(command: Parameters<typeof runEval>[2][number], argv: string[], env: NodeJS.ProcessEnv = {}) {
 	const lines: string[] = [];
 	const code = await runEval(
 		argv,
-		{ root: REPO_ROOT, out: (text) => lines.push(text), err: (text) => lines.push(text), env: {} },
+		{ root: REPO_ROOT, out: (text) => lines.push(text), err: (text) => lines.push(text), env },
 		[command]
 	);
 	return { code, output: lines.join('\n') };
@@ -158,6 +158,22 @@ describe('play refuses what it cannot run, before it starts a server', () => {
 		const root = fs.mkdtempSync(path.join(scratch, 'server-root-'));
 		options.seed(root);
 		expect(readAIConfig(path.join(root, 'ai.json'))).toEqual({ ais: { narrator: { backend: 'claude-cli', model: 'opus' } } });
+	});
+
+	it('seeds only the named OpenRouter profile and refuses conflicting narrator flags', async () => {
+		fs.writeFileSync(path.join(scratch, 'ai.json'), JSON.stringify({ ais: { measured: { backend: 'openrouter', model: 'test-model', key: 'test-key' }, unused: { backend: 'openrouter', model: 'other', key: 'other-key' } } }));
+		startServer.mockRejectedValue(new Error('no server in this test'));
+		const command = createPlayCommand({ startServer });
+		const args = ['play', '--blueprint', 'mock-blueprint', '--ai-profile', 'measured', '--config', writeConfig({ investigator: STUB_BINDING }), '--output-root', path.join(scratch, 'out')];
+		await run(command, args, { MYSTERY_CONFIG_ROOT: scratch });
+		const [options] = startServer.mock.calls[0];
+		expect(options.env.AI_PROFILE).toBe('measured');
+		const seeded = fs.mkdtempSync(path.join(scratch, 'seeded-'));
+		options.seed(seeded);
+		expect(readAIConfig(path.join(seeded, 'ai.json'))).toEqual({ ais: { measured: { backend: 'openrouter', model: 'test-model', key: 'test-key' } } });
+		startServer.mockClear();
+		expect((await run(command, [...args, '--narrator', 'mock'])).output).toContain('--ai-profile replaces');
+		expect(startServer).not.toHaveBeenCalled();
 	});
 
 	it('does not need an investigator to replay, only the script it names', async () => {

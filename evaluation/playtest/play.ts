@@ -45,7 +45,7 @@ import { createRunFolder, resolveOutputRoot, slugify } from "../core/run-folder.
 import type { RunFolder, SubjectFolder } from "../core/run-folder.ts";
 import { RESULT_SCHEMA_VERSION, summarize, writeResult } from "../core/result.ts";
 import type { Result, RunError } from "../core/result.ts";
-import { writeAIConfig } from "../../scripts/lib/ai-seed.mjs";
+import { seedAIs, writeAIConfig } from "../../scripts/lib/ai-seed.mjs";
 import { startThrowawayServer } from "../runtime/lib/replay-server.ts";
 import type { StartServer, ThrowawayServer } from "../runtime/lib/replay-server.ts";
 import { signIn } from "./lib/api.ts";
@@ -77,6 +77,7 @@ const OPTIONS = {
   concurrency: { type: "string" },
   "max-steps": { type: "string" },
   narrator: { type: "string" },
+  "ai-profile": { type: "string" },
   "narrator-model": { type: "string" },
   judge: { type: "boolean" },
   port: { type: "string" },
@@ -97,6 +98,7 @@ const HELP = formatHelp({
     ["--max-steps <n>", `investigator inputs per game before giving up (default: ${DEFAULT_MAX_STEPS}; with --replay, the whole script)`],
     ["--narrator <claude|mock>", "the game's narrator (default: claude)"],
     ["--narrator-model <m>", "the model the claude narrator uses (default: sonnet)"],
+    ["--ai-profile <name>", "a named AI from ai.json instead of --narrator/--narrator-model"],
     ["--judge", `grade each game with judge game, through the ${GAME_JUDGE_BINDING} binding (off by default)`],
     ["--port <n>", "the server's port (default: a free one)"],
   ],
@@ -110,6 +112,7 @@ interface PlayOptions {
   concurrency: number;
   maxSteps: number | null;
   narrator: "claude" | "mock";
+  aiProfile: string | null;
   narratorModel: string;
   judge: boolean;
   port: number | null;
@@ -128,6 +131,7 @@ function str(value: OptionValue): string | null {
 
 /** The options as typed, checked against each other. */
 function readOptions({ common, values }: ParsedArgs): PlayOptions {
+  if (values["ai-profile"] && (values.narrator || values["narrator-model"])) throw new UsageError("--ai-profile replaces --narrator and --narrator-model");
   const narrator = str(values.narrator) ?? "claude";
   if (narrator !== "claude" && narrator !== "mock") throw new UsageError("--narrator must be claude or mock");
   const options: PlayOptions = {
@@ -138,6 +142,7 @@ function readOptions({ common, values }: ParsedArgs): PlayOptions {
     concurrency: positiveInteger("--concurrency", values.concurrency, DEFAULT_CONCURRENCY) as number,
     maxSteps: positiveInteger("--max-steps", values["max-steps"], null),
     narrator,
+    aiProfile: str(values["ai-profile"]),
     narratorModel: str(values["narrator-model"]) ?? "sonnet",
     judge: values.judge === true,
     port: positiveInteger("--port", values.port, null),
@@ -203,6 +208,7 @@ const NARRATOR_AI = "narrator";
 
 /** The environment the server narrates under. */
 function narratorEnv(options: PlayOptions): Record<string, string> {
+  if (options.aiProfile) return { AI_PROFILE: options.aiProfile, AI_OPENROUTER_TIMEOUT_MS: "90000", AI_CLAUDE_CLI_TIMEOUT_MS: "90000" };
   if (options.narrator === "mock") {
     return {
       AI_PROFILE: "mock",
@@ -219,7 +225,8 @@ function narratorEnv(options: PlayOptions): Record<string, string> {
 }
 
 /** Writes the claude narrator's one entry into the server's root; mock needs none. */
-function narratorSeed(options: PlayOptions): ((configRoot: string) => void) | undefined {
+function narratorSeed(options: PlayOptions, root: string, env: NodeJS.ProcessEnv): ((configRoot: string) => void) | undefined {
+  if (options.aiProfile) return seedAIs({ repoRoot: root, env, names: [options.aiProfile] });
   if (options.narrator === "mock") return undefined;
   const config = { ais: { [NARRATOR_AI]: { backend: "claude-cli", model: options.narratorModel } } };
   return (configRoot) => writeAIConfig(configRoot, config);
@@ -375,7 +382,7 @@ async function playOne(play: Play, number: number): Promise<GameRecord> {
     game,
     blueprint: play.blueprint,
     persona: play.persona,
-    narratorModel: play.options.narrator === "mock" ? "mock" : play.options.narratorModel,
+    narratorModel: play.options.aiProfile ?? (play.options.narrator === "mock" ? "mock" : play.options.narratorModel),
     investigatorModel: play.script ? "replay" : (play.investigatorBinding?.model ?? "unknown"),
     callLogFile: play.callLogFile,
     wallMs: Date.now() - started,
@@ -441,7 +448,7 @@ function resolveBindings(parsed: ParsedArgs, options: PlayOptions, root: string)
 
 function describeRun(play: Play): string[] {
   const { options, script, persona, blueprint } = play;
-  const narrator = options.narrator === "mock" ? "mock" : options.narratorModel;
+  const narrator = options.aiProfile ?? (options.narrator === "mock" ? "mock" : options.narratorModel);
   return [
     `${TAG} ${blueprint.metadata.title} as "${persona}", ${options.games} game(s)`,
     script
@@ -490,6 +497,7 @@ async function runPlay(argv: string[], context: EvalContext, startServer: StartS
   }
   const bindings = resolveBindings(parsed, options, root);
 
+  const narratorConfig = narratorSeed(options, root, context.env);
   const run = createRunFolder({
     outputRoot: resolveOutputRoot(parsed.common.outputRoot, context.env),
     command: "play",
@@ -502,7 +510,7 @@ async function runPlay(argv: string[], context: EvalContext, startServer: StartS
     repoRoot: root,
     port: options.port ?? (await freePort()),
     env: { ...narratorEnv(options), AI_CALL_LOG: callLogFile },
-    seed: narratorSeed(options),
+    seed: narratorConfig,
   });
 
   const play: Play = {

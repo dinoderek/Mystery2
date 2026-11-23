@@ -162,6 +162,26 @@ describe("judge turn on a case with expect", () => {
 });
 
 describe("a clue-graph accusation", () => {
+  it("opens a clue-graph accusation with one normal scene call", async () => {
+    const file = path.join(scratch, "graph-accusation-start.json");
+    fs.writeFileSync(file, JSON.stringify({ id: "graph-start", blueprint: { path: "blueprints/clue-graph/greenhouse-prizewinner.json" }, given: { mode: "explore", location_id: "greenhouse", time_remaining: 5, history: [] }, action: { type: "accuse" } }));
+    const { code, runDir } = await judgeTurn([file, "--narrator", "narrator-stub"], [{ narration: "You gather your thoughts." }]);
+    expect(code).toBe(0);
+    const folder = path.join(runDir, "graph-start-narrator-stub");
+    expect((await readResult(path.join(folder, "result.json"))).production?.calls).toHaveLength(1);
+    expect(JSON.parse(fs.readFileSync(path.join(folder, "turn.json"), "utf8")).response.output_role).toBe("accusation_start");
+  });
+  it("rejects an invalid graph notebook before judging, even without expect", async () => {
+    const file = path.join(scratch, "invalid-notebook.json");
+    fs.writeFileSync(file, JSON.stringify({ id: "invalid-notebook", blueprint: { path: "blueprints/clue-graph/greenhouse-prizewinner.json" }, given: { mode: "explore", location_id: "greenhouse", time_remaining: 5, history: [] }, action: { type: "search" } }));
+    const { code, runDir } = await judgeTurn([file, "--narrator", "narrator-stub"], [{ narration: "Nothing here.", revealed_clue_id: null, notebook: {} }]);
+    expect(code).toBe(1);
+    const result = await readResult(path.join(runDir, "invalid-notebook-narrator-stub", "result.json"));
+    expect(result.run_error?.stage).toBe("parser");
+    expect(result.production?.calls[0].attempts[0].outcome).toBe("invalid");
+    expect(result.verdicts).toEqual([]);
+    expect(fs.readFileSync(path.join(runDir, "invalid-notebook-narrator-stub", "logs", "narrate-invalid-notebook-search.attempt-1.stdout.log"), "utf8")).toContain('"notebook":{}');
+  });
   /** One case of the greenhouse accusation library, in a file of its own. */
   function libraryCase(id: string): string {
     const file = path.join(scratch, `${id}.mjs`);
@@ -173,7 +193,6 @@ describe("a clue-graph accusation", () => {
 
   it("chains the report, the engine's decision and the reply, as the game does", async () => {
     const replies = [
-      report("mrs_nobody", []),
       report("mia", ["clue_rota_purple_ink", "clue_key_in_water_butt"]),
       { narration: "Mr. Dobbs heard the crash at ten to nine, and Mia was selling cake across town then." },
     ];
@@ -184,8 +203,8 @@ describe("a clue-graph accusation", () => {
     expect(code).toBe(0);
     const subject = path.join(runDir, "accuse-mia-cleared-narrator-stub-s1");
     const result = await readResult(path.join(subject, "result.json"));
-    // A report naming someone the case does not hold is retried; both calls are kept.
-    expect(result.production?.calls.map((call) => call.attempts.length)).toEqual([2, 1]);
+    // The two existing model calls are kept around the engine decision.
+    expect(result.production?.calls.map((call) => call.attempts.length)).toEqual([1, 1]);
     expect(result.verdicts.map((verdict) => [verdict.id, verdict.status])).toEqual([["gm_spoiler", "pass"], ["expect", "pass"]]);
     const turn = JSON.parse(fs.readFileSync(path.join(subject, "turn.json"), "utf8"));
     // A cited clue the player does not hold is dropped before the engine decides.
@@ -195,6 +214,15 @@ describe("a clue-graph accusation", () => {
       reply_kind: "flaw",
     });
     expect(turn.response.narration_text).toContain("ten to nine");
+  });
+
+  it("records an admissibility failure without pretending it was a parser failure or making the reply call", async () => {
+    const { code, runDir } = await judgeTurn([libraryCase("accuse-mia-cleared"), "--narrator", "narrator-stub", "--samples", "1"], [report("mrs_nobody", [])]);
+    expect(code).toBe(1);
+    const result = await readResult(path.join(runDir, "accuse-mia-cleared-narrator-stub-s1", "result.json"));
+    expect(result.run_error?.stage).toBe("admissibility");
+    expect(result.production?.calls).toHaveLength(1);
+    expect(result.production?.calls[0].attempts[0].outcome).toBe("ok");
   });
 
   it("refuses an accusation's expect on a blueprint that is not a clue graph, before any call", async () => {

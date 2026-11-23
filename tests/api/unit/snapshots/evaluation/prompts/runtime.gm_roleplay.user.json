@@ -235,6 +235,11 @@
         "search_query": null,
         "revealed_clue_ids": [],
         "revealed_off_script": [],
+        "recorded_use": {
+          "used_clue_ids": [],
+          "used_quote": null,
+          "new_commitments": []
+        },
         "narration": "\"Of course,\" comes the friendly reply. \"Ask me whatever you like.\"",
         "is_accusation_phase": false,
         "prior_revealed_clue_ids": []

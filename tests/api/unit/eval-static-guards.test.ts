@@ -52,7 +52,7 @@ describe("the evaluation tree", () => {
   it("starts a model subprocess or calls a model API only in the core, or in a wrapper's own body", () => {
     const outsideCore = evaluationFiles.filter((file) => /\.(ts|sh)$/.test(file) && !file.startsWith("evaluation/core/"));
     // The api generation backend is a script a binding starts; it makes the one call.
-    const wrapperBody = new Set(["evaluation/generate/openrouter.ts"]);
+    const wrapperBody = new Set(["evaluation/generate/openrouter.ts", "evaluation/runtime/config/wrappers/openrouter-runtime.ts"]);
     // The self-play client talks to the throwaway game server, not to a model.
     const gameServerClient = new Set(["evaluation/playtest/lib/api.ts"]);
     const starter = /child_process|(?<![.\w])(spawn|spawnSync|execFile|execFileSync|execSync|exec)\(|runClaudeCli|generateBlueprint\(|openrouter\.ai|api\.openai\.com|(?<![.\w])fetch\(/;

@@ -35,19 +35,10 @@ export interface TraceEvent {
   payload?: Record<string, unknown> | null;
 }
 
-// Trim a trace event's payload to the fields the runtime context builder reads
-// for history (keeps generated cases readable without losing fidelity).
+// Keep the engine's history intact: state reads use, commitments and graph
+// events as well as reveals. A whitelist silently erased earned context.
 export function historyPayload(payload: Record<string, unknown> | null | undefined): Record<string, unknown> {
-  const keep: Record<string, unknown> = {};
-  for (const k of [
-    "player_input", "character_id", "character_name", "location_id",
-    "location_name", "destination", "revealed_clue_ids", "revealed_clue_id",
-    // A clue-graph game's play is folded from these (`docs/clue-graph.md`).
-    "clue_graph",
-  ]) {
-    if (payload?.[k] !== undefined) keep[k] = payload[k];
-  }
-  return keep;
+  return payload ?? {};
 }
 
 function toFragment(event: TraceEvent) {
@@ -66,8 +57,13 @@ export function actionForEvent(event: Pick<TraceEvent, "event_type" | "payload">
   switch (event.event_type) {
     case "ask": return { type: "ask", player_input: p.player_input ?? "" };
     case "talk": return { type: "talk", character_id: p.character_id };
-    case "move": return { type: "move", destination: p.destination };
-    case "search": return { type: "search" };
+    case "move": return { type: "move", destination: p.destination ?? p.destination_id ?? p.location_id };
+    case "search": return { type: "search", ...(p.search_query ? { search_query: p.search_query } : {}) };
+    case "start": return { type: "start" };
+    case "end_talk": return { type: "end_talk" };
+    case "accuse_start": return { type: "accuse" };
+    case "accuse_failed":
+    case "accuse_resolved": return { type: "accuse", player_reasoning: p.player_reasoning };
     default: return null;
   }
 }
@@ -85,9 +81,10 @@ export function sampleEvenly<T>(items: T[], max: number): T[] {
 export function buildCase(event: TraceEvent, priorEvents: TraceEvent[], blueprintPath: string, judges: string[]): TurnCase {
   const p = (event.payload ?? {}) as Record<string, unknown> & { diagnostics?: Record<string, unknown> };
   const diag = p.diagnostics ?? {};
+  const place = [...priorEvents].reverse().find((row) => row.payload?.location_id || row.payload?.destination_id || row.payload?.destination)?.payload;
   const given = {
     mode: (diag.mode as string | undefined) ?? "explore",
-    location_id: p.location_id as string | undefined,
+    location_id: (p.location_id ?? place?.location_id ?? place?.destination_id ?? place?.destination) as string | undefined,
     ...(p.character_id ? { talk_character_id: p.character_id as string } : {}),
     time_remaining: ((diag.time_before ?? p.time_remaining ?? 0) as number),
     history: priorEvents.map(toFragment),

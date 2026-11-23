@@ -29,7 +29,7 @@
  * next clue to reveal) is passed in, not fetched here.
  */
 
-import type { AIPromptKey } from "./ai-contracts.ts";
+import type { AIPromptKey, AIRoleName } from "./ai-contracts.ts";
 import { authoredFieldBudget, type InteractionId } from "../../shared/src/age-profile.ts";
 import {
   type AIContext,
@@ -77,6 +77,30 @@ import type { AccusationVerdict } from "./clue-graph/accusation.ts";
 export type NarrationRoleName = "intro" | "ambience";
 
 export type RoleRequestName = AIPromptKey | NarrationRoleName;
+
+/** Transport-independent messages. Keep policy at its existing priority. */
+export interface NarratorMessages {
+  system: string;
+  user: string;
+}
+
+export function buildNarrationMessages(prompt: string): NarratorMessages {
+  return {
+    system: "You are the narrator for a kids mystery game. Return plain text only.",
+    user: prompt,
+  };
+}
+
+export function outputRoleForPrompt(role: AIPromptKey): AIRoleName {
+  return role === "search_bare" || role === "search_targeted" ? "search" : role;
+}
+
+export function buildRoleMessages(request: { role: AIRoleName; prompt: string; context: Record<string, unknown> }): NarratorMessages {
+  return {
+    system: `You are a strict JSON API for role "${request.role}". Output JSON only.`,
+    user: JSON.stringify({ prompt: request.prompt, context: request.context }),
+  };
+}
 
 /**
  * A role-output request: prompt plus the context the provider validates and

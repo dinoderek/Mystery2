@@ -1,5 +1,6 @@
 import type { AIRoleName, AccusationResolution } from "./ai-contracts.ts";
 import { withCallLog } from "./ai-call-log.ts";
+import { buildNarrationMessages, buildRoleMessages } from "./role-request.ts";
 import { readArrivalPrompt, readOpeningFacts } from "./ai-prompts.ts";
 import {
   ClaudeCliProvider,
@@ -822,31 +823,26 @@ class OpenRouterProvider implements AIProvider {
     prompt: string,
     metadata?: AIRequestMetadata,
   ): Promise<string> {
+    const { system, user } = buildNarrationMessages(prompt);
     const content = await this.callOpenRouter([
-      {
-        role: "system",
-        content:
-          "You are the narrator for a kids mystery game. Return plain text only.",
-      },
-      { role: "user", content: prompt },
+      { role: "system", content: system },
+      { role: "user", content: user },
     ], undefined, metadata, "narration");
 
     return content.trim();
   }
 
   async generateRoleOutput<T>(request: AIRoleOutputRequest<T>): Promise<T> {
+    const { system, user } = buildRoleMessages(request);
     const content = await this.callOpenRouter(
       [
         {
           role: "system",
-          content: `You are a strict JSON API for role "${request.role}". Output JSON only.`,
+          content: system,
         },
         {
           role: "user",
-          content: JSON.stringify({
-            prompt: request.prompt,
-            context: request.context,
-          }),
+          content: user,
         },
       ],
       { type: "json_object" },

@@ -2,8 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { BlueprintsListResponseSchema } from '@my2/shared';
 import { signInAsTestProfile } from './test-profile';
 
-const LIGHTHOUSE = '7c3e9a52-4f1b-4d8e-9a6c-2b5f1e8d3a47';
-const HEARTWOOD = 'a3f5c9d1-4e7b-4a2c-9f81-6b0d2e5a7c34';
+import { MOCK_CASE_ID } from '../../tests/testkit/src/mock-case';
 
 // Keep the full game usable on the software WebGL2 fallback used by CI.
 test.use({ launchOptions: { args: ['--disable-webgpu', '--use-angle=swiftshader'] } });
@@ -50,10 +49,10 @@ async function submit(page: Page, line: string) {
   await expect(input).toBeEnabled();
 }
 
-async function expectScene(page: Page, location: string, kind = 'procedural') {
+async function expectScene(page: Page, location: string) {
   const scene = page.getByTestId('scene-renderer');
   await expect(scene).toHaveAttribute('data-location-id', location);
-  await expect(scene).toHaveAttribute('data-kind', kind);
+  await expect(scene).toHaveAttribute('data-kind', 'procedural');
   await expect(scene).toHaveAttribute('data-state', 'ready', {
     timeout: 30000,
   });
@@ -62,45 +61,44 @@ async function expectScene(page: Page, location: string, kind = 'procedural') {
   await expect(page.locator('input[type="text"]')).toBeInViewport();
 }
 
-test('plays all lighthouse locations with real narration, dialogue, history, and resume', async ({
+test('plays both mock case locations with real narration, dialogue, history, and resume', async ({
   page,
 }) => {
   test.setTimeout(60000);
   const uncaught: string[] = [];
   page.on('pageerror', (error) => uncaught.push(error.message));
-  await startCase(page, LIGHTHOUSE);
-  await expectScene(page, 'lantern_room', 'lighthouse');
+  await startCase(page, MOCK_CASE_ID);
+  await expectScene(page, 'loc-kitchen');
   expect(await page.locator('canvas').evaluate((canvas) => canvas.getContext('webgl2') !== null)).toBe(true);
   await expect(page.getByTestId('page-narration')).toContainText(
-    'You arrive at Lantern Room',
+    'You arrive at Kitchen',
   );
-  await submit(page, 'talk to Ada');
-  await expectScene(page, 'lantern_room', 'lighthouse');
+  await submit(page, 'talk to Alice');
+  // Alice has a portrait, which a conversation prefers to scenery.
+  await expect(page.getByTestId('scene-renderer')).toHaveCount(0);
   await submit(page, 'What can you tell me?');
   const reply = page.locator('[data-speaker-kind="character"]').last();
-  await expect(reply).toContainText('Ada');
+  await expect(reply).toContainText('Alice');
   await expect(reply).toBeInViewport();
   await expect(page.locator('input[type="text"]')).toBeFocused();
   await submit(page, 'bye');
-  await expectScene(page, 'lantern_room', 'lighthouse');
-  await submit(page, "go Keeper's Cottage");
-  await expectScene(page, 'keepers_cottage');
-  await submit(page, 'go Village Quay');
-  await expectScene(page, 'village_quay');
+  await expectScene(page, 'loc-kitchen');
+  await submit(page, 'go Living Room');
+  await expectScene(page, 'loc-living-room');
 
   await page.reload();
   await expect(page.getByText('2. View in-progress games')).toBeVisible();
   await page.keyboard.press('2');
-  await expect(page.getByText('The Missing Lighthouse Lens')).toBeVisible();
+  await expect(page.getByText('Mock Case')).toBeVisible();
   await page.keyboard.press('1');
-  await expectScene(page, 'village_quay');
+  await expectScene(page, 'loc-living-room');
   const input = page.locator('input[type="text"]');
-  await input.fill('search the cradle');
+  await input.fill('search the shelf');
   await page.keyboard.press('PageUp');
-  await expectScene(page, 'keepers_cottage');
-  await expect(input).toHaveValue('search the cradle');
+  await expectScene(page, 'loc-kitchen');
+  await expect(input).toHaveValue('search the shelf');
   await page.setViewportSize({ width: 390, height: 844 });
-  await expectScene(page, 'keepers_cottage');
+  await expectScene(page, 'loc-kitchen');
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
@@ -111,22 +109,6 @@ test('plays all lighthouse locations with real narration, dialogue, history, and
     page.getByRole('dialog', { name: /case notebook/i }),
   ).toBeVisible();
   expect(uncaught).toEqual([]);
-});
-
-test('uses the same renderer for all four forest locations through normal commands', async ({
-  page,
-}) => {
-  test.setTimeout(60000);
-  await startCase(page, HEARTWOOD);
-  await expectScene(page, 'glimmerbank_landing');
-  for (const [command, location] of [
-    ['go Heartwood Hollow', 'heartwood_hollow'],
-    ["go Eva's Leaf-Lab", 'eva_leaf_lab'],
-    ['go Cheer Stage Grove', 'cheer_stage_grove'],
-  ]) {
-    await submit(page, command);
-    await expectScene(page, location);
-  }
 });
 
 test('keeps actual narration, dialogue, and typing usable when graphics cannot initialize', async ({
@@ -152,7 +134,7 @@ test('keeps actual narration, dialogue, and typing usable when graphics cannot i
     if (message.text().startsWith('[scene]')) errors.push(message.text());
   });
   page.on('pageerror', (error) => uncaught.push(error.message));
-  await startCase(page, LIGHTHOUSE, false);
+  await startCase(page, MOCK_CASE_ID, false);
   const failuresOnStart = errors.length;
   expect(failuresOnStart).toBeGreaterThan(0);
   await expect(page.getByTestId('scene-renderer')).toHaveAttribute(
@@ -160,9 +142,9 @@ test('keeps actual narration, dialogue, and typing usable when graphics cannot i
     'fallback',
   );
   await expect(page.getByTestId('page-narration')).toContainText(
-    'You arrive at Lantern Room',
+    'You arrive at Kitchen',
   );
-  await submit(page, 'talk to Ada');
+  await submit(page, 'talk to Alice');
   await submit(page, 'What can you tell me?');
   await expect(
     page.locator('[data-speaker-kind="character"]').last(),

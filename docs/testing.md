@@ -104,6 +104,8 @@ purpose with `npm run test:golden:record`; review the diff.
   never `resolveDatabasePath()`, which names your play database.
 - **Fixtures.** A test that plays a case plays the mock case,
   `blueprints/clue-graph/mock-case.json` (`tests/testkit/src/mock-case.ts`).
+  Its scenes (`tests/testkit/src/mock-case-scenes.json`) are written into each
+  test config root, since `blueprint-scenes/` ships none.
   Use the factories in `tests/testkit/src/fixtures.ts`; never
   hand-write an object for a shape with a Zod schema in `packages/shared/src/`.
   Factories parse at creation: pass only the overrides that differ. A new

@@ -5,7 +5,6 @@
 
 import { judgeBlueprintCommand, validateCommand } from "./blueprint/commands.ts";
 import type { EvalCommand } from "./core/dispatch.ts";
-import { scenesCommand } from "./generate/scenes.ts";
 import { baselineCompareCommand, baselineSaveCommand } from "./runtime/baseline.ts";
 import { casesCommand } from "./runtime/cases.ts";
 import { playCommand } from "./playtest/play.ts";
@@ -14,7 +13,6 @@ import { judgeTurnCommand } from "./runtime/judge-turn.ts";
 import { judgeGame } from "./trace/judge-game.ts";
 
 export const COMMANDS: readonly EvalCommand[] = [
-  scenesCommand,
   judgeBlueprintCommand,
   validateCommand,
   judgeGame,

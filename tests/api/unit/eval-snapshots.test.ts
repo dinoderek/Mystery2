@@ -575,6 +575,7 @@ async function composeInvestigatorPrompts() {
           },
         ],
         time_remaining: 7,
+        accusations_left: 3,
         location: "kitchen",
         mode: "explore",
         current_talk_character: null,

@@ -385,7 +385,7 @@ async function playOne(play: Play, number: number): Promise<GameRecord> {
   say(
     play,
     number,
-    `${summary.outcome ?? summary.stop_reason}: ${summary.clues_found}/${summary.clues_total} clues, ${summary.turns_used}/${summary.time_budget} turns`,
+    `${summary.outcome ?? summary.stop_reason}: ${summary.clues_found}/${summary.clues_total} clues, ${summary.turns_used}/${summary.time_budget} turns, ${summary.accusations_spent} accusations spent`,
   );
   const record: PlayedRecord = { kind: "played", number, folder, game, summary, investigator, traceStored: false, grades: null, judgeResult: null };
   if (play.options.judge) await queueGrading(play, record);

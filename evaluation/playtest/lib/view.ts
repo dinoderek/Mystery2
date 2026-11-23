@@ -7,6 +7,7 @@
 // far. The blueprint never appears here — only what the game's API hands the
 // browser in its session state and narration.
 
+import { ACCUSATIONS } from "../../../packages/game-engine/src/accusations.ts";
 import type { GameState } from "../../../packages/shared/src/mystery-api-contracts.ts";
 import {
   buildPeopleView,
@@ -49,7 +50,10 @@ function modeLine(state: NotebookState): string {
     case "talk":
       return `Talking with ${nameOfCharacter(state, state.current_talk_character)}`;
     case "accuse":
-      return "Making your accusation";
+      // Out of turns there is no way back.
+      return state.time_remaining > 0
+        ? "Making your accusation (`back` returns to exploring, free)"
+        : "Making your accusation (no way back: the turns are spent)";
     case "ended":
       return "The case is over";
     default:
@@ -99,6 +103,7 @@ export function buildView({
     `Location: ${here?.name ?? normalized.location}`,
     `People here: ${here && here.people.length > 0 ? here.people.join(", ") : "nobody"}`,
     `Turns left: ${normalized.time_remaining}`,
+    `Accusations left: ${state.accusations_left} of ${ACCUSATIONS}`,
     "",
     "== NOTEBOOK: STORY ==",
     normalized.premise ?? "",

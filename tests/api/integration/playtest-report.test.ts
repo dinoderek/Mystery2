@@ -140,6 +140,7 @@ describe('playtest report', () => {
 		expect(new Set(clues.map((clue) => clue.id))).toEqual(new Set(summary.clue_ids_found));
 		expect(clues.every((clue) => typeof clue.text === 'string' && clue.text.length > 0)).toBe(true);
 
+		expect(ungraded.games[0]).toMatchObject({ accusationsSpent: 1, wonOnThird: false });
 		expect(ungraded.games[0].findings).toEqual([]);
 		expect(ungraded.failed).toEqual([{ number: 2, error: 'game-start failed: signed out' }]);
 

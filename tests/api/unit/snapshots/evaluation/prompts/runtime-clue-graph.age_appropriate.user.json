@@ -1,0 +1,14 @@
+{
+  "target_age": 10,
+  "action": {
+    "type": "ask",
+    "player_input": "Where did you leave your wellies?"
+  },
+  "narration": "You take a slow look around. Nothing new catches your eye just yet.",
+  "narration_parts": [
+    {
+      "speaker": "character",
+      "text": "You take a slow look around. Nothing new catches your eye just yet."
+    }
+  ]
+}

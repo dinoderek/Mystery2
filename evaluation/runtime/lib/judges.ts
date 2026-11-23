@@ -20,9 +20,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import { buildClueGraphWorld } from "../../../packages/shared/src/clue-graph-case.ts";
-import { validateClueGraph } from "../../../packages/shared/src/clue-graph-validator.ts";
-import { isClueGraphFile } from "../../../packages/shared/src/clue-graph-schema.ts";
 import type { ResolvedBinding } from "../../core/config.ts";
 import { loadCheck, loadJudge } from "../../core/judge-loader.ts";
 import { validateJudgeOutput, validateTurnAgeAnswer } from "../../core/judge-output.ts";
@@ -41,7 +38,7 @@ import type { CallMemo } from "../../core/runner.ts";
 import { composeGameMasterUserMessage } from "../../judges/clue-graph-guidance.ts";
 import { resolveVerdict } from "../../judges/index.ts";
 import { projectInteractionSubject } from "../../judges/subject.ts";
-import type { BlueprintLike, JudgeOptions } from "./case.ts";
+import { readCaseWorld, type BlueprintLike, type JudgeOptions } from "./case.ts";
 import { parseFencedJson } from "./model-json.ts";
 import { CLOSING_SCENE_EVENT_TYPES } from "../../lib/game-events.ts";
 import { resolveRoleName } from "./roles.ts";
@@ -71,11 +68,8 @@ async function loadBlueprint(turn: StoredTurn, options: JudgeOptions, root: stri
         "judgeConfig.blueprintPath or replay the case again",
     );
   }
-  const candidate = JSON.parse(await fs.readFile(path.resolve(root, blueprintPath), "utf8"));
-  // A clue-graph case file is read as the game reads it: its world view, with the graph in `clue_graph`.
-  return (isClueGraphFile(candidate)
-    ? buildClueGraphWorld(validateClueGraph(candidate))
-    : candidate) as BlueprintLike;
+  const file = path.resolve(root, blueprintPath);
+  return readCaseWorld(JSON.parse(await fs.readFile(file, "utf8")), file);
 }
 
 /**

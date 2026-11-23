@@ -70,7 +70,7 @@ export function modelLabel(binding: ResolvedBinding): string {
 
 export async function replayThroughNarrator(replay: CliReplayRequest): Promise<Collected> {
   const { testCase, blueprint, binding, logDir } = replay;
-  if (testCase.action.type === "accuse" && blueprint.clue_graph) return replayGraphAccusation(replay);
+  if (testCase.action.type === "accuse") return replayGraphAccusation(replay);
   const action = getAction(testCase.action.type);
   const { request, narration } = await composeRequest(testCase, blueprint);
 
@@ -111,7 +111,7 @@ export async function replayThroughNarrator(replay: CliReplayRequest): Promise<C
  * narrated, the decided accusation and, on a failure, the kind of reply.
  */
 async function replayGraphAccusation({ testCase, blueprint, binding, logDir }: CliReplayRequest): Promise<Collected> {
-  const graph = blueprint.clue_graph!;
+  const graph = blueprint.clue_graph;
   const action = getAction("accuse");
   const history = normalizeHistory(testCase.given.history);
   const roleInput = action.roleInput(testCase.given, testCase.action, blueprint, history);

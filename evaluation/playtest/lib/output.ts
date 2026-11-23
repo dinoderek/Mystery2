@@ -19,17 +19,11 @@ import type { PlayedGame } from "./game.ts";
 import type { Divergence } from "./investigator.ts";
 import { renderEntry } from "./view.ts";
 
-type Clues = { clues?: unknown[] };
-
-/** The parts of a blueprint a game's folder reads. */
+/** The parts of a clue-graph case's world view a game's folder reads. */
 export interface PlaytestBlueprint {
-  clue_graph?: ClueGraphCase;
+  clue_graph: ClueGraphCase;
   id: string;
   metadata: { title: string; time_budget: number; target_age?: number };
-  world: {
-    locations: Array<Clues & { sub_locations?: Clues[] }>;
-    characters: Clues[];
-  };
 }
 
 /** A replay's source, and where it first found different clues. */
@@ -49,7 +43,7 @@ export interface GameSummary {
   /** Its place among the run's games, as the run's progress lines number it; null outside a run. */
   game_number: number | null;
   game_id: string;
-  blueprint: { id: string; title: string; format?: string; revision?: number };
+  blueprint: { id: string; title: string; format: string; revision: number };
   persona: string;
   narrator_model: string;
   investigator_model: string;
@@ -97,17 +91,9 @@ export function countAccusations(steps: PlayedGame["steps"], result: PlayedGame[
   return { accusations_spent: judged - (won && judged > 0 ? 1 : 0), won_on_third_accusation: won && judged === 3 };
 }
 
-/** Every clue a blueprint defines: at locations, sub-locations and characters; a clue-graph case's, the notebook's. */
+/** Every clue the case defines: the notebook's, tells included. */
 export function countBlueprintClues(blueprint: PlaytestBlueprint): number {
-  // A clue-graph notebook records every clue, tells included.
-  if (blueprint.clue_graph) return Object.keys(blueprint.clue_graph.clues).length;
-  let total = 0;
-  for (const location of blueprint.world.locations) {
-    total += location.clues?.length ?? 0;
-    for (const sub of location.sub_locations ?? []) total += sub.clues?.length ?? 0;
-  }
-  for (const character of blueprint.world.characters) total += character.clues?.length ?? 0;
-  return total;
+  return Object.keys(blueprint.clue_graph.clues).length;
 }
 
 function readCallLog(file: string | null, gameId: string): NarratorCall[] {
@@ -150,9 +136,7 @@ export function summarizeGame({
   return {
     game_number: number ?? null,
     game_id: game.gameId,
-    blueprint: { id: blueprint.id, title: blueprint.metadata.title,
-      ...(blueprint.clue_graph ? { format: blueprint.clue_graph.format, revision: 1 } : {}),
-    },
+    blueprint: { id: blueprint.id, title: blueprint.metadata.title, format: blueprint.clue_graph.format, revision: 1 },
     persona,
     narrator_model: narratorModel,
     investigator_model: investigatorModel,

@@ -71,12 +71,20 @@ export interface RawTrace {
   ai_profile: Record<string, unknown> | null;
   blueprint: BlueprintContext;
   events: RawEvent[];
-  /** Set only for a clue-graph game; its case is `blueprint.clue_graph`. */
+  /** The case format and revision the game played, and what the investigator had earned; its case is `blueprint.clue_graph`. */
   clue_graph?: TraceClueGraph;
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
+}
+
+/** A trace is of a clue-graph game; a blueprint without a graph is refused, by the name it carries. */
+export function assertClueGraphBlueprint(blueprint: unknown, where: string): void {
+  if (!isObject(blueprint)) throw new Error(`${where}: no blueprint: trace reads clue graphs only`);
+  if (isObject(blueprint.clue_graph)) return;
+  const name = typeof blueprint.id === "string" ? blueprint.id : (blueprint.metadata as { title?: unknown } | undefined)?.title;
+  throw new Error(`${where}: blueprint ${typeof name === "string" ? name : "(unnamed)"} is not a clue-graph case: trace reads clue graphs only`);
 }
 
 /**
@@ -136,7 +144,7 @@ export interface BuildRawTraceInput {
   session: unknown;
   /** game_events rows, in any order; sorted here by sequence. */
   events: unknown;
-  /** The full Blueprint V2 JSON that drove the session. */
+  /** The world view of the clue-graph case that drove the session. */
   blueprint: unknown;
   /** Provenance metadata. */
   source?: TraceProvenance | null;
@@ -164,6 +172,7 @@ export function buildRawTrace({
   if (!isObject(blueprint)) {
     throw new Error("buildRawTrace: blueprint JSON is required");
   }
+  assertClueGraphBlueprint(blueprint, "buildRawTrace");
 
   const orderedEvents = (playedEvents(events) as Record<string, unknown>[])
     .map(normalizeEvent)
@@ -197,6 +206,7 @@ export function assertRawTrace(trace: unknown): RawTrace {
   if (!isObject(trace.blueprint)) {
     throw new Error("Raw trace missing blueprint");
   }
+  assertClueGraphBlueprint(trace.blueprint, "Raw trace");
   if (!Array.isArray(trace.events)) {
     throw new Error("Raw trace missing events array");
   }

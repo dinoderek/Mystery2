@@ -137,7 +137,7 @@ function positiveInteger(value: OptionValue, fallback: number, flag: string): nu
 }
 
 interface Trace {
-  blueprint: { id: string; metadata?: { title?: string; target_age?: number } };
+  blueprint: { id: string; clue_graph?: unknown; metadata?: { title?: string; target_age?: number } };
   events: TraceEvent[];
 }
 
@@ -150,6 +150,9 @@ async function readTrace(file: string): Promise<Trace> {
   }
   if (!trace.blueprint?.id || !Array.isArray(trace.events)) {
     throw new UsageError("Not a trace file: expected { blueprint: { id }, events: [...] }");
+  }
+  if (!trace.blueprint.clue_graph) {
+    throw new UsageError(`trace ${file} is of blueprint ${trace.blueprint.id}, which is not a clue-graph case: cases reads clue graphs only`);
   }
   return trace;
 }
@@ -196,11 +199,11 @@ export const casesCommand: EvalCommand = {
       ? path.resolve(values.out)
       : path.join(resolveOutputRoot(common.outputRoot, context.env), "cases", traceId);
 
-    // The blueprint is written beside the cases so they can name it by path.
+    // The case file is written beside the cases so they can name it by path.
     const blueprintsDir = path.join(outDir, "blueprints");
     await fs.mkdir(blueprintsDir, { recursive: true });
     const blueprintFile = path.join(blueprintsDir, `${trace.blueprint.id}.json`);
-    await fs.writeFile(blueprintFile, `${JSON.stringify(trace.blueprint, null, 2)}\n`);
+    await fs.writeFile(blueprintFile, `${JSON.stringify(trace.blueprint.clue_graph, null, 2)}\n`);
 
     const cases = casesFromTrace(trace, types, max, blueprintFile, judges);
     const outFile = path.join(outDir, `${traceId}.cases.json`);

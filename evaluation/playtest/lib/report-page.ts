@@ -65,7 +65,7 @@ function parseJson<T>(text: string, fallback: T): T {
 
 /**
  * The blueprint behind a run: from a game's trace.json when the run was
- * graded, else the repo's blueprints/ and blueprints/clue-graph/ by id. Null when neither has it; clues
+ * graded, else the repo's clue-graph cases by id. Null when neither has it; clues
  * then show the text their event recorded, or only their id.
  */
 function findBlueprint(gameDirs: string[], blueprintId: string | undefined, repoRoot: string): ReportBlueprint | null {
@@ -74,14 +74,11 @@ function findBlueprint(gameDirs: string[], blueprintId: string | undefined, repo
     if (trace?.blueprint) return trace.blueprint;
   }
   if (!blueprintId) return null;
-  for (const dir of [path.join(repoRoot, "blueprints"), path.join(repoRoot, "blueprints", "clue-graph")]) {
+  for (const dir of [path.join(repoRoot, "blueprints", "clue-graph")]) {
     if (!fs.existsSync(dir)) continue;
     for (const name of fs.readdirSync(dir).filter((file) => file.endsWith(".json"))) {
       const parsed = parseJson<unknown>(fs.readFileSync(path.join(dir, name), "utf8"), null);
-      if (!isClueGraphFile(parsed)) {
-        if ((parsed as ReportBlueprint | null)?.id === blueprintId) return parsed as ReportBlueprint;
-        continue;
-      }
+      if (!isClueGraphFile(parsed)) continue;
       // A clue-graph case is named by its metadata.id, and read through its world view, which lists
       // every clue's fact. Only the run's own is validated, without story checks, as a saved game is.
       const caseId = (parsed as { metadata?: { id?: unknown } }).metadata?.id;

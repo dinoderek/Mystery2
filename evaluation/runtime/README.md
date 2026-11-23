@@ -37,13 +37,15 @@ or key fails the run first.
 
 A case is a blueprint, a `given` state (mode, location, time, the full `history`),
 exactly one `action`, and the judges to run. A case file (`.ts`, `.mjs`, `.json`)
-holds one case or a list; a folder runs every case file in it; `evaluation/runtime/cases/age-readability.ts` is an
-annotated example. `history` rows have the shape the runtime stores in
+holds one case or a list; a folder runs every case file in it;
+`evaluation/runtime/cases/clue-graph/mock-case/readability.ts` is an annotated
+example. A case's blueprint must be a clue-graph case: any other format is refused by
+name before a call is made. `history` rows have the shape the runtime stores in
 `game_events`; a clue-graph case's carry `payload.clue_graph`, and a server run seeds its
 snapshot ([`docs/clue-graph.md`](../../docs/clue-graph.md)). Action types and modes: `ACTIONS` in
 `evaluation/runtime/lib/roles.ts`.
 
-`evaluation/runtime/cases/all-interactions.ts` is the coverage baseline: one case
+`evaluation/runtime/cases/clue-graph/mock-case/all-interactions.ts` is the coverage baseline: one case
 per narrator interaction (`InteractionId` in `packages/shared/src/age-profile.ts`).
 
 ## Judges
@@ -75,7 +77,7 @@ narrator's output as the game reads it: `revealed_clue_id` (search; an id or
 `null`), `revealed_clue_ids` and `used_clue_ids` (sets), `input_understood`.
 `expect.judges` maps a turn judge to the way its fail
 errs (`withheld`, `given_away`, `either`); it always runs. See
-`cases/expect-example.ts`. On a clue graph, `whole_fact` lists an expected
+`cases/clue-graph/mock-case/expect.ts`. `whole_fact` lists an expected
 clue's details (spellings each): its notebook line, and the narration or the
 player's words it answers, must hold each. A tell riding on a
 statement counts with it.
@@ -98,9 +100,7 @@ and marks the run INCOMPLETE.
 `./dev eval baseline save <run> <file>` stores a complete run's summary, by
 convention as `<case folder>/baselines/<model>.json`;
 `baseline compare <baseline> <run>` prints each case's and group's change.
-`cases/search-reveals/` and `cases/talk-reveals/` have `haiku`, `sonnet` and
-`<model>-after` baselines. Each `cases/clue-graph/` story has
-`haiku` and `sonnet`; ported greenhouse cases keep their IDs. Its `whole-fact`,
+`cases/clue-graph/dragon-crown/` and `greenhouse/` each have `haiku` and `sonnet` baselines. Its `whole-fact`,
 `plain-unknown` and `invention` groups, with `gm_clue_discipline` and
 `gm_fabrication`, measure [the narrator's judgement](../../docs/clue-graph.md);
 its `accuse-*` groups, one per kind of accusation, with `gm_spoiler` on each
@@ -110,14 +110,14 @@ failure, measure the accusation. Each case and group scores at least 4 of 5.
 
 ```bash
 # Plumbing, no model:
-./dev eval judge turn evaluation/runtime/cases/all-interactions.ts --narrator narrator-stub --judges flesch
+./dev eval judge turn evaluation/runtime/cases/clue-graph/mock-case/all-interactions.ts --narrator narrator-stub --judges flesch
 
 # Graded cases, on one model:
-./dev eval judge turn evaluation/runtime/cases/expect-example.ts \
+./dev eval judge turn evaluation/runtime/cases/clue-graph/mock-case/expect.ts \
   --narrator narrator-claude --model-override narrator-claude=haiku
 
 # The adherence judges:
-./dev eval judge turn evaluation/runtime/cases/age-readability.ts \
+./dev eval judge turn evaluation/runtime/cases/clue-graph/mock-case/readability.ts \
   --narrator narrator-claude --judges gm_roleplay,gm_clue_discipline,gm_fabrication,gm_spoiler
 ```
 

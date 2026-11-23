@@ -1,6 +1,6 @@
 {
   "reconstruction": {
-    "turns": 9,
+    "turns": 5,
     "context_errors": 0,
     "issues": []
   },
@@ -109,6 +109,42 @@
           ],
           "verdict": "pass",
           "reasoning": "One hint, nothing given away."
+        }
+      },
+      "error": null
+    },
+    {
+      "id": "gm_broad",
+      "overall": "fail",
+      "analyzer": null,
+      "judge": {
+        "status": "fail",
+        "reasoning": "One invented place; one mild hint.",
+        "major_count": 1,
+        "minor_count": 1,
+        "model_verdict": "fail",
+        "verdict_disagreement": false,
+        "answer": {
+          "findings": [
+            {
+              "sequence": 6,
+              "severity": "major",
+              "kind": "fabrication",
+              "quote": "the locked gate",
+              "why": "No such gate in the blueprint.",
+              "refers_to": "loc_garden"
+            },
+            {
+              "sequence": 4,
+              "severity": "minor",
+              "kind": "spoiler",
+              "quote": "someone in a hurry",
+              "why": "Narrows the field slightly.",
+              "refers_to": "ground_truth.what_happened"
+            }
+          ],
+          "verdict": "fail",
+          "reasoning": "One invented place; one mild hint."
         }
       },
       "error": null

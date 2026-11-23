@@ -85,12 +85,19 @@ export function buildAgeGuidance(role: AIPromptKey, targetAge: number): string {
 // buildStyleGuidance); the reading level above it always wins.
 const PRONOUNS = "Choose pronouns from each character's sex, never by guessing.";
 const NEVER_INVENT = `- Use only the characters, places and facts you are given; never invent more. ${PRONOUNS}`;
+const DIALOGUE = "- Characters always speak in direct first-person dialogue with brief action beats.";
+// The clue-graph accusation round and ending have no one speaking but the
+// narrator. Told the dialogue rule there, the model quotes its own words and
+// gives them to the investigator ("you say warmly"), so it is replaced.
+const NARRATOR_VOICE =
+  "- No one speaks in this scene but you, the narrator: put none of your own words in quotation marks, and never give a line to the investigator, to yourself or to a voice.";
+const NARRATOR_VOICE_ROLES: ReadonlySet<string> = new Set(["graph_accusation_round", "graph_ending"]);
 const STANDARD_NARRATION_STYLE = [
   "## Narration style",
   '- Address the player as "you", the investigator, in the present tense.',
   "- Tone: warm, playful, and curious — a cozy mystery for children, never scary or gory.",
   "- Prefer concrete, sensory detail over summary; one vivid touch beats three vague ones.",
-  "- Characters always speak in direct first-person dialogue with brief action beats.",
+  DIALOGUE,
   "- Never mention game mechanics, prompts, JSON, or that you are an AI.",
   NEVER_INVENT,
 ].join("\n");
@@ -112,10 +119,12 @@ const CLUE_GRAPH_INVENTION = [
  * blueprint's own optional voice (`metadata.narration_style`) layered on top.
  * A clue-graph case's narration may invent mood, never evidence.
  */
-export function buildStyleGuidance(narrationStyle?: string | null, options: { clueGraph?: boolean } = {}): string {
-  const standard = options.clueGraph
-    ? STANDARD_NARRATION_STYLE.replace(NEVER_INVENT, CLUE_GRAPH_FACTS)
-    : STANDARD_NARRATION_STYLE;
+export function buildStyleGuidance(
+  narrationStyle?: string | null,
+  options: { clueGraph?: boolean; narratorOnly?: boolean } = {},
+): string {
+  const voiced = options.narratorOnly ? STANDARD_NARRATION_STYLE.replace(DIALOGUE, NARRATOR_VOICE) : STANDARD_NARRATION_STYLE;
+  const standard = options.clueGraph ? voiced.replace(NEVER_INVENT, CLUE_GRAPH_FACTS) : voiced;
   const custom = narrationStyle?.trim();
   const style = !custom
     ? standard
@@ -366,7 +375,13 @@ export async function loadPromptTemplate(
       "{{age_guidance}}",
       renderRoleGuidance(role, targetAge, options.interaction),
     )
-    .replace("{{style_guidance}}", buildStyleGuidance(options.narrationStyle, { clueGraph: options.clueGraph }));
+    .replace(
+      "{{style_guidance}}",
+      buildStyleGuidance(options.narrationStyle, {
+        clueGraph: options.clueGraph,
+        narratorOnly: NARRATOR_VOICE_ROLES.has(role),
+      }),
+    );
 }
 
 export function renderPrompt(

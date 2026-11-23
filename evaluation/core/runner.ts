@@ -12,7 +12,7 @@
  *
  * A caller that keeps finished calls passes a `memo`: a call it already holds,
  * by prompt hash, is answered from it with no wrapper started, and each call
- * made is handed to it when it finishes. `./dev eval suite` resumes this way.
+ * made is handed to it when it finishes.
  *
  * The wrapper's environment adds:
  *

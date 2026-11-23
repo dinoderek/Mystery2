@@ -39,7 +39,7 @@ schemas both sides import, `evaluation/` the judges and pipelines. Detail:
 | Blueprint generation | `packages/shared/src/blueprint-schema-v2.ts`, `docs/blueprint-generation-flows.md`, `packages/blueprint-generator/src/generator-prompt.md`, `evaluation/generator-harness/template/README.md` |
 | Blueprint judges | `docs/evaluation-pipeline.md`, `evaluation/README.md` |
 | `gm_*` judges | `evaluation/judges/README.md`, "Earned, not free" in `docs/ai-runtime.md` |
-| Trace, runtime, playtest, truth set | the README beside the code |
+| Trace, runtime, playtest | the README beside the code |
 | Running, databases, worktrees | `docs/local-infrastructure.md` |
 | Writing tests, or a failing gate step | `docs/testing.md` |
 

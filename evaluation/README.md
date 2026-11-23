@@ -9,8 +9,6 @@ Each harness has its README beside its code:
 - played games, `judge game`: `evaluation/trace/README.md`
 - one turn replayed, `judge turn`, `cases` and `baseline`: `evaluation/runtime/README.md`
 - self-play, `play` and `report`: `evaluation/playtest/README.md`
-- the truth set, `label`, `score`, `compare` and `suite`:
-  `evaluation/truth/README.md`
 - the `gm_*` judges: `evaluation/judges/README.md`
 - the generator agent's workspace: `evaluation/generator-harness/template/README.md`
 
@@ -57,9 +55,7 @@ installed only if it passed everything.
 Every run writes under `--output-root`, else `$MYSTERYEVALS_DIR`, else
 `~/mysteryevals`, never overwriting. A run folder,
 `<root>/<date>/<time>-<command>/`, holds `run.json` (the index) and a folder per
-subject: its `result.json`, inputs, prompts, logs and agent workspaces. A
-suite keeps its journal and runs in `<root>/suites/<name>/`; only its results
-file goes in the repo.
+subject: its `result.json`, inputs, prompts, logs and agent workspaces.
 
 `result.json` (`evaluation/core/result.ts`) is written even when the run
 aborts. `logs/<step>*.stream.jsonl` is for watching only.
@@ -68,7 +64,7 @@ aborts. `logs/<step>*.stream.jsonl` is for watching only.
 
 For every command, **0**: everything passed. **1**: the run broke (a bad
 file or binding, `run_error` in the result, the usage limit). **2**: a check
-or judge failed, or could not judge (`suite`: a threshold was not met).
+or judge failed, or could not judge.
 
 ## Retries
 
@@ -77,4 +73,4 @@ timeout, stdout that is not JSON, an `extract_path` miss, or an answer failing
 its schema (a dimension's, or Blueprint V2).
 
 At the login's usage limit nothing is retried and no judge records an error:
-the run breaks, exiting 1. A `suite` rerun resumes, repeating no finished call.
+the run breaks, exiting 1.

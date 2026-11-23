@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { GAME_KINDS } from "../lib/truth/kinds.ts";
+export const GAME_KINDS = ["spoiler", "fabrication", "clue_handling", "out_of_character", "not_age_fit"] as const;
 
 /**
  * Every game-side question in one judge, a candidate. Shares the battery's

@@ -68,7 +68,7 @@ describe("the evaluation tree", () => {
 });
 
 describe("./dev eval", () => {
-  it("lists exactly the fourteen evaluation commands", () => {
+  it("lists exactly the ten evaluation commands", () => {
     expect(COMMANDS.map((command) => command.name)).toEqual([
       "scenes",
       "judge blueprint",
@@ -80,14 +80,10 @@ describe("./dev eval", () => {
       "baseline compare",
       "play",
       "report",
-      "label",
-      "score",
-      "compare",
-      "suite",
     ]);
     const listing = listCommands(COMMANDS).split("\n");
     const listed = listing.filter((line) => /^ {2}\S/.test(line));
-    expect(listed).toHaveLength(14);
+    expect(listed).toHaveLength(10);
   });
 
   it("has a test that runs each command's main path on stub bindings", () => {
@@ -104,16 +100,19 @@ describe("./dev eval", () => {
       "baseline compare": ["tests/api/unit/runtime-expect-run.test.ts", '["baseline", "compare"'],
       play: ["tests/api/integration/playtest-command.test.ts", "['play', ...args"],
       report: ["tests/api/integration/playtest-command.test.ts", "['report', runDir]"],
-      score: ["tests/api/unit/eval-score.test.ts", '["score", ...argv]'],
-      label: ["tests/api/unit/eval-label.test.ts", '["label", "medal"'],
-      compare: ["tests/api/unit/eval-compare.test.ts", '["compare", ...argv]'],
-      suite: ["tests/api/unit/eval-suite-helpers.ts", '["suite", file'],
     };
 
     expect(Object.keys(runBy).sort()).toEqual(COMMANDS.map((command) => command.name).sort());
     for (const [name, [file, startedWith]] of Object.entries(runBy)) {
       expect(fs.readFileSync(path.join(ROOT, file), "utf8"), name).toContain(startedWith);
     }
+  });
+
+  it.each(["label", "suite", "score", "compare"])("rejects retired command %s as unknown", async (name) => {
+    const errors: string[] = [];
+    const code = await runEval([name], { root: ROOT, out: () => {}, err: (text) => errors.push(text), env: {} }, COMMANDS);
+    expect(code).toBe(1);
+    expect(errors.join("\n")).toContain(`Unknown eval command "${name}"`);
   });
 
   it("prints that list for --help and exits 0", async () => {

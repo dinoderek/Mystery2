@@ -188,7 +188,7 @@ function gameMasterJudge(id: string): JudgeEntry {
 /**
  * A candidate judge: a merged or broad alternative to judges of the default
  * battery, with its brief and schema beside theirs. Each of its findings names
- * a kind of the truth set's vocabulary, so it fails on any `major` finding.
+ * a finding kind, so it fails on any `major` finding.
  */
 function candidateJudge(id: string, subjects: readonly SubjectKind[], context?: Readonly<Record<string, unknown>>): JudgeEntry {
   const slug = id.replaceAll("_", "-");

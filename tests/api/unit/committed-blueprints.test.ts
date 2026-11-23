@@ -8,7 +8,7 @@ import { BlueprintV2Schema } from "../../../packages/shared/src/blueprint-schema
 
 /**
  * The schema changes with no compatibility path, so every blueprint the repo
- * holds must parse under it: the installed ones, the truth set's bases, the
+ * holds must parse under it: the installed ones, the runtime fixtures, the
  * ones embedded in stored traces, and fixtures. A blueprint is any object with
  * `schema_version: "v2"` and a `world`, wherever it sits in a tracked JSON file.
  */
@@ -51,8 +51,8 @@ describe("every committed blueprint", () => {
     const files = new Set(found.map(({ file }) => file));
     for (const expected of [
       "blueprints/mock-blueprint.json",
-      "evaluation/truth/bases/large-snow-foxes/blueprint.json",
-      "evaluation/truth/games/large-snow-foxes-kid-7/trace.json",
+      "evaluation/runtime/fixtures/large-snow-foxes/blueprint.json",
+      "tests/api/unit/fixtures/snow-foxes-trace.json",
     ]) {
       expect(files.has(expected), expected).toBe(true);
     }

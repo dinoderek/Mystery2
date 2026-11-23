@@ -4,12 +4,12 @@
 
 import type { HistoryEntry, TurnCase } from "../../../lib/case.ts";
 
-/** The four truth-set bases the hand-written cases are played on. */
+/** The four runtime fixtures the hand-written cases are played on. */
 export const BASES = {
-  lighthouse: "evaluation/truth/bases/lighthouse-lens/blueprint.json",
-  snowFoxes: "evaluation/truth/bases/large-snow-foxes/blueprint.json",
-  glitterwood: "evaluation/truth/bases/glitterwood-forest/blueprint.json",
-  greenhouse: "evaluation/truth/bases/greenhouse-prizewinner/blueprint.json",
+  lighthouse: "evaluation/runtime/fixtures/lighthouse-lens/blueprint.json",
+  snowFoxes: "evaluation/runtime/fixtures/large-snow-foxes/blueprint.json",
+  glitterwood: "evaluation/runtime/fixtures/glitterwood-forest/blueprint.json",
+  greenhouse: "evaluation/runtime/fixtures/greenhouse-prizewinner/blueprint.json",
 } as const;
 
 export interface Place {

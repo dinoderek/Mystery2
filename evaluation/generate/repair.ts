@@ -6,7 +6,7 @@
  * when nothing fails or after `n` repair rounds.
  *
  * The judges are the battery `generate --judge` runs, through the same binding,
- * so they are the judges the truth set measures; they are sent the brief and
+ * and are sent the brief and
  * the blueprint only, never the generator's work or an earlier round. A
  * clue-graph case may be repaired without judges: its rounds then rerun only
  * its mechanical check, the validator.

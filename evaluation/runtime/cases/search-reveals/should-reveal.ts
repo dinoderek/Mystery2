@@ -1,14 +1,14 @@
 // Searches that earn a clue: the player describes a spot that holds an unlocked
 // clue, and the narrator must reveal exactly that clue. Each case is a
-// hand-written situation on a truth-set base; the comment says why it expects
+// hand-written situation on a runtime fixture; the comment says why it expects
 // what it does. The two real failures from play are in `from-play.ts`.
 
 import { searchCase } from "../../lib/search-case.ts";
 
-const glitterwood = "evaluation/truth/bases/glitterwood-forest/blueprint.json";
-const greenhouse = "evaluation/truth/bases/greenhouse-prizewinner/blueprint.json";
-const foxes = "evaluation/truth/bases/large-snow-foxes/blueprint.json";
-const lighthouse = "evaluation/truth/bases/lighthouse-lens/blueprint.json";
+const glitterwood = "evaluation/runtime/fixtures/glitterwood-forest/blueprint.json";
+const greenhouse = "evaluation/runtime/fixtures/greenhouse-prizewinner/blueprint.json";
+const foxes = "evaluation/runtime/fixtures/large-snow-foxes/blueprint.json";
+const lighthouse = "evaluation/runtime/fixtures/lighthouse-lens/blueprint.json";
 
 export default [
   // The spot's own name, and nothing locks it.

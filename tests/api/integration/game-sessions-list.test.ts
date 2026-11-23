@@ -141,7 +141,7 @@ describe('game-sessions-list endpoint', () => {
     });
   });
 
-  it('keeps a clue-graph session listed and openable when its case file is gone: it plays from its snapshot', async () => {
+  it('keeps a clue-graph session listed and openable when its case is no longer listed: it plays from its snapshot', async () => {
     const gameId = await startSession(auth);
     patchSession(gameId, { blueprint_id: crypto.randomUUID(), updated_at: '2026-03-12T09:00:00.000Z' });
 

@@ -21,7 +21,8 @@ steps
   16  "head towards the kitchen"  mode=explore turns=2
   17  "talk to alice"  mode=talk turns=1
   18  "bye"  mode=explore turns=1
-  19  "exit"  mode=ended turns=1
+  19  "go living room"  mode=accuse turns=0
+  20  "exit"  mode=ended turns=0
 
 pages
   page 0 opening "Mock Case — clue graph"
@@ -69,5 +70,10 @@ pages
   page 11 location "Kitchen"
     step 18 | You (investigator): "bye"
     step 18 | Narrator (narrator): "[Mock] You say goodbye to Alice and look around again."
-    step 19 | You (investigator): "exit"
-    step 19 | System (system): "This case is over. Press Tab to review your notebook, or any other key to go back to the list of mysteries."
+  page 12 location "Living Room"
+    step 19 | You (investigator): "go living room"
+    step 19 | Narrator (narrator): "[Mock] You arrive at Living Room. The living room is cosy, with a sofa and a tall bookshelf. A board game is laid out on the low table. Bob is here."
+    step 19 | Narrator (narrator): "[Mock] Time is up. You must make your accusation now. Who did it, and how do you know?"
+    step 19 | System (system): "You have 3 accusations left. This one uses one. Time is up, so there is no going back."
+    step 20 | You (investigator): "exit"
+    step 20 | System (system): "This case is over. Press Tab to review your notebook, or any other key to go back to the list of mysteries."

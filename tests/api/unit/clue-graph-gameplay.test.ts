@@ -167,6 +167,7 @@ describe("clue-graph sessions and turns", () => {
     const started = await start(clueGraphCaseId("greenhouse-prizewinner"));
     expect(started.narration_events[0].payload).toMatchObject({ case_format: "clue-graph/2" });
     expect((await ctx.sessions.getById(started.game_id))?.clue_graph_snapshot).toEqual(greenhouse());
+    // A V2 game saves no snapshot: it leaves with V2.
     const v2 = await start("123e4567-e89b-12d3-a456-426614174000");
     expect((await ctx.sessions.getById(v2.game_id))?.clue_graph_snapshot).toBeUndefined();
   });

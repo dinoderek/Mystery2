@@ -169,7 +169,7 @@ export const GOLDEN_GAMES: GoldenGame[] = [
     script: [ENTER, "talk to Alice", "quit"],
   },
   {
-    // The longer aliases, and `exit`.
+    // The longer aliases, a bare `go`, and `exit` out of a forced accusation.
     name: "mock-aliases",
     blueprint: "mock-case",
     script: [
@@ -191,6 +191,7 @@ export const GOLDEN_GAMES: GoldenGame[] = [
       "head towards the kitchen",
       "talk to alice",
       "bye",
+      "go living room",
       "exit",
     ],
   },

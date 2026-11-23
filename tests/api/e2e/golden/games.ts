@@ -3,14 +3,14 @@
 // Together they play every command in docs/game.md under every alias, every
 // refusal, `help`, the turn budget running out by each kind of last turn and the
 // last accusations spent back to back, a failed accusation explored past into a
-// win, and three failures into a loss, on the two fixture blueprints; and the
-// greenhouse clue-graph case played to a win and to a loss.
+// win, and three failures into a loss, on the mock case; and the greenhouse
+// clue-graph case played to a win and to a loss.
 
 import type { ScriptStep } from "../../../testkit/src/golden/screen";
 
 export const BLUEPRINT_IDS = {
-  "mock-blueprint": "123e4567-e89b-12d3-a456-426614174000",
-  "the-missing-heartwood": "a3f5c9d1-4e7b-4a2c-9f81-6b0d2e5a7c34",
+  // `clueGraphCaseId("mock-case")`
+  "mock-case": "0b4deb40-e0d1-8cbf-a4bc-9ae6af12fbd5",
   // `clueGraphCaseId("greenhouse-prizewinner")`
   "greenhouse-clue-graph": "9afa1ef4-b543-81b5-a50f-4a366ec7e2ef",
 } as const;
@@ -25,10 +25,11 @@ const ENTER = { enter: true } as const;
 
 export const GOLDEN_GAMES: GoldenGame[] = [
   {
-    // Every refusal, the views, searching, talking, the ways back, a failed
-    // accusation, and a win once the budget runs out.
+    // Every refusal, the views, searching a room, a spot, an empty spot and a
+    // hidden one, talking, the ways back, a failed accusation, and a win once
+    // the budget runs out.
     name: "mock-investigation-won",
-    blueprint: "mock-blueprint",
+    blueprint: "mock-case",
     script: [
       ENTER,
       "help",
@@ -45,12 +46,11 @@ export const GOLDEN_GAMES: GoldenGame[] = [
       "search",
       "inspect the pantry shelf",
       "look around",
+      "search the laundry basket",
       "go to the Living Room",
       "search",
-      "look behind the bookshelf",
       "talk to bob",
-      "What did you see?!",
-      "aha, I bet it was the cookies",
+      "What did you see of Alice?!",
       "tell me more",
       "xzqv",
       "help",
@@ -58,9 +58,10 @@ export const GOLDEN_GAMES: GoldenGame[] = [
       "who is here?",
       "bye",
       "move to kitchen",
-      "speak to Alice Smith",
+      "speak to Alice",
       "Where were you at noon?",
       "accuse Bob",
+      "Look at this: clue_score_sheet",
       "goodbye",
       "accuse",
       "help",
@@ -75,15 +76,15 @@ export const GOLDEN_GAMES: GoldenGame[] = [
       "back",
       "accuse",
       "Maybe it was Bob?",
-      // Back to exploring; the search spends the last turn, and the accusation is forced.
-      "search",
+      // Back to exploring; the hidden spot is in view now, the search spends the last turn, and the accusation is forced.
+      "search the laundry basket",
       "I think it was Alice, because of the empty cookie jar.",
     ],
   },
   {
     // Accusations given with the command, failed three times into a loss.
     name: "mock-accusation-lost",
-    blueprint: "mock-blueprint",
+    blueprint: "mock-case",
     script: [
       ENTER,
       "accuse Bob took the cookies",
@@ -93,23 +94,26 @@ export const GOLDEN_GAMES: GoldenGame[] = [
     ],
   },
   {
-    // Ten turns, the last one a conversation, then a won accusation.
+    // Ten turns, the last one a conversation, then a won accusation on the
+    // confession: a statement taken back, then owned up to.
     name: "mock-budget-ends-in-talk",
-    blueprint: "mock-blueprint",
+    blueprint: "mock-case",
     script: [
       ENTER,
       "go to living room",
+      "search",
       "go to kitchen",
-      "search",
-      "search",
+      "search the pantry shelf",
       "talk to alice",
       "Where were you?",
+      "Look at this: clue_score_sheet",
+      "And this jar: clue_jar",
       "see you",
-      "move to living room",
       "search",
+      "search under the kitchen sink",
+      "move to living room",
       "look behind the bookshelf",
-      "go to the kitchen",
-      "talk to Alice",
+      "talk to Bob",
       "help",
       "back",
       "Alice did it",
@@ -118,7 +122,7 @@ export const GOLDEN_GAMES: GoldenGame[] = [
   {
     // Ten turns, the last one a move, then the three accusations back to back into a loss.
     name: "mock-budget-ends-in-move",
-    blueprint: "mock-blueprint",
+    blueprint: "mock-case",
     script: [
       ENTER,
       "move living room",
@@ -141,7 +145,7 @@ export const GOLDEN_GAMES: GoldenGame[] = [
   {
     // Ten turns, the last one a search, and the case left by quitting.
     name: "mock-budget-ends-in-search",
-    blueprint: "mock-blueprint",
+    blueprint: "mock-case",
     script: [
       ENTER,
       "search",
@@ -152,7 +156,7 @@ export const GOLDEN_GAMES: GoldenGame[] = [
       "search",
       "search",
       "search",
-      "search the pantry",
+      "search the pantry shelf",
       "search",
       "accuse",
       "quit",
@@ -161,37 +165,33 @@ export const GOLDEN_GAMES: GoldenGame[] = [
   {
     // Leaving a case partway through a conversation.
     name: "mock-quit-while-talking",
-    blueprint: "mock-blueprint",
+    blueprint: "mock-case",
     script: [ENTER, "talk to Alice", "quit"],
   },
   {
-    // The longer aliases on the second fixture, and `exit`.
-    name: "heartwood-aliases",
-    blueprint: "the-missing-heartwood",
+    // The longer aliases, a bare `go`, and `exit` out of a forced accusation.
+    name: "mock-aliases",
+    blueprint: "mock-case",
     script: [
       ENTER,
       "where can i go",
       "who is here",
       "look",
-      "search the banner wall",
-      "speak to Sophie",
-      "Where were you?",
+      "search the pantry shelf",
+      "speak to Alice",
+      "Where were you at noon?",
       "see you",
-      "speak with Sam",
-      "leave",
-      "talk to Sam Bramble",
-      "end",
-      "travel to heartwood hollow",
+      "travel to the living room",
       "inspect",
-      "head towards Eva's Leaf-Lab",
-      "talk to eva",
-      "What are the gloves for?",
-      "bye",
+      "speak with Bob",
+      "leave",
+      "talk to bob",
+      "end",
       "go home",
-      "move to the cheer stage grove",
-      "talk to Toby Flit",
-      "goodbye",
-      "talk to alexandra",
+      "head towards the kitchen",
+      "talk to alice",
+      "bye",
+      "go living room",
       "exit",
     ],
   },

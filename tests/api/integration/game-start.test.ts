@@ -8,6 +8,9 @@ import {
   type ApiAuthContext,
 } from "./helpers";
 
+const MOCK_PREMISE =
+  "The cookies vanished from the kitchen at noon. Alice baked the cookies this morning. Bob is a weekend guest who spent the morning in the living room.";
+
 describe("game-start endpoint", () => {
   let auth: ApiAuthContext;
 
@@ -41,19 +44,19 @@ describe("game-start endpoint", () => {
     expect(data.state.characters).toContainEqual({
       id: "char-alice",
       first_name: "Alice",
-      last_name: "Smith",
+      last_name: "",
       location_id: "loc-kitchen",
       sex: "female",
-      summary: "The resident baker; she baked the missing cookies.",
+      summary: null,
     });
     // Notebook reference data is surfaced on the state, not dumped into narration.
-    expect(data.state.premise).toBe("Someone stole the cookies.");
+    expect(data.state.premise).toBe(MOCK_PREMISE);
     expect(data.state.mystery_summary).toContain("The cookies vanished");
     expect(data.state.discovered_clues).toEqual([]);
     expect(data.state.locations).toContainEqual({
       id: "loc-kitchen",
       name: expect.any(String),
-      summary: "Where the cookies were baked and last seen.",
+      summary: null,
     });
     expect(data.narration_events).toHaveLength(1);
     expect(data.narration_events[0]).toMatchObject({
@@ -61,7 +64,7 @@ describe("game-start endpoint", () => {
       narration_parts: [
         {
           speaker: NARRATOR_SPEAKER,
-          image_id: "mock-blueprint.blueprint.png",
+          image_id: "mock-case.blueprint.png",
         },
         {
           speaker: NARRATOR_SPEAKER,

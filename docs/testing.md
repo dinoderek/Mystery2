@@ -91,9 +91,9 @@ content, that is the operator's call.
 `tests/api/e2e/golden-transcripts.test.ts` plays fixed games over HTTP under
 the mock narrator and compares what the player would see with
 `tests/api/e2e/golden/transcripts/`. Only `tests/testkit/src/golden/driver.ts`
-knows how a line becomes requests. The mock quotes the start of the narrator
-prompt, so editing it changes every transcript. Re-record on purpose with
-`npm run test:golden:record`; review the diff.
+knows how a line becomes requests. The mock narrates from the case and the
+context it is given, so changing either moves the transcripts. Re-record on
+purpose with `npm run test:golden:record`; review the diff.
 
 ## Writing tests
 
@@ -102,7 +102,9 @@ prompt, so editing it changes every transcript. Re-record on purpose with
   `setupApiTestAuth(tag)` and scopes assertions to its own identifiers, with no
   unscoped global counts. Anything that opens a database gets an explicit path,
   never `resolveDatabasePath()`, which names your play database.
-- **Fixtures.** Use the factories in `tests/testkit/src/fixtures.ts`; never
+- **Fixtures.** A test that plays a case plays the mock case,
+  `blueprints/clue-graph/mock-case.json` (`tests/testkit/src/mock-case.ts`).
+  Use the factories in `tests/testkit/src/fixtures.ts`; never
   hand-write an object for a shape with a Zod schema in `packages/shared/src/`.
   Factories parse at creation: pass only the overrides that differ. A new
   response type needs its factory. For a TypeScript-only shape, annotate the

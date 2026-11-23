@@ -101,10 +101,10 @@ export class ServerNarrator {
     return this.server;
   }
 
-  /** Makes the case's blueprint available to the server, if it is not the repo's. */
+  /** Makes the case's blueprint available to the server, if it is not the repo's (in `blueprints/` or `blueprints/clue-graph/`). */
   private prepare(server: ThrowawayServer, request: ServerReplayRequest): void {
     const repoBlueprints = path.join(this.repoRoot, "blueprints");
-    if (path.dirname(request.blueprintPath) !== repoBlueprints) {
+    if (![repoBlueprints, path.join(repoBlueprints, "clue-graph")].includes(path.dirname(request.blueprintPath))) {
       const dir = path.join(server.configRoot, "blueprints");
       fs.mkdirSync(dir, { recursive: true });
       const target = path.join(dir, path.basename(request.blueprintPath));

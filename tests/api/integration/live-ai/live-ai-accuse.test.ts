@@ -10,6 +10,7 @@ import {
 import type { GameTurnResponse } from "../../../../packages/shared/src/mystery-api-contracts.ts";
 import {
   API_URL,
+  MOCK_BLUEPRINT_ID,
   setupApiTestAuth,
   type ApiAuthContext,
 } from "../helpers.ts";
@@ -36,58 +37,34 @@ runLive(getLiveSuiteTitle("live-ai integration: accusation"), () => {
         headers,
         stepLabel: "game-start",
         body: {
-          blueprint_id: "123e4567-e89b-12d3-a456-426614174000",
+          blueprint_id: MOCK_BLUEPRINT_ID,
           ai_profile: profile,
         },
       });
       const { game_id } = startData;
       expect(typeof game_id).toBe("string");
 
-      const accuseStartData = await callLiveEndpointWithRetry<GameTurnResponse>({
-        apiUrl: API_URL,
-        endpoint: "game-turn",
-        headers,
-        stepLabel: "game-turn (accuse)",
-        body: {
-          game_id,
-          input: "accuse Alice, because the clues point to her timeline.",
-        },
-      });
-      expect(accuseStartData.kind).toBe("turn");
-      if (accuseStartData.kind !== "turn") return;
-      expect(accuseStartData.state.mode === "accuse" || accuseStartData.state.mode === "ended").toBe(true);
-
-      if (accuseStartData.state.mode === "ended") {
-        return;
-      }
-
-      let responseMode: string | null = null;
-      let finalResult: string | null = null;
-      for (let round = 0; round < 4; round += 1) {
-        const roundData = await callLiveEndpointWithRetry<GameTurnResponse>({
+      // A clue-graph accusation is judged at once: a failure spends one and
+      // returns to exploring, and the third ends the case either way.
+      let mode: string | null = null;
+      let result: string | null = null;
+      for (let round = 0; round < 3 && mode !== "ended"; round += 1) {
+        const data = await callLiveEndpointWithRetry<GameTurnResponse>({
           apiUrl: API_URL,
           endpoint: "game-turn",
           headers,
-          stepLabel: `game-turn (reasoning round ${round + 1})`,
-          body: {
-            game_id,
-            input: `Round ${round + 1} reasoning: clues and timeline point to Alice.`,
-          },
+          stepLabel: `game-turn (accusation ${round + 1})`,
+          body: { game_id, input: "accuse Alice, because the clues point to her timeline." },
         });
-        expect(roundData.kind).toBe("turn");
-        if (roundData.kind !== "turn") return;
-        responseMode = roundData.state.mode;
-        finalResult = roundData.result;
-
-        if (responseMode === "ended") {
-          break;
-        }
+        expect(data.kind).toBe("turn");
+        if (data.kind !== "turn") return;
+        mode = data.state.mode;
+        result = data.result;
+        expect(mode === "explore" || mode === "ended").toBe(true);
       }
 
-      expect(responseMode === "ended" || responseMode === "accuse").toBe(true);
-      if (responseMode === "ended") {
-        expect(finalResult === "win" || finalResult === "lose").toBe(true);
-      }
+      expect(mode).toBe("ended");
+      expect(result === "win" || result === "lose").toBe(true);
     } catch (error) {
       if (error instanceof LiveAIRetriableExhaustedError) {
         expect.fail(`[live-ai] Retriable retries exhausted: ${error.message}`);

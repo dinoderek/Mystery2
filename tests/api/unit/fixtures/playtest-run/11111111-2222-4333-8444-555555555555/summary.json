@@ -2,8 +2,8 @@
   "game_number": 1,
   "game_id": "11111111-2222-4333-8444-555555555555",
   "blueprint": {
-    "id": "123e4567-e89b-12d3-a456-426614174000",
-    "title": "The Missing Cookies"
+    "id": "0b4deb40-e0d1-8cbf-a4bc-9ae6af12fbd5",
+    "title": "Mock Case — clue graph"
   },
   "persona": "detective",
   "narrator_model": "mock",
@@ -21,9 +21,9 @@
   "parser_rejections": 1,
   "failed_calls": 0,
   "clues_found": 1,
-  "clues_total": 2,
+  "clues_total": 12,
   "clue_ids_found": [
-    "clue-crumb"
+    "clue_crumbs"
   ],
   "narrator_calls": 0,
   "narrator_cost_usd": null,

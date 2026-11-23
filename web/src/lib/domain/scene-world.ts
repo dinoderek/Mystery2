@@ -15,8 +15,7 @@ import {
   TorusGeometry,
   type BufferGeometry,
 } from 'three/webgpu';
-import type { SceneRecipe, ProceduralScene, SceneObject } from '@my2/shared';
-import { buildLighthouseScene } from './lighthouse-scene';
+import type { SceneRecipe, SceneObject } from '@my2/shared';
 import { disposeScene } from './scene-resources';
 
 const SHAPES = {
@@ -40,7 +39,7 @@ function makeMaterial(object: SceneObject) {
   });
 }
 
-export function buildProceduralScene(recipe: ProceduralScene) {
+export function buildScene(recipe: SceneRecipe) {
   const scene = new Scene();
   scene.background = new Color(recipe.sky);
   scene.fog = new Fog(recipe.sky, 30, 180);
@@ -93,10 +92,4 @@ export function buildProceduralScene(recipe: ProceduralScene) {
     }
   }
   return { scene, camera, animate, dispose: () => disposeScene(scene) };
-}
-
-export function buildScene(recipe: SceneRecipe) {
-  return recipe.kind === 'lighthouse'
-    ? buildLighthouseScene()
-    : buildProceduralScene(recipe);
 }

@@ -44,17 +44,13 @@ covers cover facts (else the title) and visual direction; artwork is optional.
 
 Ratios are checked against OpenRouter’s list; support varies by model.
 
-## Generating 3D scenes
+## 3D scenes
 
-`./dev eval scenes <blueprint.json> --install` generates missing location
-recipes through the `scene-generator` binding, keeping existing ones. Prompts
-get only visual direction and location names, descriptions and searchable
-areas. A failure never replaces installed art.
-
-`packages/shared/src/scene-schema.ts` bounds shapes, transforms and
-animations, rejecting executable fields and unknown references. Manifests live
-in `blueprint-scenes/<blueprint-id>.json`, the config root's winning over
-committed examples; the endpoint serves only these.
+Scene recipes are not generated here. `packages/shared/src/scene-schema.ts`
+bounds a procedural recipe's shapes, transforms and animations, rejecting
+executable fields and unknown references. Manifests live in
+`blueprint-scenes/<blueprint-id>.json`, the config root's winning over the repo's
+(empty) one; the endpoint serves only these, and a case without one has none.
 
 ## Narration at play
 

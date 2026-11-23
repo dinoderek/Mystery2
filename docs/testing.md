@@ -29,6 +29,9 @@ hold today's offenders against the `quality` limits and
 fix, prune with `npm run check:quality -- --prune` or
 `npm run check:imports -- --prune`.
 
+**One case format.** `tests/api/unit/one-case-format.test.ts` fails when any
+file or path names a retired case format.
+
 **Doc checks**, all failing the gate:
 
 - `check:doc-refs` fails when any `AGENTS.md`, `QUICKSTART.md`, `docs/` or

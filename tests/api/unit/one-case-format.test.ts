@@ -132,11 +132,19 @@ const ALLOWED: Readonly<Record<string, readonly RegExp[]>> = {
 
 // Code and docs know one case format, so neither says "V2". Tests may: they
 // write the old format's tag to prove it is refused. The turn-judge briefs
-// under `evaluation/judges/` still describe the old format, with the overlay
-// that corrects them for the clue graph, until they are rewritten.
+// still describe the old format, with the overlay that corrects them for the
+// clue graph, until they are rewritten; these are the files that say so.
 const V2 = /\bV2\b/i;
-const mayNameV2 = (file: string) =>
-  file.startsWith("tests/") || file.endsWith(".test.ts") || file.startsWith("evaluation/judges/");
+const V2_ALLOWED = new Set([
+  "evaluation/judges/README.md",
+  "evaluation/judges/clue-graph-guidance.ts",
+  "evaluation/judges/gm-fabrication.md",
+  "evaluation/judges/prompts/judge-system.md",
+]);
+const mayNameV2 = (file: string) => file.startsWith("tests/") || file.endsWith(".test.ts") || V2_ALLOWED.has(file);
+
+// Generated, not written: a lockfile's base64 hashes hold any three letters.
+const GENERATED = new Set(["package-lock.json"]);
 
 describe("the retired formats", () => {
   it("leave no module behind", () => {
@@ -153,9 +161,13 @@ describe("the retired formats", () => {
     expect(gone.filter((file) => fs.existsSync(path.join(ROOT, file)))).toEqual([]);
   });
 
-  it("are named in no file of code, tests or docs", () => {
+  it("are named in no file of code, tests or docs, nor in any file's path", () => {
     const hits: string[] = [];
     for (const file of repoFiles()) {
+      for (const name of RETIRED_NAMES) {
+        if (name.test(file)) hits.push(`path ${file}: ${name}`);
+      }
+      if (GENERATED.has(path.basename(file))) continue;
       const text = textOf(file);
       if (text === null) continue;
       const allowed = ALLOWED[file] ?? [];

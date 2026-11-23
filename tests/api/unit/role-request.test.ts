@@ -375,7 +375,6 @@ describe("arrival (ambience) derives its inputs from the session history", () =>
     });
     expect(charactersIn(prompt)).toEqual([]);
     expect(prompt).not.toContain("## Characters present");
-    expect(prompt).toContain("Use only the characters, places and facts you are given.");
   });
 
   it("names the searchable areas, never a hidden one, and recognises a return visit", () => {

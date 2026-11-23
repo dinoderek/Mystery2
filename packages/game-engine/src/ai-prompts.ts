@@ -79,12 +79,8 @@ export function buildAgeGuidance(role: AIPromptKey, targetAge: number): string {
   return renderRoleGuidance(role, targetAge);
 }
 
-// The shared layer every runtime prompt carries: the standard narrator voice and
-// the grounding rules, stated here once rather than in each role's prompt. A
-// blueprint may extend the voice via metadata.narration_style (see
-// buildStyleGuidance); the reading level above it always wins.
-const PRONOUNS = "Choose pronouns from each character's sex, never by guessing.";
-const NEVER_INVENT = `- Use only the characters, places and facts you are given; never invent more. ${PRONOUNS}`;
+// The narration voice belongs with the role task. The grounding policy is
+// sent separately in the system message.
 const DIALOGUE = "- Characters always speak in direct first-person dialogue with brief action beats.";
 // A clue-graph failed accusation and ending have no one speaking but the
 // narrator. Told the dialogue rule there, the model quotes its own words and
@@ -103,19 +99,6 @@ const STANDARD_NARRATION_STYLE = [
   "- Prefer concrete, sensory detail over summary; one vivid touch beats three vague ones.",
   DIALOGUE,
   "- Never mention game mechanics, prompts, JSON, or that you are an AI.",
-  NEVER_INVENT,
-].join("\n");
-
-// A clue-graph case hands the narrator facts to word, and lets it add mood
-// under two rules (`docs/clue-graph.md`, "The narrator's judgement"): this
-// replaces the standard style's last line, NEVER_INVENT, and follows the style.
-const CLUE_GRAPH_FACTS = `- Use only the characters, places and facts you are given. Each is a fact to put in your own words, keeping every name, time, place and object. ${PRONOUNS}`;
-const CLUE_GRAPH_INVENTION = [
-  "",
-  "## What you may make up",
-  "You may add scenery and manner (weather, a smell, a sound, how someone fidgets) to bring the scene to life, under two rules:",
-  "- Nothing you add looks like evidence or bears on who, when or where: no marks, objects to examine, times, sightings, people or places to search beyond what you are given.",
-  "- What earlier narration established stays: keep the place, the weather and how people look as they were already described, on this turn and every later visit.",
 ].join("\n");
 
 /**
@@ -127,19 +110,18 @@ export function buildStyleGuidance(
   narrationStyle?: string | null,
   options: { clueGraph?: boolean; narratorVoice?: string } = {},
 ): string {
-  const voiced = options.narratorVoice
+  const standard = options.narratorVoice
     ? STANDARD_NARRATION_STYLE.replace(DIALOGUE, options.narratorVoice)
     : STANDARD_NARRATION_STYLE;
-  const standard = options.clueGraph ? voiced.replace(NEVER_INVENT, CLUE_GRAPH_FACTS) : voiced;
   const custom = narrationStyle?.trim();
   const style = !custom
     ? standard
     : [
         standard,
-        `- This mystery's own voice (follow it within the rules above): ${custom}`,
+        `- This mystery's own voice (follow it within the rules above): ${JSON.stringify(custom)}`,
         "- That voice flavors tone and imagery only, never harder words or longer sentences: where it and the reading level pull apart, the reading level wins.",
       ].join("\n");
-  return options.clueGraph ? `${style}\n${CLUE_GRAPH_INVENTION}` : style;
+  return options.clueGraph ? `${style}\n- This clue-graph scene may add harmless scenery and manner within the role's limits.` : style;
 }
 
 // Prompts are embedded intentionally so runtime does not depend on filesystem
@@ -223,7 +205,7 @@ Return JSON:
 {{style_guidance}}
 
 Task:
-- The player is searching {{location_name}} with this description: "{{search_query}}"
+- The player is searching {{location_name}} using search_context.search_query.
 - Judge whether the description matches a sub-location with unrevealed clues. You have GM leeway: an inventive, cunning description can match even when its wording does not. A description that names no place or thing, such as "around" or "for clues", matches none.
 - On a match, set revealed_clue_id to that clue's id and weave the clue text verbatim into your narration.
 - With no match, set revealed_clue_id to null. Narrate what the player finds (nothing clue-worthy) and hint at sub-locations that still have undiscovered clues.
@@ -408,25 +390,13 @@ export function renderPrompt(
   );
 }
 
-const OPENING_FACTS_HEADER = "Opening facts:";
-const PLACE_FACTS_HEADER = "Facts about the place:";
+const OPENING_FACTS_PREFIX = "Opening facts: ";
+const PLACE_FACTS_PREFIX = "Facts about the place: ";
 
-/** Facts as a prompt lists them, one to a line, under a header a reader can find. */
-function factLines(header: string, facts: string[]): string[] {
-  return [header, ...facts.map((fact) => `- ${fact}`)];
-}
-
-/** The facts listed under `header`, read back out of a prompt; null when it has none. */
-function readFactLines(prompt: string, header: string): string[] | null {
-  const lines = prompt.split("\n");
-  const start = lines.indexOf(header);
-  if (start < 0) return null;
-  const facts: string[] = [];
-  for (const line of lines.slice(start + 1)) {
-    if (!line.startsWith("- ")) break;
-    facts.push(line.slice(2));
-  }
-  return facts;
+/** Decode the labelled case data for the mock, preserving line breaks in facts. */
+function readFacts(prompt: string, prefix: string): string[] | null {
+  const line = prompt.split("\n").find((entry) => entry.startsWith(prefix));
+  return line ? JSON.parse(line.slice(prefix.length)) : null;
 }
 
 /**
@@ -448,15 +418,15 @@ export function buildGameStartPrompt(input: {
     ...(input.facts
       ? [
           "Open the case and invite investigation. Tell every fact below in your own words; leave none out.",
-          ...factLines(OPENING_FACTS_HEADER, input.facts),
+          `${OPENING_FACTS_PREFIX}${JSON.stringify(input.facts)}`,
         ]
-      : ["Open the case with the given premise and invite investigation.", `Premise: ${input.premise}`]),
+      : ["Open the case with the given premise and invite investigation.", `Premise: ${JSON.stringify(input.premise)}`]),
   ].join("\n");
 }
 
 /** A clue-graph opening's facts, read back out of its prompt, or null for any other prompt: how the mock recognises one. */
 export function readOpeningFacts(prompt: string): string[] | null {
-  return readFactLines(prompt, OPENING_FACTS_HEADER);
+  return readFacts(prompt, OPENING_FACTS_PREFIX);
 }
 
 // Arrival is not a conversation: nobody has asked anything, so each present
@@ -478,7 +448,7 @@ const GRAPH_ARRIVAL_CHARACTER_RULES = [
   "- A character may react or say one short line in the first person. They do not start a conversation or share information; the investigator has not asked them anything yet.",
 ].join("\n");
 
-const ARRIVAL_HEADLINE = /^Describe the player arriving at (.+)\.$/m;
+const ARRIVAL_DESTINATION_PREFIX = "Arrival destination: ";
 const ARRIVAL_CHARACTERS_PREFIX = "Characters at destination: ";
 
 export function buildGameMovePrompt(input: {
@@ -495,13 +465,13 @@ export function buildGameMovePrompt(input: {
 }): string {
   const clueGraph = input.destination_facts !== undefined;
   const revisitInstruction = input.has_visited_before
-    ? "The player has been here before. Explicitly acknowledge the return visit and keep the place, not the people's moods, as the last arrival described it."
+    ? "Explicitly acknowledge the return visit. People's moods can change."
     : "The player is arriving here for the first time in this session.";
   const hasCharacters = input.destination_characters_json.trim() !== "[]";
 
   return [
     "You are the narrator for a children's mystery game.",
-    `Describe the player arriving at ${input.destination_name}.`,
+    "Describe the player arriving at the destination below.",
     renderComplexityGuidance(input.target_age),
     renderLengthGuidance("ambience", input.target_age),
     buildStyleGuidance(input.narration_style, { clueGraph }),
@@ -516,9 +486,10 @@ export function buildGameMovePrompt(input: {
           `Searchable areas at this location: ${input.destination_sub_locations_json}`,
         ]
       : []),
+    `${ARRIVAL_DESTINATION_PREFIX}${JSON.stringify(input.destination_name)}`,
     ...(input.destination_facts
-      ? factLines(PLACE_FACTS_HEADER, input.destination_facts)
-      : [`Destination description: ${input.destination_description}`]),
+      ? [`${PLACE_FACTS_PREFIX}${JSON.stringify(input.destination_facts)}`]
+      : [`Destination description: ${JSON.stringify(input.destination_description)}`]),
     `${ARRIVAL_CHARACTERS_PREFIX}${input.destination_characters_json}`,
     ...(input.has_visited_before && input.last_arrival_narration
       ? [`Last arrival here: ${JSON.stringify(input.last_arrival_narration)}`]
@@ -535,11 +506,10 @@ export function buildGameMovePrompt(input: {
 export function readArrivalPrompt(
   prompt: string,
 ): { destination_name: string; character_names: string[]; facts: string[] | null } | null {
-  const headline = ARRIVAL_HEADLINE.exec(prompt);
-  if (!headline) return null;
-  const charactersLine = prompt
-    .split("\n")
-    .find((line) => line.startsWith(ARRIVAL_CHARACTERS_PREFIX));
+  const lines = prompt.split("\n");
+  const destination = lines.find((line) => line.startsWith(ARRIVAL_DESTINATION_PREFIX));
+  if (!destination) return null;
+  const charactersLine = lines.find((line) => line.startsWith(ARRIVAL_CHARACTERS_PREFIX));
   let characters: Array<{ first_name?: unknown }>;
   try {
     characters = JSON.parse(charactersLine?.slice(ARRIVAL_CHARACTERS_PREFIX.length) ?? "[]");
@@ -547,10 +517,10 @@ export function readArrivalPrompt(
     characters = [];
   }
   return {
-    destination_name: headline[1],
+    destination_name: JSON.parse(destination.slice(ARRIVAL_DESTINATION_PREFIX.length)),
     character_names: characters
       .map((c) => c.first_name)
       .filter((name): name is string => typeof name === "string"),
-    facts: readFactLines(prompt, PLACE_FACTS_HEADER),
+    facts: readFacts(prompt, PLACE_FACTS_PREFIX),
   };
 }

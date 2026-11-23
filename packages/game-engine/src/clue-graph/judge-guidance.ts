@@ -14,7 +14,7 @@ export function clueGraphRoleGuidance(role: string): string {
 
 export const GRAPH_ACCUSATION_PROMPT = `You read an accusation in a children's mystery game. You do not answer it and you decide nothing: the game does. You report two things.
 
-The investigator says: "{{player_input}}"
+Read the investigator's accusation in player_input.
 
 graph_accusation_context.people is everyone in the case. graph_accusation_context.held is the investigator's notebook: every clue they hold, as the line they keep.
 - accused_character_id: the id of the one person this line accuses, however it is put or spelled. null when it accuses nobody, or several without choosing.
@@ -30,7 +30,7 @@ export const GRAPH_ACCUSATION_ROUND_PROMPT = `You are the narrator of the accusa
 {{age_guidance}}
 {{style_guidance}}
 
-The investigator says: "{{player_input}}"
+The investigator's accusation is in player_input.
 
 The case is not proven. graph_accusation_context carries the reported accused (an id in people, or null), held (only the clues cited), and reply (the engine's chosen explanation). Word that reply warmly; do not choose another kind.
 - kind "flaw": explain the problem using cleared_by, the held clues that conflict with the accusation, or retracted, the cited statements taken back and who took them back. Give those details without declaring anyone guilty or innocent.
@@ -38,7 +38,7 @@ The case is not proven. graph_accusation_context carries the reported accused (a
 - kind "missing": what is cited is not enough. First say plainly, in simple words, the kind of fact the case still needs: reply.fact_kind. Then the lead, when it is set. Do not spend the reply retelling the cited clues. reply.fact_kind is a kind of fact, never an unseen fact to reveal.
 For alternative or missing, when reply.lead is set, point toward that person or place in your own words. End with one short question about investigating further. The player can explore again; do not demand another accusation now.
 When forced_by_timeout is true, whatever the kind, the turns are spent and there is no more looking: suggest nowhere to go and no one to talk to, and end by inviting them to try their accusation again.
-Use only the supplied reply and cited clues. Never identify the culprit, confirm or deny the accused name, or invent a clue, explanation or alternative person. No right-name hint: every missing reply reads the same way.
+Use only the supplied reply and cited clues. Never identify the culprit or confirm or deny the accused name. No right-name hint: every missing reply reads the same way.
 
 Return JSON:
 {
@@ -49,11 +49,11 @@ export const GRAPH_ENDING_PROMPT = `You are the narrator closing a children's my
 {{age_guidance}}
 {{style_guidance}}
 
-The investigator's last words: "{{player_input}}"
+The investigator's last words are in player_input.
 
 graph_accusation_context.ending is the whole truth, and now you tell all of it:
 - outcome "win": celebrate that they solved it, and the clues in showed_it (ids from held) that showed it. Outcome "lose": say kindly that this time the answer got away, never blaming them.
-- Then tell the whole account, simply and in order: who did it (culprit), what happened (what_happened), every step of timeline, and why (motive). Keep every name, time, place and object. Add nothing, and contradict none of it.
+- Then tell the whole account, simply and in order: who did it (culprit), what happened (what_happened), every step of timeline, and why (motive).
 The whole account may run past the length above: tell every step, simply. The case is over: do not end with a question.
 
 Return JSON:

@@ -1,6 +1,6 @@
 You read an accusation in a children's mystery game. You do not answer it and you decide nothing: the game does. You report two things.
 
-The investigator says: "It was Toby."
+Read the investigator's accusation in player_input.
 
 graph_accusation_context.people is everyone in the case. graph_accusation_context.held is the investigator's notebook: every clue they hold, as the line they keep.
 - accused_character_id: the id of the one person this line accuses, however it is put or spelled. null when it accuses nobody, or several without choosing.

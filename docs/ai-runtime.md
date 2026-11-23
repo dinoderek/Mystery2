@@ -13,48 +13,51 @@ and `buildNarrationMessages` construct the system/user pair for live OpenRouter,
 live Claude CLI and replay, including plain `intro` and `ambience`. Search
 prompt keys map to the `search` output contract. Provider schemas and calls,
 including both clue-graph accusation stages, remain distinct from messages.
-The original policy keeps its existing priority; request data stays in the
-user message. Captured messages are compared byte for byte across providers
-on clue graphs in `tests/api/unit/narrator-messages.test.ts`.
+The system message carries the output instruction and grounding policy.
+The user message carries the role task and its data. Structured calls read
+player words and history from context, with any current-visit excerpt labelled
+as data. Openings and arrivals label and quote case facts and previous prose.
+Tests compare live and replay messages byte for byte.
 
-**Lean prompts.** Each rule is stated once and no two conflict
-(`tests/api/unit/talk-prompt.test.ts`). Voice, reading level and grounding
-(only given facts, pronouns from `sex`) live in the shared layer alone.
-`talk-prompt.ts` builds `talk_conversation` from sections the character needs:
-its agenda types and conditions, lock kinds, tell kinds, an open fallback.
-Recorded state replaces refereeing; the one judgement left is whether a clue
-was used this turn.
+Voice and reading level are shared. `talk-prompt.ts` selects the character's
+agendas, locks, tells and open fallback. Recorded state leaves the narrator
+to judge whether a clue was used.
+
+## Grounding policy
+
+The [runtime text](../packages/game-engine/src/narrator-grounding.ts) helps a
+child reason from dependable facts and receive the clues their work earns.
+Authored facts and current game state take precedence over conflicting earlier
+narration. A visible correction uses existing reveal permission. Otherwise
+the narrator drops the disputed detail and preserves compatible scenery.
+Authored lies remain character accounts. A valid bluff can open its gate while
+the player's claim remains unverified.
+
+Within each existing call, the narrator finds support in its permitted material,
+admits uncertainty, checks its claims and includes earned details in the existing
+output. This also applies to the IDs reported in the first accusation stage.
+Ordinary knowledge helps interpret words and actions. Repeated samples are an
+offline stability measure, and agreement alone cannot establish truth.
+
+Anthropic sources reviewed 23 November 2026.
+[Reduce hallucinations](https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations)
+and [Prompting best practices](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices).
 
 ## Roles
 
-The roles and their output contracts are `ai-contracts.ts`. `search` is one
-contract; V2 uses two prompts: `search_bare` uses the `search_find` word budget
-when the backend already knows a clue will be revealed, else `search_empty`;
-`search_targeted` carries both, because the model decides the outcome
-(`OUTCOME_LENGTH_BY_ROLE` in `ai-prompts.ts`). `accusation_judge` judges each
-accusation once, `win` or `continue`; on the last `win` or `lose`
-(`docs/game.md`, "The accusation"). `talk_start` and `talk_end` move nobody; `gm_fabrication`
-reports invented movement. A clue-graph case's `graph_talk` and `graph_search`
-return notebook lines; `graph_accusation_round` words the engine's flaw,
-alternative or missing-fact reply, from only its supplied material
-([accusation](clue-graph.md#accusation)).
+`ai-contracts.ts` owns the role contracts. The legacy `search` contract has
+two prompts. A bare search gets the budget for its known outcome. A targeted
+search gets both budgets because the model judges it. The legacy accusation
+rules are in [The game](game.md#the-accusation). Talk greetings and farewells
+move nobody. Clue-graph role mechanics are in [Clue Graph](clue-graph.md#in-play).
 
 ## Narration style
 
-Every prompt's `{{style_guidance}}` slot is filled by `buildStyleGuidance`:
-
-- The **standard narrator style**: second person, present tense; warm, cozy,
-  never scary; concrete sensory detail; characters speak in the first person
-  with action beats, but in a clue-graph failed accusation or ending only the
-  narrator speaks, never quoting itself (the ending may quote a character); no
-  meta-commentary.
-- A blueprint may add `metadata.narration_style`, one sentence of voice
-  direction, layered on top. It flavours the voice, never the point of view or
-  safety rules.
-- Style is **subordinate to the reading level**. "Wry, gothic, faintly archaic"
-  is a voice, not licence for harder words or longer sentences: the reading
-  level wins: `narration_style` may direct tone, mood and imagery only, never
-  archaic, ornate, technical or heavily figurative diction.
+`buildStyleGuidance` gives the narrator a warm, cozy voice in second person
+and present tense. Characters speak in first person with brief action beats.
+The narrator alone speaks after a failed clue-graph accusation or at the
+ending, which may quote a character. `metadata.narration_style` can flavour
+tone, mood and imagery within the reading level, point of view and safety rules.
 
 ## What each role sees
 
@@ -85,8 +88,6 @@ Which blueprint fields reach which role is the "Narration at play" table in
   motive, alibi, action, background, flavour or `condition` tell (each awaits
   the investigator's words). It steers toward people, never things: any could
   be a hiding place. A return gets the last arrival's narration.
-  `role-request.ts` derives it from history
-  (`tests/api/unit/arrival-prompt.test.ts`).
 - **Search never sees a locked clue**, nor a spot whose clues are all locked,
   so no search or arrival weaves in, advertises or narrates "nothing here" for
   either. A targeted search naming that spot (`search-target.ts`) shows it and
@@ -98,8 +99,7 @@ Which blueprint fields reach which role is the "Narration at play" table in
   found and missing clue ids). Without them it cannot tell an earned case from
   a lucky one. Both are rebuilt from event history, and `path_coverage` is
   precomputed so the model does not intersect sets across a long context.
-- Every character summary carries `sex`, and every prompt tells the model to use
-  it for pronouns rather than guess.
+- Character summaries carry `sex` for the shared pronoun rule.
 
 ## Trusting the output
 
@@ -207,8 +207,9 @@ so a double confirmation cannot narrate twice. It costs no turn, and its
 
 ## The mock provider
 
-The deterministic default for `npm run dev` and automated suites. Contract,
-prompt, context and provider changes update its tests too.
+The deterministic default for `npm run dev` and automated suites. It decodes
+the same labelled opening and arrival data and voices only those facts and
+visible names. Contract, prompt, context and provider changes update its tests.
 
 ## Failures, logs and attribution
 

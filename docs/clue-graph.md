@@ -145,11 +145,9 @@ conclusion and motive.
 
 ## The narrator's judgement
 
-The narrator adds scenery and manner, never evidence or facts about who, when
-or where, keeping earlier narration consistent. Asked
-anything beyond their clues and `knows` that bears on the case, a character
-says plainly they do not know. A clue that comes out is told whole in
-narration and line; an empty search adds nothing.
+The scene can add harmless scenery and manner under the
+[shared grounding policy](ai-runtime.md#grounding-policy). A clue that comes
+out is told whole in narration and line; an empty search adds nothing.
 
 Talk is generous on wording, strict on deeds; a clue shown and dodged opens
 on a follow-up. Cases:

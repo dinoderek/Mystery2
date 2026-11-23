@@ -301,11 +301,10 @@ describe("the clue-graph talk prompt", async () => {
   const built = (await Promise.all(STORIES.map((story) => buildAll(story)))).flat().filter(({ turnCase }) => turnCase.action.type === "ask");
 
   /** The prompt with what each case fills in taken out. */
-  function template({ prompt, context, turnCase }: Built): string {
+  function template({ prompt, context }: Built): string {
     const talk = context.graph_talk_context!;
     return prompt
-      .replace(/\nEarlier in this conversation, they said:\n(- ".*"\n)+A clue used .*/, "")
-      .split(`"${turnCase.action.player_input}"`).join('"<line>"')
+      .replace(/\nEarlier lines from this conversation: .*/, "")
       .split(talk.location_name).join("<location>")
       .split(talk.character.name).join("<character>");
   }
@@ -331,7 +330,6 @@ describe("the clue-graph talk prompt", async () => {
     const [only] = templates;
     expect(only.match(/^## .+$/gm)).toEqual([
       "## Narration style",
-      "## What you may make up",
       "## What you are given",
       "## What this line earns",
       "## The notebook",
@@ -341,9 +339,9 @@ describe("the clue-graph talk prompt", async () => {
 
   it("restates the investigator's earlier lines in this conversation beside the line, and only those", () => {
     const followUp = built.find(({ turnCase }) => turnCase.id === "toby-glass-follow-up")!;
-    expect(followUp.prompt).toContain('Earlier in this conversation, they said:\n- "toby the glass from the window was OUTSIDE on the path not inside"\nA clue used in one of those lines still counts now. If its gate is still in gates, Toby dodged it once already');
+    expect(followUp.prompt).toContain('Earlier lines from this conversation: ["toby the glass from the window was OUTSIDE on the path not inside"]');
     const first = built.find(({ turnCase }) => turnCase.id === "thorne-boots-by-implication")!;
-    expect(first.prompt).not.toContain("Earlier in this conversation");
+    expect(first.prompt).not.toContain("Earlier lines from this conversation");
 
     const line = (character: string, said: string) => ({ payload: { player_input: said, clue_graph: { type: "line", character } } });
     const talk = (character: string) => ({ payload: { clue_graph: { type: "talk", character } } });

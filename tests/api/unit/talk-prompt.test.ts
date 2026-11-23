@@ -40,10 +40,10 @@ const AGENDA_SECTIONS = [
 
 describe("the talk_conversation prompt, assembled by character", () => {
   it("renders Barnaby's turn 28 from the stored trace in at most 5,500 characters", async () => {
-    const { prompt } = await talkAt(28, "barnaby", "platform");
+    const { prompt, context } = await talkAt(28, "barnaby", "platform");
     expect(prompt.length).toBeLessThanOrEqual(5500);
     expect(prompt).toContain("You are Barnaby");
-    expect(prompt).toContain("the prints were snowshoes not wolf paws");
+    expect(context.player_input).toContain("the prints were snowshoes not wolf paws");
     // An earned reaction outranks the agenda it touches: no blaming Gus again.
     expect(prompt).toContain("current_story outranks them");
     expect(prompt).toContain("and never once current_story backs off the blame");
@@ -125,8 +125,6 @@ const RULES = [
   "never listed again",
   "If the line is gibberish",
   "first-person dialogue",
-  "never invent more",
-  "Choose pronouns",
   "the reading level wins",
   "years old",
 ];
@@ -194,7 +192,6 @@ describe("each rule once, no two in conflict", () => {
     for (const prompt of [...narration, ...templates]) {
       expect(count(prompt, "first-person dialogue")).toBe(1);
       expect(count(prompt, "7 years old")).toBe(1);
-      expect(count(prompt, "Choose pronouns")).toBe(1);
       expect(prompt).not.toContain("Never guess pronouns");
       expect(prompt).not.toContain("Do not invent extra");
     }

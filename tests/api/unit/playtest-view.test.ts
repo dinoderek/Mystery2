@@ -29,6 +29,7 @@ function state(overrides: Record<string, unknown> = {}): GameState {
 			}
 		],
 		time_remaining: 7,
+		accusations_left: 3,
 		location: 'loc-kitchen',
 		mode: 'explore',
 		current_talk_character: null,
@@ -51,12 +52,28 @@ describe('playtest player view', () => {
 		expect(view).toContain('Location: Kitchen');
 		expect(view).toContain('People here: Alice Smith');
 		expect(view).toContain('Turns left: 7');
+		expect(view).toContain('Accusations left: 3 of 3');
 		expect(view).toContain('- Kitchen (you are here) — Alice Smith: Warm and floury.');
 		expect(view).toContain('- Bob Jones (at Living Room)');
 		expect(view).toContain('FOUND AT PLACES — Kitchen:\n- A crumb on the floor.');
 		expect(view).toContain('Narrator: You arrive in the kitchen.\n> serch\n[game] Commands: ...');
 		// The investigator's own plan is not part of what the player sees.
 		expect(view).not.toContain('look around');
+	});
+
+	it('shows accusations left, the free way back, and exploring again after a failure', () => {
+		const view = (overrides: Record<string, unknown>) =>
+			buildView({ title: 'Mock Blueprint', state: state(overrides), transcript: [] });
+
+		expect(view({ mode: 'accuse' })).toContain('Mode: Making your accusation (`back` returns to exploring, free)');
+		// A failed accusation spends one and the state says exploring again.
+		const failed = view({ mode: 'explore', accusations_left: 2 });
+		expect(failed).toContain('Mode: Exploring');
+		expect(failed).toContain('Accusations left: 2 of 3');
+		// Out of turns there is no way back.
+		const forced = view({ mode: 'accuse', time_remaining: 0, accusations_left: 1 });
+		expect(forced).toContain('Mode: Making your accusation (no way back: the turns are spent)');
+		expect(forced).toContain('Accusations left: 1 of 3');
 	});
 
 	it('names who is being talked to', () => {

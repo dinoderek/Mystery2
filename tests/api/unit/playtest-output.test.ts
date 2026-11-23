@@ -10,7 +10,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { copyDatabase, readPlayedEvents } from '../../../evaluation/playtest/lib/database.ts';
 import type { PlayedGame } from '../../../evaluation/playtest/lib/game.ts';
-import { countBlueprintClues, summarizeGame, writeGameFolder } from '../../../evaluation/playtest/lib/output.ts';
+import { countAccusations, countBlueprintClues, summarizeGame, writeGameFolder } from '../../../evaluation/playtest/lib/output.ts';
 import type { PlaytestBlueprint } from '../../../evaluation/playtest/lib/output.ts';
 import { createGameDatabase } from './trace-database-fixture.ts';
 
@@ -151,6 +151,42 @@ describe('summarizing a game', () => {
 			calls: []
 		});
 		expect(summary).toMatchObject({ game_number: null, outcome: null, narrator_cost_usd: null, investigator_cost_usd: null, clues_found: 0, clue_ids_found: [] });
+	});
+});
+
+// A played turn as the server answered it, with the events it saved.
+function turn(...eventTypes: string[]): PlayedGame['steps'][number] {
+	return {
+		...game().steps[0],
+		response: { ok: true, status: 200, body: { kind: 'turn', events: eventTypes.map((event_type) => ({ event_type })) } }
+	};
+}
+const refused = { ...game().steps[1] };
+
+describe('counting accusations', () => {
+	it('counts none for a game that never accused', () => {
+		expect(countAccusations([turn('search'), refused], null)).toEqual({ accusations_spent: 0, won_on_third_accusation: false });
+	});
+
+	it('spends one for a failure, and none for the win that follows', () => {
+		const steps = [turn('accuse_start'), turn('accuse_failed'), turn('search'), turn('accuse_resolved')];
+		expect(countAccusations(steps, 'win')).toEqual({ accusations_spent: 1, won_on_third_accusation: false });
+	});
+
+	it('counts a win on the third accusation', () => {
+		const steps = [turn('accuse_failed'), turn('search'), turn('accuse_failed'), turn('accuse_resolved')];
+		expect(countAccusations(steps, 'win')).toEqual({ accusations_spent: 2, won_on_third_accusation: true });
+	});
+
+	it('counts the third failure, which ends the case, as spent', () => {
+		const steps = [turn('accuse_failed'), turn('accuse_failed'), turn('accuse_resolved')];
+		expect(countAccusations(steps, 'lose')).toEqual({ accusations_spent: 3, won_on_third_accusation: false });
+	});
+
+	it('goes into the summary and the transcript', () => {
+		const played = game({ steps: [turn('accuse_failed'), turn('accuse_failed'), turn('accuse_resolved')] });
+		const summary = summarizeGame({ ...FOLDER, game: played, calls: [] });
+		expect(summary).toMatchObject({ accusations_spent: 2, won_on_third_accusation: true });
 	});
 });
 

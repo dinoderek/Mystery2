@@ -115,6 +115,12 @@ describe('playtest loop', () => {
 			kind: 'turn',
 			event_type: 'accuse_resolved'
 		});
+		// The failed accusation left the game exploring with two accusations; the view says so.
+		const afterFailure = steps[PLAYED.indexOf('Bob did it, he was in the living room.') + 1];
+		expect(afterFailure.view).toContain('Mode: Exploring');
+		expect(afterFailure.view).toContain('Accusations left: 2 of 3');
+		expect(steps[PLAYED.indexOf('accuse')].view).toContain('Accusations left: 3 of 3');
+		expect(steps[PLAYED.indexOf('Bob did it, he was in the living room.')].view).toContain('`back` returns to exploring');
 		// Every line was posted as typed.
 		expect(steps.map((step) => step.input)).toEqual(PLAYED);
 
@@ -159,6 +165,9 @@ describe('playtest loop', () => {
 			parser_rejections: 4,
 			failed_calls: 0,
 			time_budget: MOCK_BLUEPRINT.metadata.time_budget,
+			// One accusation failed, the player explored again and then won.
+			accusations_spent: 1,
+			won_on_third_accusation: false,
 			narrator_cost_usd: null,
 			investigator_cost_usd: null
 		});
@@ -173,6 +182,8 @@ describe('playtest loop', () => {
 		const transcript = fs.readFileSync(path.join(dir, 'transcript.md'), 'utf8');
 		expect(transcript).toContain('**> talk to alice**');
 		expect(transcript).toContain('- Outcome: win (stopped: ended)');
+		expect(transcript).toContain('- Accusations spent: 1 of 3');
+		expect(JSON.parse(fs.readFileSync(path.join(dir, 'summary.json'), 'utf8'))).toMatchObject({ accusations_spent: 1 });
 	});
 
 	it('replays a recorded game, and stops where the game no longer matches', async () => {

@@ -256,6 +256,8 @@ export interface ReportGame {
   replayOf: string | null;
   turnsUsed: number | null;
   timeBudget: number | null;
+  accusationsSpent: number | null;
+  wonOnThird: boolean;
   steps: number;
   cluesFound: number | null;
   cluesTotal: number | null;
@@ -300,6 +302,8 @@ function buildGame(number: number, dir: string, summary: GameSummary, clueText: 
     replayOf: summary.replay_of ?? null,
     turnsUsed: summary.turns_used ?? null,
     timeBudget: summary.time_budget ?? null,
+    accusationsSpent: summary.accusations_spent ?? null,
+    wonOnThird: summary.won_on_third_accusation ?? false,
     steps: summary.steps ?? steps.length,
     cluesFound: summary.clues_found ?? null,
     cluesTotal: summary.clues_total ?? null,

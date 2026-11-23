@@ -1,9 +1,9 @@
 {
-  "status": "Revised twelve-sample diagnostic capture pending",
+  "status": "Twelve-sample diagnostic captured; blinded operator review pending",
   "manifest_sha256": "16216f6983afbbd843b7fba0bb0e0111eca64c2cc5fd2d9e6627e12165b585f7",
   "archive": "experiments/narrator-grounding-2026-11-23",
   "pilot": {
-    "status": "INCOMPLETE: funding required; measurement remains open",
+    "status": "Retained incomplete pilot; superseded by the operator-approved twelve-sample diagnostic, never pooled with it",
     "manifest_sha256": "f67667dee82df1dff8d5f1b2eb35b7c88f463ef8c190df341365a63ca139256c",
     "measurement_commit": "6b0efcb92bf15482dc6ad265d451a932f98b04c3",
     "archive": "experiments/narrator-grounding-2026-11-23",
@@ -37,7 +37,126 @@
     },
     "partial_run": "runs/2026-11-23/20-43-22-judge-turn",
     "human_adjudication": "Pending; no acceptance conclusion",
-    "heldout": "Six mysteries and 72 fixtures sealed; zero held-out narrator calls"
+    "heldout": "Six mysteries and 72 fixtures sealed; zero held-out narrator calls",
+    "original_status": "INCOMPLETE: funding required; measurement remains open"
   },
-  "human_review": "All twelve outputs pending blinded operator review"
+  "human_review": {
+    "status": "Pending operator ratings; no human verdicts inferred from mechanical checks",
+    "samples": 12,
+    "packet": "human-review/review.html",
+    "packet_json": "human-review/packet.json",
+    "packet_sha256": "4307b908cb72f06e75977a44afd6786158eb94b6684b30ed976f204cdfa9150f",
+    "packet_sha256_basis": "UTF-8 packet.json text excluding its final newline, matching review-index.json and downloaded ratings",
+    "identity_key": "human-review/identity-key.json",
+    "expected_download": "grounding-review-4307b908.json"
+  },
+  "primary": {
+    "measurement_commit": "34b63818743e9b18138da16161d014ebd3bf055b",
+    "tree_clean": true,
+    "node": "v24.21.0",
+    "started_at": "2026-11-23T21:12:36.136Z",
+    "finished_at": "2026-11-23T21:13:28.692Z",
+    "run": "diagnostic-runs/2026-11-23/21-12-36-judge-turn",
+    "requested": 12,
+    "captured": 12,
+    "mechanical": {
+      "expect": {
+        "pass": 12,
+        "fail": 0,
+        "incomplete": 0
+      },
+      "flesch": {
+        "pass": 12,
+        "fail": 0,
+        "error": 0
+      },
+      "parser_errors": 0,
+      "run_errors": 0
+    },
+    "model_calls": 15,
+    "retries": 0,
+    "output_token_ceiling": 8192,
+    "truncated_responses": 0,
+    "model_judge_calls": 0,
+    "whole_games": 0,
+    "cost_usd": 0.2009584,
+    "per_model": [
+      {
+        "binding": "narrator-astra",
+        "requested_and_reported_model": "openai/gpt-6.2-astra",
+        "samples": 4,
+        "expect_pass": 4,
+        "flesch_pass": 4,
+        "model_calls": 5,
+        "cost_usd": 0.0794124,
+        "prompt_tokens": 8403,
+        "completion_tokens": 475,
+        "sample_latency_ms": {
+          "minimum": 3160,
+          "median": 3849.0,
+          "maximum": 5955
+        }
+      },
+      {
+        "binding": "narrator-opus",
+        "requested_and_reported_model": "anthropic/claude-opus-5.5",
+        "samples": 4,
+        "expect_pass": 4,
+        "flesch_pass": 4,
+        "model_calls": 5,
+        "cost_usd": 0.079564,
+        "prompt_tokens": 12426,
+        "completion_tokens": 1493,
+        "sample_latency_ms": {
+          "minimum": 4618,
+          "median": 5204.0,
+          "maximum": 5483
+        }
+      },
+      {
+        "binding": "narrator-sonnet",
+        "requested_and_reported_model": "anthropic/claude-sonnet-5.5",
+        "samples": 4,
+        "expect_pass": 4,
+        "flesch_pass": 4,
+        "model_calls": 5,
+        "cost_usd": 0.041982,
+        "prompt_tokens": 12426,
+        "completion_tokens": 1713,
+        "sample_latency_ms": {
+          "minimum": 2495,
+          "median": 3643.0,
+          "maximum": 5387
+        }
+      }
+    ]
+  },
+  "cumulative_usage": {
+    "attempts": 98,
+    "successful_responses": 95,
+    "rejected_before_provider": 3,
+    "cost_usd": 4.3096644,
+    "approved_cap_usd": 8,
+    "unreconciled_reservations_usd": 0,
+    "ledger": "transport/ledger.json",
+    "reconciliation": "transport/reconciliation.json"
+  },
+  "retention": {
+    "inventory": "capture-artifacts.sha256",
+    "inventory_sha256": "233755f0cf8d6066e8e900a8ba2a782b13c33ba4df9db71cba1af761b544af86",
+    "files": 2981,
+    "covers": "Original pilot, primary capture, transport requests/responses/usage/timing, frozen input files, drivers and blinded review packet; human ratings will be retained separately when supplied."
+  },
+  "heldout": {
+    "mysteries": 6,
+    "fixed_fixtures": 72,
+    "ages": [
+      7,
+      10,
+      11
+    ],
+    "narrator_calls": 0,
+    "status": "Sealed for later acceptance; no held-out outputs generated or used for tuning"
+  },
+  "interpretation": "Descriptive original-policy development baseline: four fixed states of one purposively selected age-10 mystery, one sample per model/state. Mechanical checks are not a grounding or age-suitability verdict. Human assessment remains pending. Unseen-mystery reliability and a population 95% interval are not estimable from this diagnostic cohort; final acceptance thresholds are not established."
 }

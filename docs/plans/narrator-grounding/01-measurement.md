@@ -1,6 +1,6 @@
 # N1: trustworthy messages and a frozen baseline
 
-Depends on: this plan merged. Status: in progress; revised diagnostic capture and human review.
+Depends on: this plan merged. Status: captured; awaiting blinded operator review.
 Scope and decisions: [milestone](milestone.md).
 
 ## Outcome

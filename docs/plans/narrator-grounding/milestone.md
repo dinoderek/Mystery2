@@ -1,6 +1,6 @@
 # Narrator grounding on unseen mysteries
 
-Status: measurement in progress. Checked against main `7eee941` on 2026-11-23.
+Status: measurement awaits operator review. Checked against main `7eee941` on 2026-11-23.
 
 ## Objective
 
@@ -36,7 +36,7 @@ premature disclosures and omissions despite strong isolated scores.
 
 | Task | Depends on | Deliverable | Status |
 |---|---|---|---|
-| [N1: measurement](01-measurement.md) | Plan merged | Equivalent messages and validation, frozen experiment, original-policy baseline | In progress; revised USD8 diagnostic capture |
+| [N1: measurement](01-measurement.md) | Plan merged | Equivalent messages and validation, frozen experiment, original-policy baseline | 12 captured; blinded operator review pending |
 | [N2: policy](02-policy.md) | N1 complete | Shared high-priority grounding policy, with sources | Pending |
 | [N3: acceptance](03-acceptance.md) | N2 complete | Blinded unseen-game comparison and deployment recommendation | Pending |
 

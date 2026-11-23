@@ -1,5 +1,4 @@
 import { CLUE_GRAPH_FORMAT, type ClueGraphCase } from "./clue-graph-schema.ts";
-import type { PlayableBlueprint } from "./msf-case.ts";
 
 /** What the catalog adds to a clue-graph case's title, to tell it from a V2 case of the same story. */
 export const CLUE_GRAPH_TITLE_SUFFIX = " — clue graph";
@@ -29,17 +28,84 @@ export function spotIdOf(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
+/** A clue as the world view lists it: the clue graph's fact, under the clue's ID. */
+export interface ClueGraphWorldClue {
+  id: string;
+  text: string;
+  /** On a hidden spot's clue: the spot shows once its `revealed_by` clue is held. */
+  requires?: { kind: "pointer"; clue_ids: string[]; rationale: string };
+}
+
+export interface ClueGraphWorldSpot {
+  id: string;
+  name: string;
+  hint: string;
+  clues: ClueGraphWorldClue[];
+}
+
+export interface ClueGraphWorldLocation {
+  id: string;
+  name: string;
+  description: string;
+  location_image_id?: string;
+  /** Evidence found by searching the place itself, not one of its spots. */
+  clues: ClueGraphWorldClue[];
+  sub_locations: ClueGraphWorldSpot[];
+}
+
+export interface ClueGraphWorldCharacter {
+  id: string;
+  /** The character's one name, as the case writes it: "talk to Ms. Hale". */
+  first_name: string;
+  location_id: string;
+  sex: "male" | "female";
+  appearance: string;
+  portrait_image_id?: string;
+  personality: string;
+  initial_attitude_towards_investigator: string;
+  is_culprit: boolean;
+  /** Every statement and tell the character holds; the graph says when each comes out. */
+  clues: ClueGraphWorldClue[];
+}
+
 /**
  * The world view the commands, arrivals, notebook and artwork read, built from
  * a validated clue-graph case. It carries no rules: talk, search and the judge
- * read `clue_graph`, which stays authoritative. A hidden spot's clue points at
- * the spot's `revealed_by`, so an arrival does not mention the spot before it.
+ * read `clue_graph`, which stays authoritative.
  */
-export function buildClueGraphBlueprint(graph: ClueGraphCase): PlayableBlueprint {
+export interface ClueGraphWorld {
+  schema_version: typeof CLUE_GRAPH_FORMAT;
+  id: string;
+  clue_graph: ClueGraphCase;
+  representation_note: string;
+  metadata: {
+    title: string;
+    one_liner: string;
+    target_age: number;
+    image_id?: string;
+    time_budget: number;
+    visual_direction?: ClueGraphCase["visual_direction"];
+  };
+  narrative: { premise: string; starting_knowledge: { mystery_summary: string } };
+  world: {
+    starting_location_id: string;
+    locations: ClueGraphWorldLocation[];
+    characters: ClueGraphWorldCharacter[];
+  };
+  cover_image: { description: string; location_ids: string[]; character_ids: string[] };
+  ground_truth: { what_happened: string; why_it_happened: string; timeline: string[] };
+}
+
+/**
+ * Builds the world view of a validated clue-graph case. A hidden spot's clue
+ * points at the spot's `revealed_by`, so an arrival does not mention the spot
+ * before it.
+ */
+export function buildClueGraphWorld(graph: ClueGraphCase): ClueGraphWorld {
   const evidence = Object.entries(graph.clues).flatMap(([id, clue]) =>
     clue.kind === "evidence" ? [{ id, text: clue.fact, source: clue.source }] : [],
   );
-  const locations = Object.entries(graph.locations).map(([id, place]) => ({
+  const locations = Object.entries(graph.locations).map(([id, place]): ClueGraphWorldLocation => ({
     id,
     name: place.name,
     description: place.facts.join(" "),
@@ -68,28 +134,19 @@ export function buildClueGraphBlueprint(graph: ClueGraphCase): PlayableBlueprint
         })),
     })),
   }));
-  const characters = Object.entries(graph.characters).map(([id, person]) => ({
+  const characters = Object.entries(graph.characters).map(([id, person]): ClueGraphWorldCharacter => ({
     id,
-    // One name, as the case writes it: "talk to Ms. Hale".
     first_name: person.name,
-    last_name: "",
     location_id: person.location,
     sex: person.sex,
     appearance: person.appearance.join(" "),
     ...(person.portrait_image_id ? { portrait_image_id: person.portrait_image_id } : {}),
-    background: "",
     personality: person.personality,
     initial_attitude_towards_investigator: Object.values(person.demeanor).find(Boolean) ?? "",
-    stated_alibi: null,
-    motive: null,
     is_culprit: person.role === "culprit",
     clues: Object.entries(graph.clues).flatMap(([clueId, clue]) =>
       clue.kind !== "evidence" && clue.source.character === id ? [{ id: clueId, text: clue.fact }] : [],
     ),
-    flavor_knowledge: [],
-    actual_actions: [],
-    agendas: [],
-    tells: [],
   }));
   const { timeline } = graph.truth;
   return {
@@ -108,11 +165,7 @@ export function buildClueGraphBlueprint(graph: ClueGraphCase): PlayableBlueprint
     },
     narrative: {
       premise: graph.opening.facts.join(" "),
-      starting_knowledge: {
-        mystery_summary: graph.opening.facts[0],
-        locations: [],
-        characters: [],
-      },
+      starting_knowledge: { mystery_summary: graph.opening.facts[0] },
     },
     world: { starting_location_id: graph.opening.location, locations, characters },
     cover_image: {
@@ -125,8 +178,5 @@ export function buildClueGraphBlueprint(graph: ClueGraphCase): PlayableBlueprint
       why_it_happened: graph.truth.motive,
       timeline,
     },
-    solution_paths: [],
-    red_herrings: [],
-    suspect_elimination_paths: [],
   };
 }

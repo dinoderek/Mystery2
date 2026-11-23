@@ -453,7 +453,7 @@ describe("MSF sessions and turns", () => {
         new Error("source removed"),
       );
       const trace = await extractSessionTrace(source, opened.game_id);
-      expect(trace.blueprint.msf).toEqual(lighthouse());
+      expect(trace.blueprint).toHaveProperty("msf", lighthouse());
       expect(reconstructTrace(trace).turns.length).toBeGreaterThan(0);
     } finally {
       source.close?.();

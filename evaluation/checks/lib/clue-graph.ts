@@ -31,7 +31,7 @@ export interface ClueGraphBlueprint {
       clues?: GraphClue[];
       sub_locations?: Array<{ clues?: GraphClue[] }>;
     }>;
-    characters?: Array<{ id: string; first_name: string; last_name: string; clues?: GraphClue[] }>;
+    characters?: Array<{ id: string; first_name: string; last_name?: string; clues?: GraphClue[] }>;
   };
   solution_paths?: GraphPath[];
   red_herrings?: GraphPath[];
@@ -74,7 +74,7 @@ export function collectClues(blueprint: ClueGraphBlueprint | null | undefined): 
         owner: {
           kind: "character",
           id: character.id,
-          name: `${character.first_name} ${character.last_name}`.trim(),
+          name: `${character.first_name} ${character.last_name ?? ""}`.trim(),
         },
         requires: clue.requires?.clue_ids ?? [],
       });

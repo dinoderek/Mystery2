@@ -9,11 +9,13 @@ import path from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import {
-  buildClueGraphBlueprint,
+  buildClueGraphWorld,
   GameGetResponseSchema,
   GameStartResponseSchema,
   validateClueGraph,
+  type ClueGraphWorld,
   type PlayableBlueprint,
+  type PlayableCase,
 } from "@my2/shared";
 import { atReadingAge, gameReadingAge, READING_AGES } from "../../../packages/shared/src/reading-age.ts";
 import { createLocalEngine } from "../../../packages/game-engine/src/context-local.ts";
@@ -27,18 +29,18 @@ import type { ContentStore, GameSessionRow } from "../../../packages/game-engine
 const silentLogger = { log: () => {}, logError: () => {} };
 
 let v2: PlayableBlueprint;
-let graph: PlayableBlueprint;
+let graph: ClueGraphWorld;
 
 beforeAll(async () => {
   v2 = JSON.parse(await readFile("blueprints/mock-blueprint.json", "utf-8"));
-  graph = buildClueGraphBlueprint(
+  graph = buildClueGraphWorld(
     validateClueGraph(JSON.parse(await readFile("blueprints/clue-graph/greenhouse-prizewinner.json", "utf-8"))),
   );
 });
 
 const readerLine = (prompt: string) => prompt.match(/The reader is (\d+) years old/)?.[1];
 
-function talkStart(blueprint: PlayableBlueprint) {
+function talkStart(blueprint: PlayableCase) {
   return buildRoleRequest({
     role: "talk_start",
     game_id: "g1",
@@ -50,7 +52,7 @@ function talkStart(blueprint: PlayableBlueprint) {
   });
 }
 
-function graphGreeting(blueprint: PlayableBlueprint) {
+function graphGreeting(blueprint: ClueGraphWorld) {
   const character = blueprint.world.characters[0];
   return buildRoleRequest({
     role: "graph_talk",

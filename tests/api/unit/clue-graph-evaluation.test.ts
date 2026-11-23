@@ -95,7 +95,7 @@ describe("a clue-graph game, extracted and judged", () => {
     expect(trace.clue_graph?.progress.supported_conclusions.length).toBeGreaterThan(0);
     expect(trace.blueprint.clue_graph?.metadata.id).toBe("greenhouse-prizewinner");
     // The case is the private snapshot: its world view carries no V2 reasoning paths.
-    expect(trace.blueprint.solution_paths).toEqual([]);
+    expect(trace.blueprint).not.toHaveProperty("solution_paths");
     expect(trace.events.some((event) => event.payload?.clue_graph)).toBe(true);
   });
 

@@ -6,7 +6,7 @@ import {
   BlueprintV2SubLocationSchema,
   type BlueprintV2,
 } from "./blueprint-schema-v2.ts";
-import type { CLUE_GRAPH_FORMAT, ClueGraphCase } from "./clue-graph-schema.ts";
+import type { ClueGraphWorld } from "./clue-graph-case.ts";
 import { MysteryStructureSchema } from "./mystery-structure-schema.ts";
 import { validateMysteryStructure } from "./mystery-structure-validator.ts";
 
@@ -63,13 +63,32 @@ export const MsfCaseFileSchema = z
   .strict();
 
 export type MsfCaseFile = z.infer<typeof MsfCaseFileSchema>;
-/** Shared world view for commands/artwork; MSF and clue-graph rules and knowledge retain their native graph. */
+/** The V2 world view for commands and artwork; an MSF case keeps its native graph in `msf`. */
 export type PlayableBlueprint = Omit<BlueprintV2, "schema_version"> & {
-  schema_version: "v2" | "msf/0.1.0" | typeof CLUE_GRAPH_FORMAT;
+  schema_version: "v2" | "msf/0.1.0";
   msf?: MsfCaseFile;
-  clue_graph?: ClueGraphCase;
+  clue_graph?: undefined;
   representation_note?: string;
 };
+
+/** Any case the engine plays: a V2 or MSF world view, or a clue graph's own (`ClueGraphWorld`). */
+export type PlayableCase = PlayableBlueprint | ClueGraphWorld;
+
+/** A V2 or MSF case's world view. The V2 talk and search paths never play a clue graph. */
+export function v2CaseOf(playable: PlayableCase): PlayableBlueprint {
+  if (playable.clue_graph) throw new Error("A clue-graph case does not play the V2 talk and search paths");
+  return playable;
+}
+
+/** An MSF case's native graph; a V2 case and a clue graph have none. */
+export function msfOf(playable: PlayableCase): MsfCaseFile | undefined {
+  return playable.clue_graph ? undefined : playable.msf;
+}
+
+/** A character's last name: a V2 character's, or none for a clue-graph character, who goes by one name. */
+export function lastNameOf(character: PlayableCase["world"]["characters"][number]): string {
+  return "last_name" in character ? character.last_name : "";
+}
 
 export function validateMsfCaseFile(value: unknown): MsfCaseFile {
   const file = MsfCaseFileSchema.parse(value);

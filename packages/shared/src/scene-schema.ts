@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { BlueprintV2 } from "./blueprint-schema-v2.ts";
 
 const coordinate = z.number().finite().min(-200).max(200);
 const vector = z.tuple([coordinate, coordinate, coordinate]);
@@ -96,7 +95,7 @@ export type SceneManifest = z.infer<typeof SceneManifestSchema>;
 /** Checks asset ownership and references without exposing any private blueprint fields. */
 export function validateSceneManifest(
   value: unknown,
-  blueprint: Pick<BlueprintV2, "id" | "world">,
+  blueprint: { id: string; world: { locations: ReadonlyArray<{ id: string }> } },
 ): SceneManifest {
   const manifest = SceneManifestSchema.parse(value);
   if (manifest.blueprint_id !== blueprint.id)

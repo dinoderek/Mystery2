@@ -1,6 +1,6 @@
 import type { BlueprintContext } from "../../../packages/game-engine/src/ai-context.ts";
 import fs from "node:fs";
-import { buildClueGraphBlueprint } from "../../../packages/shared/src/clue-graph-case.ts";
+import { buildClueGraphWorld } from "../../../packages/shared/src/clue-graph-case.ts";
 import { validateClueGraph } from "../../../packages/shared/src/clue-graph-validator.ts";
 import type { RawTrace } from "../../../evaluation/trace/lib/normalize.ts";
 
@@ -186,7 +186,7 @@ export function makeClueGraphRawTrace(): RawTrace {
     created_at: `2026-06-01T10:0${sequence}:00Z`,
   });
   return makeRawTrace({
-    blueprint: buildClueGraphBlueprint(graph),
+    blueprint: buildClueGraphWorld(graph),
     clue_graph: { format: "clue-graph/2", revision: 1, progress: { supported_conclusions: [], culprit_supported: false, taken_back: [] } },
     events: [
       row(1, "start", { location_id: "greenhouse" }, "You arrive at the greenhouse.", null),

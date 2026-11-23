@@ -5,7 +5,7 @@ import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import {
-  buildClueGraphBlueprint,
+  buildClueGraphWorld,
   cheapestRoute,
   ClueGraphCaseSchema,
   reachClues,
@@ -473,7 +473,7 @@ describe("the clue graph/2 case file", () => {
   });
 
   it("gives the world view its facts, appearance, motive and artwork", () => {
-    const view = buildClueGraphBlueprint(validateClueGraph({ ...greenhouse(), ...artwork }));
+    const view = buildClueGraphWorld(validateClueGraph({ ...greenhouse(), ...artwork }));
     expect(view.schema_version).toBe("clue-graph/2");
     expect(view.world.locations.find((place) => place.id === "workshop")?.description).toBe(
       committed.locations.workshop.facts.join(" "),
@@ -488,7 +488,53 @@ describe("the clue graph/2 case file", () => {
       location_ids: ["greenhouse"],
       character_ids: ["toby", "hale"],
     });
-    expect(buildClueGraphBlueprint(committed).cover_image.description).toBe(committed.metadata.title);
+    expect(buildClueGraphWorld(committed).cover_image.description).toBe(committed.metadata.title);
+  });
+
+  const cases = fs
+    .readdirSync("blueprints/clue-graph")
+    .filter((name) => name.endsWith(".json"))
+    .map((name) => [name, validateClueGraph(JSON.parse(fs.readFileSync(`blueprints/clue-graph/${name}`, "utf8")))] as const);
+
+  it.each(cases)("builds %s a world view of exactly its places, spots, people and artwork", (_name, graph) => {
+    const view = buildClueGraphWorld(graph);
+    const evidenceAt = (location: string, spot?: string) =>
+      Object.entries(graph.clues)
+        .filter(([, clue]) => clue.kind === "evidence" && clue.source.location === location && clue.source.spot === spot)
+        .map(([id]) => id);
+    expect(view.metadata.image_id).toBe(graph.metadata.image_id);
+    expect(view.world.starting_location_id).toBe(graph.opening.location);
+    expect(view.world.locations.map((place) => place.id)).toEqual(Object.keys(graph.locations));
+    for (const place of view.world.locations) {
+      const authored = graph.locations[place.id];
+      expect(place.name).toBe(authored.name);
+      expect(place.location_image_id).toBe(authored.location_image_id);
+      expect(place.clues.map((clue) => clue.id)).toEqual(evidenceAt(place.id));
+      expect(place.sub_locations.map((spot) => spot.name)).toEqual(authored.spots.map((spot) => spot.name));
+      for (const [index, spot] of place.sub_locations.entries()) {
+        const { revealed_by } = authored.spots[index];
+        expect(spot.clues.map((clue) => clue.id)).toEqual(evidenceAt(place.id, spot.name));
+        for (const clue of spot.clues) expect(clue.requires?.clue_ids).toEqual(revealed_by ? [revealed_by] : undefined);
+      }
+    }
+    expect(view.world.characters.map((person) => person.id)).toEqual(Object.keys(graph.characters));
+    for (const person of view.world.characters) {
+      const authored = graph.characters[person.id];
+      expect([person.first_name, person.location_id, person.portrait_image_id]).toEqual([
+        authored.name,
+        authored.location,
+        authored.portrait_image_id,
+      ]);
+      expect(person.clues.map((clue) => clue.id)).toEqual(
+        Object.entries(graph.clues)
+          .filter(([, clue]) => clue.kind !== "evidence" && clue.source.character === person.id)
+          .map(([id]) => id),
+      );
+      for (const stub of ["last_name", "background", "stated_alibi", "motive", "flavor_knowledge", "actual_actions", "agendas", "tells"])
+        expect(person).not.toHaveProperty(stub);
+    }
+    for (const stub of ["solution_paths", "red_herrings", "suspect_elimination_paths"]) expect(view).not.toHaveProperty(stub);
+    expect(view.narrative.starting_knowledge).toEqual({ mystery_summary: graph.opening.facts[0] });
   });
 });
 

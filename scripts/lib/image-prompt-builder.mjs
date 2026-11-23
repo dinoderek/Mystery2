@@ -102,7 +102,7 @@ function targetBlock(blueprint, target) {
         const charHints = characterIds
           .map((charId) => {
             const ch = (blueprint.world?.characters ?? []).find((c) => c.id === charId);
-            return ch ? `${ch.first_name} ${ch.last_name} (${ch.appearance})` : charId;
+            return ch ? `${ch.first_name} ${ch.last_name ?? ""} (${ch.appearance})` : charId;
           })
           .join("; ");
         lines.push(`Characters featured: ${charHints}`);
@@ -132,7 +132,7 @@ function targetBlock(blueprint, target) {
       (entry) => entry.id === target.targetKey,
     );
     const displayName = character
-      ? `${character.first_name} ${character.last_name}`.trim()
+      ? `${character.first_name} ${character.last_name ?? ""}`.trim()
       : target.targetKey ?? "Unknown character";
 
     const sexCue = character?.sex ? `Sex: ${character.sex}.` : "";

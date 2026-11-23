@@ -10,7 +10,7 @@ import {
   resolveSearchRole,
   type RoleRequestName,
 } from "../../../packages/game-engine/src/role-request.ts";
-import { buildClueGraphBlueprint, validateClueGraph } from "@my2/shared";
+import { buildClueGraphWorld, validateClueGraph } from "@my2/shared";
 
 // role-request.ts is the single assembly path for narrator prompts. These tests
 // exist because an earlier arrangement had two: the endpoint handlers,
@@ -35,10 +35,9 @@ beforeAll(async () => {
     await readFile("blueprints/mock-blueprint.json", "utf-8"),
   );
   blueprint.metadata.narration_style = NARRATION_STYLE;
-  graphBlueprint = buildClueGraphBlueprint(
+  graphBlueprint = buildClueGraphWorld(
     validateClueGraph(JSON.parse(await readFile("blueprints/clue-graph/greenhouse-prizewinner.json", "utf-8"))),
   );
-  graphBlueprint.metadata.narration_style = NARRATION_STYLE;
 });
 
 function session(overrides: Record<string, unknown> = {}) {
@@ -202,11 +201,20 @@ describe("every assembled prompt carries the blueprint's age and voice", () => {
 
   it.each(
     ["intro", "ambience", "talk_start", "talk_conversation", "talk_end",
-      "search_bare", "search_targeted", "accusation_start", "accusation_judge", "graph_talk", "graph_search",
-      "graph_accusation_round", "graph_ending"] as RoleRequestName[],
+      "search_bare", "search_targeted", "accusation_start", "accusation_judge"] as RoleRequestName[],
   )("%s layers the blueprint narration_style", async (role) => {
     expect(await promptFor(role)).toContain(NARRATION_STYLE);
   });
+
+  // A clue graph sets no voice of its own: its roles use the standard style alone.
+  it.each(["graph_talk", "graph_search", "graph_accusation_round", "graph_ending"] as RoleRequestName[])(
+    "%s narrates in the standard style",
+    async (role) => {
+      const prompt = await promptFor(role);
+      expect(prompt).toContain("## Narration style");
+      expect(prompt).not.toContain(NARRATION_STYLE);
+    },
+  );
 
   it("covers every registered role in the assertions above", () => {
     // Guards the hand-written it.each lists against a role being added to the

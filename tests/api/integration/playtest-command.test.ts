@@ -103,24 +103,6 @@ function playedLines(gameDir: string): string[] {
 }
 
 describe('play on stub bindings', () => {
-	it('replays a recorded V2 lighthouse game on its paired native MSF case and grades the pinned graph', async () => {
-		const script = path.join(scratch, 'lighthouse-script.json');
-		const inputs = ['talk to Ada', 'What did you hear?', 'Why did you set your alarm?', 'bye', 'go keepers_cottage', 'search tide schedule', 'talk to Finn', 'What happened?', 'Who was in the cottage?', 'bye', 'go village_quay', 'search', 'search harbour tide board', 'search causeway steps', 'Roz took the lens'];
-		fs.writeFileSync(script, JSON.stringify({ blueprint_id: '7c3e9a52-4f1b-4d8e-9a6c-2b5f1e8d3a47', persona: 'comparison', inputs }));
-		const baseline = await play(['--replay', script, '--narrator', 'mock']);
-		expect(baseline.code, baseline.output).toBe(0);
-		const [baselineGame] = gameDirs(baseline.runDir as string);
-		const alternative = await play(['--replay', path.join(baselineGame, 'script.json'), '--blueprint', 'blueprints/msf/lighthouse.json', '--narrator', 'mock', '--judge']);
-		expect(alternative.code, alternative.output).toBe(0);
-		const [nativeGame] = gameDirs(alternative.runDir as string);
-		const summary = JSON.parse(fs.readFileSync(path.join(nativeGame, 'summary.json'), 'utf8'));
-		expect(summary).toMatchObject({ outcome: 'win', divergence: null, clue_drift: null, turns_used: 8, blueprint: { format: 'msf/0.1.0', revision: 1 } });
-		const trace = JSON.parse(fs.readFileSync(path.join(nativeGame, 'trace.json'), 'utf8'));
-		expect(trace.blueprint.msf.structure.solution.rule_ids).toEqual(['r_solution']);
-		expect(trace.blueprint.solution_paths).toEqual([]);
-		expect((await readResult(path.join(nativeGame, 'result.json'))).summary.passed).toBe(true);
-	}, 120_000);
-
 	it('plays the clue-graph greenhouse by path, ID and title on the mock, and grades it', async () => {
 		const script = path.join(scratch, 'greenhouse-script.json');
 		const inputs = ['search the smashed pumpkin', 'go to the workshop', 'talk to Mr. Dobbs', 'What about the noise last night?', 'bye', 'go to the garden', 'talk to Mr. Thorne', 'bye', 'accuse', 'It was Toby.', 'accuse Toby did it: his welly prints are in the pumpkin.'];
@@ -138,6 +120,13 @@ describe('play on stub bindings', () => {
 			expect(trace.clue_graph).toMatchObject({ format: 'clue-graph/2', revision: 1, progress: { culprit_supported: true } });
 			const mechanical = (await readResult(path.join(game, 'result.json'))).verdicts.filter((verdict) => verdict.tier === 'mechanical');
 			expect(mechanical.map((verdict) => [verdict.id, verdict.status])).toEqual([['clue_accounting', 'pass'], ['spoiler_leak', 'pass']]);
+			if (query === caseId) {
+				const replayed = await play(['--replay', path.join(game, 'script.json'), '--narrator', 'mock']);
+				expect(replayed.code, replayed.output).toBe(0);
+				const [replayedGame] = gameDirs(replayed.runDir as string);
+				expect(playedLines(replayedGame)).toEqual(playedLines(game));
+			}
+
 		}
 	}, 240_000);
 

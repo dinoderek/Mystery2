@@ -208,7 +208,7 @@ describe("judge turn refuses what it cannot run", () => {
 
   it.each([
     [["--judges", "nope"], "Unknown check or judge"],
-    [["--judges", "solve_depth"], "does not judge a turn"],
+    [["--judges", "cg_soundness"], "does not judge a turn"],
     [["--narrator", "claude"], "narrator binding"],
     [["--concurrency", "0"], "positive integer"],
     [["--judges", ","], "at least one"],

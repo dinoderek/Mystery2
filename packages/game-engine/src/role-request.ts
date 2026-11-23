@@ -62,7 +62,6 @@ import {
   renderPrompt,
 } from "./ai-prompts.ts";
 import { talkPromptProfile } from "./talk-prompt.ts";
-import { msfRoleGuidance } from "./msf-context.ts";
 import { clueGraphRoleGuidance } from "./clue-graph/judge-guidance.ts";
 import { GRAPH_TALK_EARLIER_LINES, GRAPH_TALK_GREETING_TURN, GRAPH_TALK_LINE_TURN } from "./clue-graph/prompts.ts";
 import { linesThisConversation, playOf } from "./clue-graph/history.ts";
@@ -486,7 +485,6 @@ function searchVars(input: SearchInput) {
 
 /** The extra guidance a case format adds to a shared role's prompt. */
 function roleGuidance(blueprint: BlueprintContext, role: AIPromptKey): string {
-  if (!blueprint.clue_graph && blueprint.msf) return `\n\n${msfRoleGuidance(role)}`;
   const guidance = blueprint.clue_graph ? clueGraphRoleGuidance(role) : "";
   return guidance ? `\n\n${guidance}` : "";
 }

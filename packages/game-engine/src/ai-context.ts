@@ -1,7 +1,4 @@
 import type { AIRoleName } from "./ai-contracts.ts";
-import type { MsfCaseFile } from "../../shared/src/msf-case.ts";
-import { evaluateMysteryStructure } from "../../shared/src/mystery-structure-progress.ts";
-import { msfCharacterKnowledge } from "./msf-context.ts";
 import {
   buildDiscoveredClueIdSet,
   buildKnownCluesWithOrigin,
@@ -93,11 +90,10 @@ export interface BlueprintReasoningPath {
   character_clue_ids: string[];
 }
 
-/** The world view a narrator context is built from: a V2 or MSF case's, or a clue graph's own. */
+/** The world view a narrator context is built from: a V2 case's, or a clue graph's own. */
 export type BlueprintContext = V2BlueprintContext | ClueGraphWorld;
 
 export interface V2BlueprintContext {
-  msf?: MsfCaseFile;
   clue_graph?: undefined;
   metadata: {
     title: string;
@@ -313,7 +309,6 @@ export interface TalkCharacterStateContext {
 }
 
 export interface TalkCharacterPrivateContext extends TalkCharacterPublicSummary {
-  msf?: ReturnType<typeof msfCharacterKnowledge>;
   background: string;
   personality: string;
   initial_attitude_towards_investigator: string;
@@ -365,7 +360,6 @@ export interface ClueGraphProgress {
 }
 
 export interface AccusationJudgeContext {
-  msf_progress?: ReturnType<typeof evaluateMysteryStructure>;
   /** This accusation is the game's last: one that fails ends the case. */
   last_accusation: boolean;
   full_blueprint: V2BlueprintContext;
@@ -439,7 +433,7 @@ export function findCharacterById<B extends BlueprintContext>(
   return characters.find((c) => c.id === characterId);
 }
 
-/** A V2 or MSF case's world view. The V2 roles (talk start and conversation, search, the judge) never play a clue graph. */
+/** A V2 case's world view. The V2 roles (talk start and conversation, search, the judge) never play a clue graph. */
 function v2Of(blueprint: BlueprintContext): V2BlueprintContext {
   if (blueprint.clue_graph) throw new Error("A clue-graph case does not play the V2 roles");
   return blueprint;
@@ -681,7 +675,6 @@ function buildTalkCharacterPrivateContext(
     throw new Error(`Character ${characterId} not found in blueprint`);
   }
   const v2 = v2FieldsOf(character);
-  const msfCase = blueprint.clue_graph ? undefined : blueprint.msf;
 
   const publicSummary = blueprint.clue_graph
     ? null
@@ -690,10 +683,7 @@ function buildTalkCharacterPrivateContext(
       )?.summary ?? null;
 
   const discoveredSet = new Set(playerKnownClues.map((c) => c.id));
-  const clues: TalkClueContext[] = (character.clues as BlueprintClue[]).filter((clue) => {
-    const node = msfCase?.structure.nodes[clue.id];
-    return node?.kind !== "clue" || node.requires?.kind !== "physical" || isClueUnlocked(clue, discoveredSet);
-  }).map((clue) => ({
+  const clues: TalkClueContext[] = (character.clues as BlueprintClue[]).map((clue) => ({
     id: clue.id,
     text: clue.text,
     about_character_id: clue.about_character_id,
@@ -705,7 +695,6 @@ function buildTalkCharacterPrivateContext(
   }));
   const stateCharacter = { ...character, ...v2 };
   const state = buildCharacterState(stateCharacter, conversationHistory, options);
-  const msf = msfCase ? msfCharacterKnowledge(msfCase.structure, character.id, discoveredSet, state.used_clue_ids) : undefined;
 
   return {
     id: character.id,
@@ -727,15 +716,14 @@ function buildTalkCharacterPrivateContext(
     agendas: buildTalkAgendas(v2, state),
     tells: v2.tells ?? [],
     player_known_clues: playerKnownClues,
-    gate_clues: [...new Set([...gateClueIds(stateCharacter), ...(msfCase ? discoveredSet : [])])].map((id) => ({ id, held: discoveredSet.has(id) })),
+    gate_clues: [...gateClueIds(stateCharacter)].map((id) => ({ id, held: discoveredSet.has(id) })),
     state: {
       used_clue_ids: state.used_clue_ids,
-      current_story: msf ? [...msf.claims.map((claim) => `${claim.disproved ? "Evidence disproves my earlier claim: " : ""}${claim.value ? "" : "It is false that "}${claim.text}`), ...state.commitments] : state.current_story,
+      current_story: state.current_story,
       commitments: state.commitments,
       visits_with_questions: state.visits_with_questions,
       fallback_open: state.visits_with_questions >= FALLBACK_VISITS,
     },
-    ...(msf ? { msf } : {}),
   };
 }
 
@@ -1129,7 +1117,7 @@ export function buildSearchContext(input: {
   // A spot whose clues are all locked is left out altogether, so the narrator
   // never advertises it or narrates "nothing here" for it, unless this targeted
   // search names it: then it is shown, clues and all, to narrate the find.
-  const admitted = blueprint.msf ? null : namedHiddenSpot(location, input.search_query, discoveredSet)?.id ?? null;
+  const admitted = namedHiddenSpot(location, input.search_query, discoveredSet)?.id ?? null;
   const subLocations: SubLocationContext[] = (location.sub_locations ?? [])
     .filter((sl) => sl.id === admitted || !isSpotHidden(sl, discoveredSet))
     .map((sl) => {
@@ -1266,7 +1254,6 @@ export function buildAccusationJudgeContext(input: {
       full_blueprint: blueprint,
       player_known_clues: buildKnownCluesWithOrigin(blueprint, discovered),
       path_coverage: buildPathCoverage(blueprint, discovered),
-      ...(blueprint.msf ? { msf_progress: evaluateMysteryStructure(blueprint.msf.structure, discovered) } : {}),
     },
   });
 }

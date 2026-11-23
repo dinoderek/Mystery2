@@ -1,7 +1,7 @@
 # AI Runtime
 
 Narrator contracts and validation before saving. Formats:
-[MSF](msf-gameplay.md), [clue graph](clue-graph.md). Profiles and providers are
+[Clue graph](clue-graph.md). Profiles and providers are
 `docs/ai-configuration.md`; which blueprint fields reach which output is
 `docs/blueprint-generation-flows.md`.
 
@@ -39,7 +39,6 @@ alternative or missing-fact reply, from only its supplied material
 ([accusation](clue-graph.md#accusation)).
 
 ## Narration style
-<!-- extract:narration-style -->
 
 Every prompt's `{{style_guidance}}` slot is filled by `buildStyleGuidance`:
 
@@ -53,13 +52,10 @@ Every prompt's `{{style_guidance}}` slot is filled by `buildStyleGuidance`:
   safety rules.
 - Style is **subordinate to the reading level**. "Wry, gothic, faintly archaic"
   is a voice, not licence for harder words or longer sentences: the reading
-  level wins. The generator prompt holds the same line: `narration_style` may
-  direct tone, mood and imagery only, never archaic, ornate, technical or
-  heavily figurative diction.
-<!-- /extract:narration-style -->
+  level wins: `narration_style` may direct tone, mood and imagery only, never
+  archaic, ornate, technical or heavily figurative diction.
 
 ## What each role sees
-<!-- extract:context-boundaries -->
 
 Which blueprint fields reach which role is the "Narration at play" table in
 `docs/blueprint-generation-flows.md`. The rules and reasons behind it:
@@ -103,7 +99,6 @@ Which blueprint fields reach which role is the "Narration at play" table in
   precomputed so the model does not intersect sets across a long context.
 - Every character summary carries `sex`, and every prompt tells the model to use
   it for pronouns rather than guess.
-<!-- /extract:context-boundaries -->
 
 ## Trusting the output
 
@@ -124,7 +119,6 @@ invalid output is retriable.
 - Rules that span fields are the parser's, never asked of the model.
 
 ## Clue discovery and gating
-<!-- extract:clue-gating -->
 
 Discovery is event-sourced: a clue is discovered once a `search` or `ask`
 event records its id. `packages/game-engine/src/clue-discovery.ts` is the only
@@ -163,7 +157,6 @@ The notebook's records (`DiscoveredClueRecord`: `origin`, `source`,
 client groups by origin. `mapClueToThreads` exists but no player-facing path
 may use it before the case resolves: its labels ("Red herring: …") name the
 answer.
-<!-- /extract:clue-gating -->
 
 ## Earned, not free
 
@@ -203,7 +196,6 @@ Case facts and revealed clues reach the browser as structured fields, never
 parsed from narration.
 
 ## Entering the first location
-<!-- extract:game-enter -->
 
 `game-enter` narrates arrival at the starting location once, after the player
 confirms the opening: the same `ambience` call a move makes, as a first visit
@@ -211,7 +203,6 @@ with no clues held. It is refused unless the session's only event is `start`,
 so a double confirmation cannot narrate twice. It costs no turn, and its
 `move` event carries `role: "enter"` so a replayed transcript does not invent a
 `move to …` line the player never typed.
-<!-- /extract:game-enter -->
 
 ## The mock provider
 

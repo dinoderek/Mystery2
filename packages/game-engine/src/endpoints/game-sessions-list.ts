@@ -63,9 +63,7 @@ function toSummary(
   session: GameSessionSummaryRow,
   titleByBlueprintId: Map<string, string>,
 ): SessionSummary {
-  const title = session.msf_title
-    ? `${session.msf_title} — MSF experiment`
-    : session.clue_graph_title
+  const title = session.clue_graph_title
     ? `${session.clue_graph_title}${CLUE_GRAPH_TITLE_SUFFIX}`
     : titleByBlueprintId.get(session.blueprint_id);
   const mystery_available = Boolean(title);

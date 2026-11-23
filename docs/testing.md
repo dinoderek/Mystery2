@@ -31,11 +31,6 @@ fix, prune with `npm run check:quality -- --prune` or
 
 **Doc checks**, all failing the gate:
 
-- `check:curated-docs` holds the extracts in
-  `evaluation/generator-harness/template/docs/` to the doc sections they
-  summarise. On drift, fix the extract if it no longer holds, then record the
-  new hash. A refreshed hash over stale prose fixes nothing
-  (`evaluation/generator-harness/template/README.md`).
 - `check:doc-refs` fails when any `AGENTS.md`, `QUICKSTART.md`, `docs/` or
   README names a path, `npm run` script or relative link that does not exist.
   A code span counts as a path only when its first segment is a real directory. Gitignored

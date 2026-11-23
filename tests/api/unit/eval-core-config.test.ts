@@ -58,7 +58,6 @@ describe("the committed example config", () => {
     expect(models).toEqual({
       "scene-generator": "sonnet",
       "generator-agent": "opus",
-      "generator-api": null,
       "blueprint-judge": "opus",
       "game-judge": "opus",
       "turn-judge": "sonnet",

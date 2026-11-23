@@ -22,8 +22,8 @@ and existing player-facing and narrator output contracts.
    prompt in two messages.
 4. Preserve role-specific mechanics and visibility. Never send additional
    solution material to help the narrator ground its answer.
-5. Update the owning docs, mocks, tests, narrator/evaluation snapshots and
-   affected curated extracts together. Explain intentional output changes.
+5. Update the owning docs, mocks, tests, narrator/evaluation snapshots
+   together. Explain intentional output changes.
 
 ## Grounding adaptation
 

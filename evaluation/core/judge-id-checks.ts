@@ -1,30 +1,19 @@
 /**
  * Runs the id checks a registry entry declares on a judge's answer: that every
- * id, path and topic it cites exists in the blueprint it judged, that it
- * covers what it must, and that it repeats nothing it must not. A schema
- * cannot say these things, because they depend on the blueprint.
+ * id it cites exists in the case it judged, that it covers what it must, and
+ * that it repeats nothing it must not. A schema cannot say these things,
+ * because they depend on the case.
  */
 
 import { stepIds } from "../blueprint/player-view.ts";
-import { extractPlayerFacingText } from "../checks/lib/player-text.ts";
 import type { IdCheck, IdSetName } from "./registry.ts";
 
-interface Blueprint {
-  metadata?: { target_age?: unknown };
-  /** A clue-graph case's maps, keyed by id (`docs/clue-graph.md`). */
+/** A clue-graph case's maps, keyed by id (`docs/clue-graph.md`). */
+interface Case {
   clues?: Record<string, unknown>;
   conclusions?: Record<string, unknown>;
   characters?: Record<string, unknown>;
   locations?: Record<string, unknown>;
-  solution_paths?: Array<{ id: string }>;
-  suspect_elimination_paths?: Array<{ id: string }>;
-  world?: {
-    locations?: Array<{
-      clues?: Array<{ id: string }>;
-      sub_locations?: Array<{ clues?: Array<{ id: string }> }>;
-    }>;
-    characters?: Array<{ id: string; first_name?: string; is_culprit?: boolean; clues?: Array<{ id: string }> }>;
-  };
 }
 
 interface Found {
@@ -52,129 +41,45 @@ function collect(root: unknown, at: string): Found[] {
   return level;
 }
 
-function clueIds(blueprint: Blueprint): Set<string> {
-  const ids = new Set<string>();
-  for (const location of blueprint.world?.locations ?? []) {
-    for (const clue of location.clues ?? []) ids.add(clue.id);
-    for (const sub of location.sub_locations ?? []) for (const clue of sub.clues ?? []) ids.add(clue.id);
-  }
-  for (const character of blueprint.world?.characters ?? []) for (const clue of character.clues ?? []) ids.add(clue.id);
-  return ids;
-}
-
 /** The keys of one of a clue-graph case's maps. */
 function caseKeys(map: Record<string, unknown> | undefined): string[] {
   return map && typeof map === "object" ? Object.keys(map) : [];
 }
 
-function blueprintSet(name: IdSetName, blueprint: Blueprint, context: Record<string, unknown>): Set<string> {
-  const characters = blueprint.world?.characters ?? [];
+function caseSet(name: IdSetName, subject: Case): Set<string> {
   switch (name) {
-    case "solution_path_ids":
-      return new Set((blueprint.solution_paths ?? []).map((p) => p.id));
-    case "elimination_path_ids":
-      return new Set((blueprint.suspect_elimination_paths ?? []).map((p) => p.id));
-    case "clue_ids":
-      return clueIds(blueprint);
-    case "character_ids":
-      return new Set(characters.map((c) => c.id));
-    case "non_culprit_ids":
-      return new Set(characters.filter((c) => !c.is_culprit).map((c) => c.id));
-    case "player_text_paths":
-      return new Set((extractPlayerFacingText(blueprint) as Array<{ path: string }>).map((s) => s.path));
-    case "probe_topics":
-      return new Set(Array.isArray(context.probe_topics) ? (context.probe_topics as string[]) : []);
     case "case_clue_ids":
-      return new Set(caseKeys(blueprint.clues));
+      return new Set(caseKeys(subject.clues));
     case "case_conclusion_ids":
-      return new Set(caseKeys(blueprint.conclusions));
+      return new Set(caseKeys(subject.conclusions));
     case "case_character_ids":
-      return new Set(caseKeys(blueprint.characters));
+      return new Set(caseKeys(subject.characters));
     case "case_ids":
       // `opening` stands for the opening's facts, as a lead and as a prompt.
-      return new Set([...[blueprint.clues, blueprint.conclusions, blueprint.characters, blueprint.locations].flatMap(caseKeys), "opening"]);
+      return new Set([...[subject.clues, subject.conclusions, subject.characters, subject.locations].flatMap(caseKeys), "opening"]);
     case "case_step_ids":
-      return stepIds(blueprint);
+      return stepIds(subject);
   }
 }
 
-const isNullish = (value: unknown) => value === null || value === undefined;
 const listed = (ids: Set<string>) => [...ids].join(", ") || "(none)";
 
-type RefCheck = Extract<IdCheck, { kind: "ref" }>;
-
-function checkRef(rule: RefCheck, answer: unknown, blueprint: Blueprint, context: Record<string, unknown>): string[] {
-  const members =
-    typeof rule.set === "string"
-      ? blueprintSet(rule.set, blueprint, context)
-      : new Set(collect(answer, rule.set.answer).map((f) => String(f.value)));
-  if (rule.skipIfEmpty && members.size === 0) return [];
-
-  const issues: string[] = [];
-  const seen = new Set<string>();
-  for (const { location, value } of collect(answer, rule.at)) {
-    if (rule.optional && (isNullish(value) || (rule.optional === "blank" && value === ""))) continue;
-    const id = String(value);
-    if (!members.has(id)) issues.push(`${location} "${id}" is not a ${rule.label} (valid: ${listed(members)})`);
-    if (rule.unique && seen.has(id)) issues.push(`${location} "${id}" appears more than once`);
-    seen.add(id);
-  }
-  if (rule.covers) {
-    for (const id of members) if (!seen.has(id)) issues.push(`${rule.at} is missing an entry for ${rule.label} "${id}"`);
-  }
-  return issues;
-}
-
-function checkFieldOf(rule: Extract<IdCheck, { kind: "field_of" }>, answer: unknown, blueprint: Blueprint): string[] {
-  const names = new Map((blueprint.world?.characters ?? []).map((c) => [c.id, c.first_name]));
-  const issues: string[] = [];
-  for (const { location, value } of collect(answer, rule.at)) {
-    const item = (value ?? {}) as Record<string, unknown>;
-    const id = String(item[rule.id]);
-    if (names.has(id) && item[rule.field] !== names.get(id)) {
-      issues.push(`${location}.${rule.field} for "${id}" is "${String(item[rule.field])}" but the blueprint says "${names.get(id)}"`);
-    }
-  }
-  return issues;
-}
-
-function checkNonemptyWhen(rule: Extract<IdCheck, { kind: "nonempty_when" }>, answer: unknown): string[] {
-  const issues: string[] = [];
-  for (const { location, value } of collect(answer, rule.at)) {
-    const item = (value ?? {}) as Record<string, unknown>;
-    const filled = Array.isArray(item[rule.field]) && (item[rule.field] as unknown[]).length > 0;
-    if (item[rule.when.field] === rule.when.equals && !filled) {
-      issues.push(`${location} is a ${rule.when.equals} but ${rule.field} is empty (${rule.hint})`);
-    }
-  }
-  return issues;
-}
-
-function checkEquals(rule: Extract<IdCheck, { kind: "equals" }>, answer: unknown, blueprint: Blueprint): string[] {
-  const expected = blueprint.metadata?.target_age;
-  return collect(answer, rule.at)
-    .filter(({ value }) => value !== expected)
-    .map(({ location, value }) => `${location} ${String(value)} does not match blueprint.metadata.${rule.to} (${String(expected)})`);
-}
-
-/** Every way `answer` breaks the declared rules against `blueprint`; empty when it breaks none. */
-export function checkAnswerIds(
-  rules: readonly IdCheck[],
-  answer: unknown,
-  blueprint: unknown,
-  context: Record<string, unknown> = {},
-): string[] {
-  const bp = (blueprint ?? {}) as Blueprint;
+/** Every way `answer` breaks the declared rules against `subject`, the case it judged; empty when it breaks none. */
+export function checkAnswerIds(rules: readonly IdCheck[], answer: unknown, subject: unknown): string[] {
+  const judged = (subject ?? {}) as Case;
   return rules.flatMap((rule) => {
-    switch (rule.kind) {
-      case "ref":
-        return checkRef(rule, answer, bp, context);
-      case "equals":
-        return checkEquals(rule, answer, bp);
-      case "field_of":
-        return checkFieldOf(rule, answer, bp);
-      case "nonempty_when":
-        return checkNonemptyWhen(rule, answer);
+    const members = caseSet(rule.set, judged);
+    const issues: string[] = [];
+    const seen = new Set<string>();
+    for (const { location, value } of collect(answer, rule.at)) {
+      const id = String(value);
+      if (!members.has(id)) issues.push(`${location} "${id}" is not a ${rule.label} (valid: ${listed(members)})`);
+      if (rule.unique && seen.has(id)) issues.push(`${location} "${id}" appears more than once`);
+      seen.add(id);
     }
+    if (rule.covers) {
+      for (const id of members) if (!seen.has(id)) issues.push(`${rule.at} is missing an entry for ${rule.label} "${id}"`);
+    }
+    return issues;
   });
 }

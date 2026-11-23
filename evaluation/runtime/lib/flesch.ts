@@ -4,9 +4,8 @@
 // compares it to the reading grade implied by the blueprint's target_age. No
 // model, no dependencies — fully reproducible from a stored turn.
 //
-// The metric functions live in evaluation/lib/readability.ts (shared with the
-// blueprint pipeline's age_appropriate analyzer) and are re-exported here so
-// this module remains the check's entry point.
+// The metric functions live in evaluation/lib/readability.ts and are
+// re-exported here so this module remains the check's entry point.
 
 import {
   countSyllables,

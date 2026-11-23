@@ -1,12 +1,11 @@
 // The candidate judges: merged or broad alternatives to judges of the default
 // battery, which run only when a run names them.
 //
-// They run here through `judge blueprint` and `judge game` on the `judge-stub`
+// They run here through `judge game` on the `judge-stub`
 // binding as the example config defines it, steered by
 // RUNTIME_JUDGE_STUB_VERDICT, so no model is called. What they are sent is
 // pinned by the prompt snapshots (eval-snapshots.test.ts).
 
-import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -21,35 +20,16 @@ import { loadJudge } from "../../../evaluation/core/judge-loader.ts";
 import { getJudgeEntry, judgesFor, SUBJECT_KINDS } from "../../../evaluation/core/registry.ts";
 import { readResult } from "../../../evaluation/core/result.ts";
 import type { Result, Verdict } from "../../../evaluation/core/result.ts";
-import { BLUEPRINT_KINDS } from "../../../evaluation/dimensions/blueprint-broad.schema.ts";
 import { GAME_KINDS } from "../../../evaluation/judges/gm-broad.schema.ts";
-import { validBlueprintV2 } from "./fixtures/blueprint-v2.fixture.ts";
 import { makeRawTrace } from "./trace-fixtures.ts";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, "..", "..", "..");
 
-const BLUEPRINT_CANDIDATES = ["solve_depth_fairness", "knowledge_timeline_coherence", "blueprint_broad"];
-const CANDIDATES = [...BLUEPRINT_CANDIDATES, "gm_broad"];
+const CANDIDATES = ["gm_broad"];
 
 /** The finding kinds each candidate may name. */
-const CANDIDATE_KINDS: Record<string, readonly string[]> = {
-  solve_depth_fairness: ["solve_depth", "fairness"],
-  knowledge_timeline_coherence: ["knowledge_coherence", "timeline_coherence"],
-  blueprint_broad: BLUEPRINT_KINDS,
-  gm_broad: GAME_KINDS,
-};
-
-const BRIEF = {
-  brief: "Someone took the cookies from the kitchen before snack time.",
-  targetAge: 8,
-  timeBudget: 12,
-  culprits: 1,
-  suspects: 1,
-  witnesses: 0,
-  locations: 2,
-  redHerringTrails: 1,
-};
+const CANDIDATE_KINDS: Record<string, readonly string[]> = { gm_broad: GAME_KINDS };
 
 let dir = "";
 let out: string[] = [];
@@ -81,8 +61,7 @@ function resultsUnder(folder: string): string[] {
 async function judge(subject: "blueprint" | "game", extra: string[]): Promise<{ code: number; result: Result }> {
   const outputRoot = path.join(dir, `out-${fs.readdirSync(dir).length}`);
   const file = subject === "blueprint" ? path.join(dir, "blueprint.json") : path.join(dir, "trace.json");
-  const brief = subject === "blueprint" ? ["--brief", path.join(dir, "brief.json")] : [];
-  const argv = ["judge", subject, file, ...brief, "--config", stubConfig(), "--output-root", outputRoot, "--quiet", ...extra];
+  const argv = ["judge", subject, file, "--config", stubConfig(), "--output-root", outputRoot, "--quiet", ...extra];
   const code = await runEval(argv, { root: REPO_ROOT, out: (t) => out.push(t), err: (t) => out.push(t), env: {} }, COMMANDS);
   const files = resultsUnder(outputRoot);
   expect(files, out.join("\n")).toHaveLength(1);
@@ -101,8 +80,7 @@ beforeEach(() => {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), "mystery-eval-candidates-"));
   out = [];
   vi.stubEnv("EVAL_HEARTBEAT_MS", "60000");
-  write("blueprint.json", { ...validBlueprintV2, metadata: { ...validBlueprintV2.metadata, target_age: 18 } });
-  write("brief.json", BRIEF);
+  write("blueprint.json", JSON.parse(fs.readFileSync(path.join(REPO_ROOT, "blueprints", "clue-graph", "greenhouse-prizewinner.json"), "utf8")));
   write("trace.json", makeRawTrace());
 });
 
@@ -113,16 +91,7 @@ afterEach(() => {
 
 describe("the default battery", () => {
   it("of each subject is the list it had, with no candidate in it", () => {
-    expect(judgesFor("blueprint").map((j) => j.id)).toEqual([
-      "solve_depth",
-      "fairness",
-      "timeline_coherence",
-      "knowledge_coherence",
-      "character_grounding",
-      "path_payoff",
-      "clue_graph",
-      "age_appropriate",
-    ]);
+    expect(judgesFor("blueprint").map((j) => j.id)).toEqual(["cg_soundness", "cg_truth_agreement", "cg_character_grounding", "cg_step_sense"]);
     expect(judgesFor("game").map((j) => j.id)).toEqual(["gm_roleplay", "gm_clue_discipline", "gm_fabrication", "gm_spoiler"]);
     expect(judgesFor("turn").map((j) => j.id)).toEqual([
       "gm_roleplay",
@@ -138,7 +107,7 @@ describe("the default battery", () => {
       judgesFor(subject, { candidates: true })
         .map((j) => j.id)
         .filter((id) => !judgesFor(subject).some((j) => j.id === id));
-    expect(named("blueprint")).toEqual(BLUEPRINT_CANDIDATES);
+    expect(named("blueprint")).toEqual([]);
     expect(named("game")).toEqual(["gm_broad"]);
     expect(named("turn")).toEqual(["gm_broad"]);
     for (const id of CANDIDATES) {
@@ -146,15 +115,8 @@ describe("the default battery", () => {
     }
   });
 
-  it("passes on judge-stub, each dimension answered with its own clean verdict, on the fixture blueprint", async () => {
-    const { code, result } = await judge("blueprint", []);
-    expect(code, out.join("\n")).toBe(0);
-    expect(judgeVerdicts(result)).toEqual(Object.fromEntries(judgesFor("blueprint").map((j) => [j.id, "pass"])));
-    expect(result.summary.passed).toBe(true);
-  });
-
   it("runs without a candidate, which is absent from the result rather than skipped", async () => {
-    const blueprint = await judge("blueprint", ["--judges", "fairness"]);
+    const blueprint = await judge("blueprint", ["--judges", "cg_soundness"]);
     expect(Object.keys(judgeVerdicts(blueprint.result))).toEqual(judgesFor("blueprint").map((j) => j.id));
     const game = await judge("game", []);
     expect(judgeVerdicts(game.result)).toEqual(Object.fromEntries(judgesFor("game").map((j) => [j.id, "pass"])));
@@ -209,40 +171,11 @@ describe("a candidate named on its command", () => {
       expect(resultsUnder(outputRoot)).toEqual([]);
       return code;
     };
-    expect(await refused(["judge", "game", path.join(dir, "trace.json"), "--judges", "blueprint_broad"])).toBe(1);
-    expect(out.join("\n")).toMatch(/--judges takes game judge ids from: .*gm_broad \(not: blueprint_broad\)/);
-    const blueprint = ["judge", "blueprint", path.join(dir, "blueprint.json"), "--brief", path.join(dir, "brief.json")];
+    expect(await refused(["judge", "game", path.join(dir, "trace.json"), "--judges", "cg_soundness"])).toBe(1);
+    expect(out.join("\n")).toMatch(/--judges takes game judge ids from: .*gm_broad \(not: cg_soundness\)/);
+    const blueprint = ["judge", "blueprint", path.join(dir, "blueprint.json")];
     expect(await refused([...blueprint, "--judges", "gm_broad"])).toBe(1);
-    expect(out.join("\n")).toMatch(/--judges needs dimension ids from: .*blueprint_broad \(got gm_broad\)/);
-  });
-});
-
-describe("a blueprint candidate's judge workspace", () => {
-  function workspace(id: string): string {
-    const target = path.join(dir, "workspace", id);
-    const setup = spawnSync("bash", [path.join(REPO_ROOT, "evaluation", "judge-harness", "setup-workspace.sh"), target, id], {
-      encoding: "utf8",
-    });
-    expect(setup.status, setup.stderr).toBe(0);
-    return target;
-  }
-
-  it.each(BLUEPRINT_CANDIDATES)("%s links its brief and schema, as a dimension's are", (id) => {
-    const target = workspace(id);
-    const entry = getJudgeEntry(id);
-    if (entry.prompt.kind !== "files") throw new Error(`${id} has no brief`);
-    expect(fs.realpathSync(path.join(target, "dimension.md"))).toBe(fs.realpathSync(path.join(REPO_ROOT, entry.prompt.brief)));
-    expect(fs.realpathSync(path.join(target, "schema", "output-schema.ts"))).toBe(
-      fs.realpathSync(path.join(REPO_ROOT, entry.prompt.schema)),
-    );
-    expect(fs.readFileSync(path.join(target, "dimension-id"), "utf8").trim()).toBe(id);
-  });
-
-  it("gives the broad candidate the narrator doc character_grounding gets, and a merged one none", () => {
-    const doc = (id: string) => fs.existsSync(path.join(workspace(id), "docs", "runtime-consumption.md"));
-    expect(doc("character_grounding")).toBe(true);
-    expect(doc("blueprint_broad")).toBe(true);
-    expect(doc("solve_depth_fairness")).toBe(false);
+    expect(out.join("\n")).toMatch(/--judges needs judge ids from: .*cg_step_sense \(got gm_broad\)/);
   });
 });
 

@@ -12,7 +12,7 @@
  * costs no turn and writes no session state: the player has not gone anywhere.
  */
 import { GameEnterRequestSchema } from "../../../shared/src/mystery-api-contracts.ts";
-import { lastNameOf } from "../../../shared/src/msf-case.ts";
+import { lastNameOf } from "../../../shared/src/playable-case.ts";
 import { AIConfigError } from "../ai-config.ts";
 import type { EngineAIProfile, EngineContext } from "../context.ts";
 import {

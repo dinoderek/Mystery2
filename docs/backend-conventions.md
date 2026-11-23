@@ -66,5 +66,5 @@ bug: a second adapter must fit beside the first.
 ## Content
 
 Blueprints, scene recipes and images are files. `content.ts` logs and skips anything
-unparseable rather than failing the catalog, and `paths.ts` alone decides where
-they live.
+unparseable rather than failing the catalog. Unknown tagged formats are rejected
+by filename. `paths.ts` alone decides where they live.

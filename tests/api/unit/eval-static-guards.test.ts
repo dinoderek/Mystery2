@@ -49,14 +49,12 @@ describe("the evaluation tree", () => {
     expect(filesMatching(wrappers, modelName)).toEqual([]);
   });
 
-  it("starts a model subprocess or calls a model API only in the core, or in a wrapper's own body", () => {
+  it("starts a model subprocess or calls a model API only in the core", () => {
     const outsideCore = evaluationFiles.filter((file) => /\.(ts|sh)$/.test(file) && !file.startsWith("evaluation/core/"));
-    // The api generation backend is a script a binding starts; it makes the one call.
-    const wrapperBody = new Set(["evaluation/generate/openrouter.ts"]);
     // The self-play client talks to the throwaway game server, not to a model.
     const gameServerClient = new Set(["evaluation/playtest/lib/api.ts"]);
-    const starter = /child_process|(?<![.\w])(spawn|spawnSync|execFile|execFileSync|execSync|exec)\(|runClaudeCli|generateBlueprint\(|openrouter\.ai|api\.openai\.com|(?<![.\w])fetch\(/;
-    const offenders = filesMatching(outsideCore, starter).filter((file) => !wrapperBody.has(file) && !gameServerClient.has(file));
+    const starter = /child_process|(?<![.\w])(spawn|spawnSync|execFile|execFileSync|execSync|exec)\(|runClaudeCli|openrouter\.ai|api\.openai\.com|(?<![.\w])fetch\(/;
+    const offenders = filesMatching(outsideCore, starter).filter((file) => !gameServerClient.has(file));
     expect(offenders).toEqual([]);
   });
 
@@ -127,31 +125,6 @@ describe("the workspace validators", () => {
   function run(script: string, args: string[], cwd: string) {
     return spawnSync("node", [path.join(ROOT, script), ...args], { cwd, encoding: "utf8" });
   }
-
-  it("reject a blueprint with missing fields without crashing, naming each one", () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "validate-blueprint-"));
-    try {
-      fs.writeFileSync(path.join(dir, "b.json"), "{}");
-      const result = run("evaluation/generator-harness/scripts/validate-blueprint.ts", ["b.json"], dir);
-      expect(result.status).toBe(1);
-      expect(result.stderr).toContain("INVALID");
-      expect(result.stderr).toContain("solution_paths");
-      expect(result.stderr).not.toContain("fatal");
-    } finally {
-      fs.rmSync(dir, { recursive: true, force: true });
-    }
-  });
-
-  it("exit 3 with a usage line when given no file, and 2 for one that is not JSON", () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "validate-blueprint-"));
-    try {
-      expect(run("evaluation/generator-harness/scripts/validate-blueprint.ts", [], dir).status).toBe(3);
-      fs.writeFileSync(path.join(dir, "b.json"), "not json");
-      expect(run("evaluation/generator-harness/scripts/validate-blueprint.ts", ["b.json"], dir).status).toBe(2);
-    } finally {
-      fs.rmSync(dir, { recursive: true, force: true });
-    }
-  });
 
   it("judge-output validator exits 3 with no file, and 2 outside a workspace", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "validate-judge-"));

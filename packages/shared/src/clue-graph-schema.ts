@@ -264,7 +264,7 @@ const ConclusionSchema = z
     "A conclusion clears, names the culprit or resolves, at most one",
   );
 
-/** Direction for generated images, the shape V2's `metadata.visual_direction` has. */
+/** Direction for generated images: the case's `metadata.visual_direction`. */
 const VisualDirectionSchema = z
   .object({
     art_style: text,

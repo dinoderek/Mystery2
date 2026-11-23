@@ -51,7 +51,8 @@ and object. Beyond the schema:
 - Optional artwork: `visual_direction`, `cover` and image IDs
   ([generation flows](blueprint-generation-flows.md)).
 
-An earlier-format game stays listed; opening it answers `410`, logged once.
+A game saves its `clue-graph/2` case; a database from before that is refused
+at open ([backend conventions](backend-conventions.md)).
 
 ## Validation
 

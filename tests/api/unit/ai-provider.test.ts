@@ -294,10 +294,9 @@ describe("ai-provider mock role output", () => {
   it.each(["talk_start", "talk_conversation", "search", "accusation_judge"])(
     "has no handler for the retired %s role",
     async (role) => {
-      const produced = await provider()
-        .generateRoleOutput({ role: role as AIRoleName, prompt: "prompt", context: {}, parse: (value) => value })
-        .catch(() => undefined);
-      expect(produced).toBeUndefined();
+      await expect(
+        provider().generateRoleOutput({ role: role as AIRoleName, prompt: "prompt", context: {}, parse: (value) => value }),
+      ).rejects.toThrow(`Mock AI has no handler for role ${role}`);
     },
   );
 });

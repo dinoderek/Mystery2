@@ -445,6 +445,8 @@ class MockAIProvider implements AIProvider {
           narration: `[Mock] ${stagePrompt} Who did it, and how do you know?`,
         };
       }
+      default:
+        throw new Error(`Mock AI has no handler for role ${String(role)}`);
     }
   }
 }

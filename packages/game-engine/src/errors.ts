@@ -63,10 +63,10 @@ export class BadRequestError extends Error {
  * the reason to log.
  */
 export class RequestRejectedError extends Error {
-  readonly status: 400 | 404 | 410 | 500;
+  readonly status: 400 | 404 | 500;
   readonly reason: string;
 
-  constructor(status: 400 | 404 | 410 | 500, message: string, reason: string) {
+  constructor(status: 400 | 404 | 500, message: string, reason: string) {
     super(message);
     this.name = "RequestRejectedError";
     this.status = status;

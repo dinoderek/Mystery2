@@ -220,6 +220,8 @@ describe('report on a committed run folder', () => {
 		// Nothing a judge quoted can close the script the data sits in.
 		expect(html).not.toContain('</script><b>');
 		expect(data).toMatchObject({ title: 'Mock Case — clue graph', persona: 'detective', narratorModel: 'mock', investigatorModel: 'stub-model' });
+		// The run has no trace.json, so the case is found by its id among the repo's clue-graph cases.
+		expect(data.targetAge).toBe(10);
 
 		const [game] = data.games;
 		expect(game).toMatchObject({

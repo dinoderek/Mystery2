@@ -37,7 +37,7 @@ pages
     step 6 | You (investigator): "speak to Alice"
     step 6 | Narrator (narrator): "[Mock] Alice is here in Kitchen. Alice is a tall girl with flour on her nose. She wears a striped T-shirt. Alice says: Alice says she saw Bob sneak into the kitchen at noon. (Alice brushes flour off her hands and will not meet your eyes.)"
     step 7 | You (investigator): "Where were you at noon?"
-    step 7 | Alice (character): "[Mock] Alice says: Alice says she was tidying the pantry at noon."
+    step 7 | Alice (character): "[Mock] Alice says: Alice says she was in the pantry at noon."
   page 3 location "Kitchen"
     step 8 | You (investigator): "see you"
     step 8 | Narrator (narrator): "[Mock] You say goodbye to Alice and look around again."

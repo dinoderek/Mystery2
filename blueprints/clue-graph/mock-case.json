@@ -136,7 +136,7 @@
     },
     "alice_noon": {
       "kind": "statement",
-      "fact": "Alice says she was tidying the pantry at noon.",
+      "fact": "Alice says she was in the pantry at noon.",
       "source": { "character": "char-alice" },
       "truth": true,
       "reached": { "by": "asked", "about": "noon", "prompted_by": ["opening"] },

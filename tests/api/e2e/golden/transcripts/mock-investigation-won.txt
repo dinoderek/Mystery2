@@ -107,7 +107,7 @@ pages
     step 28 | You (investigator): "speak to Alice"
     step 28 | Narrator (narrator): "[Mock] Alice is here in Kitchen. Alice is a tall girl with flour on her nose. She wears a striped T-shirt. Alice says: Alice says she saw Bob sneak into the kitchen at noon. (Alice brushes flour off her hands and will not meet your eyes.)"
     step 29 | You (investigator): "Where were you at noon?"
-    step 29 | Alice (character): "[Mock] Alice says: Alice says she was tidying the pantry at noon."
+    step 29 | Alice (character): "[Mock] Alice says: Alice says she was in the pantry at noon."
     step 30 | You (investigator): "accuse Bob"
     step 30 | Alice (character): "[Mock] Alice says: \"I don't know.\""
     step 31 | You (investigator): "Look at this: clue_score_sheet"

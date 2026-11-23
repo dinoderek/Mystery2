@@ -91,8 +91,8 @@ content, that is the operator's call.
 `tests/api/e2e/golden-transcripts.test.ts` plays fixed games over HTTP under
 the mock narrator and compares what the player would see with
 `tests/api/e2e/golden/transcripts/`. Only `tests/testkit/src/golden/driver.ts`
-knows how a line becomes requests. The mock quotes the start of the narrator
-prompt, so editing it changes every transcript. Re-record on purpose with
+knows how a line becomes requests. The mock narrates from the case and the
+context it is given, so changing either moves the transcripts. Re-record on purpose with
 `npm run test:golden:record`; review the diff.
 
 ## Writing tests

@@ -20,6 +20,15 @@ import { loadCasesFrom, readBlueprint, type TurnCase } from "../../../evaluation
 import { validateExpect } from "../../../evaluation/runtime/lib/expect.ts";
 import { getAction, normalizeHistory } from "../../../evaluation/runtime/lib/roles.ts";
 import { played, readGraph } from "../../../evaluation/runtime/cases/clue-graph/support/play.ts";
+import { resolves, settleAccusation, type AccusationReport, type GraphVerdictContext } from "../../../packages/game-engine/src/clue-graph/accusation.ts";
+import { playOf } from "../../../packages/game-engine/src/clue-graph/history.ts";
+import { PHYSICAL_FINDING, TAKEN_BACK, WHO_WAS_WHERE } from "../../../evaluation/runtime/cases/clue-graph/support/details.ts";
+import { gradeExpect } from "../../../evaluation/runtime/lib/expect.ts";
+import type { StoredTurn } from "../../../evaluation/runtime/lib/turn.ts";
+import { makeTurn } from "./runtime-turn-helpers.ts";
+
+/** One group per kind of accusation (`evaluation/runtime/cases/clue-graph/greenhouse/accusation.ts`). */
+const ACCUSE_GROUPS = ["accuse-cleared", "accuse-alternative", "accuse-nothing-cited", "accuse-unsupported", "accuse-retracted", "accuse-won"];
 
 /** A story's case library and its case file. */
 const STORIES = [
@@ -69,13 +78,13 @@ describe.each(STORIES)("the clue-graph $name case library", async (story) => {
     for (const { turnCase } of built) {
       expect(() => validateExpect(turnCase), turnCase.id).not.toThrow();
       expect(turnCase.blueprint.path, turnCase.id).toBe(story.file);
-      expect(turnCase.group, turnCase.id).toMatch(/^(shown|shown-after-dodge|bluffed|worded-line|asked|confession|hold-[a-z-]+|search-[a-z]+|whole-fact|plain-unknown|invention)$/);
+      expect(turnCase.group, turnCase.id).toMatch(/^(shown|shown-after-dodge|bluffed|worded-line|asked|confession|hold-[a-z-]+|search-[a-z]+|whole-fact|plain-unknown|invention|accuse-[a-z-]+)$/);
     }
   });
 
   it("covers every kind the narrator is measured on", () => {
     const groups = new Set(built.map(({ turnCase }) => turnCase.group));
-    for (const kind of ["shown", "asked", "worded-line", "bluffed", "shown-after-dodge", "hold-pushed", "hold-small-talk", "search-spot", "search-plain", "search-nothing", "whole-fact", "plain-unknown", "invention"])
+    for (const kind of ["shown", "asked", "worded-line", "bluffed", "shown-after-dodge", "hold-pushed", "hold-small-talk", "search-spot", "search-plain", "search-nothing", "whole-fact", "plain-unknown", "invention", ...ACCUSE_GROUPS])
       expect(groups, kind).toContain(kind);
   });
 
@@ -169,7 +178,8 @@ describe.each(STORIES)("the clue-graph $name case library", async (story) => {
 
   it("plays histories the engine would record, and refuses one whose report it would drop", () => {
     for (const { turnCase } of built) {
-      const recorded = (turnCase.given.history ?? []).every((row) => row.payload?.clue_graph !== undefined);
+      // Opening the accusation scene records no clue-graph event.
+      const recorded = (turnCase.given.history ?? []).every((row) => row.event_type === "accuse_start" || row.payload?.clue_graph !== undefined);
       expect(recorded, turnCase.id).toBe(true);
     }
     const greenhouse = readGraph(GREENHOUSE);
@@ -177,6 +187,91 @@ describe.each(STORIES)("the clue-graph $name case library", async (story) => {
       played(greenhouse, [{ move: "thorne_garden" }, { talk: "thorne", narration: "Hello." }, { say: "Hi.", reply: "Hm.", opened: ["toby_confession"] }]),
     ).toThrow(/toby_confession/);
     expect(() => played(greenhouse, [{ say: "Hi.", reply: "Hm." }])).toThrow(/outside a conversation/);
+  });
+});
+
+/** What each accusation case's line means: who it names and which held clues it cites. */
+const REPORTS: Record<string, AccusationReport> = {
+  "accuse-mia-cleared": { accused: "mia", cited: ["clue_rota_purple_ink"] },
+  "accuse-hale-alternative": { accused: "hale", cited: ["clue_spare_key_book", "clue_key_in_water_butt"] },
+  "accuse-dobbs-nothing-cited": { accused: "dobbs", cited: [] },
+  "accuse-toby-unsupported": { accused: "toby", cited: ["react_toby_sweeping", "react_toby_trainers"] },
+  "accuse-thorne-retracted": { accused: "thorne", cited: ["toby_blames_thorne"] },
+  "accuse-toby-won": { accused: "toby", cited: ["clue_welly_prints", "clue_thorne_mia_cake"] },
+  "accuse-nina-cleared": { accused: "nina", cited: ["abara_nina_jumper"] },
+  "accuse-pike-alternative": { accused: "pike", cited: ["clue_gold_on_steps", "clue_glue_out"] },
+  "accuse-sam-nothing-cited": { accused: "sam", cited: [] },
+  "accuse-leo-unsupported": { accused: "leo", cited: ["react_leo_seat", "clue_gold_on_steps"] },
+  "accuse-nina-retracted": { accused: "nina", cited: ["leo_blames_nina"] },
+  "accuse-leo-won": { accused: "leo", cited: ["clue_pike_saw_bundle", "clue_crown_behind_dragon"] },
+};
+
+describe.each(STORIES)("the clue-graph $name accusation cases", async (story) => {
+  const graph = readGraph(story.file);
+  const accusations = (await loadCasesFrom(story.library)).filter((turnCase) => turnCase.action.type === "accuse");
+
+  it("has a case per kind of accusation, each opened in the scene with turns left", () => {
+    expect(new Set(accusations.map((turnCase) => turnCase.group))).toEqual(new Set(ACCUSE_GROUPS));
+    for (const turnCase of accusations) {
+      expect(turnCase.given.mode, turnCase.id).toBe("accuse");
+      expect(turnCase.given.history!.at(-1)!.event_type, turnCase.id).toBe("accuse_start");
+      expect(turnCase.given.time_remaining, turnCase.id).toBeGreaterThan(0);
+    }
+  });
+
+  it("expects what the engine decides on the report its line means, and hands only what the engine hands", async () => {
+    const { blueprint } = await readBlueprint(story.file, process.cwd());
+    for (const turnCase of accusations) {
+      const report = REPORTS[turnCase.id];
+      expect(report, `${turnCase.id} has no report`).toBeDefined();
+      const history = normalizeHistory(turnCase.given.history);
+      const play = playOf(graph, history);
+      for (const id of report.cited) expect(play.held, `${turnCase.id}: ${id}`).toContain(id);
+      const { saved } = settleAccusation(graph, play, history, report);
+      expect(saved.verdict, turnCase.id).toBe(turnCase.expect!.verdict);
+      const ended = resolves(saved.verdict);
+      const input = getAction("accuse").roleInput(turnCase.given, turnCase.action, blueprint as never, history);
+      const { context } = await buildRoleRequest({ ...input, role: ended ? "graph_ending" : "graph_accusation_round", verdict: saved.verdict, accused: saved.accused, cited: saved.cited } as never);
+      const verdictContext = context.graph_accusation_context as GraphVerdictContext;
+      // A failure is judged for spoilers; the closing scene cannot spoil.
+      if (ended) {
+        expect(turnCase.expect!.reply_kind, turnCase.id).toBeUndefined();
+        expect(turnCase.expect!.judges, turnCase.id).toBeUndefined();
+      } else {
+        expect(verdictContext.reply!.kind, turnCase.id).toBe(turnCase.expect!.reply_kind);
+        expect(turnCase.expect!.judges, turnCase.id).toEqual({ gm_spoiler: "given_away" });
+      }
+      // A field's name says what it holds: `taken_back_by` hands that a statement was taken back.
+      const handed = JSON.stringify(ended ? verdictContext.ending : verdictContext.reply).toLowerCase().replace(/_/g, " ");
+      expect(turnCase.expect!.handed!.length, turnCase.id).toBeGreaterThan(0);
+      for (const detail of turnCase.expect!.handed!) {
+        const spellings = typeof detail === "string" ? [detail] : detail;
+        expect(spellings.some((spelling) => handed.includes(spelling.toLowerCase())), `${turnCase.id}: ${spellings[0]} is not handed`).toBe(true);
+      }
+    }
+  });
+});
+
+/** The shared spellings of what a reply must state, beside the words a reply uses for anything else. */
+const STATED = [TAKEN_BACK, WHO_WAS_WHERE, PHYSICAL_FINDING];
+
+describe.each(STORIES)("the clue-graph $name accusation spellings", async (story) => {
+  const accusations = (await loadCasesFrom(story.library)).filter((turnCase) => turnCase.action.type === "accuse");
+
+  it("withhold a kind of fact or a retraction from a reply that gives everything else and a closing question", () => {
+    const stating = accusations.filter((turnCase) => turnCase.expect!.handed!.some((detail) => STATED.includes(detail as string[])));
+    expect(stating.length, "a missing case and a retracted case at least").toBeGreaterThanOrEqual(3);
+    for (const turnCase of stating) {
+      const { verdict, reply_kind, handed } = turnCase.expect!;
+      const named = handed!.filter((detail) => !STATED.includes(detail as string[])).map((detail) => (typeof detail === "string" ? detail : detail[0]));
+      // Every word here is one a reply uses without stating the thing: a lead, a look, a taken crown.
+      const narration = `${named.join(" and ")} talked about it, and no longer looks cross. Maybe ${named[0]} knows more. What links ${named[0]} to this, and what ties it together? Who really took it, and who was there? Where will you look next, and what will you find?`;
+      const base = makeTurn({ action: turnCase.action });
+      const turn: StoredTurn = { ...base, response: { ...base.response, action: "accuse", narration_text: narration, raw: { clue_graph_accusation: { verdict }, reply_kind } } };
+      const grade = gradeExpect({ verdict, reply_kind, handed }, turn, []);
+      expect(grade.details, turnCase.id).toMatchObject({ erred: ["withheld"] });
+      expect((grade.details as { missing_handed: string[] }).missing_handed, turnCase.id).toHaveLength(1);
+    }
   });
 });
 
@@ -198,7 +293,7 @@ describe.each(STORIES)("the clue-graph $name case library, offline", (story) => 
     expect(summary.complete).toBe(true);
     const groups = summary.narrators[0].groups;
     expect(groups.every((group) => group.incomplete === 0)).toBe(true);
-    expect(groups.map((group) => group.group)).toEqual(expect.arrayContaining(["whole-fact", "plain-unknown", "invention"]));
+    expect(groups.map((group) => group.group)).toEqual(expect.arrayContaining(["whole-fact", "plain-unknown", "invention", ...ACCUSE_GROUPS]));
   }, 120_000);
 });
 

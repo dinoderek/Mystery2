@@ -88,9 +88,9 @@ export function buildJudgeUserMessage(judgeId: string, turn: StoredTurn, bluepri
   // through the harness's own action map. If an action has no local mapping (or
   // its resolver needs a field this capture lacks), fall back to the action
   // type: a slightly coarser label is better than failing the judge.
-  let roleName: string | null;
+  let roleName: string | null = actionType === "accuse" ? narratedRole(turn) : null;
   try {
-    roleName =
+    roleName ??=
       resolveRoleName(actionType as string, turn.given ?? {}, turn.action ?? {}, blueprint, turn.given?.history) ??
       actionType;
   } catch {
@@ -98,6 +98,18 @@ export function buildJudgeUserMessage(judgeId: string, turn: StoredTurn, bluepri
   }
   const subject = projectInteractionSubject(turn, { roleName, isAccusationPhase: isClosingScene(turn, roleName) });
   return composeGameMasterUserMessage(judgeId, null, { blueprint, subject });
+}
+
+/**
+ * The role an accusation's narration was worded in, as the turn saved it: a
+ * clue-graph accusation is reported in one role and worded in another
+ * (`graph_accusation_round` or `graph_ending`), and the judge reads the wording.
+ * A CLI narrator's raw output names it; a played turn's saved event does.
+ */
+function narratedRole(turn: StoredTurn): string | null {
+  const raw = turn.response?.raw as { role?: unknown; events?: Array<{ payload?: { role?: unknown } }> } | null | undefined;
+  const role = Array.isArray(raw?.events) ? raw.events[0]?.payload?.role : raw?.role;
+  return typeof role === "string" ? role : null;
 }
 
 /**

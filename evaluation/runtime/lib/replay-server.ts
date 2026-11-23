@@ -144,7 +144,7 @@ export class ServerNarrator {
       parts: extractNarrationParts(testCase.action.type, answer.body),
       raw: answer.body,
     });
-    return { response, model: aiProfile, call: null };
+    return { response, model: aiProfile, calls: [] };
   }
 
   /** Stops the server, if one was started, and removes its config root. */

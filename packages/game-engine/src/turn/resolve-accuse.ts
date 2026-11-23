@@ -19,7 +19,7 @@ import {
   accusationsLeft,
   isLastAccusation,
 } from "../accusations.ts";
-import { decideAccusation, resolves, type GraphVerdictContext, type SavedAccusation } from "../clue-graph/accusation.ts";
+import { accusationRole, replyKindOf, resolves, settleAccusation } from "../clue-graph/accusation.ts";
 import { playOf } from "../clue-graph/history.ts";
 import { createNarrationPart } from "../narration.ts";
 import { buildRoleRequest } from "../role-request.ts";
@@ -214,19 +214,13 @@ async function resolveGraphAccusation(game: TurnGame, runtime: TurnRuntime, reas
     rejectOutput(runtime, "accuse_reasoning", "Clue-graph accusation named someone the case does not hold", { accused });
   }
   // A clue the player does not hold cannot be cited: it is dropped, as a restated reveal is.
-  const cited = report.cited_clue_ids.filter((id) => play.held.includes(id));
-  const notHeld = report.cited_clue_ids.filter((id) => !play.held.includes(id));
+  const { saved, notHeld } = settleAccusation(graph, play, game.history, { accused, cited: report.cited_clue_ids });
   if (notHeld.length > 0) {
     runtime.logger.log("accusation.cited_not_held", { game_id: game.game_id, clue_ids: notHeld });
   }
-
-  const saved: SavedAccusation = {
-    accused,
-    cited,
-    verdict: decideAccusation(graph, play, game.history, { accused, cited }),
-  };
+  const { cited } = saved;
   const ended = resolves(saved.verdict);
-  const role = ended ? "graph_ending" : "graph_accusation_round";
+  const role = accusationRole(saved.verdict);
   const { prompt, context } = await buildRoleRequest({
     role,
     game_id: game.game_id,
@@ -252,7 +246,7 @@ async function resolveGraphAccusation(game: TurnGame, runtime: TurnRuntime, reas
       player_reasoning: reasoning,
       judge_result: result ?? "continue",
       clue_graph_accusation: saved,
-      ...(!ended ? { reply_kind: (context.graph_accusation_context as GraphVerdictContext).reply!.kind } : {}),
+      ...(!ended ? { reply_kind: replyKindOf(context) } : {}),
       speaker: NARRATOR_SPEAKER,
     },
     narration_parts: [createNarrationPart(output.narration, NARRATOR_SPEAKER)],

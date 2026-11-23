@@ -209,6 +209,62 @@ describe("a judge-graded case", () => {
   });
 });
 
+describe("grading a clue-graph accusation", () => {
+  /** A chained CLI accusation: the engine's decision kept beside the reply, as `replay-cli.ts` stores it. */
+  function accuseTurn(narration: string, decided: { verdict: string; reply_kind?: string }): StoredTurn {
+    const turn = makeTurn({ action: { type: "accuse", player_reasoning: "It was Mia, she wrote on the rota." } });
+    const { verdict, reply_kind } = decided;
+    const raw = { role: "graph_accusation_round", narration, report: {}, clue_graph_accusation: { accused: "mia", cited: [], verdict }, ...(reply_kind ? { reply_kind } : {}) };
+    return { ...turn, response: { ...turn.response, action: "accuse", narration_text: narration, raw } };
+  }
+  const FLAW: Expect = { verdict: "not_yet", reply_kind: "flaw", handed: [["ten to nine", "8:50"], "cake"] };
+  const told = "Mr. Dobbs heard the crash at 8:50, and Mia was selling cake across town.";
+  const spoiler = (status: Verdict["status"]): Verdict => ({ id: "gm_spoiler", tier: "judge", status });
+
+  it("is right when the engine decided as the case expects and the reply carries everything handed", () => {
+    const verdict = gradeExpect(FLAW, accuseTurn(told, { verdict: "not_yet", reply_kind: "flaw" }), []);
+    expect(verdict.status).toBe("pass");
+    expect(verdict.details).toMatchObject({
+      erred: [],
+      accusation: { verdict: { expected: "not_yet", actual: "not_yet" }, reply_kind: { expected: "flaw", actual: "flaw" } },
+      missing_handed: [],
+    });
+  });
+
+  it("misread when the report led the engine to another verdict or another kind of reply", () => {
+    expect(graded(FLAW, accuseTurn(told, { verdict: "win" })).erred).toEqual(["misread"]);
+    expect(graded(FLAW, accuseTurn(told, { verdict: "not_yet", reply_kind: "missing" })).erred).toEqual(["misread"]);
+    expect(graded({ verdict: "win" }, accuseTurn(told, { verdict: "not_yet", reply_kind: "flaw" })).erred).toEqual(["misread"]);
+  });
+
+  it("withheld what was handed and left out of the reply, naming it, whatever the player said", () => {
+    const verdict = gradeExpect(FLAW, accuseTurn("Mia was selling cake.", { verdict: "not_yet", reply_kind: "flaw" }), []);
+    expect(verdict.details).toMatchObject({ erred: ["withheld"], missing_handed: ["ten to nine"] });
+    // The player's line names the rota, but only the reply counts.
+    expect(graded({ handed: ["rota"] }, accuseTurn(told, { verdict: "not_yet", reply_kind: "flaw" })).erred).toEqual(["withheld"]);
+  });
+
+  it("gave away what the spoiler judge found, and errs every way at once", () => {
+    const expectation: Expect = { ...FLAW, judges: { gm_spoiler: "given_away" } };
+    expect(graded(expectation, accuseTurn(told, { verdict: "not_yet", reply_kind: "flaw" }), [spoiler("pass")]).status).toBe("pass");
+    expect(graded(expectation, accuseTurn(told, { verdict: "not_yet", reply_kind: "flaw" }), [spoiler("fail")]).erred).toEqual(["given_away"]);
+    expect(graded(expectation, accuseTurn("Hmm.", { verdict: "not_yet", reply_kind: "alternative" }), [spoiler("fail")]).erred).toEqual(["withheld", "given_away", "misread"]);
+  });
+
+  it("reads the accusation a server saved on its event", () => {
+    const turn = makeTurn({ action: { type: "accuse", player_reasoning: "Mia did it." } });
+    const event = { event_type: "accuse_failed", payload: { role: "graph_accusation_round", clue_graph_accusation: { accused: "mia", cited: [], verdict: "not_yet" }, reply_kind: "flaw" } };
+    const played = { ...turn, response: { ...turn.response, action: "accuse", narration_text: told, raw: { kind: "turn", events: [event] } } };
+    expect(graded(FLAW, played).status).toBe("pass");
+  });
+
+  it("cannot grade a turn that holds no decided accusation", () => {
+    const turn = makeTurn({ action: { type: "accuse", player_reasoning: "Mia did it." } });
+    const reported = { ...turn, response: { ...turn.response, action: "accuse", raw: { accused_character_id: "mia", cited_clue_ids: [] } } };
+    expect(graded(FLAW, reported)).toMatchObject({ status: "error", reason: expect.stringMatching(/no clue-graph accusation/) });
+  });
+});
+
 describe("validating expect", () => {
   const base = { id: "c", blueprint: { path: "b.json" }, given: {} };
   const check = (testCase: Partial<TurnCase>) => () => validateExpect({ ...base, action: { type: "ask" }, ...testCase } as TurnCase);
@@ -223,6 +279,19 @@ describe("validating expect", () => {
     expect(check({ expect: { revealed_clue_id: "x" } })).toThrow(/does not apply to a ask case/);
     expect(check({ action: { type: "search" }, expect: { used_clue_ids: [] } })).toThrow(/does not apply/);
     expect(check({ action: { type: "move" }, expect: { input_understood: true } })).toThrow(/not move/);
+  });
+
+  it("takes an accusation's own keys, and refuses a clue's, a bad value or a kind of reply on a win", () => {
+    const accuse = (expectation: Expect) => check({ action: { type: "accuse" }, expect: expectation });
+    expect(accuse({ verdict: "not_yet", reply_kind: "missing", handed: ["Ms. Hale", ["where", "alibi"]], judges: { gm_spoiler: "given_away" } })).not.toThrow();
+    expect(accuse({ verdict: "win", handed: ["Toby"] })).not.toThrow();
+    expect(accuse({ verdict: "win", input_understood: true })).toThrow(/does not apply to a accuse case/);
+    expect(accuse({ revealed_clue_ids: [] })).toThrow(/does not apply/);
+    expect(accuse({ verdict: "maybe" as "win" })).toThrow(/verdict must be one of/);
+    expect(accuse({ reply_kind: "hint" as "flaw" })).toThrow(/reply_kind must be one of/);
+    expect(accuse({ verdict: "lose", reply_kind: "flaw" })).toThrow(/only to a not_yet verdict/);
+    expect(accuse({ handed: [] })).toThrow(/handed must list details/);
+    expect(check({ expect: { verdict: "win" } })).toThrow(/does not apply to a ask case/);
   });
 
   it("refuses an empty expect, bad values, and a group without expect", () => {

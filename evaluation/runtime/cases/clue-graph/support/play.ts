@@ -17,6 +17,7 @@ import {
   type ClueGraphEvent,
   type ClueGraphPlay,
 } from "../../../../../packages/game-engine/src/clue-graph/play.ts";
+import { ACCUSATIONS, accusationRuleLine } from "../../../../../packages/game-engine/src/accusations.ts";
 import type { Expect, HistoryEntry, TurnCase } from "../../../lib/case.ts";
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../../..");
@@ -105,7 +106,7 @@ interface Labels {
   ungraded?: boolean;
 }
 
-function given(file: string, { graph, play, history }: Played, mode: "explore" | "talk") {
+function given(file: string, { graph, play, history }: Played, mode: "explore" | "talk" | "accuse") {
   return {
     blueprint: { path: file },
     given: {
@@ -130,4 +131,27 @@ export function lineCase(file: string, steps: Step[], say: string, labels: Label
 export function searchCase(file: string, steps: Step[], query: string | null, labels: Labels): TurnCase {
   const before = played(readGraph(file), steps);
   return { ...labels, ...given(file, before, "explore"), action: { type: "search", ...(query === null ? {} : { search_query: query }) } };
+}
+
+/** The scene `accuse` opens, as the game saves it: no clue-graph event, so the play is unchanged. */
+function sceneOpened(sequence: number): HistoryEntry {
+  return {
+    sequence,
+    event_type: "accuse_start",
+    actor: "player",
+    narration: `Everyone gathers round to hear what you have worked out. Who do you think did it, and why?\n\n${accusationRuleLine(ACCUSATIONS, false)}`,
+    payload: { role: "accusation_start", trigger: "player" },
+  };
+}
+
+/**
+ * The first accusation, typed in the scene the player opened after `steps`:
+ * `reasoning` is the one line judged. Turns are left, so a failure returns to
+ * exploring rather than asking again.
+ */
+export function accusationCase(file: string, steps: Step[], reasoning: string, labels: Labels): TurnCase {
+  const before = played(readGraph(file), steps);
+  if (before.play.turns >= before.graph.metadata.time_budget) throw new Error(`${labels.id}: the play leaves no turns, so the accusation is forced`);
+  const history = [...before.history, sceneOpened(before.history.length + 2)];
+  return { ...labels, ...given(file, { ...before, history }, "accuse"), action: { type: "accuse", player_reasoning: reasoning } };
 }

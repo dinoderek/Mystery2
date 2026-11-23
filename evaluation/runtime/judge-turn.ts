@@ -308,6 +308,14 @@ async function ridersFor(testCase: TurnCase, runtime: Runtime): Promise<ComesWit
   return graph ? (id) => ridersOf(graph, id) : () => [];
 }
 
+/** An accusation's `expect` grades what a clue-graph engine decided, so a case on any other blueprint is refused before a call is made. */
+async function assertAccusationGraded(testCase: TurnCase, root: string): Promise<void> {
+  if (testCase.action.type !== "accuse" || testCase.expect === undefined) return;
+  if (!(await readBlueprint(testCase.blueprint.path, root)).blueprint.clue_graph) {
+    throw new UsageError(`case ${testCase.id}: expect grades an accusation only on a clue-graph blueprint`);
+  }
+}
+
 async function replayCase(narrator: string, testCase: TurnCase, runtime: Runtime, logDir: string): Promise<Collected> {
   const { blueprint, blueprintPath } = await readBlueprint(testCase.blueprint.path, runtime.context.root);
   if (narrator === SERVER_NARRATOR) {
@@ -357,7 +365,7 @@ async function runSubject(item: WorkItem, runtime: Runtime): Promise<Result> {
   const stages: Array<{ name: string; duration_ms: number; failed?: boolean }> = [];
   const startedAt = performance.now();
   let turn: StoredTurn | null = null;
-  let call: ModelCall | null = null;
+  let calls: ModelCall[] = [];
   let runError: RunError | null = null;
   let verdicts: Verdict[] = [];
 
@@ -366,7 +374,7 @@ async function runSubject(item: WorkItem, runtime: Runtime): Promise<Result> {
     if (item.input.kind === "case") {
       const captured = await captureCase(item.narrator as string, item.input.testCase, runtime, folder);
       turn = captured.turn;
-      call = captured.collected.call;
+      calls = captured.collected.calls;
       stages.push({ name: "replay", duration_ms: Math.round(performance.now() - replayStart) });
     } else {
       turn = item.input.turn;
@@ -392,7 +400,7 @@ async function runSubject(item: WorkItem, runtime: Runtime): Promise<Result> {
     schema_version: RESULT_SCHEMA_VERSION,
     run: runtime.folder.info(),
     subject: { kind: "turn", id, path: turn ? TURN_FILE : null },
-    production: call ? { calls: [call] } : null,
+    production: calls.length > 0 ? { calls } : null,
     verdicts,
     summary: summarize(verdicts, runError),
     run_error: runError,
@@ -439,6 +447,7 @@ export function createJudgeTurnCommand({ startServer = startThrowawayServer }: J
         if (input.kind !== "case") continue;
         validateCase(input.testCase, input.testCase.id);
         validateExpect(input.testCase);
+        await assertAccusationGraded(input.testCase, context.root);
       }
 
       const items = await workItems(inputs, narrators, chosenJudges, samples);

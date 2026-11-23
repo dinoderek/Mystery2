@@ -40,14 +40,14 @@ const LEO_MET: Step[] = [{ move: "art_room" }, LEO_GREETS];
 /** The steps and the cards searched, so Leo can be shown either. */
 const LEO_WITH_CLUES: Step[] = [...GOLD_STEPS, ...CARDS, { move: "art_room" }, LEO_GREETS];
 
-const NINA_GREETS: Step = {
+export const NINA_GREETS: Step = {
   talk: "nina",
   narration:
     "Nina jumps as you come near. \"I didn't take it! I wasn't even in the hall. Ask Sam!\" She hides a fistful of crumpled cards behind her back and glances at the bike shed.",
 };
 export const NINA_MET: Step[] = [{ move: "playground" }, NINA_GREETS];
 
-const PIKE_GREETS: Step = {
+export const PIKE_GREETS: Step = {
   talk: "pike",
   narration:
     "Mr. Pike looks down from the bike-shed roof and rubs his chin. \"I've been up on the bike-shed roof since twelve, mending the felt. Right across from the art room windows, as it happens.\"",

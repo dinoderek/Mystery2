@@ -78,6 +78,11 @@ export type Detail = string | string[];
  * `judges` names turn judges whose fail makes a sample wrong, and which way.
  * `whole_fact` lists, per clue the case expects revealed, the details of its
  * fact that the narration and its notebook line must both carry.
+ *
+ * A clue-graph accusation (`accuse`) is graded on what the engine decided from
+ * the narrator's report, `verdict` and `reply_kind` (a failure's), and on
+ * `handed`: the details of what the engine handed the reply, each of which the
+ * narration must carry.
  */
 export interface Expect {
   revealed_clue_id?: string | null;
@@ -86,6 +91,9 @@ export interface Expect {
   input_understood?: boolean;
   judges?: Record<string, JudgedDirection>;
   whole_fact?: Record<string, Detail[]>;
+  verdict?: "win" | "not_yet" | "lose";
+  reply_kind?: "flaw" | "alternative" | "missing";
+  handed?: Detail[];
 }
 
 export interface TurnCase {

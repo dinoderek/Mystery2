@@ -29,7 +29,7 @@ answered whenever the player asks `about` it (`prompted_by` names what leads
 them there); or `gated`. A `gate` opens when its `after` clues are out (held,
 or taken back), and its `use` clues (`any` or `all`) are used on the character
 or its `line` of questioning is taken. With `after` alone, it comes on a plain
-ask once those are out (a confession). Using a clue means showing it or making
+ask once those are out. Using a clue means showing it or making
 its point at the character, in this line or an earlier one of the
 conversation, not holding it.
 A gate with `use` that is not `physical` also opens on a believable bluff
@@ -50,7 +50,8 @@ clues. `blueprint.conclusions` are rules over clues, never shown to the player;
 The engine, not the narrator, decides what each turn may give, and refuses a
 reveal its state did not offer: judge the narration against what was offered
 and recorded. The engine decides the accusation: naming the true culprit wins
-with their confession held, or with the culprit conclusion holding on clues
+with their confession held (their gated true statements the culprit
+conclusion names), or with the culprit conclusion holding on clues
 held and not taken back, one of them cited. Opening the accusation reveals
 nothing beyond what the player holds. A failed accusation's reply words the
 kind the engine chose: a flaw (held clearing clues, or retracted statements and
@@ -115,9 +116,8 @@ Each turn carries:
      harmless embellishment, a slightly off register, a small stylistic slip.
    A dimension **fails if and only if it has at least one `major` finding.**
    Do not inflate a `minor`, nor soften a real defect.
-5. Prose written for children is allowed to be atmospheric. Sensory colour,
-   mood, and small invented background texture that carries no load-bearing
-   fact are the game master doing its job — not findings.
+5. Sensory colour, mood, and small invented background texture that carries
+   no load-bearing fact are the game master doing its job — not findings.
 6. Return **only** a single JSON object matching the output shape declared in
    the dimension definition. No prose before or after the JSON.
 7. If you genuinely cannot judge — the subject or case is malformed beyond
@@ -192,7 +192,7 @@ Walk the judged turns in order. For each, apply the checks that fit its
    - `contradiction`: the character's story going back on an earlier line
      with nothing taking it back (a world fact is `gm_fabrication`'s).
      `major`. Holding to a false statement until its gate opens is the design.
-4. **Tells** (`tell`). A tell clue is optional behaviour, shown `with` its
+4. **Tells** (`tell`). A tell clue is behaviour, shown `with` its
    statement whenever that comes out, or when its `subject` comes up. A
    greeting shows its `first_meeting` tells and those riding on its first
    words, never one tied to a `subject` or a later statement. Acting out an
@@ -202,7 +202,8 @@ Walk the judged turns in order. For each, apply the checks that fit its
    was recorded is `gm_clue_discipline`'s.)
 5. **Knowledge** (`knowledge`). The character speaks only from their own
    clues, `knows`, and ordinary lived experience. Answering with another
-   character's private knowledge is `major`.
+   character's `knows` or private knowledge is `major` (another's clue is
+   `gm_clue_discipline`'s).
 6. **Answering** (`persona`). The character answers what was asked. Reciting
    `knows` as a checklist, or unasked backstory, is `minor`.
 
@@ -212,7 +213,7 @@ Walk the judged turns in order. For each, apply the checks that fit its
 2. Tone is warm, playful, curious — a cozy children's mystery, never scary or
    gory.
 3. Game mechanics never surface: no clue ids, no roles, no JSON, no prompts, no
-   stance names, no mention of being an AI. Any of these is `major`.
+   no mention of being an AI. Any of these is `major`.
 4. Any character quoted inside narrator prose still obeys the character rules
    above.
 

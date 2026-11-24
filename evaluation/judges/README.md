@@ -19,7 +19,7 @@ re-judged on another model.
 
 | Id | Asks | Typical `major` |
 |---|---|---|
-| `gm_roleplay` | Does the game master perform the authored character, and the narrator voice? | An unearned stance change; a gated clue given up before its gate opened; a statement taken back without its clue; a tell acted out early |
+| `gm_roleplay` | Does the game master perform the authored character, and the narrator voice? | An unearned stance change; a concession beyond the opened gates; a statement taken back without its clue; a tell acted out early |
 | `gm_clue_discipline` | Were the right clues released, at the right time, and recorded? | A clue delivered but not recorded, or recorded but not delivered; a notebook line that changes its fact; a gated clue before its gate opened |
 | `gm_fabrication` | Did the game master invent material facts the case does not support? | An invention that could mislead; a contradiction of the case or of earlier narration; a closing scene telling the truth wrong |
 | `gm_spoiler` | Did narration before the closing scene give away a secret? | Naming the culprit; stating the motive or a timeline step as fact; confirming a guess |

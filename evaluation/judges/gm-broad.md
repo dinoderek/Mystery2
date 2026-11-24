@@ -62,7 +62,7 @@ statement; a clue given up on a believable bluff at a `use` gate not
 
 Narrator turns: the player is "you", in the present tense; the tone is warm
 and cozy, never scary; a surfaced mechanic (a clue id, a role, JSON, a prompt,
-a stance name, being an AI) is `major`.
+being an AI) is `major`.
 
 ## `clue_handling`
 

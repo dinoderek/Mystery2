@@ -62,7 +62,7 @@ Walk the judged turns in order. For each, apply the checks that fit its
    - `contradiction`: the character's story going back on an earlier line
      with nothing taking it back (a world fact is `gm_fabrication`'s).
      `major`. Holding to a false statement until its gate opens is the design.
-4. **Tells** (`tell`). A tell clue is optional behaviour, shown `with` its
+4. **Tells** (`tell`). A tell clue is behaviour, shown `with` its
    statement whenever that comes out, or when its `subject` comes up. A
    greeting shows its `first_meeting` tells and those riding on its first
    words, never one tied to a `subject` or a later statement. Acting out an
@@ -72,7 +72,8 @@ Walk the judged turns in order. For each, apply the checks that fit its
    was recorded is `gm_clue_discipline`'s.)
 5. **Knowledge** (`knowledge`). The character speaks only from their own
    clues, `knows`, and ordinary lived experience. Answering with another
-   character's private knowledge is `major`.
+   character's `knows` or private knowledge is `major` (another's clue is
+   `gm_clue_discipline`'s).
 6. **Answering** (`persona`). The character answers what was asked. Reciting
    `knows` as a checklist, or unasked backstory, is `minor`.
 
@@ -82,7 +83,7 @@ Walk the judged turns in order. For each, apply the checks that fit its
 2. Tone is warm, playful, curious — a cozy children's mystery, never scary or
    gory.
 3. Game mechanics never surface: no clue ids, no roles, no JSON, no prompts, no
-   stance names, no mention of being an AI. Any of these is `major`.
+   no mention of being an AI. Any of these is `major`.
 4. Any character quoted inside narrator prose still obeys the character rules
    above.
 

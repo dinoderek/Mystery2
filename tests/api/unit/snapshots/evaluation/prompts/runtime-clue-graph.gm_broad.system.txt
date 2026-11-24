@@ -29,7 +29,7 @@ answered whenever the player asks `about` it (`prompted_by` names what leads
 them there); or `gated`. A `gate` opens when its `after` clues are out (held,
 or taken back), and its `use` clues (`any` or `all`) are used on the character
 or its `line` of questioning is taken. With `after` alone, it comes on a plain
-ask once those are out (a confession). Using a clue means showing it or making
+ask once those are out. Using a clue means showing it or making
 its point at the character, in this line or an earlier one of the
 conversation, not holding it.
 A gate with `use` that is not `physical` also opens on a believable bluff
@@ -50,7 +50,8 @@ clues. `blueprint.conclusions` are rules over clues, never shown to the player;
 The engine, not the narrator, decides what each turn may give, and refuses a
 reveal its state did not offer: judge the narration against what was offered
 and recorded. The engine decides the accusation: naming the true culprit wins
-with their confession held, or with the culprit conclusion holding on clues
+with their confession held (their gated true statements the culprit
+conclusion names), or with the culprit conclusion holding on clues
 held and not taken back, one of them cited. Opening the accusation reveals
 nothing beyond what the player holds. A failed accusation's reply words the
 kind the engine chose: a flaw (held clearing clues, or retracted statements and
@@ -115,9 +116,8 @@ Each turn carries:
      harmless embellishment, a slightly off register, a small stylistic slip.
    A dimension **fails if and only if it has at least one `major` finding.**
    Do not inflate a `minor`, nor soften a real defect.
-5. Prose written for children is allowed to be atmospheric. Sensory colour,
-   mood, and small invented background texture that carries no load-bearing
-   fact are the game master doing its job — not findings.
+5. Sensory colour, mood, and small invented background texture that carries
+   no load-bearing fact are the game master doing its job — not findings.
 6. Return **only** a single JSON object matching the output shape declared in
    the dimension definition. No prose before or after the JSON.
 7. If you genuinely cannot judge — the subject or case is malformed beyond
@@ -192,7 +192,7 @@ statement; a clue given up on a believable bluff at a `use` gate not
 
 Narrator turns: the player is "you", in the present tense; the tone is warm
 and cozy, never scary; a surfaced mechanic (a clue id, a role, JSON, a prompt,
-a stance name, being an AI) is `major`.
+being an AI) is `major`.
 
 ## `clue_handling`
 

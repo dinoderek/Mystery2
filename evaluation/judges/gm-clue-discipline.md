@@ -56,13 +56,13 @@ line and `revealed_clue_ids`.
    "Earned, not free"). A bluff stating a clue's substance opens a gate with
    `use` that is not `physical`: that release is earned. A `physical` gate
    needs its `use` clues in `prior_revealed_clue_ids`; released on a bluff,
-   `major`. On a search, a hidden spot's clue is early before its
-   `revealed_by` clue is held. Any early release is `major`.
+   `major`. A hidden spot's clue, or the spot named at all, is early before
+   its `revealed_by` clue is held. Any early release is `major`.
 5. **Wrong owner** (`kind: "wrong_source"`). A character delivers a clue whose
    `source` is another character or a location, with nothing (their own clues
    or `knows`) giving them that knowledge. `major`.
 6. **Withholding an earned clue** (`kind: "withheld"`). The player asked about
-   an `asked` clue's `about` with a prompt held, or opened a gate, but the
+   an `asked` clue's `about`, or opened a gate, but the
    character neither delivers the clue nor gives a reason the fiction
    supports. `minor` on a single turn; `major` when the same clue is
    stonewalled across repeated, differently-approached asks, which is how a

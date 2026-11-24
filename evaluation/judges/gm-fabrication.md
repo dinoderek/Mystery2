@@ -21,6 +21,8 @@ Scope boundaries with the rest of this battery:
 - A clue moving at the wrong time, or a reveal or notebook line not matching
   its clue, is `gm_clue_discipline`.
 - A secret given away early is `gm_spoiler`.
+- A character speaking from another's clue or `knows` is `gm_roleplay`'s
+  and `gm_clue_discipline`'s, not an invention.
 - **Here**: the world gained a fact the case does not hold, or a stated fact
   contradicts one it does.
 

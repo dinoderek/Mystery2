@@ -262,12 +262,15 @@ export async function startTestServer({ repoRoot, port, env = {}, build = true, 
     env: testServerEnv(process.env, env, { port, host, configRoot, repoRoot }),
   });
 
-  // Marks the build as in use, so no other run prunes it (`createBuildDir`).
-  const touch = setInterval(() => {
-    const now = new Date();
-    fs.utimesSync(buildDir, now, now);
-  }, BUILD_TOUCH_MS);
-  touch.unref();
+  // Marks a build of its own as in use, so no other run prunes it
+  // (`createBuildDir`). The suite's build is its own server's to mark.
+  const touch = build
+    ? setInterval(() => {
+        const now = new Date();
+        fs.utimesSync(buildDir, now, now);
+      }, BUILD_TOUCH_MS)
+    : undefined;
+  touch?.unref();
 
   let exited = false;
   const exit = new Promise((resolve) => {

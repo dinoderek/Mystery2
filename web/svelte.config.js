@@ -1,4 +1,5 @@
 import path from 'node:path';
+import process from 'node:process';
 import adapter from '@sveltejs/adapter-node';
 
 // A test server builds into a folder of its own (`MYSTERY_WEB_BUILD_DIR`), so

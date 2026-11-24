@@ -44,8 +44,8 @@ an invention.
 2. Invention is a fault only when it could mislead the investigation, or when
    it contradicts the case or what earlier narration established. It misleads
    when it looks like evidence or bears on who, when or where: a mark, an
-   object to examine, a time, a sighting, a person, a place to search. The
-   test is: **could a player act on this?**
+   object to examine, a time, a sighting, a person, a place to search. For an
+   invention, the test is: **could a player act on this?**
    - **People** (`kind: "person"`) — no character the case lacks; no character
      placed where the case contradicts; no weighty invented relationship.
    - **Places and objects** (`kind: "place"` / `"object"`) — a room or
@@ -67,9 +67,10 @@ an invention.
 4. **The closing scene** (`graph_ending`) is judged against `truth.timeline`,
    `truth.motive` and the culprit conclusion: a step told wrong, or added, or
    any contradiction, is a finding.
-5. Severity: a misleading invention is `major`, and so is any contradiction:
-   one of earlier narration is `major` even when what it contradicts is
-   scenery, since the player can no longer trust what they were shown.
+5. Severity: a misleading invention is `major`, and so is any contradiction of
+   the case or of earlier narration, even of scenery (a person or object shown
+   where the case puts it elsewhere), since the player can no longer trust
+   what they were shown.
    Embellishment that strays past the text but leads nowhere is `minor`.
 
 Do not penalize player-facing uncertainty, declining to reveal, or a

@@ -46,9 +46,9 @@ For character turns (`graph_talk`, `talk_end`):
 - **Earned**: a gated clue comes only once its gate opened (the preamble's
   rule; `docs/ai-runtime.md`, "Earned, not free"). The player's words decide
   use; holding, a mere mention, naming the culprit or insisting is not use.
-  `major`: a concession or confession beyond the opened gates; a statement
-  taken back without the clue whose `takes_back` names it, or a concession
-  reversed; going back on an earlier line.
+  `major`: a concession beyond the opened gates; a statement taken back
+  without the clue whose `takes_back` names it, or a concession reversed;
+  going back on an earlier line.
 - **Tells**: shown `with` their statement whenever it comes out, or when their
   `subject` comes up; a greeting shows none tied to a `subject` or a later
   statement. One acted out early is `major`,
@@ -57,8 +57,8 @@ For character turns (`graph_talk`, `talk_end`):
   `knows` as a checklist is `minor`.
 
 Not findings: atmosphere; declining, stonewalling or an authored false
-statement; a clue given up on a believable bluff where the gate has `use` and
-is not `physical`; plain register.
+statement; a clue given up on a believable bluff at a `use` gate not
+`physical`; plain register.
 
 Narrator turns: the player is "you", in the present tense; the tone is warm
 and cozy, never scary; a surfaced mechanic (a clue id, a role, JSON, a prompt,
@@ -70,13 +70,14 @@ Compare each judged turn's narration and `notebook` lines with the clue's
 `fact` and `revealed_clue_ids`; `prior_revealed_clue_ids` is what the player
 held. Each is `major`:
 
-- a clue's substance delivered (paraphrase counts, a hint that something
-  exists does not) but not recorded; or recorded but never conveyed;
+- a clue's substance delivered (paraphrase counts; a hint does not) but not
+  recorded; or recorded but never conveyed;
 - a clue, or its notebook line, with a name, time, place, object or meaning
   changed or dropped (a faithful rewording for a child is correct);
-- a gated clue before its gate opened: an `after` clue not held, or its `use`
-  clues not used and its `line` not taken; a bluff opens a `use` gate unless
-  it is `physical`, whose `use` clues must be held;
+- a gated clue before its gate opened: an `after` clue neither held nor taken
+  back, or its `use` clues not used and its `line` not taken (`after` alone
+  opens on a plain ask); a bluff opens a `use` gate unless it is
+  `physical`, whose `use` clues must be held;
 - a hidden spot's clue before its `revealed_by` clue is held; a search giving
   more than one clue, or a find matching no evidence clue of the spot or
   room searched;

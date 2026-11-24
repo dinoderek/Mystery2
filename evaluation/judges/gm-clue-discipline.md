@@ -48,15 +48,16 @@ line and `revealed_clue_ids`.
    place or object of that fact. `major`. A faithful rewording for a child's
    reading level is correct.
 4. **Gate violation** (`kind: "premature"`). A clue delivered before it could
-   be reached. Check a gated clue against its `gate`: every `after` clue is in
-   `prior_revealed_clue_ids`, and the player used its `use` clues (`any` or
-   `all`) on this character or took its `line` of questioning. Use is what the
-   player's words do, not what they hold (`docs/ai-runtime.md`, "Earned, not
-   free"). A bluff stating a clue's substance opens a gate with `use` that is
-   not `physical`: that release is earned. A `physical` gate needs its `use`
-   clues in `prior_revealed_clue_ids`; released on a bluff, `major`. On a
-   search, a hidden spot's clue is early before its `revealed_by` clue is held. Any
-   early release is `major`.
+   be reached. Check a gated clue against its `gate`: every `after` clue is
+   out (in `prior_revealed_clue_ids`, or taken back by a clue that is), and
+   the player used its `use` clues (`any` or `all`) on this character or took
+   its `line` of questioning; a gate with only `after` opens on a plain ask.
+   Use is what the player's words do, not what they hold (`docs/ai-runtime.md`,
+   "Earned, not free"). A bluff stating a clue's substance opens a gate with
+   `use` that is not `physical`: that release is earned. A `physical` gate
+   needs its `use` clues in `prior_revealed_clue_ids`; released on a bluff,
+   `major`. On a search, a hidden spot's clue is early before its
+   `revealed_by` clue is held. Any early release is `major`.
 5. **Wrong owner** (`kind: "wrong_source"`). A character delivers a clue whose
    `source` is another character or a location, with nothing (their own clues
    or `knows`) giving them that knowledge. `major`.

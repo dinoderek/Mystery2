@@ -49,7 +49,7 @@ export const HALE_GREETS: Step = {
   talk: "hale",
   narration: "Ms. Hale stands by Bertha's split shell, brushing soil from her apron. \"I unlocked the door at half past seven. It was still locked! And there was Bertha, smashed.\"",
 };
-const HALE_SHOWN_ROTA: Step = {
+export const HALE_SHOWN_ROTA: Step = {
   say: "On the rota, Toby's name is crossed out and MIA is written over it in sparkly purple pen. Who wrote that?",
   reply: "Ms. Hale sighs. \"I changed the rota myself on Wednesday. My pen ran dry, so I borrowed Mia's sparkly purple one. Toby took it well enough. He loves Bertha. He would never hurt her.\" She twists the gardening gloves in her apron pocket. \"I won't have him made into a villain.\"",
   opened: ["clue_hale_borrowed_pen", "hale_toby_fine"],

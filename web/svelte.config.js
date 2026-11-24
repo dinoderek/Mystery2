@@ -4,7 +4,9 @@ import adapter from '@sveltejs/adapter-node';
 
 // A test server builds into a folder of its own (`MYSTERY_WEB_BUILD_DIR`), so
 // two processes building from one checkout never write the same files. Unset,
-// the build goes where SvelteKit puts it: `.svelte-kit/` and `build/`.
+// the build goes where SvelteKit puts it: `.svelte-kit/` and `build/`. Such a
+// build warns that `tsconfig.json` should extend the folder's own sync output;
+// it should not, as the folder is removed when the server stops.
 const buildDir = process.env.MYSTERY_WEB_BUILD_DIR;
 
 /** @type {import('@sveltejs/kit').Config} */

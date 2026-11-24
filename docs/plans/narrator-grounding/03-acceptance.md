@@ -22,9 +22,7 @@ valid result; successful implementation is not itself evidence of improvement.
    tuning on the held-out material.
 3. Run full games for each frozen model/policy combination on the reserved new
    mysteries, with the fixed investigator, both personas and predeclared
-   repetitions/order. Use normal isolated servers/databases. Avoid independent
-   concurrent builds from one checkout; use the harness's own bounded
-   concurrency or separate worktrees.
+   repetitions/order. Use normal isolated servers/databases.
 4. Blind model/policy identities during review. Keep the four narrow game
    judges and perform the human review N1 specifies. Examine disputed findings
    against source facts and prior turns, including output judges passed.

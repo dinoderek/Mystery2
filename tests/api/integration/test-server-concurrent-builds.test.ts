@@ -43,11 +43,11 @@ await server.stop();
 console.log(${JSON.stringify(MARKER)} + JSON.stringify({ buildDir: server.buildDir, page, api }));
 `;
 
-// A child still running when its test ends (a timeout) is killed, so it leaves
-// no server or build behind.
+// A child still running when its test ends (a timeout) is killed with its
+// process group, the build or server it started included.
 const children = new Set<ChildProcess>();
 afterEach(() => {
-  for (const child of children) child.kill("SIGKILL");
+  for (const child of children) if (child.pid) process.kill(-child.pid, "SIGKILL");
   children.clear();
 });
 
@@ -56,6 +56,7 @@ async function startInChild(): Promise<Started> {
   const child = spawn(process.execPath, ["--input-type=module", "-e", CHILD], {
     env: { ...process.env, TEST_SERVER, REPO_ROOT, PORT: String(port) },
     stdio: ["ignore", "pipe", "pipe"],
+    detached: true,
   });
   children.add(child);
   let output = "";

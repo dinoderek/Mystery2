@@ -28,6 +28,7 @@ const READY_POLL_MS = 100;
 const PORT_PROBE_TIMEOUT_MS = 1_000;
 const STOP_GRACE_MS = 5_000;
 const STALE_BUILD_MS = 24 * 60 * 60 * 1000;
+const BUILD_TOUCH_MS = 60 * 60 * 1000;
 
 const MOCK_CASE_SCENES = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../tests/testkit/src/mock-case-scenes.json");
 
@@ -58,8 +59,10 @@ export function createTestConfigRoot() {
  * a rebuild never replaces the files a running server is serving.
  *
  * `stop()` removes the folder, but an interrupted run never calls it, so
- * folders older than STALE_BUILD_MS are removed here first. No test server
- * runs that long.
+ * folders untouched for STALE_BUILD_MS are removed here first. A running
+ * server touches its own folder every BUILD_TOUCH_MS, so it never looks stale.
+ * Another run may remove an entry between the listing and the check; such an
+ * entry is skipped.
  */
 export function createBuildDir(repoRoot) {
   const now = Date.now();
@@ -67,7 +70,8 @@ export function createBuildDir(repoRoot) {
   fs.mkdirSync(parent, { recursive: true });
   for (const entry of fs.readdirSync(parent, { withFileTypes: true })) {
     const dir = path.join(parent, entry.name);
-    if (entry.isDirectory() && now - fs.statSync(dir).mtimeMs > STALE_BUILD_MS) {
+    const stat = entry.isDirectory() ? fs.statSync(dir, { throwIfNoEntry: false }) : undefined;
+    if (stat && now - stat.mtimeMs > STALE_BUILD_MS) {
       fs.rmSync(dir, { recursive: true, force: true });
     }
   }
@@ -258,6 +262,13 @@ export async function startTestServer({ repoRoot, port, env = {}, build = true, 
     env: testServerEnv(process.env, env, { port, host, configRoot, repoRoot }),
   });
 
+  // Marks the build as in use, so no other run prunes it (`createBuildDir`).
+  const touch = setInterval(() => {
+    const now = new Date();
+    fs.utimesSync(buildDir, now, now);
+  }, BUILD_TOUCH_MS);
+  touch.unref();
+
   let exited = false;
   const exit = new Promise((resolve) => {
     child.on("exit", () => {
@@ -272,6 +283,7 @@ export async function startTestServer({ repoRoot, port, env = {}, build = true, 
   // the test gate's output pipe, and the gate never finishes. So it is killed
   // if it has not gone within STOP_GRACE_MS.
   const stop = async () => {
+    clearInterval(touch);
     if (!exited) {
       child.kill("SIGTERM");
       const kill = setTimeout(() => child.kill("SIGKILL"), STOP_GRACE_MS);

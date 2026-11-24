@@ -552,6 +552,9 @@ const SENT_TO_GM: [string, string][] = [
   ["runtime-clue-graph-accusation.gm_spoiler", "gm_spoiler"],
 ];
 const RETIRED_SUBJECT_FIELDS = ["recorded_use", "revealed_off_script"];
+const GREENHOUSE_CASE = validateClueGraph(
+  JSON.parse(fs.readFileSync(path.join(REPO_ROOT, "blueprints", "clue-graph", "greenhouse-prizewinner.json"), "utf8")),
+);
 
 // What the stored bytes above mean, held apart from them: re-recording the
 // snapshots cannot bring back the retired case format, the `format_guidance`
@@ -583,8 +586,7 @@ describe("what the game-master judges are sent", () => {
     expect(Object.keys(message)).toEqual(["dimension_id", "context", "blueprint", "subject"]);
     expect(message.dimension_id).toBe(id);
     // The case itself, as the game validates it, not the world view built from it.
-    const greenhouse = validateClueGraph(JSON.parse(fs.readFileSync(path.join(REPO_ROOT, "blueprints", "clue-graph", "greenhouse-prizewinner.json"), "utf8")));
-    expect(message.blueprint).toEqual(greenhouse);
+    expect(message.blueprint).toEqual(GREENHOUSE_CASE);
     expect(message.blueprint.metadata.target_age).toBe(10);
     expect(message.subject.turns.length).toBeGreaterThan(0);
     for (const turn of message.subject.turns) {

@@ -86,5 +86,7 @@ verdict for wiring checks:
 
 The tests (`tests/api/unit/judges-*.test.ts`,
 `tests/api/unit/runtime-adherence-judge.test.ts`) cover the projection, schemas
-and verdict rule this way. Ignore `gm_roleplay` findings on `narrator-stub`: its
-canned line is blueprint-blind.
+and verdict rule this way; `tests/api/unit/eval-snapshots.test.ts` checks what
+both harnesses send each judge ([`docs/testing.md`](../../docs/testing.md)).
+Ignore `gm_roleplay` findings on `narrator-stub`: its canned line is
+blueprint-blind.

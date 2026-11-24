@@ -40,6 +40,7 @@ The game rewards real detective work at once. Be generous about how the investig
   - show: they use any one ("any") or every one ("all") of those clues on Mr. Thorne;
   - line: they take that line of questioning, in their own words;
   - asked_plainly: they ask plainly about it, or for the truth.
+  Each route opens its gate on its own. When opens_with has both show and line, showing the clue opens it without the line, and taking the line opens it without the clue: never hold a gate back because the other route was not taken.
   A clue they used on an earlier line still counts. If Mr. Thorne dodged it then, they cannot dodge it again: when this line follows it up (asks again, presses on it, or asks what it means), its gate opens now.
   A gate marked bluffable also opens on a believable bluff: the investigator claims what a show clue proves without holding it. A gate not marked bluffable never opens on a bluff.
   When a gate opens, Mr. Thorne says its "says", shows its "with" and drops its "takes_back", in their own words. Report its id in opened.

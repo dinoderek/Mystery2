@@ -43,7 +43,7 @@ import { RESULT_SCHEMA_VERSION, summarize, writeResult, readResult } from "../co
 import type { ModelCall, Result, RunError, Verdict } from "../core/result.ts";
 import { createRunFolder, resolveOutputRoot } from "../core/run-folder.ts";
 import type { RunFolder } from "../core/run-folder.ts";
-import { loadCasesFrom, readBlueprint, validateCase } from "./lib/case.ts";
+import { assertCaseCharacters, loadCasesFrom, readBlueprint, validateCase } from "./lib/case.ts";
 import type { BlueprintLike, JudgeOptions, TurnCase } from "./lib/case.ts";
 import { EXPECT_VERDICT, expectJudges, gradeExpect, validateExpect, type ComesWith } from "./lib/expect.ts";
 import { EXPECT_FILE, formatSummary, summarizeSamples, writeSummary } from "./lib/expect-summary.ts";
@@ -440,8 +440,9 @@ export function createJudgeTurnCommand({ startServer = startThrowawayServer }: J
         if (input.kind !== "case") continue;
         validateCase(input.testCase, input.testCase.id);
         validateExpect(input.testCase);
-        // A case on anything but a clue graph is refused by name before a call is made.
-        await readBlueprint(input.testCase.blueprint.path, context.root);
+        // A case on anything but a clue graph, or naming a character it lacks, is refused before a call is made.
+        const { blueprint, blueprintPath } = await readBlueprint(input.testCase.blueprint.path, context.root);
+        assertCaseCharacters(input.testCase, blueprint, blueprintPath);
       }
 
       const items = await workItems(inputs, narrators, chosenJudges, samples);

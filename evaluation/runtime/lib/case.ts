@@ -139,6 +139,23 @@ export function validateCase(testCase: unknown, source: string): TurnCase {
 }
 
 /**
+ * Refuses a case that names a character its blueprint does not have: the one a
+ * `talk` action greets, or the one a talk-mode `given` is already talking to.
+ */
+export function assertCaseCharacters(testCase: TurnCase, blueprint: BlueprintLike, blueprintPath: string): void {
+  const known = new Set(blueprint.world.characters.map((character) => character.id));
+  const named = [
+    ["action.character_id", testCase.action.character_id],
+    ["given.talk_character_id", testCase.given.talk_character_id],
+  ] as const;
+  for (const [field, id] of named) {
+    if (id !== undefined && !known.has(id)) {
+      throw new UsageError(`Case ${testCase.id}: ${field} "${id}" is not a character in blueprint ${blueprintPath}`);
+    }
+  }
+}
+
+/**
  * A case file as the game reads it: its world view, with the graph in
  * `clue_graph`. Any other file is refused by name; the harness plays clue
  * graphs only.

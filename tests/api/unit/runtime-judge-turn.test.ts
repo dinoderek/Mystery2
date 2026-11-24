@@ -219,6 +219,34 @@ describe("judge turn refuses what it cannot run", () => {
     expect(output).toContain(message);
   });
 
+  it.each([
+    ["a greeting", { action: { type: "talk", character_id: "char-nobody" } }, "action.character_id"],
+    ["a talk-mode given", { given: { mode: "talk", talk_character_id: "char-nobody" }, action: { type: "end_talk" } }, "given.talk_character_id"],
+  ])("refuses %s naming a character the blueprint lacks, before any narrator starts", async (_kind, fields, field) => {
+    const marker = path.join(scratch, `narrator-started-${field}`);
+    const wrapper = path.join(scratch, `marking-narrator-${field}.sh`);
+    fs.writeFileSync(wrapper, `#!/bin/sh\ntouch "${marker}"\nexit 1\n`, { mode: 0o755 });
+    const config = path.join(scratch, `marking-${field}.json`);
+    fs.writeFileSync(config, JSON.stringify({ "narrator-marking": { cmd: wrapper, args: [], timeout_ms: 30_000 } }));
+    const caseFile = path.join(scratch, `unknown-character-${field}.json`);
+    fs.writeFileSync(caseFile, JSON.stringify({ id: "greet-nobody", blueprint: { path: MOCK_CASE_PATH }, given: { history: [] }, ...fields }));
+    const startServer = vi.fn();
+
+    const { code, output, runDir } = await run(
+      [caseFile, "--narrator", "narrator-marking", "--judges", "flesch"],
+      config,
+      {},
+      createJudgeTurnCommand({ startServer }),
+    );
+
+    expect(code).toBe(1);
+    expect(output).toContain(`Case greet-nobody: ${field} "char-nobody" is not a character in blueprint`);
+    expect(output).toContain(MOCK_CASE_PATH);
+    expect(fs.existsSync(marker)).toBe(false);
+    expect(startServer).not.toHaveBeenCalled();
+    expect(runDir).toBe("");
+  });
+
   it("prints its help", async () => {
     const { code, output } = await run(["--help"]);
     expect(code).toBe(0);

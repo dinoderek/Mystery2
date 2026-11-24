@@ -137,6 +137,18 @@ describe("revealedClueIdsFromResponse", () => {
     expect(revealedClueIdsFromResponse({ raw: { opened: [], answered: [], notebook: [{ id: "toby_alibi", line: "Toby says he was home." }] } })).toEqual(["toby_alibi"]);
   });
 
+  it("leaves a clue the player already held out of the judged turn's reveals", () => {
+    const interaction = makeInteraction({
+      response: {
+        narration_text: "Alice sighs.",
+        raw: { opened: ["clue-wrapper"], answered: [], notebook: [{ id: "clue-crumb", line: "Crumbs by the jar." }, { id: "clue-wrapper", line: "A wrapper." }] },
+      },
+    });
+    const subject = projectInteractionSubject(interaction, { roleName: "graph_talk" });
+    expect(subject.turns[2].prior_revealed_clue_ids).toEqual(["clue-crumb"]);
+    expect(subject.turns[2].revealed_clue_ids).toEqual(["clue-wrapper"]);
+  });
+
   it("is empty when the turn revealed nothing", () => {
     expect(revealedClueIdsFromResponse({ raw: { narration: "…" } })).toEqual([]);
     expect(revealedClueIdsFromResponse({ raw: { revealed_clue_id: null } })).toEqual([]);

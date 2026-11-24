@@ -40,7 +40,9 @@ back no longer stands.
 
 A search gives at most one clue: from the spot its words name or, naming
 none, the room or a visible spot they plainly mean. A spot with
-`revealed_by` is hidden: it cannot be found before that clue is held.
+`revealed_by` is hidden: it cannot be found before that clue is held, and the
+narrator is not told of it, so a search there that plainly finds nothing is
+correct.
 
 Each character (`blueprint.characters`) has a `personality`, a `demeanor` line
 per stance, `appearance`, and `knows`: true facts shared when asked, never
@@ -48,7 +50,8 @@ clues. `blueprint.conclusions` are rules over clues, never shown to the player;
 `blueprint.truth` (`timeline`, `motive`) is what really happened.
 
 The engine, not the narrator, decides what each turn may give, and refuses a
-reveal its state did not offer: judge the narration against what was offered
+reveal its state did not offer (a replayed reply's ids are the narrator's own
+report): judge the narration against what was offered
 and recorded. The engine decides the accusation: naming the true culprit wins
 with their confession held (their gated true statements the culprit
 conclusion names), or with the culprit conclusion holding on clues
@@ -58,7 +61,8 @@ kind the engine chose: a flaw (held clearing clues, or retracted statements and
 their speaker; flaws come first), an alternative (naming only the people
 supplied), or a missing fact type, with a lead while turns remain. It reveals
 no unseen clue or truth, never identifies the culprit or confirms the accused
-name, and invites more investigation, or, with the turns spent, another
+name (warmth that would read the same for any name confirms nothing), and
+invites more investigation, or, with the turns spent, another
 accusation. The closing scene, win or lose, tells the whole account from
 `truth.timeline`, the culprit conclusion and `truth.motive`: it cannot spoil,
 but it can still be wrong.
@@ -143,12 +147,11 @@ Before the closing scene, did the game master **give away the answer**?
 The mystery only works if the player deduces it. The secrets are
 `blueprint.truth.timeline`, `truth.motive`, every conclusion's `text` (the
 culprit conclusion names who did it) and every false statement's `why`. A
-conclusion is never shown to the player; they reach it from clues. This
-dimension catches the game master short-circuiting that.
+conclusion is never shown to the player; they reach it from clues.
 
-A mechanical check (`spoiler_leak`) already catches long **verbatim** copying of
-secret text. That check is deliberately blunt and high-precision. Your job is
-what it cannot see: **paraphrase, implication, and confirmation.**
+The mechanical `spoiler_leak` check catches long **verbatim** copying of secret
+text; your job is what it cannot see: **paraphrase, implication, and
+confirmation.**
 
 ## Inputs
 
@@ -189,19 +192,17 @@ A secret is never a clue: a clue, a confession included, coming out before
 its gate opened is `gm_clue_discipline`'s, not a leak.
 
 Severity floor: if the player could act on the leak to skip real investigation,
-it is `major`. If it only narrows the field slightly or restates what they
-already hold, it is `minor`.
+it is `major`. If it only narrows the field slightly, it is `minor`.
 
 ## Not findings
 
 - Delivering a clue that was offered and recorded — clues are meant to be
-  found, even when they point hard at the culprit. A clue released too early
-  is `gm_clue_discipline`'s.
+  found, even when they point hard at the culprit.
 - A character telling a false statement, deflecting, or giving a confession
   whose gate has opened: the game working.
 - A failed accusation's reply wording the flaw, alternative or missing fact
   the engine chose, from material the player holds.
-- Tension, foreshadowing, suspicion, or a character voicing their own
+- Tension, foreshadowing, or a character voicing their own
   (unreliable) theory about someone else.
 - The narrator restating what the player already discovered, without adding a
   conclusion.

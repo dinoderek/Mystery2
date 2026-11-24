@@ -13,12 +13,11 @@ Before the closing scene, did the game master **give away the answer**?
 The mystery only works if the player deduces it. The secrets are
 `blueprint.truth.timeline`, `truth.motive`, every conclusion's `text` (the
 culprit conclusion names who did it) and every false statement's `why`. A
-conclusion is never shown to the player; they reach it from clues. This
-dimension catches the game master short-circuiting that.
+conclusion is never shown to the player; they reach it from clues.
 
-A mechanical check (`spoiler_leak`) already catches long **verbatim** copying of
-secret text. That check is deliberately blunt and high-precision. Your job is
-what it cannot see: **paraphrase, implication, and confirmation.**
+The mechanical `spoiler_leak` check catches long **verbatim** copying of secret
+text; your job is what it cannot see: **paraphrase, implication, and
+confirmation.**
 
 ## Inputs
 
@@ -59,19 +58,17 @@ A secret is never a clue: a clue, a confession included, coming out before
 its gate opened is `gm_clue_discipline`'s, not a leak.
 
 Severity floor: if the player could act on the leak to skip real investigation,
-it is `major`. If it only narrows the field slightly or restates what they
-already hold, it is `minor`.
+it is `major`. If it only narrows the field slightly, it is `minor`.
 
 ## Not findings
 
 - Delivering a clue that was offered and recorded — clues are meant to be
-  found, even when they point hard at the culprit. A clue released too early
-  is `gm_clue_discipline`'s.
+  found, even when they point hard at the culprit.
 - A character telling a false statement, deflecting, or giving a confession
   whose gate has opened: the game working.
 - A failed accusation's reply wording the flaw, alternative or missing fact
   the engine chose, from material the player holds.
-- Tension, foreshadowing, suspicion, or a character voicing their own
+- Tension, foreshadowing, or a character voicing their own
   (unreliable) theory about someone else.
 - The narrator restating what the player already discovered, without adding a
   conclusion.

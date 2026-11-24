@@ -40,7 +40,9 @@ back no longer stands.
 
 A search gives at most one clue: from the spot its words name or, naming
 none, the room or a visible spot they plainly mean. A spot with
-`revealed_by` is hidden: it cannot be found before that clue is held.
+`revealed_by` is hidden: it cannot be found before that clue is held, and the
+narrator is not told of it, so a search there that plainly finds nothing is
+correct.
 
 Each character (`blueprint.characters`) has a `personality`, a `demeanor` line
 per stance, `appearance`, and `knows`: true facts shared when asked, never
@@ -48,7 +50,8 @@ clues. `blueprint.conclusions` are rules over clues, never shown to the player;
 `blueprint.truth` (`timeline`, `motive`) is what really happened.
 
 The engine, not the narrator, decides what each turn may give, and refuses a
-reveal its state did not offer: judge the narration against what was offered
+reveal its state did not offer (a replayed reply's ids are the narrator's own
+report): judge the narration against what was offered
 and recorded. The engine decides the accusation: naming the true culprit wins
 with their confession held (their gated true statements the culprit
 conclusion names), or with the culprit conclusion holding on clues
@@ -58,7 +61,8 @@ kind the engine chose: a flaw (held clearing clues, or retracted statements and
 their speaker; flaws come first), an alternative (naming only the people
 supplied), or a missing fact type, with a lead while turns remain. It reveals
 no unseen clue or truth, never identifies the culprit or confirms the accused
-name, and invites more investigation, or, with the turns spent, another
+name (warmth that would read the same for any name confirms nothing), and
+invites more investigation, or, with the turns spent, another
 accusation. The closing scene, win or lose, tells the whole account from
 `truth.timeline`, the culprit conclusion and `truth.motive`: it cannot spoil,
 but it can still be wrong.
@@ -175,7 +179,8 @@ For character turns (`graph_talk`, `talk_end`):
   the third person; pronouns follow `sex`.
 - **Earned**: a gated clue comes only once its gate opened (the preamble's
   rule; `docs/ai-runtime.md`, "Earned, not free"). The player's words decide
-  use; holding, a mere mention, naming the culprit or insisting is not use.
+  use; holding, naming a clue without its point, naming the culprit or
+  insisting is not use.
   `major`: a concession beyond the opened gates; a statement taken back
   without the clue whose `takes_back` names it, or a concession reversed;
   going back on an earlier line.

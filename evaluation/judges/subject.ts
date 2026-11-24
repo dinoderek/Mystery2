@@ -140,8 +140,9 @@ export function projectTraceSubject(reconstructedTurns: readonly TraceTurnLike[]
 
 // A runtime response carries the model's clue decisions in two different
 // shapes, and the judge needs the same list from either:
-//   - cli narrator:     response.raw is the role-output JSON itself
-//                       (revealed_clue_ids for talk, revealed_clue_id for search)
+//   - cli narrator:     response.raw is the role-output JSON itself (a talk
+//                       reply's opened, answered and notebook; a search's
+//                       revealed_clue_id)
 //   - server narrator:  response.raw is the endpoint body, which returns the
 //                       clue OBJECTS the server accepted as `revealed_clues`
 // Note the asymmetry this exposes: the endpoint list is post-validation (the
@@ -221,6 +222,7 @@ export function projectInteractionSubject(
 ): JudgeSubject {
   const given = interaction.given ?? {};
   const context = historyTurns(given.history);
+  const held = new Set(context.flatMap((turn) => turn.revealed_clue_ids));
   const action = interaction.action ?? {};
   const response = interaction.response ?? {};
 
@@ -232,7 +234,8 @@ export function projectInteractionSubject(
     character_id: action.character_id ?? given.talk_character_id ?? null,
     player_input: action.player_input ?? action.player_reasoning ?? null,
     search_query: action.search_query ?? null,
-    revealed_clue_ids: revealedClueIdsFromResponse(response),
+    // A clue the player already held is recall, which the engine drops from a turn's record.
+    revealed_clue_ids: revealedClueIdsFromResponse(response).filter((id) => !held.has(id)),
     ...notebookField(notebookFromResponse(response)),
     narration: response.narration_text ?? "",
     is_accusation_phase: isAccusationPhase,

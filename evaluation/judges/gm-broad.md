@@ -45,7 +45,8 @@ For character turns (`graph_talk`, `talk_end`):
   the third person; pronouns follow `sex`.
 - **Earned**: a gated clue comes only once its gate opened (the preamble's
   rule; `docs/ai-runtime.md`, "Earned, not free"). The player's words decide
-  use; holding, a mere mention, naming the culprit or insisting is not use.
+  use; holding, naming a clue without its point, naming the culprit or
+  insisting is not use.
   `major`: a concession beyond the opened gates; a statement taken back
   without the clue whose `takes_back` names it, or a concession reversed;
   going back on an earlier line.

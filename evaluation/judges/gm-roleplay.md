@@ -50,8 +50,8 @@ Walk the judged turns in order. For each, apply the checks that fit its
    gated clue only once its gate opened, by the preamble's rule
    (`docs/ai-runtime.md`, "Earned, not free"). The player's words decide
    whether a clue was used: its point made and aimed at this character, so
-   they could fairly react as if just shown it. Holding or mentioning a clue
-   is not use, nor is naming the character culprit, insisting, or a case
+   they could fairly react as if just shown it. Holding a clue, or naming it
+   without making its point, is not use, nor is naming the character culprit, insisting, or a case
    built on other clues.
    - `unearned`: a concession or crack beyond what the opened gates give.
      `major`. (A gated clue itself coming out early, the confession included,
@@ -98,8 +98,8 @@ Walk the judged turns in order. For each, apply the checks that fit its
 - A clue given up on a believable bluff stating what the missing clue proves,
   where the gate has `use` and is not `physical`. Rewarding good roleplay is
   intended.
-- Register that is plainer than you would write it. Judge fidelity to the
-  authored character, not literary quality.
+- Plain register. Judge fidelity to the authored character, not literary
+  quality.
 
 ## Output
 

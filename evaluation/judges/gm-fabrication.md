@@ -48,8 +48,9 @@ an invention.
    test is: **could a player act on this?**
    - **People** (`kind: "person"`) — no character the case lacks; no character
      placed where the case contradicts; no weighty invented relationship.
-   - **Places and objects** (`kind: "place"` / `"object"`) — a room the player
-     could investigate, or a searchable object, that the case lacks. Moving
+   - **Places and objects** (`kind: "place"` / `"object"`) — a room or
+     searchable object the case lacks, or an object moved from where the case
+     or earlier narration put it. Moving
      the investigator when the turn moved no one (only a `move` or `ambience`
      does), or putting them inside or outside against the location's `facts`
      ("You walk back out into the rain" from a warm bakery), is `place`.
@@ -70,8 +71,6 @@ an invention.
    one of earlier narration is `major` even when what it contradicts is
    scenery, since the player can no longer trust what they were shown.
    Embellishment that strays past the text but leads nowhere is `minor`.
-6. Tie each finding to a turn `sequence`, quote the span, and name the case
-   fact it invents or contradicts.
 
 Do not penalize player-facing uncertainty, declining to reveal, or a
 character's authored false statement.

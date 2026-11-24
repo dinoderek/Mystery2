@@ -23,7 +23,9 @@ import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import type { GameState } from "../../../packages/shared/src/mystery-api-contracts.ts";
+import { validateClueGraph } from "../../../packages/shared/src/clue-graph-validator.ts";
 import { resolveBinding } from "../../../evaluation/core/config.ts";
+import { loadJudge } from "../../../evaluation/core/judge-loader.ts";
 import type { Result } from "../../../evaluation/core/result.ts";
 import { judgeTurnCommand } from "../../../evaluation/runtime/judge-turn.ts";
 import { gradeGame } from "../../../evaluation/playtest/lib/judge.ts";
@@ -37,6 +39,7 @@ import {
   verdictFile,
   type PromptParts,
 } from "./eval-snapshot-store.ts";
+import { EVERY_RULE, PROMPT_RULES, RETIRED, RULES } from "./judge-prompt-rules.ts";
 import { makeClueGraphRawTrace } from "./trace-fixtures.ts";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -52,7 +55,7 @@ const CASE_JUDGES = ["cg_soundness", "cg_truth_agreement", "cg_character_groundi
 const GM_JUDGES = ["gm_roleplay", "gm_clue_discipline", "gm_fabrication", "gm_spoiler"];
 // Candidates run only when named, so each harness runs them apart from its default battery.
 const GM_CANDIDATES = ["gm_broad"];
-/** A clue-graph game's judges carry format guidance, so every game-master judge is kept for it too. */
+/** Every game-master judge, the candidate included, is kept for a clue-graph game. */
 const GRAPH_JUDGES = [...GM_JUDGES, ...GM_CANDIDATES];
 const PERSONAS = listPersonas() as string[];
 
@@ -267,8 +270,8 @@ async function runTurnCase(
 
 /**
  * A clue-graph game on both harnesses: the trace harness on a played greenhouse
- * game and `judge turn` on one conversation turn of it, so the graph guidance
- * each judge is handed shows in its prompts.
+ * game and `judge turn` on one conversation turn of it, so what each
+ * game-master judge is sent on either shows in its prompts.
  */
 async function runClueGraphHarnesses(answersFile: string) {
   const dir = path.join(scratch, "clue-graph");
@@ -540,6 +543,54 @@ describe("evaluation verdict snapshots", () => {
     const verdict = verdicts.get(name);
     if (verdict === undefined) throw new Error(`${name} reached no verdicts`);
     expectStored(verdictFile(name), `${withoutScratch(verdict)}\n`);
+  });
+});
+
+/** Each game-master judge's prompt as each harness sent it: the trace's, the replayed turn's and the failed accusation's. */
+const SENT_TO_GM: [string, string][] = [
+  ...GRAPH_JUDGES.flatMap((id): [string, string][] => [[`trace-clue-graph.${id}`, id], [`runtime-clue-graph.${id}`, id]]),
+  ["runtime-clue-graph-accusation.gm_spoiler", "gm_spoiler"],
+];
+const RETIRED_SUBJECT_FIELDS = ["recorded_use", "revealed_off_script"];
+
+// What the stored bytes above mean, held apart from them: re-recording the
+// snapshots cannot bring back the retired case format, the `format_guidance`
+// key or the world view in place of the case.
+describe("what the game-master judges are sent", () => {
+  function sent(key: string): PromptParts {
+    const parts = prompts.get(key);
+    if (!parts) throw new Error(`${key} was not composed`);
+    return parts;
+  }
+
+  it.each(SENT_TO_GM)("%s states the clue-graph rules and none of the retired format's", async (key, id) => {
+    const { system } = sent(key);
+    const definition = await loadJudge(id);
+    const head = `${definition.preamble}\n\n---\n\n`;
+    expect(system.startsWith(`${head}${definition.text}`)).toBe(true);
+    expect(EVERY_RULE.filter((rule) => !RULES[rule].test(system))).toEqual([]);
+    // The brief, not only the preamble, states the rules it judges by.
+    const brief = system.slice(head.length, head.length + definition.text.length);
+    const own = PROMPT_RULES[path.relative(REPO_ROOT, definition.filePath ?? "")] ?? [];
+    expect(own.length).toBeGreaterThan(0);
+    expect(own.filter((rule) => !RULES[rule].test(brief))).toEqual([]);
+    expect(RETIRED.filter((term) => term.test(system)).map(String)).toEqual([]);
+  });
+
+  it.each(SENT_TO_GM)("%s is sent the clue-graph case and a subject without the retired fields", (key, id) => {
+    const { user } = sent(key);
+    const message = JSON.parse(user);
+    expect(Object.keys(message)).toEqual(["dimension_id", "context", "blueprint", "subject"]);
+    expect(message.dimension_id).toBe(id);
+    // The case itself, as the game validates it, not the world view built from it.
+    const greenhouse = validateClueGraph(JSON.parse(fs.readFileSync(path.join(REPO_ROOT, "blueprints", "clue-graph", "greenhouse-prizewinner.json"), "utf8")));
+    expect(message.blueprint).toEqual(greenhouse);
+    expect(message.blueprint.metadata.target_age).toBe(10);
+    expect(message.subject.turns.length).toBeGreaterThan(0);
+    for (const turn of message.subject.turns) {
+      expect(RETIRED_SUBJECT_FIELDS.filter((field) => field in turn), `turn ${turn.sequence}`).toEqual([]);
+    }
+    expect(user).not.toMatch(/format_guidance|recorded_use|revealed_off_script/);
   });
 });
 

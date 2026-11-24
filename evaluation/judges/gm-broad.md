@@ -78,9 +78,9 @@ held. Each is `major`:
   back, or its `use` clues not used and its `line` not taken (`after` alone
   opens on a plain ask); a bluff opens a `use` gate unless it is
   `physical`, whose `use` clues must be held;
-- a hidden spot's clue before its `revealed_by` clue is held; a search giving
-  more than one clue, or a find matching no evidence clue of the spot or
-  room searched;
+- an `asked` clue given unasked; a hidden spot's clue before its `revealed_by`
+  clue is held; a search giving more than one clue, or a find matching no
+  evidence clue of the spot or room searched;
 - a character delivering a clue whose `source` is someone or somewhere else.
 
 An earned clue asked for and withheld without a fictional reason is `minor`
@@ -121,7 +121,7 @@ phrasing where the child cannot tell what they are being told. Stretch words
 within the allowance are fine. Judge language complexity only.
 
 `major`: a turn that, as a whole, is not comfortable to read at the target
-age. `minor`: an isolated overshoot in an otherwise readable turn.
+age. `minor`: an isolated overshoot.
 
 ## Output
 

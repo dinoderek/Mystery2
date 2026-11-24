@@ -131,7 +131,7 @@ const RETIRED: readonly RegExp[] = [
   /format_guidance/,
   /agenda/i,
   /trigger/i,
-  /three (separate )?visits/i,
+  /three[- ](separate )?visits?/i,
   /stated_alibi/,
   /flavor_knowledge/,
   /is_culprit/,

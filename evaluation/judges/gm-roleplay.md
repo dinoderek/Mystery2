@@ -82,8 +82,8 @@ Walk the judged turns in order. For each, apply the checks that fit its
 1. The player is addressed as **"you"**, the investigator, in the present tense.
 2. Tone is warm, playful, curious — a cozy children's mystery, never scary or
    gory.
-3. Game mechanics never surface: no clue ids, no roles, no JSON, no prompts, no
-   no mention of being an AI. Any of these is `major`.
+3. Game mechanics never surface: no clue ids, no roles, no JSON, no prompts,
+   no mention of being an AI. Any of these is `major` (`narrator_voice`).
 4. Any character quoted inside narrator prose still obeys the character rules
    above.
 
@@ -98,7 +98,7 @@ Walk the judged turns in order. For each, apply the checks that fit its
 - A clue given up on a believable bluff stating what the missing clue proves,
   where the gate has `use` and is not `physical`. Rewarding good roleplay is
   intended.
-- Register that is simply plainer than you would write it. Judge fidelity to the
+- Register that is plainer than you would write it. Judge fidelity to the
   authored character, not literary quality.
 
 ## Output

@@ -122,6 +122,21 @@ describe("revealedClueIdsFromResponse", () => {
     ]);
   });
 
+  it("reads a clue-graph talk reply's openings and answers, and what came out with them", () => {
+    // First words and riding tells come out whatever the reply lists; only its notebook lines name them.
+    const raw = {
+      opened: ["toby_blames_mia"],
+      answered: ["toby_no_key"],
+      notebook: [
+        { id: "toby_blames_mia", line: "Toby says it could have been Mia." },
+        { id: "toby_no_key", line: "Toby says he has not seen the key." },
+        { id: "react_toby_sweeping", line: "Toby keeps sweeping the same spot." },
+      ],
+    };
+    expect(revealedClueIdsFromResponse({ raw })).toEqual(["toby_blames_mia", "toby_no_key", "react_toby_sweeping"]);
+    expect(revealedClueIdsFromResponse({ raw: { opened: [], answered: [], notebook: [{ id: "toby_alibi", line: "Toby says he was home." }] } })).toEqual(["toby_alibi"]);
+  });
+
   it("is empty when the turn revealed nothing", () => {
     expect(revealedClueIdsFromResponse({ raw: { narration: "…" } })).toEqual([]);
     expect(revealedClueIdsFromResponse({ raw: { revealed_clue_id: null } })).toEqual([]);

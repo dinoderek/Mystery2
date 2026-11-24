@@ -159,9 +159,14 @@ export function revealedClueIdsFromResponse(response: InteractionLike["response"
   if (Array.isArray(raw.revealed_clue_ids)) {
     return raw.revealed_clue_ids.filter((id): id is string => typeof id === "string");
   }
-  // A clue-graph talk reply: the gates it opened and the questions it answered.
+  // A clue-graph talk reply: the gates it opened, the questions it answered,
+  // and what the engine brings out with them whatever the reply lists (first
+  // words, riding tells), which only its notebook lines name.
   if (Array.isArray(raw.opened) || Array.isArray(raw.answered)) {
-    return [...readStringArray(raw, "opened"), ...readStringArray(raw, "answered")];
+    const lines = Array.isArray(raw.notebook)
+      ? raw.notebook.flatMap((entry: { id?: unknown } | null) => (typeof entry?.id === "string" ? [entry.id] : []))
+      : [];
+    return [...new Set([...readStringArray(raw, "opened"), ...readStringArray(raw, "answered"), ...lines])];
   }
   if (typeof raw.revealed_clue_id === "string") return [raw.revealed_clue_id];
   return [];

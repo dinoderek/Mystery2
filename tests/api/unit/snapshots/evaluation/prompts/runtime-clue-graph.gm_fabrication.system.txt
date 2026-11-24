@@ -87,8 +87,8 @@ Each turn carries:
   `graph_accusation_round` (a failed accusation's reply) or `graph_ending` (the
   closing scene). A replayed interaction's context turns, and a trace turn
   saved without its graph role, are labelled by their event: `talk_start` (a
-  greeting), `talk_conversation` (a line), `accusation_judge` (a reply), or
-  the same names as above.
+  greeting), `talk_conversation` (a line), `accusation_judge` (a reply, or the
+  closing scene), or the same names as above.
 - `location_id`, `character_id` — the scope the turn happened in.
 - `player_input`, `search_query` — what the player typed. A talk turn with no
   `player_input` is a greeting: it gives the first words and opens nothing.

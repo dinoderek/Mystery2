@@ -45,19 +45,21 @@ line and `revealed_clue_ids`.
 3. **Distorted clue** (`kind: "distorted"`). The narration delivers a clue
    whose meaning differs from its `fact` — a different object, place, person,
    time or implication — or its notebook line drops or changes a name, time,
-   place or object of that fact. `major`. A faithful rewording for a child's
-   reading level is correct.
+   place or object of that fact. `major`. A faithful rewording for a child is
+   correct.
 4. **Gate violation** (`kind: "premature"`). A clue delivered before it could
    be reached. Check a gated clue against its `gate`: every `after` clue is
    out (in `prior_revealed_clue_ids`, or taken back by a clue that is), and
    the player used its `use` clues (`any` or `all`) on this character or took
    its `line` of questioning; a gate with only `after` opens on a plain ask.
+   An `asked` clue given when the line did not ask about its `about` is early.
    Use is what the player's words do, not what they hold (`docs/ai-runtime.md`,
    "Earned, not free"). A bluff stating a clue's substance opens a gate with
    `use` that is not `physical`: that release is earned. A `physical` gate
    needs its `use` clues in `prior_revealed_clue_ids`; released on a bluff,
-   `major`. A hidden spot's clue, or the spot named at all, is early before
-   its `revealed_by` clue is held. Any early release is `major`.
+   `major`. A hidden spot named, or its clue found, before its `revealed_by`
+   clue is out (held, or recorded that turn) is early. Any early release is
+   `major`.
 5. **Wrong owner** (`kind: "wrong_source"`). A character delivers a clue whose
    `source` is another character or a location, with nothing (their own clues
    or `knows`) giving them that knowledge. `major`.
@@ -65,8 +67,8 @@ line and `revealed_clue_ids`.
    an `asked` clue's `about`, or opened a gate, but the
    character neither delivers the clue nor gives a reason the fiction
    supports. `minor` on a single turn; `major` when the same clue is
-   stonewalled across repeated, differently-approached asks, which is how a
-   mystery becomes unsolvable. A clue shown and dodged opens on a follow-up.
+   stonewalled across repeated, differently-approached asks. A clue shown and
+   dodged opens on a follow-up.
 
 A `search` turn reveals at most one clue: an evidence clue of the spot its
 words name or, naming none, of the room or a visible spot they plainly mean;

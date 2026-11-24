@@ -26,7 +26,7 @@ stating its `fact`:
 A character's clue is reached one way (`reached.by`): `first_meeting`, in the
 greeting; `seen`, a tell shown `with` one of their statements or when its
 `subject` comes up; `asked` `about` something, once a `prompted_by` clue is
-held; or `gated`. A `gate` opens when its `after` clues are out, and its `use`
+held (`"opening"` is held from the start); or `gated`. A `gate` opens when its `after` clues are out, and its `use`
 clues (`any` or `all`) are used on the character or its `line` of questioning
 is taken. With `after` alone, it comes when asked once those are out (a
 confession). Using a clue means showing it or making its point at the
@@ -88,8 +88,7 @@ Each turn carries:
 - `location_id`, `character_id` — the scope the turn happened in.
 - `player_input`, `search_query` — what the player typed. A talk turn with no
   `player_input` is a greeting: it gives the first words and opens nothing.
-- `narration` — what the game master actually said. This is the text under
-  judgment.
+- `narration` — what the game master actually said. The text under judgment.
 - `revealed_clue_ids` — the clues the engine recorded this turn.
 - `notebook` — for each clue recorded, tells included, the line the narrator
   wrote for the player to keep.
@@ -123,4 +122,4 @@ Each turn carries:
 7. If you genuinely cannot judge — the subject or case is malformed beyond
    use — set `verdict` to `"fail"` and explain in `reasoning`.
 
-Be terse in `reasoning` and `why` fields. Long explanations dilute the signal.
+Be terse in `reasoning` and `why` fields.

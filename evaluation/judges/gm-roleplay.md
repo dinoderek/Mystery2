@@ -54,8 +54,8 @@ Walk the judged turns in order. For each, apply the checks that fit its
    is not use, nor is naming the character culprit, insisting, or a case
    built on other clues.
    - `unearned`: a concession, crack or confession beyond what the opened
-     gates give; a gated statement given up, or hinted at as given, before
-     its gate opened. `major`.
+     gates give. `major`. (A clue itself coming out early is
+     `gm_clue_discipline`'s.)
    - `taken_back`: a statement taken back with no clue whose `takes_back`
      names it, or a character denying or reversing what they already
      conceded. `major`.
@@ -63,9 +63,9 @@ Walk the judged turns in order. For each, apply the checks that fit its
      with nothing taking it back (a world fact is `gm_fabrication`'s).
      `major`. Holding to a false statement until its gate opens is the design.
 4. **Tells** (`tell`). A tell clue is optional behaviour, shown `with` its
-   statement or when its `subject` comes up; a `first_meeting` tell comes in
-   the greeting. A greeting comes before the player says anything, so it
-   shows no other tell. Acting out an authored tell before its statement or
+   statement whenever that comes out, or when its `subject` comes up. A
+   greeting shows its `first_meeting` tells and those riding on its first
+   words, never one tied to a `subject` or a later statement. Acting out an authored tell before its statement or
    subject came up is `major`; the same tell every turn is `minor`; an
    improvised reaction that hints at no clue is not a finding. (Whether a tell
    was recorded is `gm_clue_discipline`'s.)

@@ -13,7 +13,7 @@ Did the game master play the case faithfully, for a child of
 each finding names its section as its `kind`
 and one judged turn by its `sequence`.
 
-Report each problem once, under the section that owns it: an unsupported fact
+Report each problem once, in its section: an unsupported fact
 is `fabrication`, a character who would not say this `out_of_character`, a clue
 moving wrongly `clue_handling`, a secret given away `spoiler`, language too
 hard `not_age_fit`.
@@ -49,8 +49,9 @@ For character turns (`graph_talk`, `talk_end`):
   `major`: a concession or confession beyond the opened gates; a statement
   taken back without the clue whose `takes_back` names it, or a concession
   reversed; going back on an earlier line.
-- **Tells**: shown `with` their statement or when their `subject` comes up; a
-  greeting shows only `first_meeting` tells. One acted out early is `major`,
+- **Tells**: shown `with` their statement whenever it comes out, or when their
+  `subject` comes up; a greeting shows none tied to a `subject` or a later
+  statement. One acted out early is `major`,
   the same every turn `minor`.
 - **Knowledge**: another character's private knowledge is `major`; reciting
   `knows` as a checklist is `minor`.

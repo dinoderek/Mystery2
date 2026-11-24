@@ -93,13 +93,13 @@ const RULES: Record<string, RegExp> = {
   "gates with a line": /`line`/,
   "physical gates": /`physical`/,
   bluffs: /bluff/i,
-  tells: /\btells?\b/,
+  tells: /\*\*tells?\*\*|`seen`/i,
   "statements taken back": /taken back|`takes_back`/,
   knows: /`knows`/,
   "notebook lines": /notebook/,
   searches: /\bsearch/i,
   "hidden spots": /`revealed_by`/,
-  "the accusation rule": /accusation/,
+  "the accusation rule": /`graph_accusation_round`|decides the accusation/,
   "the closing scene": /closing scene/,
 };
 const EVERY_RULE = Object.keys(RULES);

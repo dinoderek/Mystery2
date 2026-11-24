@@ -26,7 +26,7 @@ stating its `fact`:
 A character's clue is reached one way (`reached.by`): `first_meeting`, in the
 greeting; `seen`, a tell shown `with` one of their statements or when its
 `subject` comes up; `asked` `about` something, once a `prompted_by` clue is
-held; or `gated`. A `gate` opens when its `after` clues are out, and its `use`
+held (`"opening"` is held from the start); or `gated`. A `gate` opens when its `after` clues are out, and its `use`
 clues (`any` or `all`) are used on the character or its `line` of questioning
 is taken. With `after` alone, it comes when asked once those are out (a
 confession). Using a clue means showing it or making its point at the
@@ -88,8 +88,7 @@ Each turn carries:
 - `location_id`, `character_id` — the scope the turn happened in.
 - `player_input`, `search_query` — what the player typed. A talk turn with no
   `player_input` is a greeting: it gives the first words and opens nothing.
-- `narration` — what the game master actually said. This is the text under
-  judgment.
+- `narration` — what the game master actually said. The text under judgment.
 - `revealed_clue_ids` — the clues the engine recorded this turn.
 - `notebook` — for each clue recorded, tells included, the line the narrator
   wrote for the player to keep.
@@ -123,7 +122,7 @@ Each turn carries:
 7. If you genuinely cannot judge — the subject or case is malformed beyond
    use — set `verdict` to `"fail"` and explain in `reasoning`.
 
-Be terse in `reasoning` and `why` fields. Long explanations dilute the signal.
+Be terse in `reasoning` and `why` fields.
 
 
 ---
@@ -184,8 +183,8 @@ Walk the judged turns in order. For each, apply the checks that fit its
    is not use, nor is naming the character culprit, insisting, or a case
    built on other clues.
    - `unearned`: a concession, crack or confession beyond what the opened
-     gates give; a gated statement given up, or hinted at as given, before
-     its gate opened. `major`.
+     gates give. `major`. (A clue itself coming out early is
+     `gm_clue_discipline`'s.)
    - `taken_back`: a statement taken back with no clue whose `takes_back`
      names it, or a character denying or reversing what they already
      conceded. `major`.
@@ -193,9 +192,9 @@ Walk the judged turns in order. For each, apply the checks that fit its
      with nothing taking it back (a world fact is `gm_fabrication`'s).
      `major`. Holding to a false statement until its gate opens is the design.
 4. **Tells** (`tell`). A tell clue is optional behaviour, shown `with` its
-   statement or when its `subject` comes up; a `first_meeting` tell comes in
-   the greeting. A greeting comes before the player says anything, so it
-   shows no other tell. Acting out an authored tell before its statement or
+   statement whenever that comes out, or when its `subject` comes up. A
+   greeting shows its `first_meeting` tells and those riding on its first
+   words, never one tied to a `subject` or a later statement. Acting out an authored tell before its statement or
    subject came up is `major`; the same tell every turn is `minor`; an
    improvised reaction that hints at no clue is not a finding. (Whether a tell
    was recorded is `gm_clue_discipline`'s.)

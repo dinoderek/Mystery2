@@ -55,8 +55,8 @@ after reading it that they should have had to earn.
    failed accusation's reply confirming the accused name or the culprit.
    `major`.
 
-A character stating a secret before the gate of the clue that holds it opened
-is a leak, under the kind it gives away.
+A secret is never a clue: a clue, a confession included, coming out before
+its gate opened is `gm_clue_discipline`'s, not a leak.
 
 Severity floor: if the player could act on the leak to skip real investigation,
 it is `major`. If it only narrows the field slightly or restates what they

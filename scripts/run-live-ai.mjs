@@ -49,6 +49,7 @@ try {
       ...plan.suiteEnv,
       MYSTERY_TEST_API_URL: server.url,
       MYSTERY_TEST_CONFIG_ROOT: server.configRoot,
+      MYSTERY_TEST_BUILD_DIR: server.buildDir,
     },
     true,
   );

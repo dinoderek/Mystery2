@@ -3,8 +3,8 @@
 // The suite's server runs on a config root with no `ai.json`, and a server
 // reads that file only when it starts. A test that needs a server started with
 // AIs of its own, or one whose start must fail, starts it here, on the build the
-// suite already made (building again would replace the files the suite's server
-// runs from) and a free port. It is mock-only in the same way as the suite's.
+// suite already made (`MYSTERY_TEST_BUILD_DIR`) and a free port. It is
+// mock-only in the same way as the suite's.
 
 import fs from 'node:fs';
 import net from 'node:net';

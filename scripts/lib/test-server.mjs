@@ -51,16 +51,44 @@ export function createTestConfigRoot() {
 }
 
 /**
- * Builds the app with the run's config root as its own, then fails if the
- * build opened a database there. The build prerenders pages through the server
- * hook, so a build that opens the engine would otherwise create or migrate the
- * developer's database (`database/main` in the main checkout) on every run.
+ * A folder for one server's build, inside `web/` so the server's imports still
+ * resolve against the checkout's `node_modules`. Each build gets its own, so
+ * two runs building from one checkout at once never write the same files, and
+ * a rebuild never replaces the files a running server is serving.
  */
-export function buildWebApp(repoRoot, configRoot, run = spawnSync) {
+export function createBuildDir(repoRoot) {
+  const parent = path.join(repoRoot, "web", ".test-builds");
+  fs.mkdirSync(parent, { recursive: true });
+  return fs.mkdtempSync(path.join(parent, "build-"));
+}
+
+/** The server entry point of the build in `buildDir`. */
+export function buildEntry(buildDir) {
+  return path.join(buildDir, "build", "index.js");
+}
+
+/**
+ * Builds the app into `buildDir` with the run's config root as its own, then
+ * fails if the build opened a database there. The build prerenders pages
+ * through the server hook, so a build that opens the engine would otherwise
+ * create or migrate the developer's database (`database/main` in the main
+ * checkout) on every run.
+ */
+export function buildWebApp(repoRoot, configRoot, buildDir, run = spawnSync) {
+  // `web/tsconfig.json` extends the sync output in `web/.svelte-kit/`, which a
+  // build into a folder of its own does not write, so a checkout that has never
+  // synced is synced first. Only then: a sync that rewrote the file while
+  // another run's build read it would break that build.
+  if (!fs.existsSync(path.join(repoRoot, "web", ".svelte-kit", "tsconfig.json"))) {
+    const sync = run(npmBin, ["-w", "web", "exec", "--", "svelte-kit", "sync"], { cwd: repoRoot, stdio: "inherit" });
+    if ((sync.status ?? 1) !== 0) {
+      throw new Error("Failed to sync the web app (svelte-kit sync) for the test run");
+    }
+  }
   const result = run(npmBin, ["-w", "web", "run", "build"], {
     cwd: repoRoot,
     stdio: "inherit",
-    env: { ...process.env, MYSTERY_CONFIG_ROOT: configRoot },
+    env: { ...process.env, MYSTERY_CONFIG_ROOT: configRoot, MYSTERY_WEB_BUILD_DIR: buildDir },
   });
   if ((result.status ?? 1) !== 0) {
     throw new Error("Failed to build the web app for the test run");
@@ -73,6 +101,22 @@ export function buildWebApp(repoRoot, configRoot, run = spawnSync) {
         "(`$app/environment`), and nothing else may open it at import time.",
     );
   }
+}
+
+/**
+ * The build a `build: false` server runs: the suite's, which the suite runner
+ * passes its suites in `MYSTERY_TEST_BUILD_DIR`.
+ */
+export function suiteBuildDir(env = process.env) {
+  const dir = env.MYSTERY_TEST_BUILD_DIR;
+  if (!dir || !fs.existsSync(buildEntry(dir))) {
+    throw new Error(
+      "A server started with `build: false` runs the suite's build, and there is none: " +
+        "MYSTERY_TEST_BUILD_DIR must name the build folder of the suite's server " +
+        "(scripts/run-mock-tests.mjs sets it).",
+    );
+  }
+  return dir;
 }
 
 /** Resolves true if anything accepts a connection on the port right now. */
@@ -161,11 +205,11 @@ export function testServerEnv(processEnv, env, { port, host, configRoot, repoRoo
 
 /**
  * Builds and starts the server. Returns its URL, the config root its database
- * lives in, that database's file, and a `stop()` that shuts it down and removes
- * the root.
+ * lives in, that database's file, the folder of the build it runs, and a
+ * `stop()` that shuts it down and removes the root and the build.
  *
- * `build: false` starts the build that is already there, for a caller that
- * runs beside a server of its own and must not rebuild under it. `seed` is
+ * `build: false` starts the suite's build instead (`suiteBuildDir`), for a
+ * caller inside a suite that has a server of its own; it is not removed. `seed` is
  * given the config root before the server starts, for a caller that needs a
  * file there the server reads at start, such as `ai.json`; without one the root
  * has none, and mock is the only AI.
@@ -173,18 +217,28 @@ export function testServerEnv(processEnv, env, { port, host, configRoot, repoRoo
 export async function startTestServer({ repoRoot, port, env = {}, build = true, seed }) {
   const configRoot = createTestConfigRoot();
   const host = "127.0.0.1";
+  let buildDir = null;
+  const removeOwnFiles = () => {
+    fs.rmSync(configRoot, { recursive: true, force: true });
+    if (build && buildDir) fs.rmSync(buildDir, { recursive: true, force: true });
+  };
   try {
     seed?.(configRoot);
-    if (build) buildWebApp(repoRoot, configRoot);
+    if (build) {
+      buildDir = createBuildDir(repoRoot);
+      buildWebApp(repoRoot, configRoot, buildDir);
+    } else {
+      buildDir = suiteBuildDir();
+    }
     await assertPortIsFree(host, port);
   } catch (error) {
-    fs.rmSync(configRoot, { recursive: true, force: true });
+    removeOwnFiles();
     throw error;
   }
 
   const url = `http://${host}:${port}`;
 
-  const child = spawn("node", ["build/index.js"], {
+  const child = spawn("node", [buildEntry(buildDir)], {
     cwd: path.join(repoRoot, "web"),
     stdio: ["ignore", "inherit", "inherit"],
     env: testServerEnv(process.env, env, { port, host, configRoot, repoRoot }),
@@ -210,7 +264,7 @@ export async function startTestServer({ repoRoot, port, env = {}, build = true, 
       await exit;
       clearTimeout(kill);
     }
-    fs.rmSync(configRoot, { recursive: true, force: true });
+    removeOwnFiles();
   };
 
   try {
@@ -223,5 +277,5 @@ export async function startTestServer({ repoRoot, port, env = {}, build = true, 
   // The config root stands in for the repo root here, with no environment,
   // which is how the server resolved it.
   const databaseFile = resolveDatabaseFile(TEST_DATABASE, configRoot, {});
-  return { url, configRoot, databaseFile, stop };
+  return { url, configRoot, databaseFile, buildDir, stop };
 }

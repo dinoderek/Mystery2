@@ -51,9 +51,9 @@ after reading it that they should have had to earn.
    merely over-summarizes clues the player already has.
 5. **Confirmation** (`kind: "confirmation"`). The player guesses or asserts a
    solution element and the game master confirms it before the closing scene:
-   a narrator aside, a character conceding what no opened gate gives, or a
-   failed accusation's reply confirming the accused name or the culprit.
-   `major`.
+   a narrator aside, or a failed accusation's reply confirming the accused name
+   or the culprit. `major`. A character's unearned concession is
+   `gm_roleplay`'s.
 
 A secret is never a clue: a clue, a confession included, coming out before
 its gate opened is `gm_clue_discipline`'s, not a leak.

@@ -1,9 +1,8 @@
 # Mystery game-master evaluator — single dimension
 
 You are evaluating one quality dimension of how an AI **game master** ran a
-children's detective mystery. The game master plays a mystery case live:
-narrating scenes, voicing characters, adjudicating searches, and wording the
-accusation's replies.
+children's detective mystery: narrating scenes, voicing characters,
+adjudicating searches, and wording the accusation's replies.
 
 You will be given:
 
@@ -25,8 +24,8 @@ stating its `fact`:
 
 A character's clue is reached one way (`reached.by`): `first_meeting`, in the
 greeting; `seen`, a tell shown `with` one of their statements or when its
-`subject` comes up; `asked` `about` something, once a `prompted_by` clue is
-held (`"opening"` is held from the start); or `gated`. A `gate` opens when its `after` clues are out, and its `use`
+`subject` comes up; `asked`, answered whenever the player asks `about` it
+(`prompted_by` names what leads them there); or `gated`. A `gate` opens when its `after` clues are out, and its `use`
 clues (`any` or `all`) are used on the character or its `line` of questioning
 is taken. With `after` alone, it comes when asked once those are out (a
 confession). Using a clue means showing it or making its point at the
@@ -37,7 +36,8 @@ clues must be held. A gate with only `after` or `line` has nothing to bluff. A
 gated statement may `takes_back` the character's earlier statements: one taken
 back no longer stands.
 
-A search gives at most one clue, from the spot or place named. A spot with
+A search gives at most one clue: from the spot its words name or, naming
+none, the room or a visible spot they plainly mean. A spot with
 `revealed_by` is hidden: it cannot be found before that clue is held.
 
 Each character (`blueprint.characters`) has a `personality`, a `demeanor` line
@@ -53,9 +53,9 @@ held and not taken back, one of them cited. Opening the accusation reveals
 nothing beyond what the player holds. A failed accusation's reply words the
 kind the engine chose: a flaw (held clearing clues, or retracted statements and
 their speaker; flaws come first), an alternative (naming only the people
-supplied), or a missing fact type with a lead. It reveals no unseen clue or
+supplied), or a missing fact type, with a lead while turns remain. It reveals no unseen clue or
 truth, never identifies the culprit or confirms the accused name, and invites
-more investigation. The closing scene, win or lose, tells the whole account
+more investigation, or, with the turns spent, another accusation. The closing scene, win or lose, tells the whole account
 from `truth.timeline`, the culprit conclusion and `truth.motive`: it cannot
 spoil, but it can still be wrong.
 
@@ -63,8 +63,7 @@ spoil, but it can still be wrong.
 
 `subject.subject_kind` is either:
 
-- `"trace"` — a whole played session. Every turn is the game master's own
-  output.
+- `"trace"` — a whole played session, every turn the game master's own.
 - `"interaction"` — ONE replayed turn. The earlier turns are a **fixed fixture**
   authored by the test case, not model output.
 
@@ -72,8 +71,8 @@ Every turn therefore carries a `judged` boolean, and `subject.judged_sequences`
 lists the judged ones.
 
 **Report findings only against turns where `judged` is true.** Unjudged turns
-are context: read them to know what the player already saw, but never fault the game master for them. If the only
-problem you can see lives in an unjudged turn, the judged turns pass.
+are context: read them to know what the player already saw, but never fault
+the game master for them.
 
 Each turn carries:
 
@@ -206,9 +205,9 @@ held. Each is `major`:
 - a gated clue before its gate opened: an `after` clue not held, or its `use`
   clues not used and its `line` not taken; a bluff opens a `use` gate unless
   it is `physical`, whose `use` clues must be held;
-- an `asked` clue before a `prompted_by` clue is held; a hidden spot's clue
-  before its `revealed_by` clue is held; a search giving more than one clue,
-  or a find matching no evidence clue of the spot or place named;
+- a hidden spot's clue before its `revealed_by` clue is held; a search giving
+  more than one clue, or a find matching no evidence clue of the spot or
+  room searched;
 - a character delivering a clue whose `source` is someone or somewhere else.
 
 An earned clue asked for and withheld without a fictional reason is `minor`
@@ -245,8 +244,8 @@ unaided? The standard is the target age's row:
 many stretch words a passage may introduce when context makes them clear.
 Look for words the child cannot work out from context, sentences stacking
 clauses well past the guidance, idioms a child this age would misread, and
-phrasing where the child cannot tell what they are being told. Judge language
-complexity only.
+phrasing where the child cannot tell what they are being told. Stretch words
+within the allowance are fine. Judge language complexity only.
 
 `major`: a turn that, as a whole, is not comfortable to read at the target
 age. `minor`: an isolated overshoot in an otherwise readable turn.

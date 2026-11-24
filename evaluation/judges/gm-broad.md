@@ -77,9 +77,9 @@ held. Each is `major`:
 - a gated clue before its gate opened: an `after` clue not held, or its `use`
   clues not used and its `line` not taken; a bluff opens a `use` gate unless
   it is `physical`, whose `use` clues must be held;
-- an `asked` clue before a `prompted_by` clue is held; a hidden spot's clue
-  before its `revealed_by` clue is held; a search giving more than one clue,
-  or a find matching no evidence clue of the spot or place named;
+- a hidden spot's clue before its `revealed_by` clue is held; a search giving
+  more than one clue, or a find matching no evidence clue of the spot or
+  room searched;
 - a character delivering a clue whose `source` is someone or somewhere else.
 
 An earned clue asked for and withheld without a fictional reason is `minor`
@@ -116,8 +116,8 @@ unaided? The standard is the target age's row:
 many stretch words a passage may introduce when context makes them clear.
 Look for words the child cannot work out from context, sentences stacking
 clauses well past the guidance, idioms a child this age would misread, and
-phrasing where the child cannot tell what they are being told. Judge language
-complexity only.
+phrasing where the child cannot tell what they are being told. Stretch words
+within the allowance are fine. Judge language complexity only.
 
 `major`: a turn that, as a whole, is not comfortable to read at the target
 age. `minor`: an isolated overshoot in an otherwise readable turn.

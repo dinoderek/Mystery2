@@ -54,9 +54,8 @@ line and `revealed_clue_ids`.
    player's words do, not what they hold (`docs/ai-runtime.md`, "Earned, not
    free"). A bluff stating a clue's substance opens a gate with `use` that is
    not `physical`: that release is earned. A `physical` gate needs its `use`
-   clues in `prior_revealed_clue_ids`; released on a bluff, `major`. An
-   `asked` clue is early before a `prompted_by` clue is held. On a search, a
-   hidden spot's clue is early before its `revealed_by` clue is held. Any
+   clues in `prior_revealed_clue_ids`; released on a bluff, `major`. On a
+   search, a hidden spot's clue is early before its `revealed_by` clue is held. Any
    early release is `major`.
 5. **Wrong owner** (`kind: "wrong_source"`). A character delivers a clue whose
    `source` is another character or a location, with nothing (their own clues
@@ -68,8 +67,9 @@ line and `revealed_clue_ids`.
    stonewalled across repeated, differently-approached asks, which is how a
    mystery becomes unsolvable. A clue shown and dodged opens on a follow-up.
 
-A `search` turn reveals at most one clue: an evidence clue of the spot or
-place named, or none. Narrating a find that matches no evidence clue there is
+A `search` turn reveals at most one clue: an evidence clue of the spot its
+words name or, naming none, of the room or a visible spot they plainly mean;
+or none. Narrating a find that matches no evidence clue there is
 a `major` `unsupported` finding; a search that finds nothing adds nothing.
 
 ## Not findings

@@ -112,8 +112,7 @@ opened only when the state offered it.
 
 The turn judges' preamble states this rule from the case's gates, and
 `gm_roleplay`, `gm_clue_discipline` and `gm_broad` judge by it from the
-player's words, never from a reported use
-([`evaluation/judges/README.md`](../evaluation/judges/README.md)).
+player's words ([`evaluation/judges/README.md`](../evaluation/judges/README.md)).
 
 Case facts and revealed clues reach the browser as structured fields, never
 parsed from narration.

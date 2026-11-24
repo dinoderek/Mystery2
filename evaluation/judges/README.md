@@ -41,7 +41,7 @@ input, narration and revealed clues. Two fields carry the design:
   has no fixture, so every turn is judged.
 - `prior_revealed_clue_ids`. A gate is judged against what the player
   demonstrably had, from either subject; whether a clue was used is judged from
-  the player's words, not a recorded flag
+  the player's words
   ([`docs/ai-runtime.md`](../../docs/ai-runtime.md), "Earned, not free").
 
 A turn also carries `notebook`, the line saved for each clue.

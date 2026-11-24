@@ -3,11 +3,11 @@
 // folder of its own, so neither build breaks the other, nor the suite's
 // server, which is running from its own build meanwhile.
 
-import { spawn } from "node:child_process";
+import { spawn, type ChildProcess } from "node:child_process";
 import fs from "node:fs";
 import net from "node:net";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 const REPO_ROOT = path.resolve(__dirname, "../../..");
 const TEST_SERVER = path.join(REPO_ROOT, "scripts/lib/test-server.mjs");
@@ -43,16 +43,26 @@ await server.stop();
 console.log(${JSON.stringify(MARKER)} + JSON.stringify({ buildDir: server.buildDir, page, api }));
 `;
 
+// A child still running when its test ends (a timeout) is killed, so it leaves
+// no server or build behind.
+const children = new Set<ChildProcess>();
+afterEach(() => {
+  for (const child of children) child.kill("SIGKILL");
+  children.clear();
+});
+
 async function startInChild(): Promise<Started> {
   const port = await freePort();
   const child = spawn(process.execPath, ["--input-type=module", "-e", CHILD], {
     env: { ...process.env, TEST_SERVER, REPO_ROOT, PORT: String(port) },
     stdio: ["ignore", "pipe", "pipe"],
   });
+  children.add(child);
   let output = "";
   child.stdout.on("data", (chunk) => (output += chunk));
   child.stderr.on("data", (chunk) => (output += chunk));
   const code = await new Promise<number | null>((resolve) => child.on("exit", resolve));
+  children.delete(child);
   const line = output.split("\n").find((l) => l.startsWith(MARKER));
   if (code !== 0 || !line) throw new Error(`Test server child exited ${code}:\n${output}`);
   return JSON.parse(line.slice(MARKER.length)) as Started;

@@ -27,6 +27,7 @@ const READY_TIMEOUT_MS = 30_000;
 const READY_POLL_MS = 100;
 const PORT_PROBE_TIMEOUT_MS = 1_000;
 const STOP_GRACE_MS = 5_000;
+const STALE_BUILD_MS = 24 * 60 * 60 * 1000;
 
 const MOCK_CASE_SCENES = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../tests/testkit/src/mock-case-scenes.json");
 
@@ -55,10 +56,21 @@ export function createTestConfigRoot() {
  * resolve against the checkout's `node_modules`. Each build gets its own, so
  * two runs building from one checkout at once never write the same files, and
  * a rebuild never replaces the files a running server is serving.
+ *
+ * `stop()` removes the folder, but an interrupted run never calls it, so
+ * folders older than STALE_BUILD_MS are removed here first. No test server
+ * runs that long.
  */
 export function createBuildDir(repoRoot) {
+  const now = Date.now();
   const parent = path.join(repoRoot, "web", ".test-builds");
   fs.mkdirSync(parent, { recursive: true });
+  for (const entry of fs.readdirSync(parent, { withFileTypes: true })) {
+    const dir = path.join(parent, entry.name);
+    if (entry.isDirectory() && now - fs.statSync(dir).mtimeMs > STALE_BUILD_MS) {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  }
   return fs.mkdtempSync(path.join(parent, "build-"));
 }
 
@@ -78,7 +90,9 @@ export function buildWebApp(repoRoot, configRoot, buildDir, run = spawnSync) {
   // `web/tsconfig.json` extends the sync output in `web/.svelte-kit/`, which a
   // build into a folder of its own does not write, so a checkout that has never
   // synced is synced first. Only then: a sync that rewrote the file while
-  // another run's build read it would break that build.
+  // another run's build read it would break that build. (Two runs started
+  // together in a never-synced checkout still sync together; `npm ci` syncs
+  // through `prepare`, so only a checkout that skipped it can meet that.)
   if (!fs.existsSync(path.join(repoRoot, "web", ".svelte-kit", "tsconfig.json"))) {
     const sync = run(npmBin, ["-w", "web", "exec", "--", "svelte-kit", "sync"], { cwd: repoRoot, stdio: "inherit" });
     if ((sync.status ?? 1) !== 0) {

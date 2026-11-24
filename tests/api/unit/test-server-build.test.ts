@@ -109,6 +109,20 @@ describe("createBuildDir", () => {
       expect(fs.statSync(dir).isDirectory()).toBe(true);
     }
   });
+
+  it("removes builds an interrupted run left a day ago, and keeps recent ones", () => {
+    const repo = tempRoot();
+    const old = createBuildDir(repo);
+    const recent = createBuildDir(repo);
+    const day = 24 * 60 * 60 * 1000;
+    const stale = new Date(Date.now() - day - 60_000);
+    fs.utimesSync(old, stale, stale);
+
+    createBuildDir(repo);
+
+    expect(fs.existsSync(old)).toBe(false);
+    expect(fs.existsSync(recent)).toBe(true);
+  });
 });
 
 describe("suiteBuildDir", () => {

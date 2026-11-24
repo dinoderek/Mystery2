@@ -26,6 +26,7 @@ import { validateJudgeOutput, validateTurnAgeAnswer } from "../../core/judge-out
 import {
   answerJsonSchema,
   composeJudgeSystemPrompt,
+  composeJudgeUserMessage,
   composeTurnAgeSystemPrompt,
   TURN_AGE_ANSWER_SCHEMA,
 } from "../../core/judge-prompt.ts";
@@ -35,8 +36,7 @@ import type { Verdict } from "../../core/result.ts";
 import { UsageLimitError } from "../../core/errors.ts";
 import { runModel } from "../../core/runner.ts";
 import type { CallMemo } from "../../core/runner.ts";
-import { composeGameMasterUserMessage } from "../../judges/clue-graph-guidance.ts";
-import { resolveVerdict } from "../../judges/index.ts";
+import { judgedCase, resolveVerdict } from "../../judges/index.ts";
 import { projectInteractionSubject } from "../../judges/subject.ts";
 import { readCaseWorld, type BlueprintLike, type JudgeOptions } from "./case.ts";
 import { parseFencedJson } from "./model-json.ts";
@@ -91,7 +91,7 @@ export function buildJudgeUserMessage(judgeId: string, turn: StoredTurn, bluepri
     roleName = actionType;
   }
   const subject = projectInteractionSubject(turn, { roleName, isAccusationPhase: isClosingScene(turn, roleName) });
-  return composeGameMasterUserMessage(judgeId, null, { blueprint, subject });
+  return composeJudgeUserMessage(judgeId, null, { blueprint: judgedCase(blueprint), subject });
 }
 
 /**

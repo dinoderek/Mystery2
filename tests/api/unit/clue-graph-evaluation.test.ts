@@ -1,7 +1,7 @@
 // The evaluation tools reading a clue-graph case (`docs/clue-graph.md`): trace
 // extraction of a game played on the mock, its reconstruction and mechanical
 // checks, the runtime harness's case loading, roles and seeding, self-play's
-// case lookup, and what the game-master judges are told.
+// case lookup, and what the game-master judges are sent.
 
 import fs from "node:fs";
 import os from "node:os";
@@ -13,25 +13,36 @@ import type { EngineContext } from "../../../packages/game-engine/src/context.ts
 import { openDatabase } from "../../../packages/game-engine/src/db/client.ts";
 import { handle as startGame } from "../../../packages/game-engine/src/endpoints/game-start.ts";
 import { playTurn } from "../../../packages/game-engine/src/turn/play-turn.ts";
-import { composeGameMasterUserMessage as composeJudgeUserMessage } from "../../../evaluation/judges/clue-graph-guidance.ts";
+import { composeJudgeUserMessage } from "../../../evaluation/core/judge-prompt.ts";
 import { projectInteractionSubject, projectTraceSubject } from "../../../evaluation/judges/subject.ts";
 import { findBlueprint } from "../../../evaluation/playtest/play.ts";
 import { countBlueprintClues } from "../../../evaluation/playtest/lib/output.ts";
 import { readBlueprint, type TurnCase } from "../../../evaluation/runtime/lib/case.ts";
 import { outputSays } from "../../../evaluation/runtime/lib/expect.ts";
 import { casesFromTrace } from "../../../evaluation/runtime/cases.ts";
+import { buildJudgeUserMessage } from "../../../evaluation/runtime/lib/judges.ts";
 import { buildRoleRequest } from "../../../evaluation/runtime/lib/prompt-build.ts";
 import { getAction, normalizeHistory, resolveRoleName } from "../../../evaluation/runtime/lib/roles.ts";
 import { seedSessionWithHistory } from "../../../evaluation/runtime/lib/seed.ts";
 import { createLocalTraceSource, extractSessionTrace } from "../../../evaluation/trace/lib/datasource.ts";
 import { runTraceMechanicalChecks } from "../../../evaluation/trace/lib/mechanical.ts";
+import { buildGameJudgeUserMessage, prepareGameJudging } from "../../../evaluation/trace/judge-game.ts";
 import { reconstructTrace } from "../../../evaluation/trace/lib/reconstruct.ts";
 import type { RawTrace } from "../../../evaluation/trace/lib/normalize.ts";
+import { validateClueGraph } from "../../../packages/shared/src/clue-graph-validator.ts";
+import { makeTurn } from "./runtime-turn-helpers.ts";
 
 const ROOT = process.cwd();
 const GREENHOUSE_FILE = "blueprints/clue-graph/greenhouse-prizewinner.json";
 const GREENHOUSE_ID = clueGraphCaseId("greenhouse-prizewinner");
 const silent = { log: () => {}, logError: () => {} };
+const GM = ["gm_roleplay", "gm_clue_discipline", "gm_fabrication", "gm_spoiler", "gm_broad"];
+const MESSAGE_KEYS = ["dimension_id", "context", "blueprint", "subject"];
+
+/** The greenhouse case as the game validates it. */
+function greenhouseCase() {
+  return validateClueGraph(JSON.parse(fs.readFileSync(path.join(ROOT, GREENHOUSE_FILE), "utf8")));
+}
 
 const WIN = [
   "search the smashed pumpkin",
@@ -105,6 +116,20 @@ describe("a clue-graph game, extracted and judged", () => {
     expect(trace.blueprint.clue_graph?.locations.greenhouse.name).toBe("The Old Greenhouse");
   });
 
+  it.each(GM)("sends %s the played case itself, at the age the game was narrated for", async (id) => {
+    const gameId = await playOnMock(WIN.slice(0, 1));
+    local.db.prepare("update game_sessions set reading_age = 7 where id = ?").run(gameId);
+    const run = prepareGameJudging(await extract(gameId));
+    const sent = buildGameJudgeUserMessage(id, null, run);
+    const message = JSON.parse(sent);
+    expect(Object.keys(message)).toEqual(MESSAGE_KEYS);
+    const graph = greenhouseCase();
+    expect(graph.metadata.target_age).toBe(10);
+    expect(message.blueprint).toEqual({ ...graph, metadata: { ...graph.metadata, target_age: 7 } });
+    expect(message.blueprint).not.toHaveProperty("world");
+    expect(sent).toBe(composeJudgeUserMessage(id, null, { blueprint: message.blueprint, subject: run.judgeSubject }));
+  });
+
   it("rebuilds each turn's context from the graph and the events, with no errors", async () => {
     const trace = await extract(await playOnMock(WIN));
     const reconstruction = reconstructTrace(trace);
@@ -159,32 +184,18 @@ describe("a clue-graph game, extracted and judged", () => {
   });
 });
 
-describe("what the game-master judges are told", () => {
-  const GM = ["gm_roleplay", "gm_clue_discipline", "gm_fabrication", "gm_spoiler", "gm_broad"];
-
-  it.each(GM)("%s is handed the graph guidance for a clue-graph blueprint", async (id) => {
+describe("what the game-master judges are sent on a replayed turn", () => {
+  it.each(GM)("%s is sent the case file itself, by the composer, with nothing beside it", async (id) => {
     const { blueprint } = await readBlueprint(GREENHOUSE_FILE, ROOT);
-    const message = JSON.parse(composeJudgeUserMessage(id, null, { blueprint, subject: { turns: [] } }));
-    expect(message.format_guidance).toContain("blueprint.clue_graph is the authority");
-    expect(message.format_guidance).toContain("physical");
-    expect(Object.keys(message)).toEqual(["dimension_id", "context", "format_guidance", "blueprint", "subject"]);
-  });
-
-  it("each judge's guidance speaks to its own question", async () => {
-    const { blueprint } = await readBlueprint(GREENHOUSE_FILE, ROOT);
-    const says = (id: string) => JSON.parse(composeJudgeUserMessage(id, null, { blueprint, subject: {} })).format_guidance as string;
-    expect(says("gm_clue_discipline")).toContain("Clue discipline");
-    expect(says("gm_spoiler")).toContain("every false statement's \"why\"");
-    expect(says("gm_fabrication")).toContain("Fabrication");
-    expect(says("gm_roleplay")).toContain("demeanor");
-  });
-
-  it("leaves a blueprint with no graph and every other judge's message as it was", () => {
-    const blueprint = { metadata: { title: "No graph" } };
-    for (const id of GM) {
-      expect(JSON.parse(composeJudgeUserMessage(id, null, { blueprint, subject: {} }))).not.toHaveProperty("format_guidance");
-    }
-    expect(JSON.parse(composeJudgeUserMessage("solve_depth", null, { blueprint: { clue_graph: {} } }))).not.toHaveProperty("format_guidance");
+    const sent = buildJudgeUserMessage(id, makeTurn({ blueprint_path: GREENHOUSE_FILE }), blueprint);
+    const message = JSON.parse(sent);
+    expect(Object.keys(message)).toEqual(MESSAGE_KEYS);
+    // The case, not the world view built from it.
+    expect(message.blueprint).toEqual(greenhouseCase());
+    expect(message.blueprint.clues).toBeDefined();
+    expect(message.blueprint.metadata.target_age).toBe(10);
+    expect(message.blueprint).not.toHaveProperty("world");
+    expect(sent).toBe(composeJudgeUserMessage(id, null, { blueprint: blueprint.clue_graph, subject: message.subject }));
   });
 });
 

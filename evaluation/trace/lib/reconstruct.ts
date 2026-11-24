@@ -19,12 +19,9 @@ import { ACCUSE_BACK, ACCUSE_FAILED } from "../../../packages/game-engine/src/ac
 import {
   EVENT_ROLE,
   LEGACY_ACCUSE_ROUND,
-  offScriptClueIdsForEvent,
   playedEvents,
   notebookLinesForEvent,
   readField,
-  type RecordedUse,
-  recordedUseForEvent,
   revealedClueIdsForEvent,
 } from "../../lib/game-events.ts";
 import type {
@@ -154,10 +151,6 @@ export interface TurnRecord {
   search_query: string | null;
   narration: string;
   revealed_clue_ids: string[];
-  revealed_off_script: string[];
-  // What an ask turn recorded about the character: clues used, the player's
-  // words, new commitments. Null elsewhere, and in games saved before it.
-  recorded_use: RecordedUse | null;
   // A clue-graph turn's saved notebook lines, by clue id; absent elsewhere.
   notebook?: Record<string, string>;
   location_id: string | null;
@@ -270,11 +263,6 @@ export function reconstructTrace(rawTrace: RawTrace): Reconstruction {
       search_query: searchQuery,
       narration: event.narration,
       revealed_clue_ids: revealedClueIdsForEvent(event),
-      // Reveals the game master granted outside the discovery graph. The
-      // clue-discipline judge needs them to tell a declared brilliance bypass
-      // apart from an unearned reveal.
-      revealed_off_script: offScriptClueIdsForEvent(event),
-      recorded_use: recordedUseForEvent(event),
       ...notebookOf(event),
       location_id: locationId,
       character_id: roleName && roleName.startsWith("talk") ? characterId : null,

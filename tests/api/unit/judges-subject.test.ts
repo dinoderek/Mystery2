@@ -42,7 +42,7 @@ function makeInteraction(overrides: Record<string, unknown> = {}) {
     action: { type: "ask", player_input: "Then why are your hands shaking?" },
     response: {
       narration_text: '"They are not!" Alice says, sitting on her hands.',
-      raw: { narration: "…", revealed_clue_ids: ["clue-wrapper"], revealed_off_script: [] },
+      raw: { narration: "…", revealed_clue_ids: ["clue-wrapper"] },
     },
     ...overrides,
   };
@@ -122,6 +122,33 @@ describe("revealedClueIdsFromResponse", () => {
     ]);
   });
 
+  it("reads a clue-graph talk reply's openings and answers, and what came out with them", () => {
+    // First words and riding tells come out whatever the reply lists; only its notebook lines name them.
+    const raw = {
+      opened: ["toby_blames_mia"],
+      answered: ["toby_no_key"],
+      notebook: [
+        { id: "toby_blames_mia", line: "Toby says it could have been Mia." },
+        { id: "toby_no_key", line: "Toby says he has not seen the key." },
+        { id: "react_toby_sweeping", line: "Toby keeps sweeping the same spot." },
+      ],
+    };
+    expect(revealedClueIdsFromResponse({ raw })).toEqual(["toby_blames_mia", "toby_no_key", "react_toby_sweeping"]);
+    expect(revealedClueIdsFromResponse({ raw: { opened: [], answered: [], notebook: [{ id: "toby_alibi", line: "Toby says he was home." }] } })).toEqual(["toby_alibi"]);
+  });
+
+  it("leaves a clue the player already held out of the judged turn's reveals", () => {
+    const interaction = makeInteraction({
+      response: {
+        narration_text: "Alice sighs.",
+        raw: { opened: ["clue-wrapper"], answered: [], notebook: [{ id: "clue-crumb", line: "Crumbs by the jar." }, { id: "clue-wrapper", line: "A wrapper." }] },
+      },
+    });
+    const subject = projectInteractionSubject(interaction, { roleName: "graph_talk" });
+    expect(subject.turns[2].prior_revealed_clue_ids).toEqual(["clue-crumb"]);
+    expect(subject.turns[2].revealed_clue_ids).toEqual(["clue-wrapper"]);
+  });
+
   it("is empty when the turn revealed nothing", () => {
     expect(revealedClueIdsFromResponse({ raw: { narration: "…" } })).toEqual([]);
     expect(revealedClueIdsFromResponse({ raw: { revealed_clue_id: null } })).toEqual([]);
@@ -129,34 +156,40 @@ describe("revealedClueIdsFromResponse", () => {
   });
 });
 
-describe("recorded use in a subject", () => {
-  const USE = { used_clue_ids: ["clue-wrapper"], used_quote: "the wrapper was in your pocket", new_commitments: ["never opened the jar"] };
+describe("what a subject's turn leaves out", () => {
+  // The engine still saves what a talk turn used, and a narrator reply may name
+  // reveals "off script"; neither reaches a judge, which reads the clue graph's
+  // gates against what the player held and said.
+  const SAVED = {
+    used_clue_ids: ["clue-wrapper"],
+    used_quote: "the wrapper was in your pocket",
+    new_commitments: ["never opened the jar"],
+    revealed_off_script: ["clue-wrapper"],
+  };
+  const DROPPED = ["recorded_use", "revealed_off_script", "used_clue_ids", "used_quote", "new_commitments"];
 
-  it("carries what a trace turn recorded, and nothing for a turn that recorded none", () => {
-    const raw = makeRawTrace();
-    const events = raw.events.map((event: { sequence: number; payload?: Record<string, unknown> | null }) =>
-      event.sequence === 4 ? { ...event, payload: { ...event.payload, ...USE } } : event,
+  function expectNoneDropped(turns: readonly object[]) {
+    for (const turn of turns) for (const key of DROPPED) expect(turn, key).not.toHaveProperty(key);
+  }
+
+  it("carries neither recorded use nor off-script reveals from a recorded trace turn", () => {
+    const events = makeRawTrace().events.map((event: { sequence: number; payload?: Record<string, unknown> | null }) =>
+      event.sequence === 4 ? { ...event, payload: { ...event.payload, ...SAVED } } : event,
     );
-    const subject = projectTraceSubject(reconstructTrace(makeRawTrace({ events })).turns);
-    const bySequence = (n: number) => subject.turns.find((t: { sequence: number }) => t.sequence === n);
-    expect(bySequence(4)?.recorded_use).toEqual(USE);
-    // An ask saved before the engine recorded use stays "not recorded", never "used nothing".
-    expect("recorded_use" in (bySequence(2) ?? {})).toBe(false);
+    const reconstructed = reconstructTrace(makeRawTrace({ events })).turns;
+    expectNoneDropped(reconstructed);
+    const subject = projectTraceSubject(reconstructed);
+    expect(subject.turns.some((turn) => turn.sequence === 4)).toBe(true);
+    expectNoneDropped(subject.turns);
   });
 
-  it("reads a replayed history row and the cli narrator's reply the same way", () => {
-    const interaction = makeInteraction({ response: { narration_text: "Alice sighs.", raw: { narration: "…", revealed_clue_ids: [], ...USE } } });
+  it("carries neither from a replayed history row nor from the narrator's reply", () => {
+    const interaction = makeInteraction({ response: { narration_text: "Alice sighs.", raw: { narration: "…", revealed_clue_ids: [], ...SAVED } } });
     const history = interaction.given.history as Array<{ payload: Record<string, unknown> }>;
-    history[1].payload = { ...history[1].payload, used_clue_ids: [], used_quote: null, new_commitments: [] };
-    const subject = projectInteractionSubject(interaction, { roleName: "talk_conversation" });
-    expect(subject.turns[1].recorded_use).toEqual({ used_clue_ids: [], used_quote: null, new_commitments: [] });
-    expect(subject.turns[2].recorded_use).toEqual(USE);
-    expect("recorded_use" in subject.turns[0]).toBe(false);
-  });
-
-  it("records none for a server replay, whose body does not carry the uses", () => {
-    const subject = projectInteractionSubject(makeInteraction({ response: { narration_text: "Alice sighs.", raw: { revealed_clues: [] } } }), { roleName: "talk_conversation" });
-    expect("recorded_use" in subject.turns[2]).toBe(false);
+    history[1].payload = { ...history[1].payload, ...SAVED };
+    const subject = projectInteractionSubject(interaction, { roleName: "graph_talk" });
+    expect(subject.turns).toHaveLength(3);
+    expectNoneDropped(subject.turns);
   });
 });
 

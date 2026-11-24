@@ -15,7 +15,6 @@ export const schema = z.object({
         "culprit",
         "motive",
         "mechanism",
-        "hidden_action",
         "deduction",
         "confirmation",
       ]),

@@ -1,3 +1,5 @@
+import fs from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
 import { loadJudge } from "../../../evaluation/core/judge-loader.ts";
@@ -79,6 +81,109 @@ describe("shared judge definitions", () => {
     // write; blaming the model for them would make every runtime case noisy.
     expect(base).toMatch(/Report findings only against turns where `judged` is true/);
     expect(base).toMatch(/at least one `major` finding/);
+  });
+});
+
+// Each prompt file states the clue-graph rules it judges by
+// (`docs/clue-graph.md`), naming the case's fields, and none of the retired
+// format's. The preamble carries the shared model; `gm_broad` holds every rule.
+const RULES: Record<string, RegExp> = {
+  "gates with after": /`after`/,
+  "gates with use": /`use`/,
+  "gates with a line": /`line`/,
+  "physical gates": /`physical`/,
+  bluffs: /bluff/i,
+  tells: /\*\*tells?\*\*|`seen`/i,
+  "statements taken back": /taken back|`takes_back`/,
+  knows: /`knows`/,
+  "notebook lines": /notebook/,
+  searches: /\bsearch/i,
+  "hidden spots": /`revealed_by`/,
+  "the accusation rule": /`graph_accusation_round`|decides the accusation/,
+  "the closing scene": /closing scene/,
+};
+const EVERY_RULE = Object.keys(RULES);
+const PROMPT_RULES: Record<string, readonly string[]> = {
+  "evaluation/judges/prompts/judge-system.md": EVERY_RULE,
+  "evaluation/judges/gm-broad.md": EVERY_RULE,
+  "evaluation/judges/gm-roleplay.md": ["gates with use", "physical gates", "bluffs", "tells", "statements taken back", "knows"],
+  "evaluation/judges/gm-clue-discipline.md": [
+    "gates with after",
+    "gates with use",
+    "gates with a line",
+    "physical gates",
+    "bluffs",
+    "notebook lines",
+    "searches",
+    "hidden spots",
+  ],
+  "evaluation/judges/gm-fabrication.md": ["knows", "notebook lines", "searches", "the closing scene"],
+  "evaluation/judges/gm-spoiler.md": ["the accusation rule", "the closing scene"],
+};
+const RETIRED: readonly RegExp[] = [
+  /requires/,
+  /ground_truth/,
+  /actual_actions/,
+  /solution_paths/,
+  /recorded_use/,
+  /revealed_off_script/,
+  /off.script/i,
+  /format_guidance/,
+  /agenda/i,
+  /trigger/i,
+  /three[- ](separate )?visits?/i,
+  /stated_alibi/,
+  /flavor_knowledge/,
+  /is_culprit/,
+  /sub_locations/,
+  /initial_attitude/,
+  /\bworld\.(characters|locations)/,
+  /\bV2\b/i,
+];
+
+describe("the prompt files", () => {
+  it("are the six the game-master judges are composed from", async () => {
+    const files = new Set<string>();
+    for (const id of [...JUDGE_IDS, "gm_broad"]) {
+      const { entry } = await loadJudge(id);
+      if (entry.prompt.kind !== "files") throw new Error(`${id} has no prompt files`);
+      files.add(entry.prompt.brief).add(entry.prompt.preamble);
+    }
+    expect([...files].sort()).toEqual(Object.keys(PROMPT_RULES).sort());
+  });
+
+  it.each(Object.entries(PROMPT_RULES))("%s names the clue-graph rules it judges by", (file, rules) => {
+    const text = fs.readFileSync(file, "utf8");
+    expect(rules.filter((rule) => !RULES[rule].test(text))).toEqual([]);
+  });
+
+  it.each(Object.keys(PROMPT_RULES))("%s names no retired field or rule", (file) => {
+    const text = fs.readFileSync(file, "utf8");
+    expect(RETIRED.filter((term) => term.test(text)).map(String)).toEqual([]);
+  });
+});
+
+describe("finding kinds", () => {
+  // No clue-graph rule produces these: `unearned`, `taken_back` and `mechanism` cover their cases.
+  const DROPPED = ["agenda", "alibi", "hidden_action"];
+  // Every other kind each schema took before.
+  const KEPT: Record<string, string[]> = {
+    gm_roleplay: ["persona", "voice", "unearned", "taken_back", "contradiction", "tell", "knowledge", "narrator_voice"],
+    gm_clue_discipline: ["unrecorded", "unsupported", "distorted", "premature", "wrong_source", "withheld"],
+    gm_fabrication: ["person", "place", "object", "event", "contradiction"],
+    gm_spoiler: ["culprit", "motive", "mechanism", "deduction", "confirmation"],
+    gm_broad: ["spoiler", "fabrication", "clue_handling", "out_of_character", "not_age_fit"],
+  };
+
+  it.each(Object.entries(KEPT))("%s rejects agenda, alibi and hidden_action, and takes every other kind it did", async (id, kept) => {
+    const schema = (await loadJudge(id)).schema as unknown as JudgeSchema;
+    const answer = (kind: string) => ({
+      findings: [{ sequence: 1, severity: "minor", kind, quote: "q", why: "w" }],
+      verdict: "pass",
+      reasoning: "r",
+    });
+    expect(kept.filter((kind) => !schema.safeParse(answer(kind)).success)).toEqual([]);
+    expect(DROPPED.filter((kind) => schema.safeParse(answer(kind)).success)).toEqual([]);
   });
 });
 

@@ -26,7 +26,7 @@ import type { EvalCommand, EvalContext } from "../core/dispatch.ts";
 import { UsageError, UsageLimitError } from "../core/errors.ts";
 import { loadCheck, loadJudge } from "../core/judge-loader.ts";
 import { validateJudgeOutput } from "../core/judge-output.ts";
-import { composeJudgeSystemPrompt } from "../core/judge-prompt.ts";
+import { composeJudgeSystemPrompt, composeJudgeUserMessage } from "../core/judge-prompt.ts";
 import { mapPool } from "../core/pool.ts";
 import { formatDuration, startDigest } from "../core/progress.ts";
 import { checksFor, judgesFor } from "../core/registry.ts";
@@ -37,8 +37,7 @@ import { runModel } from "../core/runner.ts";
 import type { CallMemo } from "../core/runner.ts";
 import { RESULT_SCHEMA_VERSION, summarize, writeResult } from "../core/result.ts";
 import type { RunError, Verdict } from "../core/result.ts";
-import { composeGameMasterUserMessage } from "../judges/clue-graph-guidance.ts";
-import { majorFindingsVerdict } from "../judges/index.ts";
+import { judgedCase, majorFindingsVerdict } from "../judges/index.ts";
 import { projectTraceSubject } from "../judges/subject.ts";
 import { createLocalTraceSource, extractSessionTrace } from "./lib/datasource.ts";
 import type { TraceCheckResult } from "./lib/mechanical.ts";
@@ -222,6 +221,19 @@ export function prepareGameJudging(trace: unknown): Pick<JudgeRun, "trace" | "ju
   return { trace: raw, judgeSubject: projectTraceSubject(reconstructTrace(raw).turns) };
 }
 
+/**
+ * A game judge's user message: the case itself, at the age the game was
+ * narrated for, and the subject. Exported for tests and for anyone wanting to
+ * see exactly what a judge is handed.
+ */
+export function buildGameJudgeUserMessage(
+  id: string,
+  context: Record<string, unknown> | null,
+  run: Pick<JudgeRun, "trace" | "judgeSubject">,
+): string {
+  return composeJudgeUserMessage(id, context, { blueprint: judgedCase(run.trace.blueprint), subject: run.judgeSubject });
+}
+
 /** One game judge: its prompt, one model call, and the verdict its rule reaches. */
 export async function judgeOne(entry: JudgeEntry, run: JudgeRun): Promise<{ verdict: Verdict; ms: number }> {
   const startedAt = performance.now();
@@ -233,10 +245,7 @@ export async function judgeOne(entry: JudgeEntry, run: JudgeRun): Promise<{ verd
       binding: run.binding,
       step: `judge-${entry.id}`,
       systemPrompt: composeJudgeSystemPrompt(definition, context as Record<string, unknown> | null),
-      userMessage: composeGameMasterUserMessage(entry.id, context as Record<string, unknown> | null, {
-        blueprint: run.trace.blueprint,
-        subject: run.judgeSubject,
-      }),
+      userMessage: buildGameJudgeUserMessage(entry.id, context as Record<string, unknown> | null, run),
       logDir: run.logDir,
       memo: run.memo,
       parse: (answer) => {

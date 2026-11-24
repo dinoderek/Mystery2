@@ -1,4 +1,4 @@
-// Shared game-master judge layer: the verdict rule.
+// Shared game-master judge layer: the case the judges read, and the verdict rule.
 //
 // The game-master judges (briefs and schemas in this directory, listed in
 // evaluation/core/registry.ts) are subject-agnostic: they are written against
@@ -6,6 +6,21 @@
 // grade a whole played game (evaluation/trace) and a single replayed turn
 // (evaluation/runtime). Their registry entries declare the `major_findings`
 // verdict rule that resolveVerdict applies.
+
+import type { ClueGraphCase } from "../../packages/shared/src/clue-graph-schema.ts";
+
+/**
+ * The case a game-master judge reads as its `blueprint`: the clue-graph case
+ * itself, not the world view built from it, at the reading age the turns were
+ * narrated for. Each harness reads that age into its world view's
+ * `metadata.target_age` (a trace from the game, a replay from the case), so
+ * both send the judges the same thing.
+ */
+export function judgedCase(world: { clue_graph: ClueGraphCase; metadata?: { target_age?: number } }): ClueGraphCase {
+  const graph = world.clue_graph;
+  const age = world.metadata?.target_age ?? graph.metadata.target_age;
+  return graph.metadata.target_age === age ? graph : { ...graph, metadata: { ...graph.metadata, target_age: age } };
+}
 
 /**
  * The shared pass/fail rule, applied to every judge in this battery: a verdict

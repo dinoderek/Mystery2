@@ -37,7 +37,7 @@ export default [
   line(HALE_WITH_BENCH, "Look at the toppled bench. Its rotten leg snapped clean through, and its heavy pots crashed down onto Bertha.", {
     id: "hale-either-bench-alone",
     group: "shown",
-    // The bench shown, with nothing kind said and no accident suggested: the show route alone.
+    // The bench shown, with nothing kind said and the word accident never used: as near the show route alone as the bench allows, since its fact itself points to an accident.
     expect: ADMISSION,
   }),
   line(HALE_WITH_BENCH, "I promise I will be fair to Toby. He is a kind boy.", {

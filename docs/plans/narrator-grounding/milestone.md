@@ -21,8 +21,7 @@ premature disclosures and omissions despite strong isolated scores.
 - Preserve existing model calls and output contracts, including the two-stage
   clue-graph accusation. Additional verification calls, source-map fields,
   fine-tuning and model routing require a later measured experiment.
-- Adapt Anthropic's guidance in the shared
-  [runtime policy](../../ai-runtime.md#grounding-policy).
+- Adapt Anthropic's guidance in the [N2 candidate](https://github.com/dinoderek/Mystery2/pull/342).
 - Stable policy belongs in the high-priority message. Player words, history
   and case material remain separated as data. Never promote interpolated player
   text into higher-priority instructions or widen a role's private context.

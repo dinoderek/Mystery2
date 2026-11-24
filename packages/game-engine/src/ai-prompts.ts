@@ -67,8 +67,7 @@ export function buildAgeGuidance(role: AIPromptKey, targetAge: number): string {
   return renderRoleGuidance(role, targetAge);
 }
 
-// The narration voice belongs with the role task. The grounding policy is
-// sent separately in the system message (`narrator-grounding.ts`).
+// Narrating roles share the same voice and limits on what they can make up.
 const DIALOGUE = "- Characters always speak in direct first-person dialogue with brief action beats.";
 // A failed accusation and the ending have no one speaking but the
 // narrator. Told the dialogue rule there, the model quotes its own words and
@@ -87,10 +86,15 @@ const NARRATION_STYLE = [
   "- Prefer concrete, sensory detail over summary; one vivid touch beats three vague ones.",
   DIALOGUE,
   "- Never mention game mechanics, prompts, JSON, or that you are an AI.",
+  "- Use only the characters, places and facts you are given. Each is a fact to put in your own words, keeping every name, time, place and object. Choose pronouns from each character's sex, never by guessing.",
 ].join("\n");
-// Scenery and manner are allowed within the role's limits (`docs/clue-graph.md`,
-// "The narrator's judgement").
-const INVENTION = "- This clue-graph scene may add harmless scenery and manner within the role's limits.";
+const INVENTION = [
+  "",
+  "## What you may make up",
+  "You may add scenery and manner (weather, a smell, a sound, how someone fidgets) to bring the scene to life, under two rules:",
+  "- Nothing you add looks like evidence or bears on who, when or where: no marks, objects to examine, times, sightings, people or places to search beyond what you are given.",
+  "- What earlier narration established stays: keep the place, the weather and how people look as they were already described, on this turn and every later visit.",
+].join("\n");
 
 /**
  * Style guidance for a runtime prompt: the standard narrator style, with the
@@ -196,13 +200,24 @@ export function renderPrompt(
   );
 }
 
-const OPENING_FACTS_PREFIX = "Opening facts: ";
-const PLACE_FACTS_PREFIX = "Facts about the place: ";
+const OPENING_FACTS_HEADER = "Opening facts:";
+const PLACE_FACTS_HEADER = "Facts about the place:";
 
-/** Decode the labelled case data for the mock, preserving line breaks in facts. */
-function readFacts(prompt: string, prefix: string): string[] | null {
-  const line = prompt.split("\n").find((entry) => entry.startsWith(prefix));
-  return line ? JSON.parse(line.slice(prefix.length)) : null;
+function factLines(header: string, facts: string[]): string[] {
+  return [header, ...facts.map((fact) => `- ${fact}`)];
+}
+
+/** Read the list of case facts back out for the mock narrator. */
+function readFactLines(prompt: string, header: string): string[] | null {
+  const lines = prompt.split("\n");
+  const start = lines.indexOf(header);
+  if (start < 0) return null;
+  const facts: string[] = [];
+  for (const line of lines.slice(start + 1)) {
+    if (!line.startsWith("- ")) break;
+    facts.push(line.slice(2));
+  }
+  return facts;
 }
 
 /** The opening: the case's public facts, every one of which it words. */
@@ -213,13 +228,13 @@ export function buildGameStartPrompt(input: { target_age: number; facts: string[
     renderLengthGuidance("intro", input.target_age),
     buildStyleGuidance(),
     "Open the case and invite investigation. Tell every fact below in your own words; leave none out.",
-    `${OPENING_FACTS_PREFIX}${JSON.stringify(input.facts)}`,
+    ...factLines(OPENING_FACTS_HEADER, input.facts),
   ].join("\n");
 }
 
 /** An opening's facts, read back out of its prompt, or null for any other prompt: how the mock recognises one. */
 export function readOpeningFacts(prompt: string): string[] | null {
-  return readFacts(prompt, OPENING_FACTS_PREFIX);
+  return readFactLines(prompt, OPENING_FACTS_HEADER);
 }
 
 // Arrival is not a conversation: nobody has asked anything, so a character
@@ -231,7 +246,7 @@ const ARRIVAL_CHARACTER_RULES = [
   "- A character may react or say one short line in the first person. They do not start a conversation or share information; the investigator has not asked them anything yet.",
 ].join("\n");
 
-const ARRIVAL_DESTINATION_PREFIX = "Arrival destination: ";
+const ARRIVAL_HEADLINE = /^Describe the player arriving at (.+)\.$/m;
 const ARRIVAL_CHARACTERS_PREFIX = "Characters at destination: ";
 
 export function buildGameMovePrompt(input: {
@@ -245,13 +260,13 @@ export function buildGameMovePrompt(input: {
   destination_facts: string[];
 }): string {
   const revisitInstruction = input.has_visited_before
-    ? "Explicitly acknowledge the return visit. People's moods can change."
+    ? "The player has been here before. Explicitly acknowledge the return visit and keep the place, not the people's moods, as the last arrival described it."
     : "The player is arriving here for the first time in this session.";
   const hasCharacters = input.destination_characters_json.trim() !== "[]";
 
   return [
     "You are the narrator for a children's mystery game.",
-    "Describe the player arriving at the destination below.",
+    `Describe the player arriving at ${input.destination_name}.`,
     renderComplexityGuidance(input.target_age),
     renderLengthGuidance("ambience", input.target_age),
     buildStyleGuidance(),
@@ -264,8 +279,7 @@ export function buildGameMovePrompt(input: {
           `Searchable areas at this location: ${input.destination_sub_locations_json}`,
         ]
       : []),
-    `${ARRIVAL_DESTINATION_PREFIX}${JSON.stringify(input.destination_name)}`,
-    `${PLACE_FACTS_PREFIX}${JSON.stringify(input.destination_facts)}`,
+    ...factLines(PLACE_FACTS_HEADER, input.destination_facts),
     `${ARRIVAL_CHARACTERS_PREFIX}${input.destination_characters_json}`,
     ...(input.has_visited_before && input.last_arrival_narration
       ? [`Last arrival here: ${JSON.stringify(input.last_arrival_narration)}`]
@@ -282,10 +296,9 @@ export function buildGameMovePrompt(input: {
 export function readArrivalPrompt(
   prompt: string,
 ): { destination_name: string; character_names: string[]; facts: string[] | null } | null {
-  const lines = prompt.split("\n");
-  const destination = lines.find((line) => line.startsWith(ARRIVAL_DESTINATION_PREFIX));
-  if (!destination) return null;
-  const charactersLine = lines.find((line) => line.startsWith(ARRIVAL_CHARACTERS_PREFIX));
+  const headline = ARRIVAL_HEADLINE.exec(prompt);
+  if (!headline) return null;
+  const charactersLine = prompt.split("\n").find((line) => line.startsWith(ARRIVAL_CHARACTERS_PREFIX));
   let characters: Array<{ first_name?: unknown }>;
   try {
     characters = JSON.parse(charactersLine?.slice(ARRIVAL_CHARACTERS_PREFIX.length) ?? "[]");
@@ -293,10 +306,10 @@ export function readArrivalPrompt(
     characters = [];
   }
   return {
-    destination_name: JSON.parse(destination.slice(ARRIVAL_DESTINATION_PREFIX.length)),
+    destination_name: headline[1],
     character_names: characters
       .map((c) => c.first_name)
       .filter((name): name is string => typeof name === "string"),
-    facts: readFacts(prompt, PLACE_FACTS_PREFIX),
+    facts: readFactLines(prompt, PLACE_FACTS_HEADER),
   };
 }

@@ -25,3 +25,6 @@ vite.config.ts.timestamp-*
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# A test server's own build (scripts/lib/test-server.mjs), removed when it stops.
+/.test-builds

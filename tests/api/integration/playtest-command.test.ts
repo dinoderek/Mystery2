@@ -2,8 +2,8 @@
 // mock case through a server of the command's own on a temporary database,
 // the mock narrator narrates, a stub judge grades. No model is called.
 //
-// It starts the build the suite already made, because building again would
-// replace the files the suite's own server is running from.
+// It starts the build the suite already made (`MYSTERY_TEST_BUILD_DIR`) rather
+// than paying for a build of its own.
 
 import fs from 'node:fs';
 import os from 'node:os';

@@ -15,8 +15,8 @@ runs only those named.
 **Every step runs in every environment.** The gate needs nothing beyond this
 repo. No suite may be reported skipped; one that cannot start is a bug.
 
-Integration and API E2E run against the production build, so a bundling failure
-shows; the build fails its step if it opens a database.
+Integration and API E2E run against a production build (each test server's own,
+in `web/.test-builds/`), so a bundling failure shows; the build fails if it opens a database.
 
 **Every test file runs in the gate.** Each step names its `roots` and `files`
 pattern; keep them in step with the runner's include (and the `e2e-browser`

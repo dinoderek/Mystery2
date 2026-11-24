@@ -4,8 +4,8 @@
 // case's fixed history into that root's database and plays the case's line on
 // the mock provider. This proves the one thing a unit test cannot: that the
 // session was seeded in the temporary database, and that no database outside
-// that root was opened. It starts the build the suite already made, because
-// building again would replace the files the suite's own server is running from.
+// that root was opened. It starts the build the suite already made
+// (`MYSTERY_TEST_BUILD_DIR`) rather than paying for a build of its own.
 
 import fs from "node:fs";
 import os from "node:os";

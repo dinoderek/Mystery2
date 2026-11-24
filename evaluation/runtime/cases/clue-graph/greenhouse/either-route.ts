@@ -7,7 +7,7 @@
 // reported gate id and its notebook line (`expect.whole_fact`).
 
 import { lineCase, type Step } from "../support/play.ts";
-import { HALE_GREETS, SEARCHED } from "./talk.ts";
+import { HALE_GREETS, HALE_SHOWN_ROTA, SEARCHED } from "./talk.ts";
 
 const GREENHOUSE = "blueprints/clue-graph/greenhouse-prizewinner.json";
 const line = (steps: Step[], say: string, labels: Parameters<typeof lineCase>[3]) => lineCase(GREENHOUSE, steps, say, labels);
@@ -20,11 +20,7 @@ const HALE_WITH_BENCH: Step[] = [
   { search: "the watering rota on the door" },
   { move: "greenhouse" },
   HALE_GREETS,
-  {
-    say: "On the rota, Toby's name is crossed out and MIA is written over it in sparkly purple pen. Who wrote that?",
-    reply: "Ms. Hale sighs. \"I changed the rota myself on Wednesday. My pen ran dry, so I borrowed Mia's sparkly purple one. Toby took it well enough. He loves Bertha. He would never hurt her.\" She twists the gardening gloves in her apron pocket. \"I won't have him made into a villain.\"",
-    opened: ["clue_hale_borrowed_pen", "hale_toby_fine"],
-  },
+  HALE_SHOWN_ROTA,
 ];
 
 const ADMISSION = {

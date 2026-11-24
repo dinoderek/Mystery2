@@ -14,35 +14,13 @@ game's `target_age`; it imports no database, so the eval harness calls it too
 `buildNarrationMessages` construct the system/user pair for live OpenRouter,
 live Claude CLI and replay, including plain `intro` and `ambience`. Provider
 schemas and calls, including both accusation stages, remain distinct from
-messages. The system message carries the output instruction and grounding
-policy. The user message carries the role task and its data. Structured calls
-read player words and history from context, with any current-visit excerpt
-labelled as data. Openings and arrivals label and quote case facts and
-previous prose. Tests compare live and replay messages byte for byte
+messages. The system message sets the output format. The user message
+carries the role prompt, its grounding rules and any structured context.
+Tests compare live and replay messages byte for byte
 (`tests/api/unit/narrator-messages.test.ts`).
 
 Voice and reading level are shared. Recorded state replaces refereeing: the
 engine derives what a turn can bring out from the graph and the events.
-
-## Grounding policy
-
-The [runtime text](../packages/game-engine/src/narrator-grounding.ts) helps a
-child reason from dependable facts and receive the clues their work earns.
-Authored facts and current game state take precedence over conflicting earlier
-narration. A visible correction uses existing reveal permission. Otherwise
-the narrator drops the disputed detail and preserves compatible scenery.
-Authored lies remain character accounts. A valid bluff can open its gate while
-the player's claim remains unverified.
-
-Within each existing call, the narrator finds support in its permitted material,
-admits uncertainty, checks its claims and includes earned details in the existing
-output. This also applies to the IDs reported in the first accusation stage.
-Ordinary knowledge helps interpret words and actions. Repeated samples are an
-offline stability measure, and agreement alone cannot establish truth.
-
-Anthropic sources reviewed 23 November 2026.
-[Reduce hallucinations](https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations)
-and [Prompting best practices](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices).
 
 ## Roles
 
@@ -148,9 +126,9 @@ so a double confirmation cannot narrate twice. It costs no turn, and its
 
 ## The mock provider
 
-The deterministic default for `npm run dev` and automated suites. It decodes
-the same labelled opening and arrival data and voices only those facts and
-visible names. Contract, prompt, context and provider changes update its tests.
+The deterministic default for `npm run dev` and automated suites. It reads
+the opening and arrival fact lists and voices those facts and visible names.
+Contract, prompt, context and provider changes update its tests.
 
 ## Failures, logs and attribution
 

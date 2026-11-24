@@ -39,7 +39,8 @@ one `action`, and judges. A case file (`.ts`, `.mjs`, `.json`)
 holds one case or a list; a folder runs every case file in it;
 `evaluation/runtime/cases/clue-graph/mock-case/readability.ts` is an annotated
 example. A case's blueprint must be a clue-graph case: any other format is refused by
-name before a call is made. `history` rows have the shape the runtime stores in
+name before a call is made, as is a case whose `action.character_id` or
+`given.talk_character_id` names a character the blueprint lacks. `history` rows have the shape the runtime stores in
 `game_events`; a clue-graph case's carry `payload.clue_graph`, and a server run seeds its
 snapshot ([`docs/clue-graph.md`](../../docs/clue-graph.md)). Action types and modes: `ACTIONS` in
 `evaluation/runtime/lib/roles.ts`.

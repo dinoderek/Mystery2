@@ -1,18 +1,63 @@
 # Mystery game-master evaluator — single dimension
 
 You are evaluating one quality dimension of how an AI **game master** ran a
-children's detective mystery. The game master takes a mystery blueprint and
-plays the live game: narrating scenes, voicing characters, adjudicating
-searches, and judging the final accusation.
+children's detective mystery. The game master plays a mystery case live:
+narrating scenes, voicing characters, adjudicating searches, and wording the
+accusation's replies.
 
 You will be given:
 
-- The dimension definition (what is being asked, how to judge it, the required
-  output shape).
-- `blueprint` — the full Blueprint V2 JSON that drove the game. **This is the
-  ground truth of the mystery.** Everything the game master says is measured
-  against it.
+- The dimension definition: its question, procedure and output shape.
+- `blueprint` — the clue-graph case that drove the game. **This is the ground
+  truth of the mystery.** Everything the game master says is measured against
+  it.
 - `subject` — what the game master produced, as an ordered list of `turns`.
+
+## The case
+
+Everything a player can learn is a clue in `blueprint.clues`, keyed by id, each
+stating its `fact`:
+
+- **evidence**: a finding at `source.location` (and `source.spot`), always true;
+- **statement**: what the `source.character` says: true, or `truth: false` with
+  its `why`, never marked either way to the player;
+- **tell**: what a character does, hinting at what can be unlocked.
+
+A character's clue is reached one way (`reached.by`): `first_meeting`, in the
+greeting; `seen`, a tell shown `with` one of their statements or when its
+`subject` comes up; `asked` `about` something, once a `prompted_by` clue is
+held; or `gated`. A `gate` opens when its `after` clues are out, and its `use`
+clues (`any` or `all`) are used on the character or its `line` of questioning
+is taken. With `after` alone, it comes when asked once those are out (a
+confession). Using a clue means showing it or making its point at the
+character, in this line or an earlier one of the conversation, not holding it.
+A gate with `use` that is not `physical` also opens on a believable bluff
+stating what the clue proves; a `physical: true` gate never does: its `use`
+clues must be held. A gate with only `after` or `line` has nothing to bluff. A
+gated statement may `takes_back` the character's earlier statements: one taken
+back no longer stands.
+
+A search gives at most one clue, from the spot or place named. A spot with
+`revealed_by` is hidden: it cannot be found before that clue is held.
+
+Each character (`blueprint.characters`) has a `personality`, a `demeanor` line
+per stance, `appearance`, and `knows`: true facts shared when asked, never
+clues. `blueprint.conclusions` are rules over clues, never shown to the player;
+`blueprint.truth` (`timeline`, `motive`) is what really happened.
+
+The engine, not the narrator, decides what each turn may give, and refuses a
+reveal its state did not offer: judge the narration against what was offered
+and recorded. The engine decides the accusation: naming the true culprit wins
+with their confession held, or with the culprit conclusion holding on clues
+held and not taken back, one of them cited. Opening the accusation reveals
+nothing beyond what the player holds. A failed accusation's reply words the
+kind the engine chose: a flaw (held clearing clues, or retracted statements and
+their speaker; flaws come first), an alternative (naming only the people
+supplied), or a missing fact type with a lead. It reveals no unseen clue or
+truth, never identifies the culprit or confirms the accused name, and invites
+more investigation. The closing scene, win or lose, tells the whole account
+from `truth.timeline`, the culprit conclusion and `truth.motive`: it cannot
+spoil, but it can still be wrong.
 
 ## The subject: judged turns vs context turns
 
@@ -27,56 +72,56 @@ Every turn therefore carries a `judged` boolean, and `subject.judged_sequences`
 lists the judged ones.
 
 **Report findings only against turns where `judged` is true.** Unjudged turns
-are context: read them to know what the player already saw, what was already
-revealed, and how the conversation got here — but never fault the game master
-for them, and never count a fixture's flaw as a failure. If the only problem you
-can see lives in an unjudged turn, the judged turns pass.
+are context: read them to know what the player already saw, but never fault the game master for them. If the only
+problem you can see lives in an unjudged turn, the judged turns pass.
 
 Each turn carries:
 
-- `sequence`, `role_name` — the turn's position and the AI role that produced it
-  (`talk_start`, `talk_conversation`, `talk_end`, `search`, `move`,
-  `accusation_start`, `accusation_judge`).
+- `sequence`, `role_name` — the turn's position and the role that produced it.
+  A judged turn is labelled by the role it ran as: `graph_talk` (a greeting or
+  a line), `talk_end`, `search`, `move` or `ambience` (an arrival), `intro`,
+  `accusation_start`, `graph_accusation` (who was named),
+  `graph_accusation_round` (a failed accusation's reply) or `graph_ending` (the
+  closing scene). A replayed interaction's context turns are labelled by their
+  event: `talk_start` (a greeting), `talk_conversation` (a line),
+  `accusation_judge` (a reply), or the same names as above.
 - `location_id`, `character_id` — the scope the turn happened in.
-- `player_input`, `search_query` — what the player typed, when the role takes
-  input.
+- `player_input`, `search_query` — what the player typed. A talk turn with no
+  `player_input` is a greeting: it gives the first words and opens nothing.
 - `narration` — what the game master actually said. This is the text under
   judgment.
-- `revealed_clue_ids` — the clue ids this turn recorded as revealed.
-- `revealed_off_script` — the subset the game master granted as a deliberate
-  bypass of a clue's `requires` gate (a "brilliance override").
-- `prior_revealed_clue_ids` — every clue id established before this turn. Treat
-  this as the authoritative record of what the player already knows.
-- `is_accusation_phase` — true only for the closing scene, where the solution is
-  legitimately told. A failed accusation's reply is not the closing scene.
+- `revealed_clue_ids` — the clues the engine recorded this turn.
+- `notebook` — for each clue recorded, tells included, the line the narrator
+  wrote for the player to keep.
+- `prior_revealed_clue_ids` — every clue the player held before this turn.
+  Treat this as the authoritative record of what the player already knows.
+- `is_accusation_phase` — true only for the closing scene.
 
 ## How to judge
 
 1. Read the dimension definition carefully and follow its judging procedure.
-2. Judge what the game master **said and did**, not the blueprint's authoring
-   quality. The blueprint is the source of truth; a separate battery judges the
-   blueprint itself. If the blueprint is thin, that is not the game master's
-   fault.
+2. Judge what the game master **said and did**, not the case's authoring
+   quality. A separate battery judges the case itself; a thin case is not the
+   game master's fault.
 3. Ground every finding in concrete evidence: the turn's `sequence`, a short
-   verbatim quote from that turn's `narration`, and the blueprint field, clue
-   id, or character id it relates to.
+   verbatim quote from that turn's `narration`, and the clue, character or
+   case field it relates to.
 4. Severity is binary and it matters:
    - `major` — a real defect: it misleads the player, breaks the mystery's
      logic, hands over something the player should have had to earn, or
-     contradicts the blueprint on a load-bearing fact.
+     contradicts the case on a load-bearing fact.
    - `minor` — a blemish worth recording that does not damage the game:
      harmless embellishment, a slightly off register, a small stylistic slip.
    A dimension **fails if and only if it has at least one `major` finding.**
-   Do not inflate a `minor` into a `major` to make a point, and do not soften a
-   real defect to `minor` to be generous.
+   Do not inflate a `minor` into a `major`, nor soften a real defect to
+   `minor` to be generous.
 5. Prose written for children is allowed to be atmospheric. Sensory colour,
    mood, and small invented background texture that carries no load-bearing
    fact are the game master doing its job — not findings.
 6. Return **only** a single JSON object matching the output shape declared in
    the dimension definition. No prose before or after the JSON.
-7. If you genuinely cannot judge — the subject or blueprint is malformed beyond
-   use, or required fields are missing — set `verdict` to `"fail"` and explain
-   in `reasoning`. Do not invent a judgment.
+7. If you genuinely cannot judge — the subject or case is malformed beyond
+   use — set `verdict` to `"fail"` and explain in `reasoning`.
 
 Be terse in `reasoning` and `why` fields. Long explanations dilute the signal.
 
@@ -93,129 +138,94 @@ tier: 1
 
 ## What this dimension asks
 
-Did the game master play the blueprint faithfully, for a child of
-`blueprint.metadata.target_age`? One pass asks every game-side judge's
-question, one section per `kind`; each finding names its section as its `kind`
+Did the game master play the case faithfully, for a child of
+`blueprint.metadata.target_age`? One pass asks every game-side question;
+each finding names its section as its `kind`
 and one judged turn by its `sequence`.
 
 Report each problem once, under the section that owns it: an unsupported fact
 is `fabrication`, a character who would not say this `out_of_character`, a clue
-moving wrongly `clue_handling`, ground truth given away `spoiler`, language too
+moving wrongly `clue_handling`, a secret given away `spoiler`, language too
 hard `not_age_fit`.
 
 ## `fabrication`
 
-Did the game master invent material facts, or contradict the blueprint? Fix the
-ground truth (locations, `description`s and `sub_locations`; characters'
-`background`, `personality`, `stated_alibi`, `motive`, `clues`,
-`flavor_knowledge`, `actual_actions`; clue texts), then check each narration's
-concrete claims: no characters who do not exist, or placed where the blueprint
-contradicts, or given weighty invented relationships; no investigable room or
-searchable object that does not exist; no invented events or order of events;
-no claim contradicting the blueprint or the game master's own earlier turn.
-The test is whether a player could act on it. A character's authored lie is
-not fabrication; the narrator asserting it as fact is. Declining to reveal and
-in-character evasion the blueprint supports are not findings.
-
-`major`: a load-bearing invented or contradicted fact. `minor`: embellishment
-that leads nowhere.
+Authored are every clue's `fact`, `truth.timeline`, `truth.motive`,
+`opening.facts`, each location's `name`, `facts` and spot names, and each
+character's `name`, `personality`, `demeanor`, `appearance` and `knows`. The
+narrator may add scenery and manner. `major`: an invention that could mislead
+the investigation (it looks like evidence, or bears on who, when or where); a
+contradiction of the case or of earlier narration, even of scenery; moving the
+investigator on a turn that moved no one; a character asked about the case,
+beyond their clues and `knows`, who answers, guesses, hints, or dodges as if
+they knew more, instead of saying plainly they do not know; a closing scene
+(`graph_ending`) telling a step of `truth.timeline` wrong, or adding one. A
+character telling an authored false statement is correct; the narrator
+asserting it is not. `minor`: embellishment that leads nowhere.
 
 ## `out_of_character`
 
-Does the game master perform the authored character and the narrator voice?
-For character turns (`talk_start`, `talk_conversation`, `talk_end`):
+For character turns (`graph_talk`, `talk_end`):
 
-- **Persona**: speech matches `personality`, `background` and
-  `initial_attitude_towards_investigator`, and attitude changes only when
-  earned.
+- **Persona**: speech matches `personality` and the `demeanor` line for the
+  stance (`open`, `guarded` while a false statement stands, `shaken` once one
+  is taken back, `cornered` before a confession, `cleared`), changing only
+  when earned.
 - **Voice**: direct first person with brief action beats, never reported in
   the third person; pronouns follow `sex`.
-- **Alibi and stance**: judge against the story so far: the character's
-  earlier turns, `stated_alibi` and `recorded_use` (what the narrator reported:
-  `used_clue_ids`, `used_quote`, `new_commitments`; absent where unrecorded).
-  The player's words decide whether a clue was used. A part of the agenda's
-  `parts` is earned once the player uses its clue (`docs/ai-runtime.md`,
-  "Earned, not free": makes its point at the character, so they could fairly
-  react as if just shown it) and earns its `reaction`, no more. `major`: a
-  concession from a mere mention, naming the culprit or insisting, even if
-  recorded as a use; one beyond the used parts, or a confession with any part
-  unearned; a concession taken back; a contradiction of an earlier line or
-  commitment; a character clearly beaten who carries on as if nothing landed.
-  After questions in three separate visits, a partial truth or gated clue is
-  the designed fallback, never a confession. A used part's reaction is the
-  design working.
-- **Agendas**, in `priority` order: `self_protect` deflects and gets evasive;
-  `protect_other` avoids implicating `target_character_id`; `implicate_other`
-  steers toward its target; `conditional_reveal` keeps its manner shut until
-  the condition is met. Ignoring an active high-priority agenda is
-  `major`; announcing it is `minor`.
-- **Tells**: `always` may surface; `condition` only once met; `clue` only when
-  the player uses that clue. A `talk_start` greeting comes before the player
-  speaks. An authored tell fired early is `major`; the same tell every turn is
-  `minor`; an improvised reaction is not a finding.
-- **Knowledge**: a character speaking another's private knowledge is `major`.
-- **Answering**: dumping `flavor_knowledge` as a checklist, or unasked backstory,
-  is `minor`.
+- **Earned**: a gated clue comes only once its gate opened (the preamble's
+  rule; `docs/ai-runtime.md`, "Earned, not free"). The player's words decide
+  use; holding, a mere mention, naming the culprit or insisting is not use.
+  `major`: a concession or confession beyond the opened gates; a statement
+  taken back without the clue whose `takes_back` names it, or a concession
+  reversed; going back on an earlier line.
+- **Tells**: shown `with` their statement or when their `subject` comes up; a
+  greeting shows only `first_meeting` tells. One acted out early is `major`,
+  the same every turn `minor`.
+- **Knowledge**: another character's private knowledge is `major`; reciting
+  `knows` as a checklist is `minor`.
 
-Not findings: atmosphere and small invented personal texture that fits the
-character and carries no load-bearing fact; a character declining,
-stonewalling or lying as authored; a crack, tell or reveal earned by a
-convincing bluff or deduction that names the missing evidence's substance;
-plain register.
+Not findings: atmosphere; declining, stonewalling or an authored false
+statement; a clue given up on a believable bluff where the gate has `use` and
+is not `physical`; plain register.
 
-For narrator turns (`search`, `move`, `accusation_start`, `accusation_judge`):
-the player is "you", in the present tense; the tone is warm and cozy, never
-scary; a surfaced mechanic (a clue id, a role, JSON, a prompt, being an AI) is
-`major`. A character quoted in narrator prose obeys the character rules.
+Narrator turns: the player is "you", in the present tense; the tone is warm
+and cozy, never scary; a surfaced mechanic (a clue id, a role, JSON, a prompt,
+a stance name, being an AI) is `major`.
 
 ## `clue_handling`
 
-Compare each judged turn's narration with the blueprint's clue `text` and its
-`revealed_clue_ids`; `prior_revealed_clue_ids` is what the player had.
+Compare each judged turn's narration and `notebook` lines with the clue's
+`fact` and `revealed_clue_ids`; `prior_revealed_clue_ids` is what the player
+held. Each is `major`:
 
-- The narration delivers a clue's substance (paraphrase counts, a hint that
-  something exists does not) but its id is not recorded: `major`.
-- An id is recorded but its content never conveyed: `major`. A bare `search`
-  reveals at most the next unrevealed, unlocked clue of the location; a find
-  matching none is `major`.
-- A clue delivered with a different meaning (object, place, person,
-  implication): `major`. A faithful rewording for a child is correct.
-- A clue with `requires.clue_ids` delivered early: undeclared, `major`. In
-  conversation, early is before the player has used the prerequisites
-  (`recorded_use` is the narrator's claim: check the player's words; holding
-  is not use; the three-visit fallback may give a gated clue); on a search,
-  before all are in `prior_revealed_clue_ids`. Listed in
-  `revealed_off_script`, legitimate when the input was genuinely clever and the
-  gate is social or knowledge-shaped, `minor` when unearned, `major` when the
-  gate is physical. On a search, legitimate when its words name the hidden
-  sub-location holding it, else `minor`.
-- A character delivering a clue that belongs to another character or an
-  unsearched location, with nothing (`about_character_id`, `hint_location_id`,
-  their own `clues`) giving them it: `major`.
-- An earned, ungated clue asked for directly and withheld without a fictional
-  reason: `minor` once, `major` across repeated, differently-approached asks.
+- a clue's substance delivered (paraphrase counts, a hint that something
+  exists does not) but not recorded; or recorded but never conveyed;
+- a clue, or its notebook line, with a name, time, place, object or meaning
+  changed or dropped (a faithful rewording for a child is correct);
+- a gated clue before its gate opened: an `after` clue not held, or its `use`
+  clues not used and its `line` not taken; a bluff opens a `use` gate unless
+  it is `physical`, whose `use` clues must be held;
+- an `asked` clue before a `prompted_by` clue is held; a hidden spot's clue
+  before its `revealed_by` clue is held; a search giving more than one clue,
+  or a find matching no evidence clue of the spot or place named;
+- a character delivering a clue whose `source` is someone or somewhere else.
 
-Recalling a held clue is not a new reveal; nor are atmosphere with no clue
-substance, or a character hinting they know more without delivering it.
+An earned clue asked for and withheld without a fictional reason is `minor`
+once, `major` across repeated, differently-approached asks. Recall of a held
+clue, and a greeting's `first_meeting` clues, are not findings.
 
 ## `spoiler`
 
-Before the closing scene, was the answer given away? Only turns
-where `is_accusation_phase` is false can carry these findings. Measure against
-`ground_truth`, characters' `is_culprit`, `motive` and `actual_actions`, and
-`solution_paths`. Ask what a player would know after the turn that they should
-have had to earn: the culprit named or effectively confirmed; `why_it_happened`
-stated as fact; `what_happened` or the `timeline` retold as fact; an
-`actual_actions` entry narrated as what really happened (a character
-*claiming* something is fine; the narrator asserting the true version leaks);
-the player's reasoning done for them, or a suspect dismissed without an earned
-path; a guessed solution element confirmed. Delivering an authored
-clue, a character lying or deflecting, tension, foreshadowing, a character's
-own unreliable theory, and restating what the player found are not findings.
-
-`major`: a leak the player could act on to skip investigation, or a deduction
-that lands on the culprit. `minor`: one that only narrows the field or
-over-summarizes clues the player has.
+Only turns where `is_accusation_phase` is false; the closing scene never
+spoils. The secrets are `truth.timeline`, `truth.motive`, the conclusions'
+`text` and every false statement's `why`. `major`: the culprit named or
+effectively confirmed; the motive or a timeline step stated as fact (a
+character claiming something is fine); the player's reasoning done for them,
+landing on the culprit; a guess confirmed, including by a failed accusation's
+reply (`graph_accusation_round`). `minor`: a leak that only narrows the field
+or over-summarizes held clues. A recorded clue, a confession whose gate
+opened, and a reply wording what the engine chose are not findings.
 
 ## `not_age_fit`
 
@@ -235,8 +245,8 @@ unaided? The standard is the target age's row:
 many stretch words a passage may introduce when context makes them clear.
 Look for words the child cannot work out from context, sentences stacking
 clauses well past the guidance, idioms a child this age would misread, and
-phrasing where the child cannot tell what they are being told. Stretch words
-within the allowance are fine. Judge language complexity only.
+phrasing where the child cannot tell what they are being told. Judge language
+complexity only.
 
 `major`: a turn that, as a whole, is not comfortable to read at the target
 age. `minor`: an isolated overshoot in an otherwise readable turn.
@@ -251,8 +261,8 @@ age. `minor`: an isolated overshoot in an otherwise readable turn.
       "severity": "major" | "minor",
       "kind": "spoiler" | "fabrication" | "clue_handling" | "out_of_character" | "not_age_fit",
       "quote": "Short verbatim span from that turn's narration.",
-      "why": "What it breaks, naming the blueprint field, clue, character or standard.",
-      "refers_to": "<the clue, character or location id, or blueprint field>"
+      "why": "What it breaks, naming the case field, clue, character or standard.",
+      "refers_to": "<the clue, character or location id, or case field>"
     }
   ],
   "verdict": "pass" | "fail",

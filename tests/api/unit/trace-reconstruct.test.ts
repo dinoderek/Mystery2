@@ -14,7 +14,6 @@ type Turn = {
   character_id: string | null;
   player_input: string | null;
   context_error: string | null;
-  recorded_use: { used_clue_ids: string[]; used_quote: string | null; new_commitments: string[] } | null;
   pre_state: { mode: string; current_location_id: string | null };
   reconstructed_context: {
     mode?: string;
@@ -103,22 +102,14 @@ describe("reconstructTrace", () => {
     expect(turnBySeq(turns, 4).reconstructed_context?.mode).toBe("talk");
   });
 
-  it("reads what an ask turn recorded about the character", () => {
-    // The fixture's ask predates recorded use, so nothing is read from it.
-    expect(turnBySeq(turns, 4).recorded_use).toBeNull();
-    expect(turnBySeq(turns, 2).recorded_use).toBeNull();
-
+  it("keeps no recorded use or off-script reveals on a turn, though the event saved them", () => {
     const events = makeRawTrace().events.map((event: { sequence: number; payload?: Record<string, unknown> | null }) =>
       event.sequence === 4
-        ? { ...event, payload: { ...event.payload, used_clue_ids: [], used_quote: null, new_commitments: ["saw only a shadow"] } }
+        ? { ...event, payload: { ...event.payload, used_clue_ids: ["c1"], used_quote: "q", new_commitments: ["saw only a shadow"], revealed_off_script: ["c1"] } }
         : event
     );
     const replayed = reconstructTrace(makeRawTrace({ events })).turns;
-    expect(turnBySeq(replayed, 4).recorded_use).toEqual({
-      used_clue_ids: [],
-      used_quote: null,
-      new_commitments: ["saw only a shadow"],
-    });
+    for (const key of ["recorded_use", "revealed_off_script"]) expect(turnBySeq(replayed, 4), key).not.toHaveProperty(key);
   });
 
   it("builds the verdict context only for an accusation turn, and never for another role", () => {

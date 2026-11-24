@@ -42,7 +42,7 @@ function makeInteraction(overrides: Record<string, unknown> = {}) {
     action: { type: "ask", player_input: "Then why are your hands shaking?" },
     response: {
       narration_text: '"They are not!" Alice says, sitting on her hands.',
-      raw: { narration: "…", revealed_clue_ids: ["clue-wrapper"], revealed_off_script: [] },
+      raw: { narration: "…", revealed_clue_ids: ["clue-wrapper"] },
     },
     ...overrides,
   };
@@ -129,34 +129,40 @@ describe("revealedClueIdsFromResponse", () => {
   });
 });
 
-describe("recorded use in a subject", () => {
-  const USE = { used_clue_ids: ["clue-wrapper"], used_quote: "the wrapper was in your pocket", new_commitments: ["never opened the jar"] };
+describe("what a subject's turn leaves out", () => {
+  // The engine still saves what a talk turn used, and a narrator reply may name
+  // reveals "off script"; neither reaches a judge, which reads the clue graph's
+  // gates against what the player held and said.
+  const SAVED = {
+    used_clue_ids: ["clue-wrapper"],
+    used_quote: "the wrapper was in your pocket",
+    new_commitments: ["never opened the jar"],
+    revealed_off_script: ["clue-wrapper"],
+  };
+  const DROPPED = ["recorded_use", "revealed_off_script", "used_clue_ids", "used_quote", "new_commitments"];
 
-  it("carries what a trace turn recorded, and nothing for a turn that recorded none", () => {
-    const raw = makeRawTrace();
-    const events = raw.events.map((event: { sequence: number; payload?: Record<string, unknown> | null }) =>
-      event.sequence === 4 ? { ...event, payload: { ...event.payload, ...USE } } : event,
+  function expectNoneDropped(turns: readonly object[]) {
+    for (const turn of turns) for (const key of DROPPED) expect(turn, key).not.toHaveProperty(key);
+  }
+
+  it("carries neither recorded use nor off-script reveals from a recorded trace turn", () => {
+    const events = makeRawTrace().events.map((event: { sequence: number; payload?: Record<string, unknown> | null }) =>
+      event.sequence === 4 ? { ...event, payload: { ...event.payload, ...SAVED } } : event,
     );
-    const subject = projectTraceSubject(reconstructTrace(makeRawTrace({ events })).turns);
-    const bySequence = (n: number) => subject.turns.find((t: { sequence: number }) => t.sequence === n);
-    expect(bySequence(4)?.recorded_use).toEqual(USE);
-    // An ask saved before the engine recorded use stays "not recorded", never "used nothing".
-    expect("recorded_use" in (bySequence(2) ?? {})).toBe(false);
+    const reconstructed = reconstructTrace(makeRawTrace({ events })).turns;
+    expectNoneDropped(reconstructed);
+    const subject = projectTraceSubject(reconstructed);
+    expect(subject.turns.some((turn) => turn.sequence === 4)).toBe(true);
+    expectNoneDropped(subject.turns);
   });
 
-  it("reads a replayed history row and the cli narrator's reply the same way", () => {
-    const interaction = makeInteraction({ response: { narration_text: "Alice sighs.", raw: { narration: "…", revealed_clue_ids: [], ...USE } } });
+  it("carries neither from a replayed history row nor from the narrator's reply", () => {
+    const interaction = makeInteraction({ response: { narration_text: "Alice sighs.", raw: { narration: "…", revealed_clue_ids: [], ...SAVED } } });
     const history = interaction.given.history as Array<{ payload: Record<string, unknown> }>;
-    history[1].payload = { ...history[1].payload, used_clue_ids: [], used_quote: null, new_commitments: [] };
-    const subject = projectInteractionSubject(interaction, { roleName: "talk_conversation" });
-    expect(subject.turns[1].recorded_use).toEqual({ used_clue_ids: [], used_quote: null, new_commitments: [] });
-    expect(subject.turns[2].recorded_use).toEqual(USE);
-    expect("recorded_use" in subject.turns[0]).toBe(false);
-  });
-
-  it("records none for a server replay, whose body does not carry the uses", () => {
-    const subject = projectInteractionSubject(makeInteraction({ response: { narration_text: "Alice sighs.", raw: { revealed_clues: [] } } }), { roleName: "talk_conversation" });
-    expect("recorded_use" in subject.turns[2]).toBe(false);
+    history[1].payload = { ...history[1].payload, ...SAVED };
+    const subject = projectInteractionSubject(interaction, { roleName: "graph_talk" });
+    expect(subject.turns).toHaveLength(3);
+    expectNoneDropped(subject.turns);
   });
 });
 

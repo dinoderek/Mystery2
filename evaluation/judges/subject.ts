@@ -1,7 +1,7 @@
 // The shared judge subject.
 //
 // The game-master judges in this directory grade narration against the
-// blueprint. That question is the same whether the narration came from a whole
+// case. That question is the same whether the narration came from a whole
 // played session or from one replayed interaction, so both harnesses project
 // their own data into ONE shape and the judge briefs are written against that
 // shape alone:
@@ -10,13 +10,12 @@
 //     subject_kind: "trace" | "interaction",
 //     turns: [ { sequence, judged, role_name, location_id, character_id,
 //                player_input, search_query, revealed_clue_ids,
-//                revealed_off_script, prior_revealed_clue_ids, recorded_use?,
-//                notebook?, narration } ],
+//                prior_revealed_clue_ids, notebook?, narration } ],
 //     judged_sequences: number[],
 //   }
 //
-// (The blueprint travels alongside the subject in the judge's user message
-// rather than inside it, so the same blueprint JSON is not duplicated.)
+// (The case travels alongside the subject in the judge's user message, as
+// `blueprint`, rather than inside it, so its JSON is not duplicated.)
 //
 // `judged` is the load-bearing field. In a trace every turn is the game
 // master's own output and every turn is judged. In a runtime interaction the
@@ -29,12 +28,9 @@ import {
   CLOSING_SCENE_EVENT_TYPES,
   EVENT_ROLE,
   type GameEventLike,
-  offScriptClueIdsForEvent,
   notebookLinesForEvent,
   readField,
   readStringArray,
-  type RecordedUse,
-  recordedUseForEvent,
   revealedClueIdsForEvent,
 } from "../lib/game-events.ts";
 
@@ -48,19 +44,10 @@ export interface JudgeTurn {
   player_input: string | null;
   search_query: string | null;
   revealed_clue_ids: string[];
-  revealed_off_script: string[];
   narration: string;
   is_accusation_phase: boolean;
   /** Clue ids established by every turn before this one, in reveal order. */
   prior_revealed_clue_ids: string[];
-  /**
-   * What the narrator reported for a character turn: the gate clues the player
-   * used, their words, and the character's new commitments. A stored game's is
-   * the engine's filtered record; a cli replay's is the raw reply, unfiltered. Absent where nothing was
-   * recorded (a game saved before the engine recorded it, a server replay), so
-   * "recorded nothing used" and "not recorded" differ.
-   */
-  recorded_use?: RecordedUse;
   /** A clue-graph turn's notebook lines, by clue id: what the player keeps for each clue it brought out. */
   notebook?: Record<string, string>;
 }
@@ -83,8 +70,6 @@ export interface TraceTurnLike {
   player_input?: string | null;
   search_query?: string | null;
   revealed_clue_ids?: string[];
-  revealed_off_script?: string[];
-  recorded_use?: RecordedUse | null;
   notebook?: Record<string, string> | null;
   narration: string;
 }
@@ -111,10 +96,6 @@ function priorRevealedClueIds(turns: readonly TurnBeforePriors[], index: number)
     }
   }
   return seen;
-}
-
-function recordedUseField(use: RecordedUse | null): { recorded_use?: RecordedUse } {
-  return use ? { recorded_use: use } : {};
 }
 
 function notebookField(lines: Record<string, string> | null): { notebook?: Record<string, string> } {
@@ -150,8 +131,6 @@ export function projectTraceSubject(reconstructedTurns: readonly TraceTurnLike[]
       player_input: t.player_input ?? null,
       search_query: t.search_query ?? null,
       revealed_clue_ids: t.revealed_clue_ids ?? [],
-      revealed_off_script: t.revealed_off_script ?? [],
-      ...recordedUseField(t.recorded_use ?? null),
       ...notebookField(t.notebook ?? null),
       narration: t.narration,
       is_accusation_phase: CLOSING_SCENE_EVENT_TYPES.has(t.event_type),
@@ -188,18 +167,6 @@ export function revealedClueIdsFromResponse(response: InteractionLike["response"
   return [];
 }
 
-// The cli narrator's raw reply carries the uses it reported; the engine's
-// endpoint body does not, so a server replay records none.
-function recordedUseFromResponse(response: InteractionLike["response"]): RecordedUse | null {
-  const raw = (response?.raw ?? null) as Record<string, unknown> | null;
-  if (!raw || typeof raw !== "object" || !Array.isArray(raw.used_clue_ids)) return null;
-  return {
-    used_clue_ids: readStringArray(raw, "used_clue_ids"),
-    used_quote: readField(raw, "used_quote"),
-    new_commitments: readStringArray(raw, "new_commitments"),
-  };
-}
-
 // A clue-graph reply's notebook lines: the cli narrator's raw `notebook`, or
 // the saved event's on a server replay.
 function notebookFromResponse(response: InteractionLike["response"]): Record<string, string> | null {
@@ -215,19 +182,10 @@ function notebookFromResponse(response: InteractionLike["response"]): Record<str
   return saved ? notebookLinesForEvent(saved) : null;
 }
 
-function offScriptClueIdsFromResponse(response: InteractionLike["response"]): string[] {
-  const raw = (response?.raw ?? null) as Record<string, unknown> | null;
-  if (!raw || typeof raw !== "object") return [];
-  return Array.isArray(raw.revealed_off_script)
-    ? raw.revealed_off_script.filter((id): id is string => typeof id === "string")
-    : [];
-}
-
 // The case's `given.history` rows use the persisted game_events shape, so the
 // same readers that parse a real trace parse them here.
 function historyTurns(history: readonly GameEventLike[] | undefined): TurnBeforePriors[] {
   return (history ?? []).map((event, index) => ({
-    ...recordedUseField(recordedUseForEvent(event)),
     sequence: index + 1,
     judged: false,
     role_name: EVENT_ROLE[event.event_type] ?? null,
@@ -238,7 +196,6 @@ function historyTurns(history: readonly GameEventLike[] | undefined): TurnBefore
       readField(event.payload, "player_input"),
     search_query: readField(event.payload, "search_query"),
     revealed_clue_ids: revealedClueIdsForEvent(event),
-    revealed_off_script: offScriptClueIdsForEvent(event),
     ...notebookField(notebookLinesForEvent(event)),
     narration: event.narration ?? "",
     is_accusation_phase: CLOSING_SCENE_EVENT_TYPES.has(event.event_type),
@@ -271,8 +228,6 @@ export function projectInteractionSubject(
     player_input: action.player_input ?? action.player_reasoning ?? null,
     search_query: action.search_query ?? null,
     revealed_clue_ids: revealedClueIdsFromResponse(response),
-    revealed_off_script: offScriptClueIdsFromResponse(response),
-    ...recordedUseField(recordedUseFromResponse(response)),
     ...notebookField(notebookFromResponse(response)),
     narration: response.narration_text ?? "",
     is_accusation_phase: isAccusationPhase,

@@ -14,11 +14,9 @@ export const schema = z.object({
       kind: z.enum([
         "persona",
         "voice",
-        "alibi",
         "unearned",
         "taken_back",
         "contradiction",
-        "agenda",
         "tell",
         "knowledge",
         "narrator_voice",

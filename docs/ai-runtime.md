@@ -110,7 +110,10 @@ a physical one never does. A clue shown and dodged opens on a follow-up. The
 character's mood never decides what opens, and the engine accepts a gate
 opened only when the state offered it.
 
-`gm_roleplay` judges against the same definition of earned.
+The turn judges' preamble states this rule from the case's gates, and
+`gm_roleplay`, `gm_clue_discipline` and `gm_broad` judge by it from the
+player's words, never from a reported use
+([`evaluation/judges/README.md`](../evaluation/judges/README.md)).
 
 Case facts and revealed clues reach the browser as structured fields, never
 parsed from narration.

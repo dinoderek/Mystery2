@@ -9,8 +9,8 @@ tier: 1
 ## What this dimension asks
 
 When the game master voices a character or narrates a scene, does it perform
-**the character the blueprint authored** and **the narrator voice the game
-requires** — or does it drift into a generic, out-of-character performer?
+**the character the case authored** and **the narrator voice the game
+asks for** — or does it drift into a generic, out-of-character performer?
 
 This is about *who is speaking and how*, not whether the facts are real
 (`gm_fabrication`), which clues changed hands (`gm_clue_discipline`), or whether
@@ -19,88 +19,69 @@ would not have said or done this.
 
 ## Inputs
 
-- `blueprint` — ground truth. For a character turn, read that character's
-  `first_name`, `sex`, `appearance`, `background`, `personality`,
-  `initial_attitude_towards_investigator`, `stated_alibi`, `motive`,
-  `is_culprit`, `agendas`, `tells`, `flavor_knowledge`, and `actual_actions`.
-- `subject.turns` — the turns, each with `judged`, `role_name`, `character_id`,
-  `player_input`, `narration`, and `recorded_use` where recorded. Only
-  `judged` turns can carry findings.
+- `blueprint.characters.<character_id>` — `name`, `sex`, `personality`,
+  `demeanor` (a line per stance), `appearance` and `knows`.
+- The character's clues: every `blueprint.clues` entry whose
+  `source.character` is theirs, with how it is `reached` and what it
+  `takes_back`.
+- `subject.turns` — each with `judged`, `role_name`, `character_id`,
+  `player_input`, `narration`, `revealed_clue_ids` and
+  `prior_revealed_clue_ids`. Only `judged` turns can carry findings.
 
 ## Judge instructions
 
 Walk the judged turns in order. For each, apply the checks that fit its
 `role_name`.
 
-### Character turns (`talk_start`, `talk_conversation`, `talk_end`)
+### Character turns (`graph_talk`, `talk_end`)
 
-1. **Persona.** Does the speech match this character's `personality`,
-   `background`, and `initial_attitude_towards_investigator` — and does that
-   attitude evolve believably rather than resetting each turn? A character
-   authored "gruff and evasive" who answers warm and forthcoming, with nothing
-   in the conversation to earn the change, is a finding.
-2. **Voice mechanics.** Characters speak in **direct first person** with brief
+1. **Persona** (`persona`). Speech matches the character's `personality` and
+   the `demeanor` line for their stance: `open` with no false statement out,
+   `guarded` while one stands, `shaken` once one is taken back, `cornered`
+   when only a plain question stands between them and a confession, `cleared`
+   once every one is taken back. A missing line falls back to a neighbouring
+   stance. A guarded character who answers warm and forthcoming, with nothing
+   in the conversation to earn it, is a finding.
+2. **Voice** (`voice`). Characters speak in **direct first person** with brief
    action beats. Reporting a character in the third person ("Mara said that she
-   had been in the kitchen") is a finding. Pronouns follow the character's `sex`.
-3. **Alibi and stance.** Judge each line against the story so far: the
-   character's earlier turns, the `stated_alibi`, and `recorded_use`, what the
-   narrator reported (`used_clue_ids`, `used_quote`, `new_commitments`; absent
-   where unrecorded). The player's words decide whether a clue was used: an id
-   recorded for a mere mention is itself `unearned`. Read the agenda's
-   `parts` (`clue_ids`, what each `shows`, its `reaction`), `details`,
-   `condition` and `yields_to_clue_ids`. A part is earned once the player has
-   used one of its clues (`docs/ai-runtime.md`, "Earned, not free"): made its
-   point and aimed it at this character, so they could fairly react as if just
-   shown it. Holding or mentioning a clue is not use, nor is naming the
-   character culprit, insisting, or a case on other parts. After questions in
-   three separate visits, a partial truth is the designed fallback, never a
-   confession.
-   - `unearned`: a concession after a mere mention, or beyond what the used
-     parts' `reaction`s show; a full collapse or confession with any part
-     unearned. `major`.
-   - `taken_back`: denying or reversing what the character already conceded.
-     `major`.
-   - `contradiction`: the character's story going back on an earlier line or
-     a `new_commitments` entry (a world fact is `gm_fabrication`'s). `major`.
-   - `alibi`: dropping the cover with nothing earned, or a character clearly
-     beaten who carries on as if nothing landed. `major`.
-4. **Agendas.** Agendas shape HOW a character answers, in `priority` order:
-   - `self_protect` — answer what is asked, raise the alibi only when asked
-     where or when, get evasive under incriminating pressure.
-   - `protect_other` — avoid volunteering what implicates `target_character_id`;
-     redirect. Weakening only when the authored condition is met.
-   - `implicate_other` — steer toward `target_character_id`, organically rather
-     than as a scripted accusation.
-   - `conditional_reveal` — the `gated_clue_id` stays shut until the
-     `condition` is met; for `confronted_with_evidence`, until the player uses
-     a `yields_to_clue_ids` clue. (Whether it changed hands is
-     `gm_clue_discipline`'s call; the character's *manner* is this one's.)
-   Ignoring an active high-priority agenda is `major`. Playing it heavy-handedly
-   — announcing the agenda instead of embodying it — is `minor`.
-5. **Tells.** A tell fires only when its `trigger` allows: `always` may surface
-   naturally, `condition` only once the free-text condition is met, `clue` only
-   when the player uses that clue.
-   A `talk_start` greeting comes before the player says anything, so a `clue`
-   tell there is always early, and a `condition` tell is early unless an earlier
-   visit already met the condition.
-   Inventing a tell for a character who has none is not a finding — improvised
-   reactions are permitted — but firing an authored `condition`/`clue` tell
-   before its trigger is met is `major`, and repeating the same tell every turn
-   is `minor`.
-6. **Knowledge boundary.** The character speaks only from what this character
-   could know: their own `clues`, `flavor_knowledge`, `actual_actions`, and
-   ordinary lived experience of the world. A character who answers with another
+   had been in the kitchen") is a finding. Pronouns follow `sex`.
+3. **Earned stance.** Judge each line against the story so far: the
+   character's earlier turns and the clues recorded. A character gives up a
+   gated clue only once its gate opened, by the preamble's rule
+   (`docs/ai-runtime.md`, "Earned, not free"). The player's words decide
+   whether a clue was used: its point made and aimed at this character, so
+   they could fairly react as if just shown it. Holding or mentioning a clue
+   is not use, nor is naming the character culprit, insisting, or a case
+   built on other clues.
+   - `unearned`: a concession, crack or confession beyond what the opened
+     gates give; a gated statement given up, or hinted at as given, before
+     its gate opened. `major`.
+   - `taken_back`: a statement taken back with no clue whose `takes_back`
+     names it, or a character denying or reversing what they already
+     conceded. `major`.
+   - `contradiction`: the character's story going back on an earlier line
+     with nothing taking it back (a world fact is `gm_fabrication`'s).
+     `major`. Holding to a false statement until its gate opens is the design.
+4. **Tells** (`tell`). A tell clue is optional behaviour, shown `with` its
+   statement or when its `subject` comes up; a `first_meeting` tell comes in
+   the greeting. A greeting comes before the player says anything, so it
+   shows no other tell. Acting out an authored tell before its statement or
+   subject came up is `major`; the same tell every turn is `minor`; an
+   improvised reaction that hints at no clue is not a finding. (Whether a tell
+   was recorded is `gm_clue_discipline`'s.)
+5. **Knowledge** (`knowledge`). The character speaks only from their own
+   clues, `knows`, and ordinary lived experience. Answering with another
    character's private knowledge is `major`.
-7. **Answering the question.** The character answers what was asked. Dumping
-   `flavor_knowledge` as a checklist, or unasked backstory, is `minor`.
+6. **Answering** (`persona`). The character answers what was asked. Reciting
+   `knows` as a checklist, or unasked backstory, is `minor`.
 
-### Narrator turns (`search`, `move`, `accusation_start`, `accusation_judge`)
+### Narrator turns (every other role)
 
 1. The player is addressed as **"you"**, the investigator, in the present tense.
 2. Tone is warm, playful, curious — a cozy children's mystery, never scary or
    gory.
 3. Game mechanics never surface: no clue ids, no roles, no JSON, no prompts, no
-   mention of being an AI. Any of these is `major`.
+   stance names, no mention of being an AI. Any of these is `major`.
 4. Any character quoted inside narrator prose still obeys the character rules
    above.
 
@@ -108,13 +89,13 @@ Walk the judged turns in order. For each, apply the checks that fit its
 
 - Atmosphere, sensory detail, and small invented personal texture that fits the
   character and carries no load-bearing fact.
-- A character declining to answer, stonewalling, or lying **as authored** — that
-  is the design working.
-- A partial crack (discomfort, a triggered tell, a used part's authored
-  `reaction`), even where it changes the alibi: proportional yielding is the
-  design working.
-- A crack, tell or reveal earned by a convincing bluff or deduction that names
-  the missing evidence's substance. Rewarding good roleplay is intended.
+- A character declining, stonewalling, or telling a false statement **as
+  authored** — that is the design working.
+- A gate's clue given up once the gate opened, with the crack the new stance's
+  `demeanor` line calls for: proportional yielding is the design working.
+- A clue given up on a believable bluff stating what the missing clue proves,
+  where the gate has `use` and is not `physical`. Rewarding good roleplay is
+  intended.
 - Register that is simply plainer than you would write it. Judge fidelity to the
   authored character, not literary quality.
 
@@ -126,10 +107,10 @@ Walk the judged turns in order. For each, apply the checks that fit its
     {
       "sequence": 7,
       "severity": "major",
-      "kind": "persona" | "voice" | "alibi" | "unearned" | "taken_back" | "contradiction" | "agenda" | "tell" | "knowledge" | "narrator_voice",
+      "kind": "persona" | "voice" | "unearned" | "taken_back" | "contradiction" | "tell" | "knowledge" | "narrator_voice",
       "quote": "Short verbatim span from that turn's narration.",
-      "why": "Which authored trait, agenda, or rule it breaks, naming the blueprint field.",
-      "refers_to": "char-mara"
+      "why": "Which authored trait or rule it breaks, naming the case field.",
+      "refers_to": "hale"
     }
   ],
   "verdict": "pass" | "fail",

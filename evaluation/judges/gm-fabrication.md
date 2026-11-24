@@ -8,71 +8,71 @@ tier: 1
 
 ## What this dimension asks
 
-Did the game master **invent material facts the blueprint does not support**?
+Did the game master **invent material facts the case does not support**?
 
 Every concrete claim the game master makes about the world — who was where,
 what a character did or knows, what a clue says, how the crime happened — must
-be grounded in the blueprint. Invented facts mislead the player, can make the
-case unsolvable or unfair, and break continuity.
+be grounded in the case. Invented facts mislead the player, can make the case
+unsolvable or unfair, and break continuity.
 
 Scope boundaries with the rest of this battery:
 
 - A character behaving unlike their authored self is `gm_roleplay`.
-- A clue moving at the wrong time, or a reveal not matching its record, is
-  `gm_clue_discipline`.
-- Ground truth leaking early is `gm_spoiler`.
-- **Here**: the world gained a fact that is not in the blueprint, or a stated
-  fact contradicts one that is.
+- A clue moving at the wrong time, or a reveal or notebook line not matching
+  its clue, is `gm_clue_discipline`.
+- A secret given away early is `gm_spoiler`.
+- **Here**: the world gained a fact the case does not hold, or a stated fact
+  contradicts one it does.
 
-## Inputs
+## What is authored
 
-- `blueprint` — the full Blueprint V2 that drove the game: the ground truth.
-- `subject.turns` — the turns, each with `judged`, `role_name`, its scope, the
-  player's input, and the narration. Only `judged`
-  turns can carry findings.
+Every clue's `fact`, `blueprint.truth.timeline` and `truth.motive`,
+`blueprint.opening.facts`, each location's `name`, `facts` and spot names, and
+each character's `name`, `personality`, `demeanor` lines, `appearance` and
+`knows`. A false statement (`truth: false`) is authored too: a character
+telling it is correct, not an invention. The narrator asserting it as fact is
+an invention.
 
 ## Judge instructions
 
-1. Read the blueprint to fix the ground truth: locations and their
-   `description`s and `sub_locations`, characters (`background`, `personality`,
-   `stated_alibi`, `motive`, `clues`, `flavor_knowledge`, `actual_actions`), and
-   the clue texts.
-2. Walk the judged turns in order. For each narration, check whether its
-   concrete factual claims are supported:
-   - **People** (`kind: "person"`) — no characters who do not exist; no
-     character placed somewhere the blueprint contradicts; no invented
-     relationships between characters that carry weight.
-   - **Places and objects** (`kind: "place"` / `"object"`) — locations,
-     sub-locations, and objects consistent with the authored world. A new room
-     the player could investigate, or a searchable object that does not exist,
-     is a fabrication; a passing sensory detail is not.
-   - **Events** (`kind: "event"`) — what happened, when, and in what order, as
-     asserted by the narration.
+1. The narrator words these facts and may invent scenery and manner: weather,
+   a smell, a sound, a gesture. Walk the judged turns in order and check each
+   narration's concrete claims against the whole case, not only the clues
+   already out.
+2. Invention is a fault only when it could mislead the investigation, or when
+   it contradicts the case or what earlier narration established. It misleads
+   when it looks like evidence or bears on who, when or where: a mark, an
+   object to examine, a time, a sighting, a person, a place to search. The
+   test is: **could a player act on this?**
+   - **People** (`kind: "person"`) — no character the case lacks; no character
+     placed where the case contradicts; no weighty invented relationship.
+   - **Places and objects** (`kind: "place"` / `"object"`) — a room the player
+     could investigate, or a searchable object, that the case lacks. Moving
+     the investigator when the turn moved no one (only a `move` or `ambience`
+     does), or putting them inside or outside against the location's `facts`
+     ("You walk back out into the rain" from a warm bakery), is `place`.
+   - **Events** (`kind: "event"`) — what happened, when, and in what order.
    - **Contradiction** (`kind: "contradiction"`) — a claim that conflicts with
-     the blueprint, or with something the game master itself established in an
-     earlier turn. Self-contradiction across turns counts: continuity is part
-     of grounding.
-   - **Movement and placement** (`kind: "place"`) — moving the investigator
-     when the turn moved no one (only a `move` does), or putting them inside
-     or outside against the location's `description`: ending a talk in the
-     "warm bakery" with "You walk back out into the rain".
-3. Distinguish **fabrication** from acceptable **colour**. Atmospheric flourish
-   that adds no load-bearing fact (a creak of floorboards, the weather, a smell
-   from the kitchen) is the game master doing its job. A new alibi, a new
-   motive, a moved object that matters, a character knowing something they
-   cannot know, or a clue that does not exist — those are fabrications.
-   The test is: **could a player act on this?** If it would send them
-   somewhere, rule someone out, or change what they believe, it is
-   load-bearing.
-4. Severity: `major` when the invented fact is load-bearing, by step 3's test;
-   `minor` for embellishment that strays past the text but leads nowhere.
-5. Tie each finding to a turn `sequence`, quote the span, and name the
-   blueprint fact it invents or contradicts.
+     the case, or with something the game master itself established in an
+     earlier turn.
+3. **Saying "I don't know."** A character asked about something that bears on
+   the case, outside their own clues and `knows`, says plainly that they do
+   not know. An answer, a guess, or a hint at who, when or where is an
+   invention (`event` or `person`); so is a dodge that suggests they know
+   more. A character holding back a clue of their own that is not yet out is
+   the game working.
+4. **The closing scene** (`graph_ending`) is judged against `truth.timeline`,
+   `truth.motive` and the culprit conclusion: a step told wrong, or added, or
+   any contradiction, is a finding.
+5. Severity: a misleading invention is `major`, and so is any contradiction:
+   one of earlier narration is `major` even when what it contradicts is
+   scenery, since the player can no longer trust what they were shown.
+   Embellishment that strays past the text but leads nowhere is `minor`.
+6. Tie each finding to a turn `sequence`, quote the span, and name the case
+   fact it invents or contradicts.
 
-Do not penalize the game master for player-facing uncertainty, for declining to
-reveal, or for in-character evasion that the blueprint's deception supports. A
-character *lying* is not fabrication — the lie is authored. The narrator
-asserting the lie as fact is.
+Do not penalize player-facing uncertainty, declining to reveal, or a
+character's authored false statement.
 
 ## Output
 
@@ -84,8 +84,8 @@ asserting the lie as fact is.
       "severity": "minor" | "major",
       "kind": "person" | "place" | "object" | "event" | "contradiction",
       "quote": "Short verbatim span from that turn's narration.",
-      "why": "Which blueprint fact it invents or contradicts, with the grounding detail.",
-      "refers_to": "loc-garden"
+      "why": "Which case fact it invents or contradicts, with the grounding detail.",
+      "refers_to": "greenhouse"
     }
   ],
   "verdict": "pass" | "fail",

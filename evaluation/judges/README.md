@@ -1,9 +1,11 @@
 # Shared game-master judges
 
-These judges ask whether the AI **game master** honored the blueprint. That
+These judges ask whether the AI **game master** honored the case. That
 question does not depend on how the narration was produced, so the briefs and
 output schemas live here, outside both harnesses. Each harness projects its own
-data into one shared subject:
+data into one shared subject, and sends the clue-graph case itself as
+`blueprint` (`judgedCase` in `index.ts`), at the age the turns were narrated
+for:
 
 | Harness | Subject | Judged turns | Bound as |
 |---|---|---|---|
@@ -17,34 +19,32 @@ re-judged on another model.
 
 | Id | Asks | Typical `major` |
 |---|---|---|
-| `gm_roleplay` | Does the game master perform the authored character, and the required narrator voice? | An unearned persona flip; a concession from a mere mention, beyond the evidence used, or taken back; firing a gated tell early |
-| `gm_clue_discipline` | Were the right clues released, at the right time, and recorded? | Narration delivers a clue that was not recorded (or records one it never delivered); a `requires`-gated clue released before its prerequisites are used, undeclared |
-| `gm_fabrication` | Did the game master invent material facts the blueprint does not support? | An invented person, place, or searchable object; a claim contradicting the blueprint or the game master's own earlier turn |
-| `gm_spoiler` | Did narration before the closing scene give away ground truth? | Naming the culprit; stating the motive or mechanism as fact; confirming a guess |
+| `gm_roleplay` | Does the game master perform the authored character, and the narrator voice? | An unearned stance change; a gated clue given up before its gate opened; a statement taken back without its clue; a tell acted out early |
+| `gm_clue_discipline` | Were the right clues released, at the right time, and recorded? | A clue delivered but not recorded, or recorded but not delivered; a notebook line that changes its fact; a gated clue before its gate opened |
+| `gm_fabrication` | Did the game master invent material facts the case does not support? | An invention that could mislead; a contradiction of the case or of earlier narration; a closing scene telling the truth wrong |
+| `gm_spoiler` | Did narration before the closing scene give away a secret? | Naming the culprit; stating the motive or a timeline step as fact; confirming a guess |
 
 Four narrow judges, not one "blueprint adherence" judge
 (`docs/evaluation-pipeline.md`), each stating its
-boundaries so no defect is reported four times. For a clue-graph blueprint
-([`docs/clue-graph.md`](../../docs/clue-graph.md)), each message adds
-`format_guidance` (`clue-graph-guidance.ts`). The briefs still describe V2
-fields until their rewrite; the overlay keeps them correct.
+boundaries so no defect is reported four times. The preamble
+(`prompts/judge-system.md`) states the clue graph's rules once
+([`docs/clue-graph.md`](../../docs/clue-graph.md)); each brief adds its own,
+and the candidate `gm_broad` holds them all, one section per finding kind.
 
 ## The subject
 
 `subject.ts` projects each harness's data into a list of turns, each with its
-input, narration and revealed clues. Three fields carry the design:
+input, narration and revealed clues. Two fields carry the design:
 
 - `judged`. A runtime case's prior history is a **fixture**, not the model's
   output, so those turns are context the judge reads but never faults. A trace
   has no fixture, so every turn is judged.
-- `prior_revealed_clue_ids`. A search gate is judged against what the player
-  demonstrably had, from either subject, without the runtime's internal flags.
-- `recorded_use`. What the narrator reported for a character turn: gate clues
-  used, the player's words, new commitments (a runtime replay's is unfiltered by
-  the engine). Absent where not recorded, so "used nothing" and "not recorded" differ. A talk gate opens on use, not possession ([`docs/ai-runtime.md`](../../docs/ai-runtime.md),
-  "Earned, not free").
+- `prior_revealed_clue_ids`. A gate is judged against what the player
+  demonstrably had, from either subject; whether a clue was used is judged from
+  the player's words, not a recorded flag
+  ([`docs/ai-runtime.md`](../../docs/ai-runtime.md), "Earned, not free").
 
-A clue-graph turn also carries `notebook`, the line saved for each clue.
+A turn also carries `notebook`, the line saved for each clue.
 
 ## The verdict rule
 

@@ -26,12 +26,12 @@ evaluation/generator-harness/template/clue-graph/CLAUDE.md	350
 evaluation/judge-harness/template/README.md	200
 evaluation/judge-harness/template/clue-graph/CLAUDE.md	350
 evaluation/judges/README.md	750
-evaluation/judges/gm-broad.md	1400
+evaluation/judges/gm-broad.md	1100
 evaluation/judges/gm-clue-discipline.md	750
-evaluation/judges/gm-fabrication.md	650
-evaluation/judges/gm-roleplay.md	1000
+evaluation/judges/gm-fabrication.md	700
+evaluation/judges/gm-roleplay.md	850
 evaluation/judges/gm-spoiler.md	650
-evaluation/judges/prompts/judge-system.md	700
+evaluation/judges/prompts/judge-system.md	1100
 evaluation/playtest/README.md	950
 evaluation/playtest/personas/detective.md	100
 evaluation/playtest/personas/kid-7.md	100

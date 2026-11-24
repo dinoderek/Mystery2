@@ -140,11 +140,11 @@ describe("adherence judges (stub binding)", () => {
 });
 
 describe("buildJudgeUserMessage", () => {
-  it("hands the judge the blueprint and a one-judged-turn subject", () => {
-    const blueprint = { metadata: { title: "Mock" } } as unknown as BlueprintLike;
+  it("hands the judge the case itself and a one-judged-turn subject", () => {
+    const blueprint = mockBlueprint();
     const message = JSON.parse(buildJudgeUserMessage("gm_clue_discipline", makeTurn(), blueprint));
     expect(message.dimension_id).toBe("gm_clue_discipline");
-    expect(message.blueprint).toEqual(blueprint);
+    expect(message.blueprint).toEqual(blueprint.clue_graph);
     expect(message.subject.subject_kind).toBe("interaction");
     expect(message.subject.judged_sequences).toEqual([2]);
   });

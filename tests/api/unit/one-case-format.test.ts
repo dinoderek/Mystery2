@@ -134,22 +134,23 @@ const ALLOWED: Readonly<Record<string, readonly RegExp[]>> = {
 
 // Code and docs know one case format, so neither says "V2", in either case: a
 // third-party `/v2/` in code is caught too, and needs an entry here. Tests may: they
-// write the old format's tag to prove it is refused. The turn-judge briefs
-// still describe the old format, with the overlay that corrects them for the
-// clue graph, until they are rewritten; these are the files that say so.
+// write the old format's tag to prove it is refused. No file under
+// `evaluation/judges/` may: the turn judges state the clue graph's rules.
 const V2 = /\bV2\b/i;
-const V2_ALLOWED = new Set([
-  "evaluation/judges/README.md",
-  "evaluation/judges/clue-graph-guidance.ts",
-  "evaluation/judges/gm-fabrication.md",
-  "evaluation/judges/prompts/judge-system.md",
-]);
+const V2_ALLOWED = new Set<string>([]);
 const mayNameV2 = (file: string) => file.startsWith("tests/") || file.endsWith(".test.ts") || V2_ALLOWED.has(file);
 
 // Generated, not written: a lockfile's base64 hashes hold any three letters.
 const GENERATED = new Set(["package-lock.json"]);
 
 describe("the retired formats", () => {
+  it("leave the turn judges none to name", () => {
+    expect([...V2_ALLOWED].filter((file) => file.startsWith("evaluation/judges/"))).toEqual([]);
+    const judges = repoFiles().filter((file) => file.startsWith("evaluation/judges/"));
+    expect(judges.length).toBeGreaterThan(0);
+    expect(judges.filter((file) => V2.test(textOf(file) ?? ""))).toEqual([]);
+  });
+
   it("are matched as MSF spells them, and not inside an ordinary word", () => {
     for (const name of ["MSF-CASE/1", "msf_snapshot", "msf-case.ts", "validateMsfCaseFile", "MsfCaseFile", "msfSnapshot", "isMsf"]) {
       expect(MSF.test(name), name).toBe(true);

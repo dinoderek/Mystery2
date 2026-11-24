@@ -10,52 +10,53 @@ tier: 1
 
 Before the closing scene, did the game master **give away the answer**?
 
-The mystery only works if the player deduces it. Ground truth — who did it, why,
-and how — is authored in `ground_truth` and in the culprit's `actual_actions`,
-and the player is supposed to reconstruct it from clues. This dimension catches
-the game master short-circuiting that.
+The mystery only works if the player deduces it. The secrets are
+`blueprint.truth.timeline`, `truth.motive`, every conclusion's `text` (the
+culprit conclusion names who did it) and every false statement's `why`. A
+conclusion is never shown to the player; they reach it from clues. This
+dimension catches the game master short-circuiting that.
 
 A mechanical check (`spoiler_leak`) already catches long **verbatim** copying of
-ground-truth text. That check is deliberately blunt and high-precision. Your job
-is what it cannot see: **paraphrase, implication, and confirmation.**
+secret text. That check is deliberately blunt and high-precision. Your job is
+what it cannot see: **paraphrase, implication, and confirmation.**
 
 ## Inputs
 
-- `blueprint.ground_truth` — `what_happened`, `why_it_happened`, `timeline`.
-- `blueprint.world.characters[]` — `is_culprit`, `motive`, and each character's
-  `actual_actions` (what they really did, as opposed to `stated_alibi`).
-- `blueprint.solution_paths` — the reasoning the player is meant to assemble.
+- `blueprint.truth`, `blueprint.conclusions`, and the clues: a false
+  statement's `why`, and which gated statements are the culprit's confession.
 - `subject.turns` — each with `is_accusation_phase`. **Only turns where
   `is_accusation_phase` is false can carry findings**: it is true only for the
-  closing scene, where telling the solution is the point.
+  closing scene (`graph_ending`), which tells the solution and is never a
+  spoiler. A failed accusation's reply (`graph_accusation_round`) is judged as
+  any other turn.
 
 ## Judge instructions
 
-For each judged turn before the closing scene, ask what a player would *know* after
-reading it that they should have had to earn.
+For each judged turn before the closing scene, ask what a player would *know*
+after reading it that they should have had to earn.
 
 1. **Culprit disclosure** (`kind: "culprit"`). The narration identifies or
    effectively confirms who did it — naming them, or asserting guilt in a way
    that removes doubt ("you can be sure it was Dorn"). `major`.
-2. **Motive disclosure** (`kind: "motive"`). `why_it_happened` is stated as
-   fact rather than left to be inferred. `major`.
-3. **Mechanism disclosure** (`kind: "mechanism"`). `what_happened` or the
-   `timeline` is retold as established fact — how the crime was actually done,
-   in what order. `major`.
-4. **Hidden action disclosure** (`kind: "hidden_action"`). A culprit's or
-   suspect's `actual_actions` entry is narrated as what really happened, when
-   the player has not earned that. Note the distinction that matters most here:
-   a character *claiming* something is fine even when it is a lie; the narrator
-   asserting the true version is the leak. `major`.
-5. **Deduction handed over** (`kind: "deduction"`). The game master does the
-   player's reasoning for them — chaining known clues into the conclusion, or
-   telling the player which suspect to stop considering, when no authored
-   elimination path was earned. `major` when it lands on the culprit; `minor`
-   when it merely over-summarizes clues the player already has.
-6. **Confirmation** (`kind: "confirmation"`). The player guesses or asserts a
-   solution element and the game master confirms it as true before the
-   closing scene — a failed accusation's reply, a narrator aside, or a
-   character conceding what the fiction has not earned. `major`.
+2. **Motive disclosure** (`kind: "motive"`). `truth.motive`, or a false
+   statement's `why`, stated as fact rather than left to be inferred. `major`.
+3. **Mechanism disclosure** (`kind: "mechanism"`). A step of `truth.timeline`
+   — what someone really did, how the crime was done, in what order — narrated
+   as established fact. A character *claiming* something is fine, even when it
+   is false; the narrator asserting the true version is the leak. `major`.
+4. **Deduction handed over** (`kind: "deduction"`). The game master does the
+   player's reasoning — chaining held clues into a conclusion, or telling the
+   player which suspect to stop considering, when the player holds no clue
+   that clears them. `major` when it lands on the culprit; `minor` when it
+   merely over-summarizes clues the player already has.
+5. **Confirmation** (`kind: "confirmation"`). The player guesses or asserts a
+   solution element and the game master confirms it before the closing scene:
+   a narrator aside, a character conceding what no opened gate gives, or a
+   failed accusation's reply confirming the accused name or the culprit.
+   `major`.
+
+A character stating a secret before the gate of the clue that holds it opened
+is a leak, under the kind it gives away.
 
 Severity floor: if the player could act on the leak to skip real investigation,
 it is `major`. If it only narrows the field slightly or restates what they
@@ -63,17 +64,17 @@ already hold, it is `minor`.
 
 ## Not findings
 
-- Delivering an **authored clue** — clues are meant to be found, and their
-  content is not a spoiler even when it points hard at the culprit. If the
-  concern is that a clue moved too early, that is `gm_clue_discipline`.
-- A character lying, deflecting, or defending a false alibi.
-- A character giving the authored `reaction` of an agenda part whose clue the
-  player used: that concession is earned (`gm_roleplay` judges its fit).
+- Delivering a clue that was offered and recorded — clues are meant to be
+  found, even when they point hard at the culprit. A clue released too early
+  is `gm_clue_discipline`'s.
+- A character telling a false statement, deflecting, or giving a confession
+  whose gate has opened: the game working.
+- A failed accusation's reply wording the flaw, alternative or missing fact
+  the engine chose, from material the player holds.
 - Tension, foreshadowing, suspicion, or a character voicing their own
   (unreliable) theory about someone else.
 - The narrator restating what the player already discovered, without adding a
   conclusion.
-- Anything in a turn where `is_accusation_phase` is true.
 
 ## Output
 
@@ -83,10 +84,10 @@ already hold, it is `minor`.
     {
       "sequence": 5,
       "severity": "major",
-      "kind": "culprit" | "motive" | "mechanism" | "hidden_action" | "deduction" | "confirmation",
+      "kind": "culprit" | "motive" | "mechanism" | "deduction" | "confirmation",
       "quote": "Short verbatim span from that turn's narration.",
-      "why": "Which ground-truth element it gives away, and what the player no longer has to work out.",
-      "refers_to": "ground_truth.why_it_happened"
+      "why": "Which secret it gives away, and what the player no longer has to work out.",
+      "refers_to": "truth.motive"
     }
   ],
   "verdict": "pass" | "fail",

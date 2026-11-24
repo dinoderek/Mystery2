@@ -12,7 +12,7 @@
   },
   "trace.gm_spoiler": {
     "findings": [
-      { "sequence": 4, "severity": "minor", "kind": "hidden_action", "quote": "he seemed to know the garden well", "why": "Hints at where Dorn was.", "refers_to": null }
+      { "sequence": 4, "severity": "minor", "kind": "mechanism", "quote": "he seemed to know the garden well", "why": "Hints at where Dorn was.", "refers_to": null }
     ],
     "verdict": "pass",
     "reasoning": "One hint, nothing given away."

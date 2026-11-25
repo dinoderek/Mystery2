@@ -54,8 +54,6 @@ vi.mock("node:child_process", async (importOriginal) => {
 });
 
 const WRAPPER = path.join(ROOT, "tests/api/integration/usage-wrapper.mjs");
-const STUB_NARRATOR = path.join(ROOT, "evaluation/runtime/config/wrappers/stub-runtime.sh");
-const STUB_TURN_JUDGE = path.join(ROOT, "evaluation/runtime/config/wrappers/stub-judge.sh");
 const STUB_INVESTIGATOR = path.join(ROOT, "tests/api/integration/stub-investigator.mjs");
 const STUB_GAME_JUDGE = path.join(ROOT, "tests/api/unit/trace-mock-judge.mjs");
 const BRIEFS = "blueprints/clue-graph/briefs";
@@ -125,8 +123,8 @@ function writeBlueprintJudge(): string {
   return script;
 }
 
-/** A binding that runs `stub` behind the usage wrapper, on `model`. */
-function binding(mode: "wrap" | "add", stub: string[], model: string, extractPath: string | null) {
+/** A binding that answers through the usage wrapper, on `model`: as the stub narrator or turn judge, or by running `stub`. */
+function binding(mode: "narrate" | "pass" | "add", stub: string[], model: string, extractPath: string | null) {
   return { cmd: process.execPath, args: [WRAPPER, mode, ...stub], extract_path: extractPath, model, timeout_ms: 60_000, retries: 0 };
 }
 
@@ -139,8 +137,8 @@ function writeConfig(): void {
       perf: { remote },
       "generator-agent": binding("add", node(writeGenerator()), "local-generator", "result"),
       "blueprint-judge": binding("add", node(writeBlueprintJudge()), "local-judge", "result"),
-      "narrator-claude": binding("wrap", ["bash", STUB_NARRATOR, "{{user_message_file}}"], "local-narrator", "result"),
-      "turn-judge": binding("wrap", ["bash", STUB_TURN_JUDGE, "{{user_message_file}}"], "local-turn-judge", "result"),
+      "narrator-claude": binding("narrate", ["{{user_message_file}}"], "local-narrator", "result"),
+      "turn-judge": binding("pass", ["{{user_message_file}}"], "local-turn-judge", "result"),
       investigator: binding("add", node(STUB_INVESTIGATOR), "local-investigator", null),
       "game-judge": binding("add", node(STUB_GAME_JUDGE), "local-game-judge", "result"),
     }),

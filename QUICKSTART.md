@@ -52,14 +52,15 @@ profiles and chosen AI.
 
 ## Local Development
 
-### Mock AI (default)
+### Mock AI
 
 ```bash
 npm run dev
 ```
 
 Starts the game at `http://127.0.0.1:51000` (a worktree gets its own port; the
-command prints it). Mock narration, no network, no API key.
+command prints it). Without an `ai.json`, mock narration: no network, no API
+key.
 
 Pick a profile name on the first screen — that is the whole of signing in.
 
@@ -70,15 +71,18 @@ your AIs by name:
 
 ```json
 { "ais": {
-    "free":   { "backend": "openrouter", "model": "<model-id>", "key": "<key>" },
-    "claude": { "backend": "claude-cli", "model": "sonnet" } } }
+    "haiku":  { "backend": "openrouter", "model": "anthropic/claude-haiku-5.5", "key": "<key>" },
+    "claude": { "backend": "claude-cli", "model": "sonnet" } },
+  "default": "haiku" }
 ```
 
 Add a `"key"`, or leave it out and put `OPENROUTER_API_KEY` in `.env.local`.
-`./dev doctor` checks the file. Start, then choose one on `/settings`
-(`[ AI SETTINGS ]` on the profile picker, reachable before you have picked a
-profile). The choice is stored per database and survives a restart; a fresh
-database is mock, and the picker names the narrator.
+`"default"` narrates wherever nothing is chosen, fresh databases included;
+the example's is `haiku`, Claude Haiku over OpenRouter, so a playtest needs
+only the key. `./dev doctor` checks the file and the default.
+To narrate with another AI, choose one on `/settings` (`[ AI SETTINGS ]` on
+the profile picker, reachable before you have picked a profile). The choice is
+stored per database and survives a restart; the picker names the narrator.
 
 ### Naming an AI for a run
 

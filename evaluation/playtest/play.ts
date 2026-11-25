@@ -43,6 +43,7 @@ import type { RunFolder, SubjectFolder } from "../core/run-folder.ts";
 import { RESULT_SCHEMA_VERSION, summarize, writeResult } from "../core/result.ts";
 import type { Result, RunError } from "../core/result.ts";
 import { seedAIs, writeAIConfig } from "../../scripts/lib/ai-seed.mjs";
+import { readModelCalls } from "../lib/game-ai-calls.ts";
 import { startThrowawayServer } from "../runtime/lib/replay-server.ts";
 import type { StartServer, ThrowawayServer } from "../runtime/lib/replay-server.ts";
 import { signIn } from "./lib/api.ts";
@@ -413,7 +414,11 @@ function gameRunError(record: GameRecord): RunError | null {
 async function writeGameResult(play: Play, record: GameRecord): Promise<void> {
   const runError = gameRunError(record);
   const verdicts = record.kind === "played" ? (record.judgeResult?.verdicts ?? []) : [];
-  const calls = record.kind === "played" ? [...record.investigator.calls] : [];
+  // The investigator's calls, then the server's: the narrator's, which the game logged under this game's id.
+  const calls =
+    record.kind === "played"
+      ? [...record.investigator.calls, ...readModelCalls(play.callLogFile, (line) => line.game_id === record.game.gameId)]
+      : [];
   await writeResult(record.folder.resultFile, {
     schema_version: RESULT_SCHEMA_VERSION,
     run: play.run.info(),

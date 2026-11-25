@@ -16,7 +16,7 @@ Every model call through the runner (`evaluation/core/runner.ts`) is written to
 with its duration, cost and tokens, per attempt and summed per call.
 
 **Tokens.** An attempt's `tokens` holds `input`, `output`, `cache_read` and
-`cache_write`: the Claude CLI's `usage` counts, read where its cost is read, from
+`cache_write` (null where a source counts none, as below): the Claude CLI's `usage` counts, read where its cost is read, from
 the top of the wrapper's JSON stdout, else the last `result` event of the
 attempt's stream file. Cost is the CLI's own estimate and differs by login;
 tokens are the comparable measure.
@@ -30,3 +30,23 @@ tokens are the comparable measure.
 - Results of versions 1 and 2 read back with `tokens` null. A field a later
   version 3 addition introduces defaults to null when absent, so every version 3
   result already written stays readable.
+
+## The game's narrator calls
+
+`judge turn --narrator server` and `play` narrate through the game, which logs
+each AI call when `AI_CALL_LOG` is set (`packages/game-engine/src/ai-call-log.ts`).
+Both set it, to a file in the run folder (`ai-calls.jsonl`; `play`'s is
+`ai-calls.all.jsonl`), and read the lines back as model calls (`evaluation/lib/game-ai-calls.ts`) in `production.calls` of the
+subject's `result.json`, under the binding `server`; `play` lists them after the
+investigator's, told apart by binding.
+
+- A turn's calls are the lines carrying the `x-request-id` the harness sent with
+  its request, so concurrent samples never share one, and a turn that failed
+  keeps the calls it made. A game's are the lines of its game id.
+- The model is the AI profile's resolved model; duration, cost and tokens are the
+  line's. The game counts input and output only, the cache folded into input, so
+  both cache counts are null and a provider reporting no usage (mock) gives null
+  tokens and cost.
+- A line is one attempt, retries included. Only the prompt's hash is kept,
+  over its text and context, and an outcome: no prompt, answer or error text
+  reaches `result.json`.

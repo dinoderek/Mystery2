@@ -37,27 +37,39 @@ export const STATUSES = ["pass", "fail", "error", "skipped"] as const;
 export const StatusSchema = z.enum(STATUSES);
 export type Status = z.infer<typeof StatusSchema>;
 
-/** The tokens a model call used, as the Claude CLI's `usage` object counts them. */
+const CountSchema = z.number().int().min(0);
+
+/**
+ * The tokens a model call used, as the Claude CLI's `usage` object counts them.
+ * A cache count is null when the source reports none: the game's own call log
+ * counts input and output only, the cache folded into input.
+ */
 export const TokensSchema = z
   .object({
-    input: z.number().int().min(0),
-    output: z.number().int().min(0),
-    cache_read: z.number().int().min(0),
-    cache_write: z.number().int().min(0),
+    input: CountSchema,
+    output: CountSchema,
+    cache_read: CountSchema.nullable(),
+    cache_write: CountSchema.nullable(),
   })
   .strict();
 export type Tokens = z.infer<typeof TokensSchema>;
+
+/** A field's sum over the counts that were reported; null when none were. */
+function sumCounts(counts: readonly (number | null)[]): number | null {
+  const reported = counts.filter((each): each is number => each !== null);
+  return reported.length === 0 ? null : reported.reduce((sum, each) => sum + each, 0);
+}
 
 /** Field-wise sum of the tokens that were reported; null when none were. */
 export function sumTokens(tokens: readonly (Tokens | null)[]): Tokens | null {
   const reported = tokens.filter((each): each is Tokens => each !== null);
   if (reported.length === 0) return null;
-  return reported.reduce((sum, each) => ({
-    input: sum.input + each.input,
-    output: sum.output + each.output,
-    cache_read: sum.cache_read + each.cache_read,
-    cache_write: sum.cache_write + each.cache_write,
-  }));
+  return {
+    input: reported.reduce((sum, each) => sum + each.input, 0),
+    output: reported.reduce((sum, each) => sum + each.output, 0),
+    cache_read: sumCounts(reported.map((each) => each.cache_read)),
+    cache_write: sumCounts(reported.map((each) => each.cache_write)),
+  };
 }
 
 export const AttemptSchema = z

@@ -24,7 +24,8 @@ also applies engine reveal checks. Claude runs without tools, MCP or settings.
 
 A `server` run starts the app on a temporary root
 (`scripts/lib/test-server.mjs`), seeds each case's history, sends the action as
-a typed line, and removes the root; your play database is untouched. A case setting
+a typed line, records the game's AI calls as `server` model calls (its log is `ai-calls.jsonl` in
+the run folder), and removes the root; your play database is untouched. A case setting
 `accusation_history_mode` needs a CLI narrator. An `--ai-profile` other than `mock` or `default` comes from `ai.json` with its key; a missing one fails the run first.
 
 ## Cases

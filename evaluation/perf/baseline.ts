@@ -116,7 +116,8 @@ export function readSuite(dir: string, name: string): SuiteFile {
 /** The argv after `./dev eval` that makes one of a suite's runs: its command, inputs, options and numbers, then the suite's name and models. */
 export function suiteRunArgv(run: SuiteRun, suite: { name: string; models: Record<string, string> }, root: string): string[] {
   const flags = RUN_FLAGS[run.command];
-  const argv = [...run.command.split(" "), ...run.inputs.map((input) => path.resolve(root, input))];
+  // The commands read inputs from the working directory; relative, so a shared record holds no checkout's path.
+  const argv = [...run.command.split(" "), ...run.inputs.map((input) => path.relative(process.cwd(), path.resolve(root, input)) || ".")];
   for (const [name, value] of Object.entries(run.options)) {
     if (value === true) argv.push(`--${name}`);
     else if (value !== false) argv.push(`--${name}`, String(value));
@@ -141,6 +142,7 @@ const HELP = formatHelp({
     "place of the config's, recording the suite's name, then pushes their records to the data repository as perf push",
     "does. A dirty tree is refused before anything runs. A failed push is said once and leaves the exit code the runs':",
     "perf push sends it later. Exits as a run does: 1 if any run broke, else 2 if any failed, else 0. Calls models.",
+    "The suite sets --suite and --model-override itself; giving either is a usage error.",
   ].join("\n"),
 });
 

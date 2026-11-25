@@ -230,7 +230,7 @@ describe("the committed suites", () => {
         const at = argv.findIndex((arg, j) => arg === retained[i] && argv[j + 1] === retained[i + 1]);
         expect(at, `${retained[i]} ${retained[i + 1]}`).toBeGreaterThan(-1);
       }
-      expect(argv).toContain(path.join(ROOT, retained[0]));
+      expect(path.resolve(argv[2])).toBe(path.join(ROOT, retained[0]));
     }
   });
 });

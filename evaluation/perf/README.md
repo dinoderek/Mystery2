@@ -48,8 +48,8 @@ subject's `production.calls`, binding `server`.
 A finished run writes `record.json` beside `run.json`, never replaced
 (`evaluation/perf/record.ts`, schema `mystery-eval-record/1`): the run block
 whole, `exit_code`, `comparable`, and per subject its kind, id, `passed`, round
-count and break stage. Calls and verdicts are flat rows naming their subject
-and round.
+count and break stage. Calls and verdicts are flat rows naming their subject's
+position and round.
 
 - A call row: role, judge and version, binding, model, duration, cost, tokens,
   attempts and outcome. A verdict row: id, tier, status, version, finding count.

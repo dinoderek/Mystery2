@@ -1,3 +1,4 @@
+import { pickNumbered } from './landing-menu';
 import type { SessionOutcome, SessionSummary } from '$lib/types/game';
 
 function readDate(value: string): Date | null {
@@ -34,10 +35,5 @@ export function pickSessionByNumericKey(
   key: string,
   sessions: SessionSummary[],
 ): SessionSummary | null {
-  const index = Number.parseInt(key, 10);
-  if (!Number.isFinite(index) || index < 1 || index > sessions.length) {
-    return null;
-  }
-
-  return sessions[index - 1];
+  return pickNumbered(key, sessions);
 }

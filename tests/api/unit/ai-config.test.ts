@@ -1,5 +1,6 @@
 // `ai.json` and the resolver over it: the file's schema, named AIs and their
-// keys, and the order `default` follows — run override, stored choice, mock.
+// keys, and the order `default` follows — run override, stored choice, the
+// file's default, mock.
 // That order is why the settings page carries an override banner, so it is
 // asserted rather than assumed.
 
@@ -122,6 +123,17 @@ describe("the ai.json schema", () => {
     );
   });
 
+  it("accepts a default naming an entry, or mock", () => {
+    expect(parseAIConfig({ ...OPERATOR_FILE, default: "luna6" }).default).toBe("luna6");
+    expect(parseAIConfig({ ais: {}, default: "mock" }).default).toBe("mock");
+  });
+
+  it("rejects a default naming no entry, so a gone default stops the start", () => {
+    expect(rejection({ ...OPERATOR_FILE, default: "haiku" })).toMatch(/field "default" names AI "haiku", which is not an entry/);
+    expect(rejection({ ...OPERATOR_FILE, default: "default" })).toMatch(/field "default" names AI "default"/);
+    expect(rejection({ ...OPERATOR_FILE, default: "" })).toMatch(/field "default" is empty/);
+  });
+
   it("reports every problem at once", () => {
     const message = rejection({
       ais: { a: { backend: "x", model: "m" }, b: { backend: "openrouter" } },
@@ -239,6 +251,27 @@ describe("how default resolves", () => {
   it("is mock when nothing is chosen", () => {
     expect(resolveAIProfile("default", load())).toMatchObject({ id: "default", provider: "mock" });
     expect(resolveAIProfile("default", load(), nothingChosen())).toMatchObject({ id: "default", provider: "mock" });
+  });
+
+  it("follows the file's default when nothing is chosen, a fresh database included", () => {
+    writeConfig({ ais: { ...STORED.ais }, default: "stored" });
+    const expected = { id: "default", provider: "openrouter", model: "stored/model", openrouter_api_key: "sk-stored" };
+    expect(resolveAIProfile("default", load())).toEqual(expected);
+    expect(resolveAIProfile("default", load(), nothingChosen())).toEqual(expected);
+  });
+
+  it("puts the stored choice and the run override before the file's default", () => {
+    writeConfig({ ais: { ...STORED.ais, claude: { backend: "claude-cli", model: "sonnet" } }, default: "stored" });
+    expect(resolveAIProfile("default", load(), storedChoice("mock"))?.provider).toBe("mock");
+    expect(resolveAIProfile("default", load({ AI_PROFILE: "claude" }))?.provider).toBe("claude-cli");
+  });
+
+  it("errors, naming it, rather than becoming mock when the file's default has no key anywhere", () => {
+    writeConfig({ ...OPERATOR_FILE, default: "free" });
+    expect(() => resolveAIProfile("default", load(), nothingChosen())).toThrow(AIConfigError);
+    expect(() => resolveAIProfile("default", load(), nothingChosen())).toThrow(
+      /The default in .*ai\.json, "free", cannot narrate\. AI "free" uses openrouter but has no key/,
+    );
   });
 
   it("errors, naming the AI, rather than becoming mock when the stored choice has gone from the file", () => {

@@ -149,6 +149,18 @@ describe("the result schema", () => {
     await expect(writeResult(file, result([verdict("schema", "pass")], { production: { calls: [bad] } }))).rejects.toThrow(/tokens.input/);
   });
 
+  it("reads the analyzer verdicts of versions 1 and 2, and refuses them in version 3", async () => {
+    const analyzer = { id: "clue_graph.analyzer", tier: "analyzer" as const, status: "pass" as const };
+    for (const version of ["mystery-eval-result/1", "mystery-eval-result/2"]) {
+      const file = path.join(dir, `analyzer-${version.slice(-1)}.json`);
+      fs.writeFileSync(file, JSON.stringify(withoutTokens({ ...result([analyzer]), schema_version: version })));
+      expect((await readResult(file)).verdicts[0].tier).toBe("analyzer");
+    }
+    await expect(writeResult(path.join(dir, "v3.json"), result([analyzer]))).rejects.toThrow(/verdicts.0.tier: mystery-eval-result\/3 has no analyzer verdicts/);
+    const rounds = [{ round: 0, path: "blueprint.json", call, verdicts: [analyzer], summary: summarize([analyzer]), cost_usd: null, timing: null }];
+    await expect(writeResult(path.join(dir, "v3.json"), result([analyzer], { rounds }))).rejects.toThrow(/rounds.0.verdicts.0.tier/);
+  });
+
   it("reads a version 1 result, which has no rounds", async () => {
     const file = path.join(dir, "v1.json");
     fs.writeFileSync(file, JSON.stringify({ ...result(), schema_version: "mystery-eval-result/1" }));

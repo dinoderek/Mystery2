@@ -4,6 +4,7 @@
  *
  *     <output root>/<YYYY-MM-DD>/<HH-MM-SS>-<command>/
  *     ├── run.json              the index: the run, and one line per subject
+ *     ├── record.json           the run record (`perf/record.ts`), written once
  *     └── <subject>/
  *         ├── result.json       the subject's result (`result.ts`)
  *         ├── <stored subject>  the blueprint, trace or captured turn
@@ -13,7 +14,12 @@
  * Dates and times are UTC. A second run in the same second gets `-2`, `-3`.
  * `run.json` repeats from each result only what a reader needs to pick a
  * subject to open: its kind, id, folder, `passed` and counts, and the run error
- * if it broke. The results stay the record.
+ * if it broke. The results stay the source of truth.
+ *
+ * `record.json` is written after `run.json` and never replaced: the run's ids,
+ * counts and metrics, with no text, for sharing and indexing. `recordFromFolder`
+ * builds the same record from any run folder of result versions 1 to 3,
+ * including one stopped before it wrote `run.json`.
  */
 
 import { execFileSync } from "node:child_process";
@@ -23,9 +29,13 @@ import path from "node:path";
 
 import { z } from "zod";
 
+import { buildRecord, writeRecord } from "../perf/record.ts";
+import type { RecordSource, RunRecord } from "../perf/record.ts";
+
 import type { ResolvedBinding } from "./config.ts";
 import { judgeVersions } from "./judge-version.ts";
 import { promptVersions } from "./prompt-versions.ts";
+import { osUserName } from "./run-identity.ts";
 import type { RunIdentity } from "./run-identity.ts";
 import { suiteAttributes } from "./suite-attributes.ts";
 import type { CommandAttributes } from "./suite-attributes.ts";
@@ -132,7 +142,7 @@ export interface RunFolder {
   info(): RunInfo;
   /** Makes the folder for one subject, named after its id. */
   subject(subject: Pick<Subject, "kind" | "id">): SubjectFolder;
-  /** Reads back every subject's result, writes `run.json`, and returns it. */
+  /** Reads back every subject's result, writes `run.json` and then `record.json`, and returns the index. */
   finish(): Promise<RunIndex>;
 }
 
@@ -204,6 +214,8 @@ export function createRunFolder(options: RunFolderOptions): RunFolder {
         exit_code: exitCodeFor(results),
       });
       fs.writeFileSync(path.join(dir, RUN_INDEX), `${JSON.stringify(index, null, 2)}\n`, "utf8");
+      const source = { result_version: index.schema_version, run: index.run, exit_code: index.exit_code, results };
+      writeRecord(dir, buildRecord(source, options.identity?.developer ?? osUserName()));
       return index;
     },
   };
@@ -213,4 +225,34 @@ export function createRunFolder(options: RunFolderOptions): RunFolder {
 export function readRunIndex(runDir: string): RunIndex {
   const file = path.join(runDir, RUN_INDEX);
   return RunIndexSchema.parse(JSON.parse(fs.readFileSync(file, "utf8")));
+}
+
+/** The subject folders of a run that wrote no `run.json`: those holding a result, in name order. */
+function resultDirs(runDir: string): string[] {
+  return fs
+    .readdirSync(runDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && fs.existsSync(path.join(runDir, entry.name, RESULT_FILE)))
+    .map((entry) => entry.name)
+    .sort();
+}
+
+/** What a record is built from: `run.json` and its subjects' results, else, for a run stopped before it wrote one, its results and the latest run block among them. */
+async function recordSource(runDir: string): Promise<RecordSource> {
+  if (fs.existsSync(path.join(runDir, RUN_INDEX))) {
+    const index = readRunIndex(runDir);
+    const results: Result[] = [];
+    for (const subject of index.subjects) results.push(await readResult(path.join(runDir, subject.dir, RESULT_FILE)));
+    return { result_version: index.schema_version, run: index.run, exit_code: index.exit_code, results };
+  }
+  const dirs = resultDirs(runDir);
+  if (dirs.length === 0) throw new Error(`${runDir} has no ${RUN_INDEX} and no subject with a ${RESULT_FILE}`);
+  const results: Result[] = [];
+  for (const dir of dirs) results.push(await readResult(path.join(runDir, dir, RESULT_FILE)));
+  const latest = results.reduce((last, each) => ((each.run.ended_at ?? "") > (last.run.ended_at ?? "") ? each : last));
+  return { result_version: latest.schema_version, run: latest.run, exit_code: null, results };
+}
+
+/** The record of the run in `runDir`, built as `finish()` builds it; `localDeveloper` stands in when the run recorded none. */
+export async function recordFromFolder(runDir: string, localDeveloper: string): Promise<RunRecord> {
+  return buildRecord(await recordSource(runDir), localDeveloper);
 }

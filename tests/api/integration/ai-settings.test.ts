@@ -226,6 +226,33 @@ describe("a server with AIs of its own", () => {
     expect(readStoredEvents(gameId, own.database())).toHaveLength(narrated);
   });
 
+  it("narrates a fresh database with the ai.json default, with nothing chosen", async () => {
+    const own = await start({ ais: { cli: { backend: "claude-cli", model: "sonnet" } }, default: "cli" });
+    const auth = await own.createPlayer("ai-default-fresh");
+
+    expect(await state(own.apiUrl)).toMatchObject({
+      chosen: null,
+      configured_default: "cli",
+      narrator: { name: "cli", backend: "claude-cli", model: "sonnet" },
+    });
+    // The claude CLI is a missing file here, so the game cannot start: the
+    // default narrated it, and mock did not stand in for it.
+    expect((await gameStart(own, auth)).status).not.toBe(200);
+    expect(sessionCount(own, auth)).toBe(0);
+  });
+
+  it("answers game-start with an error naming an ai.json default that cannot narrate, and starts nothing", async () => {
+    const own = await start({ ais: { free: { backend: "openrouter", model: "vendor/free" } }, default: "free" });
+    const auth = await own.createPlayer("ai-default-broken");
+
+    const response = await gameStart(own, auth);
+
+    expect(response.status).toBe(500);
+    expect((await response.json()).error).toMatch(/The default in .*ai\.json, "free", cannot narrate/);
+    expect(sessionCount(own, auth)).toBe(0);
+    expect((await state(own.apiUrl)).narrator_error).toMatch(/"free"/);
+  });
+
   it("answers game-start with an error naming a chosen AI that has gone, and starts nothing", async () => {
     const own = await start(undefined);
     const auth = await own.createPlayer("ai-choice-gone");

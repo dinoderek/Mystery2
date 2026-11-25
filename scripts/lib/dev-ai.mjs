@@ -124,24 +124,27 @@ export function describeAIs({ root, env, claudeRuns = claudeCliRuns }) {
   if (!fs.existsSync(file)) return { ok: true, lines: [`ok   no ${file}: mock is the only AI`] };
 
   const lines = [`ok   ${file} parses: mock and ${Object.keys(loaded.config.ais).length} AI(s)`];
+  // The CLI is started once, however many AIs use it.
+  let cliResult = null;
+  const cliRuns = () => (cliResult ??= claudeRuns(env));
   for (const [name, entry] of Object.entries(loaded.config.ais)) {
     const what = `AI "${name}": ${entry.backend} ${entry.model}`;
     if (entry.backend === "openrouter") {
       const found = findOpenRouterKey(entry, loaded.sources);
       lines.push(found ? `ok   ${what}, key from ${found.source}` : `warn ${what}, no key in ai.json, OPENROUTER_API_KEY or .env.local`);
     } else {
-      const { ok, cli } = claudeRuns(env);
+      const { ok, cli } = cliRuns();
       lines.push(ok ? `ok   ${what}, "${cli}" runs` : `warn ${what}, "${cli}" did not run: install Claude Code or set CLAUDE_CLI_PATH`);
     }
   }
-  return describeDefault({ loaded, env, claudeRuns, lines });
+  return describeDefault({ loaded, cliRuns, lines });
 }
 
 /**
  * Adds the line about the file's `default`. A default that cannot narrate
  * fails: every game on a database with nothing chosen would fail with it.
  */
-function describeDefault({ loaded, env, claudeRuns, lines }) {
+function describeDefault({ loaded, cliRuns, lines }) {
   const name = loaded.config.default;
   if (name === undefined) return { ok: true, lines: [...lines, "ok   no default in ai.json: a database with nothing chosen narrates with mock"] };
 
@@ -153,7 +156,7 @@ function describeDefault({ loaded, env, claudeRuns, lines }) {
       ? { ok: true, lines: [...lines, `ok   ${what} can narrate`] }
       : { ok: false, lines: [...lines, `FAIL ${what} cannot narrate: no key in ai.json, OPENROUTER_API_KEY or .env.local`] };
   }
-  const { ok, cli } = claudeRuns(env);
+  const { ok, cli } = cliRuns();
   return ok
     ? { ok: true, lines: [...lines, `ok   ${what} can narrate`] }
     : { ok: false, lines: [...lines, `FAIL ${what} cannot narrate: "${cli}" did not run`] };

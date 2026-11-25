@@ -92,9 +92,8 @@ create unique index game_events_session_sequence_idx
 --
 -- At most one row, holding the chosen AI's name: \`mock\` or an entry of
 -- ai.json. No row means nothing has been chosen, which narrates with the file's
--- default, else mock. The
--- name is not checked against the file here, because the file can change
--- between starts; resolving it is where a name that has gone is reported.
+-- default, else mock. The name is not checked against the file here, because
+-- the file can change between starts; resolving it is where a name that has gone is reported.
 
 create table app_settings (
     id       integer primary key check (id = 1),

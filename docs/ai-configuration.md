@@ -10,7 +10,7 @@ gitignored, and `tracked-files` fails the gate if one is tracked. It is read
 once, at start: a malformed file stops the server, a missing one leaves only
 mock. An optional top-level `"default"` must name `mock` or an entry.
 `./dev doctor` lists each AI and its gaps, and fails when the default cannot
-narrate. The example's default, `haiku`, is the model the runtime baselines
+narrate. The example's default is `haiku`, the family the runtime baselines
 used.
 
 ## Keys

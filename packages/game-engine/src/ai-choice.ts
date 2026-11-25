@@ -2,7 +2,8 @@
 //
 // The page lists mock and the AIs in `ai.json`, marks the stored choice, names
 // the file's default and a run override while one is in force, and says which
-// AI narrates a game started now. It never carries a key: nothing here copies one into a summary.
+// AI narrates a game started now. It never carries a key: nothing here copies
+// one into a summary.
 
 import {
   AISettingsUpdateSchema,

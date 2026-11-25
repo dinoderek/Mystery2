@@ -201,6 +201,11 @@ export function openDatabase(options: OpenDatabaseOptions): Db {
     throw error;
   }
 
+  return wrap(database);
+}
+
+/** The narrow handle over an open driver connection. */
+function wrap(database: BetterSqlite3.Database): Db {
   return {
     prepare: (sql) => database.prepare(sql) as unknown as DbStatement,
     exec: (sql) => {
@@ -215,6 +220,19 @@ export function openDatabase(options: OpenDatabaseOptions): Db {
     },
     close: () => database.close(),
   };
+}
+
+/**
+ * Opens a database that is not the game's: a new file, or one the caller made,
+ * with no schema applied, no migration and no pragma beyond a busy timeout. For
+ * files other code owns and can delete, such as the evaluation index
+ * (`evaluation/perf/`). Parent directories are created.
+ */
+export function openPlainDatabase(filePath: string): Db {
+  fs.mkdirSync(path.dirname(path.resolve(filePath)), { recursive: true });
+  const database = new Database(filePath);
+  database.pragma("busy_timeout = 5000");
+  return wrap(database);
 }
 
 function schemaVersionOf(database: BetterSqlite3.Database): number {

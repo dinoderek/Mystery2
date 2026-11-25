@@ -83,6 +83,12 @@ function identityFallback(clone: string, author: string): string[] {
   return settings;
 }
 
+/** Brings the clone to the remote's `main`, making it on first use; what `perf sync` reads from. Throws a `GitError` when the remote cannot be reached. */
+export function fetchRecords(clone: string, remote: string): void {
+  ensureClone(clone, remote);
+  syncToRemote(clone);
+}
+
 /** A record to send: where it goes and the exact bytes of its `record.json`. */
 export interface RecordFile {
   path: string;

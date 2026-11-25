@@ -18,7 +18,7 @@ import { generateCommand } from "../../../evaluation/generate/commands.ts";
 import { runEval } from "../../../evaluation/core/dispatch.ts";
 import type { EvalCommand } from "../../../evaluation/core/dispatch.ts";
 import { createPerfBaselineCommand, readSuite, suiteNames, suiteRunArgv, SUITES_DIR } from "../../../evaluation/perf/baseline.ts";
-import { runFolders } from "../../../evaluation/perf/push.ts";
+import { runFolders } from "../../../evaluation/perf/run-folders.ts";
 import { readRecord } from "../../../evaluation/perf/record.ts";
 import { readSummary } from "../../../evaluation/runtime/lib/expect-summary.ts";
 

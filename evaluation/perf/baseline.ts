@@ -36,7 +36,8 @@ import { EXIT_PASSED, EXIT_RUN_BROKE, EXIT_VERDICT_FAILED } from "../core/result
 import { readCommit as readCheckoutCommit, resolveOutputRoot } from "../core/run-folder.ts";
 import { generateCommand } from "../generate/commands.ts";
 import { judgeTurnCommand } from "../runtime/judge-turn.ts";
-import { pushFolders, requirePerfRemote, runFolders } from "./push.ts";
+import { pushFolders, requirePerfRemote } from "./push.ts";
+import { runFolders } from "./run-folders.ts";
 import { RECORD_FILE, readRecord } from "./record.ts";
 
 export const SUITES_DIR = path.join("evaluation", "perf", "suites");

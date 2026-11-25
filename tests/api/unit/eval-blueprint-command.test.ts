@@ -215,6 +215,16 @@ describe("judge blueprint", () => {
     expect(result.run.bindings).toEqual({});
   });
 
+  it("records the suite, label, developer and host it was given, and nulls when it was given none", async () => {
+    const config = write("named-config.json", { developer: "dino" });
+    expect(await eval_(judgeArgv(["--no-judges", "--config", config, "--suite", "blueprint-loop", "--label", "first try"]))).toBe(0);
+    expect((await theResult()).run).toMatchObject({ suite: "blueprint-loop", label: "first try", developer: "dino", host: os.hostname(), parent_run: null });
+
+    fs.rmSync(path.join(dir, "out"), { recursive: true });
+    expect(await eval_(judgeArgv(["--no-judges", "--config", config]))).toBe(0);
+    expect((await theResult()).run).toMatchObject({ suite: null, label: null, developer: "dino" });
+  });
+
   it("runs only the judges --judges names, and skips the rest", async () => {
     const config = stubConfig(passingAnswers());
     expect(await eval_(judgeArgv(["--judges", "cg_soundness,cg_step_sense", "--config", config, "--quiet"]))).toBe(0);

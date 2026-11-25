@@ -15,12 +15,16 @@ export const COMMON_OPTIONS = {
   config: { type: "string" },
   "output-root": { type: "string" },
   "model-override": { type: "string", multiple: true },
+  suite: { type: "string" },
+  label: { type: "string" },
 } as const satisfies ParseArgsOptionsConfig;
 
 const COMMON_HELP: ReadonlyArray<[string, string]> = [
   ["--config <file>", "the bindings file (default: evaluation/config.json, else evaluation/config.example.json)"],
   ["--output-root <dir>", "where runs are written (default: $MYSTERYEVALS_DIR, else ~/mysteryevals)"],
   ["--model-override <binding>=<model>", "use another model for one binding in this run; repeatable"],
+  ["--suite <name>", "name the suite a run belongs to; run commands record it, null when absent"],
+  ["--label <text>", "a free-text label a run records beside its suite, null when absent"],
   ["-h, --help", "print this help"],
 ];
 
@@ -29,6 +33,10 @@ export interface CommonArgs {
   configPath: string | undefined;
   outputRoot: string | undefined;
   modelOverrides: Record<string, string>;
+  /** `--suite`: recorded by the run commands; null when not given. */
+  suite: string | null;
+  /** `--label`: recorded by the run commands; null when not given. */
+  label: string | null;
 }
 
 export type OptionValue = string | boolean | Array<string | boolean> | undefined;
@@ -51,6 +59,13 @@ function checkPositionals(count: number, { min, max }: { min: number; max: numbe
   if (count > max) throw new UsageError(`expected at most ${max} argument(s), got ${count}`);
 }
 
+/** A string option's trimmed value, null when it was not given; given but blank is a usage error. */
+function nonBlank(name: string, value: OptionValue): string | null {
+  if (typeof value !== "string") return null;
+  if (value.trim() === "") throw new UsageError(`--${name} needs a value`);
+  return value.trim();
+}
+
 /** Parses a command's argv. With `--help`, positional counts are not checked. */
 export function parseCommandArgs(argv: readonly string[], spec: CommandSpec = {}): ParsedArgs {
   const own = spec.options ?? {};
@@ -68,15 +83,22 @@ export function parseCommandArgs(argv: readonly string[], spec: CommandSpec = {}
   } catch (error) {
     throw new UsageError((error as Error).message);
   }
-  const { help, config, "output-root": outputRoot, "model-override": overrides, ...values } = parsed.values as Record<
-    string,
-    OptionValue
-  >;
+  const {
+    help,
+    config,
+    "output-root": outputRoot,
+    "model-override": overrides,
+    suite,
+    label,
+    ...values
+  } = parsed.values as Record<string, OptionValue>;
   const common: CommonArgs = {
     help: help === true,
     configPath: typeof config === "string" ? config : undefined,
     outputRoot: typeof outputRoot === "string" ? outputRoot : undefined,
     modelOverrides: parseModelOverrides(Array.isArray(overrides) ? overrides.map(String) : []),
+    suite: nonBlank("suite", suite),
+    label: nonBlank("label", label),
   };
   if (!common.help && spec.positionals) checkPositionals(parsed.positionals.length, spec.positionals);
   return { common, values, positionals: parsed.positionals };

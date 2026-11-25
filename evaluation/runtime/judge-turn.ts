@@ -42,6 +42,7 @@ import { getEntry } from "../core/registry.ts";
 import { RESULT_SCHEMA_VERSION, summarize, writeResult, readResult } from "../core/result.ts";
 import type { ModelCall, Result, RunError, Verdict } from "../core/result.ts";
 import { createRunFolder, resolveOutputRoot } from "../core/run-folder.ts";
+import { runIdentity } from "../core/run-identity.ts";
 import type { RunFolder } from "../core/run-folder.ts";
 import { assertCaseCharacters, loadCasesFrom, readBlueprint, validateCase } from "./lib/case.ts";
 import type { BlueprintLike, JudgeOptions, TurnCase } from "./lib/case.ts";
@@ -476,6 +477,7 @@ export function createJudgeTurnCommand({ startServer = startThrowawayServer }: J
         command: "judge turn",
         argv,
         root: context.root,
+        identity: runIdentity(common, context.root),
         bindings: [...narratorBindings.values(), ...(judgeBinding ? [judgeBinding] : [])],
       });
       // Its calls come back as the turns' model calls; the log itself stays in the run's folder.

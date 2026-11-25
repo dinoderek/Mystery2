@@ -4,7 +4,7 @@
  *
  * | Part         | Holds |
  * | ------------ | ----- |
- * | `run`        | The run it belongs to: id, command, arguments, start and end, commit and whether the tree was clean, the bindings used, each judge's version |
+ * | `run`        | The run it belongs to: id, command, arguments, start and end, commit and whether the tree was clean, the bindings used, each judge's version, and who ran what: suite, label, developer, host, parent run, prompt versions |
  * | `subject`    | `blueprint`, `game` or `turn`, its id, and where the stored subject sits beside the result |
  * | `production` | When this run made the subject: each model call, with its attempts |
  * | `verdicts`   | One per check or judge; a judge's carries its model call and raw answer |
@@ -132,6 +132,22 @@ export const RunInfoSchema = z
      * the result records none.
      */
     judge_versions: z.record(z.number().int().positive().nullable()).default({}),
+    /** `--suite`; null on an ad-hoc run and in results written before it was recorded. */
+    suite: z.string().min(1).nullable().default(null),
+    /** `--label`; null on an ad-hoc run and in results written before it was recorded. */
+    label: z.string().min(1).nullable().default(null),
+    /** Who ran it: `developer` in the config, else the OS user name; never an email address. */
+    developer: z.string().min(1).nullable().default(null),
+    /** The machine's host name. */
+    host: z.string().min(1).nullable().default(null),
+    /** The id of the run this one belongs to: `judge game` started by `play --judge` names its play run; null otherwise. */
+    parent_run: z.string().min(1).nullable().default(null),
+    /** Short hashes of the narrator's prompt files and the generator's (`prompt-versions.ts`); null when not recorded. */
+    prompt_versions: z
+      .object({ narrator: z.string().regex(/^[0-9a-f]{12}$/), generator: z.string().regex(/^[0-9a-f]{12}$/) })
+      .strict()
+      .nullable()
+      .default(null),
   })
   .strict();
 export type RunInfo = z.infer<typeof RunInfoSchema>;

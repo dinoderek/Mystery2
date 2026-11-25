@@ -6,8 +6,7 @@ running the commands: `evaluation/README.md`.
 
 Run folders stay the source of truth. Whatever is shared, indexed or reported is
 derived from them. The data repository, index, report and baseline suites, and
-the `./dev eval perf` commands with the `--suite` and `--label` options that go
-with them, are not built yet; this file grows with each.
+the `./dev eval perf` commands are not built yet; this file grows with each.
 
 ## What a run records
 
@@ -31,6 +30,28 @@ tokens are the comparable measure.
 - Results of versions 1 and 2 read back with `tokens` null. A field a later
   version 3 addition introduces defaults to null when absent, so every version 3
   result already written stays readable.
+
+**Who ran what.** The `run` block of every result also names:
+
+- `suite` and `label`, from `--suite <name>` and `--label <text>`, which every
+  `./dev eval` command accepts; `generate`, `judge blueprint`, `judge turn`,
+  `judge game` and `play` record them, null when absent.
+- `developer`, from a top-level `developer` key in `evaluation/config.json` (or
+  the `--config` file), else the OS user name. A name, never an email address;
+  `evaluation/config.example.json` leaves it null. It is not a binding.
+- `host`, the machine's host name.
+- `parent_run`: `judge game` started by `play --judge` records the play run's
+  id (passed as its `--parent-run`, with the play run's suite and label), so the
+  pair counts as one loop. Null otherwise.
+- `prompt_versions`: `narrator` and `generator`, each the first 12 hex digits of
+  a SHA-256 over its prompt files' paths and content
+  (`evaluation/core/prompt-versions.ts`). The narrator's files are the role
+  prompts, their guidance, the system messages and the age profile, all under
+  the paths `baseline status` treats as read. A hash needs no upkeep; the index
+  orders versions by when each was first seen. Judges keep their numbered
+  versions.
+
+Fields absent from a version 3 result read back as null.
 
 ## The game's narrator calls
 

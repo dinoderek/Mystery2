@@ -25,6 +25,8 @@ import { z } from "zod";
 
 import type { ResolvedBinding } from "./config.ts";
 import { judgeVersions } from "./judge-version.ts";
+import { promptVersions } from "./prompt-versions.ts";
+import type { RunIdentity } from "./run-identity.ts";
 import {
   RESULT_SCHEMA_VERSION,
   ResultSchemaVersionSchema,
@@ -108,6 +110,8 @@ export interface RunFolderOptions {
   /** The repo root, whose commit the run records. */
   root: string;
   bindings: readonly ResolvedBinding[];
+  /** Suite, label, developer and parent run (`runIdentity`); null for a command that is not a run command. */
+  identity?: RunIdentity;
   now?: () => Date;
   commit?: { commit: string | null; tree_clean: boolean | null };
 }
@@ -160,6 +164,12 @@ export function createRunFolder(options: RunFolderOptions): RunFolder {
     ...commit,
     bindings: bindingsUsed(options.bindings),
     judge_versions: { ...judgeVersions() },
+    suite: options.identity?.suite ?? null,
+    label: options.identity?.label ?? null,
+    developer: options.identity?.developer ?? null,
+    host: os.hostname(),
+    parent_run: options.identity?.parent_run ?? null,
+    prompt_versions: promptVersions(),
   };
   const subjects: Array<Pick<Subject, "kind" | "id"> & { dir: string }> = [];
 

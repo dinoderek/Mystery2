@@ -17,6 +17,7 @@ import type { ResolvedBinding } from "../core/config.ts";
 import type { EvalCommand, EvalContext } from "../core/dispatch.ts";
 import { UsageError } from "../core/errors.ts";
 import { createRunFolder, resolveOutputRoot } from "../core/run-folder.ts";
+import { runIdentity } from "../core/run-identity.ts";
 import { judgesFor } from "../core/registry.ts";
 import type { Result } from "../core/result.ts";
 import { createRunTimer, formatTimingSummary } from "../core/timing.ts";
@@ -130,6 +131,7 @@ export const judgeBlueprintCommand: EvalCommand = {
       command: "judge blueprint",
       argv,
       root: context.root,
+      identity: runIdentity(common, context.root),
       bindings: binding ? [binding] : [],
     });
     const id = blueprintSubjectId(inputs.blueprintFile);

@@ -41,8 +41,17 @@ function recordingLogger(): LogWriter & { entries: RecordedLog[] } {
   };
 }
 
-function store(dirs: string[] = [primaryDir, fallbackDir]) {
-  return createLocalContentStore({ blueprintDirs: dirs, imagesDir, sceneDirs: [path.join(tempDir, "blueprint-scenes")] });
+function store(dirs: string[] = [primaryDir, fallbackDir], listFixtures?: boolean) {
+  return createLocalContentStore({ blueprintDirs: dirs, imagesDir, sceneDirs: [path.join(tempDir, "blueprint-scenes")], listFixtures });
+}
+
+/** The mock case with every image id taken out, as a committed case is filed. */
+function caseWithoutImages() {
+  const graph = structuredClone(CASE_FILE);
+  delete graph.metadata.image_id;
+  for (const person of Object.values(graph.characters)) delete person.portrait_image_id;
+  for (const place of Object.values(graph.locations)) delete place.location_image_id;
+  return graph;
 }
 
 function writeBlueprint(dir: string, filename: string, overrides = {}) {
@@ -98,7 +107,7 @@ describe("listBlueprints", () => {
   it("returns every readable blueprint with its filename as the source", async () => {
     writeBlueprint(primaryDir, `${BLUEPRINT_ID}.json`);
 
-    expect(await store().listBlueprints()).toEqual([
+    expect(await store(undefined, true).listBlueprints()).toEqual([
       { blueprint: expect.objectContaining({ id: BLUEPRINT_ID }), source: `${BLUEPRINT_ID}.json` },
     ]);
   });
@@ -137,6 +146,59 @@ describe("listBlueprints", () => {
         details: { object: "old.json", error: "Unknown case format: clue-graph/1" },
       },
     ]);
+  });
+
+  it("logs an unreadable blueprint once, and again only once the file changes", async () => {
+    const file = path.join(primaryDir, "v2.json");
+    writeBlueprint(primaryDir, "v2.json", { format: undefined, schema_version: "v2" });
+    const content = store();
+    const logger = recordingLogger();
+
+    await content.listBlueprints(logger);
+    await content.listBlueprints(logger);
+    await content.loadBlueprint("nope", logger);
+    expect(logger.entries.map((entry) => entry.event)).toEqual(["blueprint.parse_failed"]);
+
+    writeBlueprint(primaryDir, "v2.json", { format: undefined, schema_version: "v2-edited" });
+    fs.utimesSync(file, new Date(), new Date(Date.now() + 5_000));
+    await content.listBlueprints(logger);
+    expect(logger.entries.map((entry) => entry.details?.error)).toEqual([
+      "Unknown case format: v2",
+      "Unknown case format: v2-edited",
+    ]);
+  });
+
+  it("marks the test fixture unlisted unless fixtures are listed, and loads it by id either way", async () => {
+    writeBlueprint(primaryDir, "mock-case.json");
+
+    expect(await store().listBlueprints()).toEqual([expect.objectContaining({ unlisted: true })]);
+    expect(await store().loadBlueprint(BLUEPRINT_ID, recordingLogger())).toMatchObject({ id: BLUEPRINT_ID });
+    expect((await store(undefined, true).listBlueprints())[0]).not.toHaveProperty("unlisted");
+  });
+
+  it("fills a case's missing image ids from images filed under their conventional names", async () => {
+    fs.writeFileSync(path.join(primaryDir, "mock-case.json"), JSON.stringify(caseWithoutImages()));
+    const content = store();
+
+    const bare = (await content.listBlueprints())[0].blueprint;
+    expect(bare.metadata.image_id).toBeUndefined();
+    expect(bare.world.characters.every((person) => person.portrait_image_id === undefined)).toBe(true);
+
+    for (const file of ["mock-case.blueprint.png", "mock-case.character-char-alice.png", "mock-case.location-loc-kitchen.png"]) {
+      fs.writeFileSync(path.join(imagesDir, file), "png");
+    }
+    const filed = (await content.listBlueprints())[0].blueprint;
+    expect(filed.metadata.image_id).toBe("mock-case.blueprint.png");
+    expect(filed.world.characters.find((person) => person.id === "char-alice")?.portrait_image_id).toBe("mock-case.character-char-alice.png");
+    expect(filed.world.characters.find((person) => person.id === "char-bob")?.portrait_image_id).toBeUndefined();
+    expect(filed.world.locations.find((place) => place.id === "loc-kitchen")?.location_image_id).toBe("mock-case.location-loc-kitchen.png");
+  });
+
+  it("keeps the image ids a case names over the conventional files", async () => {
+    writeBlueprint(primaryDir, "mock-case.json", { metadata: { ...CASE_FILE.metadata, image_id: "named-cover.png" } });
+    fs.writeFileSync(path.join(imagesDir, "mock-case.blueprint.png"), "png");
+
+    expect((await store().listBlueprints())[0].blueprint.metadata.image_id).toBe("named-cover.png");
   });
 
   it("lets the first directory win when a blueprint id appears twice", async () => {

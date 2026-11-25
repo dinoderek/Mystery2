@@ -88,6 +88,8 @@ export default defineConfig({
       ...process.env,
       MYSTERY_CONFIG_ROOT: E2E_CONFIG_ROOT,
       MYSTERY_DATABASE: TEST_DATABASE,
+      // The suite starts the mock case from the menu, which hides it from players.
+      MYSTERY_LIST_FIXTURES: '1',
       // The browser suite is mock-only, and mock is chosen by absence. Since a
       // test can now switch the server to live narration for every other test
       // sharing it, point the provider at a closed port: a slip fails here in

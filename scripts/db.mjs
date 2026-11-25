@@ -97,12 +97,12 @@ function inspect(file) {
         sessions: countOf("game_sessions"),
         events: countOf("game_events"),
       },
-      // The operator question this answers: "why is my game still mock?"
+      // The operator question this answers: "which AI narrates my game?"
       ai:
         version >= 3
           ? String(
               db.prepare("select ai_name from app_settings where id = 1").get()?.ai_name ??
-                "mock (nothing chosen)",
+                "nothing chosen: the ai.json default, else mock",
             )
           : null,
     };

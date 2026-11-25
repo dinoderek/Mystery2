@@ -500,11 +500,15 @@ describe("./dev doctor checks", () => {
 });
 
 /** A config root of its own, with `ai.json` holding `ais`; never the operator's. */
-function aiRoot(ais: Record<string, unknown> | null, envLocal?: string): Record<string, string> {
+function aiRoot(
+  ais: Record<string, unknown> | null,
+  envLocal?: string,
+  defaultAI?: string,
+): Record<string, string> {
   const root = path.join(sandbox, "ai-root");
   fs.rmSync(root, { recursive: true, force: true });
   fs.mkdirSync(root, { recursive: true });
-  if (ais) fs.writeFileSync(path.join(root, "ai.json"), JSON.stringify({ ais }));
+  if (ais) fs.writeFileSync(path.join(root, "ai.json"), JSON.stringify({ ais, default: defaultAI }));
   if (envLocal) fs.writeFileSync(path.join(root, ".env.local"), envLocal);
   return { MYSTERY_CONFIG_ROOT: root };
 }
@@ -613,8 +617,35 @@ describe("./dev doctor's AIs", () => {
     const fromFile = describeAIs({ root: clone, env, claudeRuns: claudeRuns(true) }).lines.join("\n");
     expect(fromFile).toContain('ok   AI "free": openrouter vendor/free, key from .env.local');
     expect(fromFile).toContain('ok   AI "claude": claude-cli sonnet, "claude" runs');
-    const fromEnv = describeAIs({ root: clone, env: { ...env, OPENROUTER_API_KEY: "sk-env" } }).lines.join("\n");
+    const fromEnv = describeAIs({ root: clone, env: { ...env, OPENROUTER_API_KEY: "sk-env" }, claudeRuns: claudeRuns(true) }).lines.join("\n");
     expect(fromEnv).toContain("key from OPENROUTER_API_KEY");
+  });
+
+  it("says a database with nothing chosen narrates with mock when there is no default", () => {
+    const text = describeAIs({ root: clone, env: aiRoot(AIS), claudeRuns: claudeRuns(true) }).lines.join("\n");
+    expect(text).toContain("ok   no default in ai.json: a database with nothing chosen narrates with mock");
+  });
+
+  it("reports a default that can narrate", () => {
+    expect(describeAIs({ root: clone, env: aiRoot(AIS, undefined, "own"), claudeRuns: claudeRuns(true) }).lines).toContain('ok   default "own" can narrate');
+    const claude = describeAIs({ root: clone, env: aiRoot(AIS, undefined, "claude"), claudeRuns: claudeRuns(true) });
+    expect(claude.lines).toContain('ok   default "claude" can narrate');
+    expect(describeAIs({ root: clone, env: aiRoot(AIS, undefined, "mock"), claudeRuns: claudeRuns(true) }).lines).toContain('ok   default "mock": built in, no real AI');
+  });
+
+  it("fails on a default that cannot narrate, naming it and what it lacks", () => {
+    const noKey = describeAIs({ root: clone, env: aiRoot(AIS, undefined, "free"), claudeRuns: claudeRuns(true) });
+    expect(noKey.ok).toBe(false);
+    expect(noKey.lines).toContain('FAIL default "free" cannot narrate: no key in ai.json, OPENROUTER_API_KEY or .env.local');
+    const noCli = describeAIs({ root: clone, env: aiRoot(AIS, undefined, "claude"), claudeRuns: claudeRuns(false) });
+    expect(noCli.ok).toBe(false);
+    expect(noCli.lines).toContain('FAIL default "claude" cannot narrate: "claude" did not run');
+  });
+
+  it("fails on a default naming no AI in the file", () => {
+    const report = describeAIs({ root: clone, env: aiRoot(AIS, undefined, "haiku"), claudeRuns: claudeRuns(true) });
+    expect(report.ok).toBe(false);
+    expect(report.lines.join("\n")).toMatch(/FAIL .*field "default" names AI "haiku"/);
   });
 
   it("fails on a malformed ai.json, naming the AI and the field", () => {

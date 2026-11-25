@@ -50,7 +50,8 @@ to a file in the run folder. `evaluation/lib/game-ai-calls.ts` reads it back as
 the subject's `production.calls`, binding `server`, after any investigator's.
 
 - A turn's calls are the lines with the `x-request-id` the harness sent, so
-  samples never mix and a failed turn keeps its calls; a game's, its game id's. A last line without its newline is not read.
+  samples never mix and a failed turn keeps its calls; a game's carry its game
+  id. A last line without its newline is not read.
 - Model, duration, cost and tokens are the line's; cache counts are null.
 - A line is one attempt. Only the prompt's hash is kept, no text.
 

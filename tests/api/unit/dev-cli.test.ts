@@ -617,7 +617,7 @@ describe("./dev doctor's AIs", () => {
     const fromFile = describeAIs({ root: clone, env, claudeRuns: claudeRuns(true) }).lines.join("\n");
     expect(fromFile).toContain('ok   AI "free": openrouter vendor/free, key from .env.local');
     expect(fromFile).toContain('ok   AI "claude": claude-cli sonnet, "claude" runs');
-    const fromEnv = describeAIs({ root: clone, env: { ...env, OPENROUTER_API_KEY: "sk-env" } }).lines.join("\n");
+    const fromEnv = describeAIs({ root: clone, env: { ...env, OPENROUTER_API_KEY: "sk-env" }, claudeRuns: claudeRuns(true) }).lines.join("\n");
     expect(fromEnv).toContain("key from OPENROUTER_API_KEY");
   });
 

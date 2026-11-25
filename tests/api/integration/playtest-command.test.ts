@@ -159,8 +159,18 @@ describe('play on stub bindings', () => {
 		expect(result.subject).toMatchObject({ kind: 'game', path: 'trace.json' });
 		expect(result.run_error).toBeNull();
 		expect(result.summary.passed).toBe(true);
-		expect(result.production?.calls).toHaveLength(10);
-		expect(result.production?.calls[0]).toMatchObject({ binding: 'investigator', model: 'stub-model', cost_usd: 0.01 });
+		// The investigator's ten calls, then the narrator's: the calls the server logged under this game, one line each.
+		const calls = result.production?.calls ?? [];
+		const narration = fs.readFileSync(path.join(gameDir, 'ai-calls.jsonl'), 'utf8').trim().split('\n');
+		expect(calls.filter((call) => call.binding === 'investigator')).toHaveLength(10);
+		expect(calls.slice(0, 10).every((call) => call.binding === 'investigator')).toBe(true);
+		expect(calls[0]).toMatchObject({ binding: 'investigator', model: 'stub-model', cost_usd: 0.01 });
+		expect(narration.length).toBeGreaterThan(0);
+		expect(calls.slice(10)).toHaveLength(narration.length);
+		expect(calls.slice(10).every((call) => call.binding === 'server' && call.model?.startsWith('mock'))).toBe(true);
+		// The mock reports no usage, so the narrator's calls carry none; none quotes a prompt or an answer.
+		expect(calls[10]).toMatchObject({ cost_usd: null, tokens: null, attempts: [{ outcome: 'ok' }] });
+		expect(JSON.stringify(calls.slice(10))).not.toContain(JSON.parse(narration[0]).prompt.slice(0, 40));
 		expect(result.verdicts.map((verdict) => verdict.id)).toEqual(
 			expect.arrayContaining(['clue_accounting', 'gm_roleplay', 'gm_clue_discipline', 'gm_fabrication', 'gm_spoiler'])
 		);
@@ -205,7 +215,9 @@ describe('play on stub bindings', () => {
 			JSON.parse(fs.readFileSync(path.join(gameDir, 'script.json'), 'utf8'))
 		);
 		const replayResult = await readResult(path.join(replayDir, 'result.json'));
-		expect(replayResult.production).toBeNull();
+		// No investigator ran, so every call it holds is the narrator's.
+		expect(replayResult.production?.calls.length).toBeGreaterThan(0);
+		expect(replayResult.production?.calls.every((call) => call.binding === 'server')).toBe(true);
 		expect(replayResult.verdicts).toEqual([]);
 		expect(JSON.parse(fs.readFileSync(path.join(replayDir, 'summary.json'), 'utf8'))).toMatchObject({
 			outcome: 'win',

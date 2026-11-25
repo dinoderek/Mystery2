@@ -49,6 +49,7 @@ import type { BlueprintLike, JudgeOptions, TurnCase } from "./lib/case.ts";
 import { EXPECT_VERDICT, expectJudges, gradeExpect, validateExpect, type ComesWith } from "./lib/expect.ts";
 import { EXPECT_FILE, formatSummary, summarizeSamples, writeSummary } from "./lib/expect-summary.ts";
 import type { Sample } from "./lib/expect-summary.ts";
+import { SERVER_BINDING } from "../lib/game-ai-calls.ts";
 import { judgeTurn } from "./lib/judges.ts";
 import { modelLabel, NarratorReplayError, replayThroughNarrator } from "./lib/replay-cli.ts";
 import type { Collected } from "./lib/replay-cli.ts";
@@ -60,7 +61,7 @@ import { TURN_FILE, buildTurn, isStoredTurn, readStoredTurn, turnFromEvent } fro
 import type { StoredEvent } from "./lib/turn.ts";
 import type { StoredTurn } from "./lib/turn.ts";
 
-export const SERVER_NARRATOR = "server";
+export const SERVER_NARRATOR = SERVER_BINDING;
 export const DEFAULT_JUDGE_BINDING = "turn-judge";
 const DEFAULT_CONCURRENCY = 4;
 /** How many times a case with `expect` is replayed per narrator, unless `--samples` says otherwise. */
@@ -479,6 +480,8 @@ export function createJudgeTurnCommand({ startServer = startThrowawayServer }: J
         identity: runIdentity(common, context.root),
         bindings: [...narratorBindings.values(), ...(judgeBinding ? [judgeBinding] : [])],
       });
+      // Its calls come back as the turns' model calls; the log itself stays in the run's folder.
+      server.logCallsTo(path.join(folder.dir, "ai-calls.jsonl"));
       const runtime: Runtime = { context, folder, judgeBinding, narrators: narratorBindings, server, aiProfile };
 
       context.out(`[judge turn] ${items.length} turn(s) -> ${folder.dir}`);

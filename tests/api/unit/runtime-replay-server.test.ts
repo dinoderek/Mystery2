@@ -12,6 +12,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import { openDatabase } from "../../../packages/game-engine/src/db/client.ts";
 import type { TurnCase } from "../../../evaluation/runtime/lib/case.ts";
+import { NarratorReplayError } from "../../../evaluation/runtime/lib/replay-cli.ts";
 import { ServerNarrator } from "../../../evaluation/runtime/lib/replay-server.ts";
 import type { StartServer, ThrowawayServer } from "../../../evaluation/runtime/lib/replay-server.ts";
 import { seedSessionWithHistory } from "../../../evaluation/runtime/lib/seed.ts";
@@ -36,10 +37,34 @@ interface Seen {
   servers: ThrowawayServer[];
 }
 
+/** What a stand-in server logs for each AI call a request makes: the game's log line, trimmed to what the harness reads. */
+function logLine(requestId: string | null, over: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    request_id: requestId,
+    game_id: "game-1",
+    model: "free-ish",
+    resolved_model: "vendor/free-ish",
+    prompt: "SECRET PROMPT",
+    context: null,
+    output: "SECRET ANSWER",
+    parsed_ok: true,
+    error: null,
+    latency_ms: 1200,
+    input_tokens: 300,
+    output_tokens: 40,
+    cost_usd: 0.002,
+    ...over,
+  };
+}
+
 /** A stand-in game server on the requested port, over a real database in its own config root. */
-function fakeServer(answer: (endpoint: string) => { status: number; body: unknown } = defaultAnswer): { start: StartServer; seen: Seen } {
+function fakeServer(
+  answer: (endpoint: string) => { status: number; body: unknown } = defaultAnswer,
+  /** The log lines each request makes, given its request id, written to `AI_CALL_LOG` when the harness set one. */
+  logs: (requestId: string | null) => Array<Record<string, unknown>> = () => [],
+): { start: StartServer; seen: Seen } {
   const seen: Seen = { calls: [], started: 0, stopped: 0, servers: [] };
-  const start: StartServer = async ({ port, seed }) => {
+  const start: StartServer = async ({ port, seed, env }) => {
     const configRoot = fs.mkdtempSync(path.join(scratch, "root-"));
     seed?.(configRoot);
     const databaseFile = path.join(configRoot, "database", "test", "game.db");
@@ -60,6 +85,11 @@ function fakeServer(answer: (endpoint: string) => { status: number; body: unknow
           return;
         }
         seen.calls.push({ endpoint, body });
+        const log = env?.AI_CALL_LOG;
+        if (log) {
+          const lines = logs(String(request.headers["x-request-id"] ?? "") || null);
+          fs.appendFileSync(log, lines.map((line) => `${JSON.stringify(line)}\n`).join(""));
+        }
         const reply = answer(endpoint);
         response.writeHead(reply.status, { "content-type": "application/json" });
         response.end(JSON.stringify(reply.body));
@@ -151,6 +181,89 @@ describe("replaying through a throwaway server", () => {
       { sequence: 2, event_type: "ask", narration: '"Hm," says Alice.' },
     ]);
     db.close();
+  });
+
+  it("gives a replay the calls the game logged under its own request id, as model calls", async () => {
+    const log = path.join(scratch, "calls-ok.jsonl");
+    const { start, seen } = fakeServer(defaultAnswer, (id) => [
+      logLine(id),
+      logLine(id, { role: "narration", latency_ms: 800, input_tokens: null, output_tokens: null, cost_usd: null }),
+      logLine("some-other-request"),
+    ]);
+    const made = narrator(start);
+    made.logCallsTo(log);
+    const [one, two] = await Promise.all([made.replay(request(askCase, "free-ish")), made.replay(request(askCase, "free-ish"))]);
+
+    // The server was started with the log on, and each replay holds its own two calls, not the other's.
+    expect(seen.started).toBe(1);
+    for (const collected of [one, two]) {
+      expect(collected.calls).toHaveLength(2);
+      expect(collected.calls[0]).toMatchObject({
+        binding: "server",
+        model: "vendor/free-ish",
+        duration_ms: 1200,
+        cost_usd: 0.002,
+        tokens: { input: 300, output: 40, cache_read: null, cache_write: null },
+        attempts: [{ attempt: 1, outcome: "ok", duration_ms: 1200 }],
+      });
+      expect(collected.calls[1]).toMatchObject({ duration_ms: 800, cost_usd: null, tokens: null });
+    }
+    // Neither the prompt nor the answer is in what is recorded.
+    expect(JSON.stringify([one.calls, two.calls])).not.toMatch(/SECRET/);
+    expect(one.calls[0].prompt_sha256).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it("keeps the calls of a turn that failed, with their outcome, on the error it throws", async () => {
+    const log = path.join(scratch, "calls-failed.jsonl");
+    const { start } = fakeServer(() => ({ status: 500, body: { error: "narrator broke" } }), (id) => [
+      logLine(id, { parsed_ok: false, error: "Error: bad json", output: null, input_tokens: null, output_tokens: null, cost_usd: null }),
+    ]);
+    const made = narrator(start);
+    made.logCallsTo(log);
+    const failure = await made.replay(request(askCase)).then(
+      () => null,
+      (error: unknown) => error,
+    );
+    expect(failure).toBeInstanceOf(NarratorReplayError);
+    const error = failure as NarratorReplayError;
+    expect(error.message).toMatch(/game-turn failed: HTTP 500/);
+    expect(error.stage).toBe("replay");
+    // The client retries a 500 under the same request id, and each try's call was made.
+    expect(error.calls).toHaveLength(3);
+    expect(error.calls[0].attempts[0]).toEqual({ attempt: 1, outcome: "exit", duration_ms: 1200, cost_usd: null, tokens: null });
+    expect(JSON.stringify(error.calls)).not.toMatch(/bad json/);
+  });
+
+  it("says a failed turn's own error when its call log cannot be read as well", async () => {
+    const log = path.join(scratch, "calls-unreadable.jsonl");
+    const { start } = fakeServer(() => ({ status: 400, body: { error: "Invalid ai_profile" } }));
+    const made = narrator(start);
+    made.logCallsTo(log);
+    // A complete line that is no log line: written before the replay, so the read after the failure meets it.
+    fs.writeFileSync(log, '{"not":"a log line"}\n');
+    const failure = (await made.replay(request(askCase)).then(
+      () => null,
+      (error: unknown) => error,
+    )) as NarratorReplayError;
+    expect(failure).toBeInstanceOf(NarratorReplayError);
+    expect(failure.message).toMatch(/game-turn failed: HTTP 400.*Invalid ai_profile.*AI call log could not be read.*is not an AI call log line/);
+    expect(failure.stage).toBe("replay");
+    expect(failure.calls).toEqual([]);
+    expect((failure.cause as Error).message).toMatch(/game-turn failed/);
+  });
+
+  it("records no calls when it was never told where the server logs them", async () => {
+    const { start, seen } = fakeServer(defaultAnswer, (id) => [logLine(id)]);
+    const collected = await narrator(start).replay(request(askCase));
+    expect(collected.calls).toEqual([]);
+    expect(seen.servers).toHaveLength(1);
+  });
+
+  it("will not move the log once the server is running", async () => {
+    const { start } = fakeServer();
+    const made = narrator(start);
+    await made.replay(request(askCase));
+    expect(() => made.logCallsTo(path.join(scratch, "late.jsonl"))).toThrow(/already running/);
   });
 
   it("starts one server for a whole run, and stops it once", async () => {

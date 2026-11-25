@@ -18,7 +18,8 @@ export type ApiResponse<T> =
 
 export interface GameApi {
   get<T>(endpoint: string, query?: Record<string, string>): Promise<ApiResponse<T>>;
-  post<T>(endpoint: string, body?: unknown): Promise<ApiResponse<T>>;
+  /** `requestId` is sent as `x-request-id`, which the game stamps on every AI call the request makes. */
+  post<T>(endpoint: string, body?: unknown, requestId?: string): Promise<ApiResponse<T>>;
 }
 
 export async function signIn(baseUrl: string, name: string): Promise<GameApi> {
@@ -52,10 +53,11 @@ function parseBody(text: string): { error?: string } {
 interface CallOptions {
   body?: unknown;
   query?: Record<string, string>;
+  requestId?: string;
 }
 
 function createApi(baseUrl: string, cookie: string): GameApi {
-  async function call<T>(method: string, endpoint: string, { body, query }: CallOptions = {}): Promise<ApiResponse<T>> {
+  async function call<T>(method: string, endpoint: string, { body, query, requestId }: CallOptions = {}): Promise<ApiResponse<T>> {
     const url = new URL(`${baseUrl}/api/${endpoint}`);
     for (const [key, value] of Object.entries(query ?? {})) url.searchParams.set(key, value);
 
@@ -64,7 +66,7 @@ function createApi(baseUrl: string, cookie: string): GameApi {
       try {
         response = await fetch(url, {
           method,
-          headers: { "Content-Type": "application/json", cookie },
+          headers: { "Content-Type": "application/json", cookie, ...(requestId ? { "x-request-id": requestId } : {}) },
           body: body === undefined ? undefined : JSON.stringify(body),
         });
       } catch (error) {
@@ -89,6 +91,6 @@ function createApi(baseUrl: string, cookie: string): GameApi {
 
   return {
     get: (endpoint, query) => call("GET", endpoint, { query }),
-    post: (endpoint, body) => call("POST", endpoint, { body }),
+    post: (endpoint, body, requestId) => call("POST", endpoint, { body, requestId }),
   };
 }

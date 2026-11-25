@@ -49,7 +49,7 @@ either way, with `stop_reason` in `summary.json`. Narrator calls are capped at 9
 ## A run folder
 
 Each game is a subject of the run, in a folder named after its game id (`game-<n>`
-if it could not start). Its `result.json` holds the investigator's model calls and,
+if it could not start). Its `result.json` holds the investigator's and narrator's model calls and,
 when graded, the verdicts. Beside it are `transcript.md` (the investigator's plan
 in italics), `script.json` to replay, `steps.jsonl`, `events.json`, `summary.json`
 (outcome, stop reason, accusations spent, clues and costs) and `logs/`. The run also keeps the

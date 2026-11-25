@@ -6,7 +6,7 @@ running the commands: `evaluation/README.md`.
 
 Run folders stay the source of truth. Whatever is shared, indexed or reported is
 derived from them. The data repository, index, report and baseline suites, and
-and the `./dev eval perf` commands are not built yet; this file grows with each.
+the `./dev eval perf` commands are not built yet; this file grows with each.
 
 ## What a run records
 
@@ -15,7 +15,8 @@ Every model call through the runner (`evaluation/core/runner.ts`) is written to
 with its duration, cost and tokens, per attempt and summed per call.
 
 **Tokens.** An attempt's `tokens` holds `input`, `output`, `cache_read` and
-`cache_write`: the Claude CLI's `usage` counts, read where its cost is read, from
+`cache_write` (null where a source counts none, as below): the Claude CLI's
+`usage` counts, read where its cost is read, from
 the top of the wrapper's JSON stdout, else the last `result` event of the
 attempt's stream file. Cost is the CLI's own estimate and differs by login;
 tokens are the comparable measure.
@@ -51,3 +52,19 @@ tokens are the comparable measure.
   versions.
 
 Fields absent from a version 3 result read back as null.
+
+## The game's narrator calls
+
+`judge turn --narrator server` and `play` narrate through the game, which logs
+each AI call to `AI_CALL_LOG` (`packages/game-engine/src/ai-call-log.ts`). Both
+set it to a file in the run folder, and `evaluation/lib/game-ai-calls.ts` reads
+it back as model calls in the subject's `production.calls`, binding `server`;
+`play` lists them after the investigator's.
+
+- A turn's calls are the lines with the `x-request-id` the harness sent, so
+  concurrent samples never mix, and a failed turn keeps its calls. A game's are
+  the lines of its game id. A last line without its newline is not read.
+- Model, duration, cost and tokens are the line's. Cache counts are null (the
+  game folds the cache into input); no usage (mock) gives null tokens and cost.
+- A line is one attempt, retries included. Only the prompt's hash and an
+  outcome are kept, no text.

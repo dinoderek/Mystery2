@@ -96,9 +96,8 @@ process, and the page shows a banner saying so.
 
 ### Switching model
 
-Change it on the settings page; no restart. A session resolves its AI on every
-request, so the switch takes effect on the next turn of a game in progress. A
-new or edited `ai.json` entry needs a restart.
+Change it on the settings page; no restart. It takes effect on the next turn,
+even mid-game. A new or edited `ai.json` entry needs a restart.
 
 Existing sessions keep the AI name they were started with, which is what the
 evaluation pipeline reads.
@@ -110,8 +109,8 @@ See [`docs/ai-configuration.md`](docs/ai-configuration.md).
 ./dev run --lan
 ```
 
-Prints the addresses to open over WiFi or Tailscale. On a Mac, allow incoming
-connections for `node` when the firewall asks on first run. Exposure rules:
+Serves WiFi and Tailscale, printing the addresses. On a Mac, allow `node`
+incoming connections when the firewall asks. Rules:
 `docs/local-infrastructure.md`.
 
 ## Profiles

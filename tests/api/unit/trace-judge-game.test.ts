@@ -13,7 +13,8 @@ import { COMMANDS } from "../../../evaluation/commands.ts";
 import { runEval } from "../../../evaluation/core/dispatch.ts";
 import { readResult } from "../../../evaluation/core/result.ts";
 import type { Result } from "../../../evaluation/core/result.ts";
-import { locateSubject } from "../../../evaluation/trace/judge-game.ts";
+import { contentHash } from "../../../evaluation/core/suite-attributes.ts";
+import { locateSubject, traceContent } from "../../../evaluation/trace/judge-game.ts";
 import { createGameDatabase } from "./trace-database-fixture.ts";
 import { makeRawTrace } from "./trace-fixtures.ts";
 
@@ -248,6 +249,51 @@ describe("the bindings and the judges a run asks for", () => {
 
     expect(result.run.bindings["game-judge"].model).toBe("haiku");
     expect(result.verdicts.find((v) => v.id === "gm_spoiler")?.call?.model).toBe("haiku");
+  });
+});
+
+describe("judge game's suite attributes", () => {
+  it("records the trace's hash, the judges and the judge's model", async () => {
+    const trace = makeRawTrace();
+    const { result } = await runForResult([writeTrace(trace), "--config", withJudge(), "--suite", "narration-loop"], "pass");
+    const attributes = result.run.attributes;
+    expect(attributes).toEqual({
+      command: "judge game",
+      options: {},
+      inputs: [{ id: trace.session.id, hash: contentHash(traceContent(trace)) }],
+      judges: [...GM_JUDGES].sort(),
+      models: { generator: null, narrator: null, investigator: null, judge: ["game-judge"] },
+      samples: null,
+      concurrency: null,
+      suite: "narration-loop",
+    });
+
+    // The same game extracted again elsewhere, judged with output and naming options added: the same attributes.
+    const again = makeRawTrace({ extracted_at: "2026-06-03T00:00:00Z", source: { kind: "local", database: "/elsewhere/game.db" } });
+    const rerun = await runForResult([writeTrace(again), "--config", withJudge(), "--suite", "narration-loop", "--label", "again", "--parent-run", "2026-11-25/10-00-00-play"], "pass");
+    expect(rerun.result.run.attributes).toEqual(attributes);
+
+    // An edited game changes the hash; a model override shows in the judge's models.
+    const edited = makeRawTrace({ events: makeRawTrace().events.slice(1) });
+    const changed = await runForResult([writeTrace(edited), "--config", withJudge(), "--suite", "narration-loop", "--model-override", "game-judge=haiku"], "pass");
+    expect(changed.result.run.attributes).toEqual({
+      ...attributes,
+      inputs: [{ id: trace.session.id, hash: contentHash(traceContent(edited)) }],
+      models: { ...attributes?.models, judge: ["game-judge:haiku"] },
+    });
+    expect(contentHash(traceContent(edited))).not.toBe(contentHash(traceContent(trace)));
+  });
+
+  it("records the judges --judges names, none with --no-judges, and no hash for a trace it cannot read", async () => {
+    const named = await runForResult([writeTrace(), "--config", withJudge(), "--judges", "gm_spoiler,gm_roleplay"], "pass");
+    expect(named.result.run.attributes).toMatchObject({ judges: ["gm_roleplay", "gm_spoiler"] });
+    const none = await runForResult([writeTrace(), "--no-judges"], "pass");
+    expect(none.result.run.attributes).toMatchObject({ judges: [], models: { judge: null } });
+
+    const broken = path.join(scratch, "broken.json");
+    fs.writeFileSync(broken, '{"schema_version": "trace/0.1"}');
+    const unread = await runForResult([broken, "--config", withJudge()], "pass");
+    expect(unread.result.run.attributes?.inputs).toEqual([{ id: "broken", hash: null }]);
   });
 });
 

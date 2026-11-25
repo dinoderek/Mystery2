@@ -37,6 +37,7 @@ import type { SubjectFolder } from "../core/run-folder.ts";
 import { runModel } from "../core/runner.ts";
 import type { CallMemo } from "../core/runner.ts";
 import { RESULT_SCHEMA_VERSION, summarize, writeResult } from "../core/result.ts";
+import { bindingLabel, contentHash } from "../core/suite-attributes.ts";
 import type { RunError, Verdict } from "../core/result.ts";
 import { judgedCase, majorFindingsVerdict } from "../judges/index.ts";
 import { projectTraceSubject } from "../judges/subject.ts";
@@ -334,6 +335,14 @@ interface Judged {
   judgeTimes: Array<{ id: string; ms: number }>;
 }
 
+/** A trace's content, for its hash: everything but when and where it was extracted, which a second extraction of the same game changes. */
+export function traceContent(trace: RawTrace): unknown {
+  const content: Partial<RawTrace> = { ...trace };
+  delete content.extracted_at;
+  delete content.source;
+  return content;
+}
+
 /** Everything done to an acquired trace: reconstruct it, check it, judge it. */
 async function judgeTrace(
   trace: RawTrace,
@@ -401,6 +410,15 @@ async function runJudgeGame(argv: string[], context: EvalContext): Promise<numbe
     root: context.root,
     identity: runIdentity(common, context.root, parentRunOf(values)),
     bindings: binding ? [binding] : [],
+    attributes: {
+      // `--database` says only where the game is read from; its trace's hash is what was judged.
+      options: {},
+      inputs: [{ id: acquired.id, hash: acquired.trace ? contentHash(traceContent(acquired.trace)) : null }],
+      judges: selection.run.map((entry) => entry.id),
+      models: { judge: binding ? [bindingLabel(binding)] : [] },
+      samples: null,
+      concurrency: null,
+    },
   });
   const folder = run.subject({ kind: "game", id: acquired.id });
   context.out(`${TAG} run folder: ${run.dir}`);

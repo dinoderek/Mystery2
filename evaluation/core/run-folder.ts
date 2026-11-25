@@ -27,6 +27,8 @@ import type { ResolvedBinding } from "./config.ts";
 import { judgeVersions } from "./judge-version.ts";
 import { promptVersions } from "./prompt-versions.ts";
 import type { RunIdentity } from "./run-identity.ts";
+import { suiteAttributes } from "./suite-attributes.ts";
+import type { CommandAttributes } from "./suite-attributes.ts";
 import {
   RESULT_SCHEMA_VERSION,
   ResultSchemaVersionSchema,
@@ -112,6 +114,8 @@ export interface RunFolderOptions {
   bindings: readonly ResolvedBinding[];
   /** Suite, label, developer and parent run (`runIdentity`); null for a command that is not a run command. */
   identity?: RunIdentity;
+  /** What a run command held fixed (`suite-attributes.ts`); the command and the identity's suite are added here. Absent for a command that is not a run command. */
+  attributes?: CommandAttributes;
   now?: () => Date;
   commit?: { commit: string | null; tree_clean: boolean | null };
 }
@@ -170,6 +174,7 @@ export function createRunFolder(options: RunFolderOptions): RunFolder {
     host: os.hostname(),
     parent_run: options.identity?.parent_run ?? null,
     prompt_versions: promptVersions(),
+    attributes: options.attributes ? suiteAttributes(options.command, options.identity?.suite ?? null, options.attributes) : null,
   };
   const subjects: Array<Pick<Subject, "kind" | "id"> & { dir: string }> = [];
 

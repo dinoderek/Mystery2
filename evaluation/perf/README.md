@@ -5,8 +5,8 @@ across machines. Design and the pipeline around it: `docs/evaluation-pipeline.md
 running the commands: `evaluation/README.md`.
 
 Run folders stay the source of truth. Whatever is shared, indexed or reported is
-derived from them. The data repository, index, report and baseline suites, and
-the `./dev eval perf` commands are not built yet; this file grows with each.
+derived from them. The data repository, index, report, baseline suites and
+`./dev eval perf` commands are still to come.
 
 ## What a run records
 
@@ -22,8 +22,7 @@ attempt's stream file. Cost is the CLI's own estimate and differs by login;
 tokens are the comparable measure.
 
 - Any other shape, and a wrapper that reports nothing (stdout without usage and
-  no stream file result), record `tokens: null`. Wrappers other than the Claude
-  CLI's stay null until they report the same shape.
+  no stream file result), record `tokens: null`.
 - A failed attempt keeps what it reported, as it keeps its cost.
 - A call's `tokens` is its attempts' summed field by field, null only when no
   attempt reported any.
@@ -47,11 +46,13 @@ tokens are the comparable measure.
   a SHA-256 over its prompt files' paths and content
   (`evaluation/core/prompt-versions.ts`). The narrator's files are the role
   prompts, their guidance, the system messages and the age profile, all under
-  the paths `baseline status` treats as read. A hash needs no upkeep; the index
-  orders versions by when each was first seen. Judges keep their numbered
-  versions.
+  the paths `baseline status` treats as read. The index orders versions by
+  first sight. Judges keep their numbered versions.
 
-Fields absent from a version 3 result read back as null.
+**Suite attributes.** `run.attributes` holds what the run held fixed:
+command, options that change what runs, each input's id and content hash,
+judges, models per role, samples, concurrency and suite; null where one does
+not apply (`evaluation/core/suite-attributes.ts`). Hashes are per input.
 
 ## The game's narrator calls
 

@@ -332,6 +332,7 @@ const RUN: RunInfo = {
   host: null,
   parent_run: null,
   prompt_versions: null,
+  attributes: null,
 };
 
 const pass: Verdict = { id: "expect", tier: "mechanical", status: "pass", details: { erred: [], use: null } };

@@ -16,6 +16,7 @@ import { buildClueGraphGenerationChatInput } from "../../../packages/blueprint-g
 import { MAX_TARGET_AGE, MIN_TARGET_AGE, renderGenerationGuidance } from "../../../packages/shared/src/age-profile.ts";
 import { readResult } from "../../../evaluation/core/result.ts";
 import type { Result } from "../../../evaluation/core/result.ts";
+import { judgesFor } from "../../../evaluation/core/registry.ts";
 import { CLUE_GRAPH_REPAIR, parseRepair } from "../../../evaluation/generate/commands.ts";
 import { REPORTS_NOTICE } from "../../../evaluation/generate/repair.ts";
 import { main } from "../../../scripts/dev-cli.mjs";
@@ -259,6 +260,52 @@ describe("generate, clue graph", () => {
     const { result } = await onlyResult();
     expect(result.run.bindings["generator-agent"].model).toBe("only/one");
     expect(result.production?.calls[0].model).toBe("only/one");
+  });
+});
+
+describe("generate, its suite attributes", () => {
+  /** Generates from the two briefs and reads back the run's attributes. */
+  async function attributesOf(extra: string[]) {
+    fs.rmSync(path.join(dir, "out"), { recursive: true, force: true });
+    const argv = [path.join(dir, "brief.json"), path.join(dir, "second.json"), "--output-root", path.join(dir, "out"), ...extra];
+    expect(await main(["generate", ...argv], { root: process.cwd(), out: (t: string) => out.push(t), err: (t: string) => err.push(t), env: {} })).toBe(0);
+    const [file] = fs.readdirSync(path.join(dir, "out"), { recursive: true, encoding: "utf8" }).filter((each) => each.endsWith("result.json") && !each.includes("rounds"));
+    return (await readResult(path.join(dir, "out", file))).run.attributes;
+  }
+
+  it("records each brief's hash, the repair limit, the generator and judge models and the parallelism", async () => {
+    write("second.json", { ...brief, brief: "A missing hat at a village fete." });
+    const config = stubConfig([good]);
+    const attributes = await attributesOf(["--config", config, "--judge", "--repair", "1", "--parallelism", "2", "--suite", "blueprint-loop"]);
+    expect(attributes).toEqual({
+      command: "generate",
+      options: { repair: 1 },
+      inputs: [
+        { id: "brief", hash: expect.stringMatching(/^[0-9a-f]{12}$/) },
+        { id: "second", hash: expect.stringMatching(/^[0-9a-f]{12}$/) },
+      ],
+      judges: judgesFor("blueprint").map((entry) => entry.id).sort(),
+      models: { generator: ["generator-agent:agent-model"], narrator: null, investigator: null, judge: ["blueprint-judge:judge-model"] },
+      samples: null,
+      concurrency: 2,
+      suite: "blueprint-loop",
+    });
+    const [first, second] = attributes?.inputs ?? [];
+    expect(first.hash).not.toBe(second.hash);
+
+    // Output and naming options leave them equal.
+    expect(await attributesOf(["--config", config, "--judge", "--repair", "1", "--parallelism", "2", "--suite", "blueprint-loop", "--quiet", "--label", "again"])).toEqual(attributes);
+
+    // Editing one brief changes its hash alone; a model override and --model show in the generator's models.
+    write("second.json", { ...brief, brief: "A missing scarf at a village fete." });
+    const edited = await attributesOf(["--config", config, "--judge", "--repair", "1", "--parallelism", "2", "--suite", "blueprint-loop", "--quiet"]);
+    expect(edited?.inputs[0]).toEqual(first);
+    expect(edited?.inputs[1].hash).not.toBe(second.hash);
+    expect(edited).toEqual({ ...attributes, inputs: [first, edited?.inputs[1]] });
+
+    const overridden = await attributesOf(["--config", config, "--quiet", "--repair", "0", "--model-override", "generator-agent=other"]);
+    expect(overridden).toMatchObject({ options: { repair: 0 }, judges: [], models: { generator: ["generator-agent:other"], judge: null }, concurrency: 1, suite: null });
+    expect((await attributesOf(["--config", config, "--quiet", "--model", "m/two", "--model", "m/one"]))?.models.generator).toEqual(["generator-agent:m/one", "generator-agent:m/two"]);
   });
 });
 

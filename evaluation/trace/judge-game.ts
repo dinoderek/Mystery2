@@ -32,6 +32,7 @@ import { formatDuration, startDigest } from "../core/progress.ts";
 import { checksFor, judgesFor } from "../core/registry.ts";
 import type { JudgeEntry } from "../core/registry.ts";
 import { createRunFolder, resolveOutputRoot } from "../core/run-folder.ts";
+import { runIdentity } from "../core/run-identity.ts";
 import type { SubjectFolder } from "../core/run-folder.ts";
 import { runModel } from "../core/runner.ts";
 import type { CallMemo } from "../core/runner.ts";
@@ -67,6 +68,7 @@ const OPTIONS = {
   judges: { type: "string" },
   "no-judges": { type: "boolean" },
   quiet: { type: "boolean" },
+  "parent-run": { type: "string" },
 } as const;
 
 const HELP = formatHelp({
@@ -80,8 +82,17 @@ const HELP = formatHelp({
     ["--judges <id,id>", "run only these judges, or candidate judges, which run only when named; the rest are skipped"],
     ["--no-judges", "run the mechanical checks only; no model is called"],
     ["--quiet", "no live progress while the judges run"],
+    ["--parent-run <id>", "the run this one grades games for, recorded as parent_run (set by play --judge)"],
   ],
 });
+
+/** `--parent-run`: the id of the run this one belongs to; null when not given. */
+function parentRunOf(values: Record<string, OptionValue>): string | null {
+  const parent = values["parent-run"];
+  if (parent === undefined) return null;
+  if (typeof parent !== "string" || parent.trim() === "") throw new UsageError("--parent-run needs a run id");
+  return parent.trim();
+}
 
 /** The judges this run asks, from `--judges` and `--no-judges`, and the reason for those it leaves out. */
 function selectJudges(values: Record<string, OptionValue>): { run: JudgeEntry[]; leftOut: Map<string, string> } {
@@ -388,6 +399,7 @@ async function runJudgeGame(argv: string[], context: EvalContext): Promise<numbe
     command: "judge game",
     argv,
     root: context.root,
+    identity: runIdentity(common, context.root, parentRunOf(values)),
     bindings: binding ? [binding] : [],
   });
   const folder = run.subject({ kind: "game", id: acquired.id });

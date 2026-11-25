@@ -39,6 +39,7 @@ import type { EvalCommand, EvalContext } from "../core/dispatch.ts";
 import { InputError, UsageError } from "../core/errors.ts";
 import { mapPool } from "../core/pool.ts";
 import { createRunFolder, resolveOutputRoot, slugify } from "../core/run-folder.ts";
+import { runIdentity } from "../core/run-identity.ts";
 import type { RunFolder, SubjectFolder } from "../core/run-folder.ts";
 import { RESULT_SCHEMA_VERSION, summarize, writeResult } from "../core/result.ts";
 import type { Result, RunError } from "../core/result.ts";
@@ -430,9 +431,12 @@ async function writeGameResult(play: Play, record: GameRecord): Promise<void> {
   });
 }
 
-/** The options `judge game` is given from this run's own common ones. */
-function judgeArgsFor(common: ParsedArgs["common"]): string[] {
+/** The options `judge game` is given from this run's own common ones: its config, suite and label, and this run as its parent. */
+function judgeArgsFor(common: ParsedArgs["common"], parentRun: string): string[] {
   const args = common.configPath ? ["--config", common.configPath] : [];
+  if (common.suite) args.push("--suite", common.suite);
+  if (common.label) args.push("--label", common.label);
+  args.push("--parent-run", parentRun);
   const model = common.modelOverrides[GAME_JUDGE_BINDING];
   if (model) args.push("--model-override", `${GAME_JUDGE_BINDING}=${model}`);
   return args;
@@ -502,6 +506,7 @@ async function runPlay(argv: string[], context: EvalContext, startServer: StartS
     command: "play",
     argv,
     root,
+    identity: runIdentity(parsed.common, root),
     bindings,
   });
   const callLogFile = path.join(run.dir, "ai-calls.all.jsonl");
@@ -524,7 +529,7 @@ async function runPlay(argv: string[], context: EvalContext, startServer: StartS
     server,
     callLogFile,
     investigatorBinding: bindings.find((binding) => binding.name === INVESTIGATOR_BINDING) ?? null,
-    judgeArgs: judgeArgsFor(parsed.common),
+    judgeArgs: judgeArgsFor(parsed.common, run.info().id),
     grading: Promise.resolve(),
   };
   for (const line of describeRun(play)) context.out(line);

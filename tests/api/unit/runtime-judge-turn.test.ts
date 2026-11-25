@@ -103,6 +103,17 @@ describe("judge turn over a case set", () => {
     }
   });
 
+  it("records the suite and label it was given, and nulls when it was given none", async () => {
+    const args = [CASES, "--narrator", "narrator-stub", "--judges", "flesch"];
+    const named = await run([...args, "--suite", "narration-loop", "--label", "five samples"]);
+    expect(readRunIndex(named.runDir).run).toMatchObject({ suite: "narration-loop", label: "five samples", host: os.hostname(), parent_run: null });
+    const [dir] = subjectDirs(named.runDir);
+    expect((await readResult(path.join(dir, "result.json"))).run).toMatchObject({ suite: "narration-loop", label: "five samples" });
+
+    const adHoc = await run(args);
+    expect(readRunIndex(adHoc.runDir).run).toMatchObject({ suite: null, label: null });
+  });
+
   it("exits 2 when a judge fails, and 0 for the same run without it", async () => {
     process.env.RUNTIME_JUDGE_STUB_VERDICT = JSON.stringify({ estimated_reading_age: 14, findings: [], verdict: "fail", reasoning: "Too hard." });
     const failing = await run([CASES, "--narrator", "narrator-stub", "--judges", "age_appropriate_turn", "--judge-binding", "judge-stub"]);

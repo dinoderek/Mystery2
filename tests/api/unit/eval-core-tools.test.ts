@@ -78,6 +78,8 @@ describe("parseCommandArgs", () => {
       configPath: "c.json",
       outputRoot: "/tmp/out",
       modelOverrides: { a: "opus", b: "sonnet" },
+      suite: null,
+      label: null,
     });
     expect(parsed.values).toEqual({});
   });
@@ -111,7 +113,7 @@ describe("parseCommandArgs", () => {
 
   it("refuses a command option that shadows a common one", () => {
     expect(() => parseCommandArgs([], { options: { config: { type: "boolean" } } })).toThrow(/common to every command/);
-    expect(Object.keys(COMMON_OPTIONS)).toEqual(["help", "config", "output-root", "model-override"]);
+    expect(Object.keys(COMMON_OPTIONS)).toEqual(["help", "config", "output-root", "model-override", "suite", "label"]);
   });
 
   it("formats a command's help with its options and the common ones", () => {
@@ -122,7 +124,7 @@ describe("parseCommandArgs", () => {
     });
     expect(help).toContain("Usage: ./dev eval judge blueprint <file> [options]");
     expect(help).toContain("--quiet");
-    for (const flag of ["--config <file>", "--output-root <dir>", "--model-override <binding>=<model>", "--help"]) {
+    for (const flag of ["--config <file>", "--output-root <dir>", "--model-override <binding>=<model>", "--suite <name>", "--label <text>", "--help"]) {
       expect(help).toContain(flag);
     }
     expect(formatHelp({ usage: "x", summary: "y" })).not.toContain("\nOptions:");

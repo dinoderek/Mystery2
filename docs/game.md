@@ -108,6 +108,6 @@ happened.
 
 ## When a case ends
 
-After a win, loss or `quit`, input becomes
-`Tab: review notebook · any other key: back to the mystery list`. Finished
-cases reopen read-only.
+After a win, loss or `quit`, input gives way to `[ NOTEBOOK ]` and
+`[ MYSTERY LIST ]`; `Tab` reviews the notebook and any other key goes back to
+the list. Finished cases reopen read-only.

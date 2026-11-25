@@ -16,6 +16,11 @@
  * A stored subject keeps the shape it has on its own (a blueprint is a
  * clue-graph case, a trace or a captured turn its harness's shape), so the same
  * command can judge it again; only `result.json` carries this version.
+ *
+ * Versions: 1 lacks `rounds`; 2 lacks `tokens` on attempts and calls, which
+ * read back as null. Version 3 is the one written. A field a later task adds
+ * to version 3 defaults to null (or empty) when absent, so every version 3
+ * result already written stays readable.
  */
 
 import fs from "node:fs/promises";
@@ -23,14 +28,37 @@ import path from "node:path";
 
 import { z } from "zod";
 
-export const RESULT_SCHEMA_VERSION = "mystery-eval-result/2";
-/** The versions a result may carry when read: version 1 lacks only `rounds`. */
-export const READABLE_RESULT_SCHEMA_VERSIONS = ["mystery-eval-result/1", RESULT_SCHEMA_VERSION] as const;
+export const RESULT_SCHEMA_VERSION = "mystery-eval-result/3";
+/** The versions a result may carry when read (see the file's header). */
+export const READABLE_RESULT_SCHEMA_VERSIONS = ["mystery-eval-result/1", "mystery-eval-result/2", RESULT_SCHEMA_VERSION] as const;
 export const ResultSchemaVersionSchema = z.enum(READABLE_RESULT_SCHEMA_VERSIONS);
 
 export const STATUSES = ["pass", "fail", "error", "skipped"] as const;
 export const StatusSchema = z.enum(STATUSES);
 export type Status = z.infer<typeof StatusSchema>;
+
+/** The tokens a model call used, as the Claude CLI's `usage` object counts them. */
+export const TokensSchema = z
+  .object({
+    input: z.number().int().min(0),
+    output: z.number().int().min(0),
+    cache_read: z.number().int().min(0),
+    cache_write: z.number().int().min(0),
+  })
+  .strict();
+export type Tokens = z.infer<typeof TokensSchema>;
+
+/** Field-wise sum of the tokens that were reported; null when none were. */
+export function sumTokens(tokens: readonly (Tokens | null)[]): Tokens | null {
+  const reported = tokens.filter((each): each is Tokens => each !== null);
+  if (reported.length === 0) return null;
+  return reported.reduce((sum, each) => ({
+    input: sum.input + each.input,
+    output: sum.output + each.output,
+    cache_read: sum.cache_read + each.cache_read,
+    cache_write: sum.cache_write + each.cache_write,
+  }));
+}
 
 export const AttemptSchema = z
   .object({
@@ -40,6 +68,8 @@ export const AttemptSchema = z
     duration_ms: z.number().int().min(0),
     /** What the CLI reported it cost, in US dollars; null when it reported nothing. */
     cost_usd: z.number().min(0).nullable(),
+    /** What the CLI reported it used; null when it reported nothing, and in results before version 3. */
+    tokens: TokensSchema.nullable().default(null),
     error: z.string().optional(),
   })
   .strict();
@@ -55,6 +85,8 @@ export const ModelCallSchema = z
     duration_ms: z.number().int().min(0),
     /** The sum of the attempts' reported costs; null when no attempt reported one. */
     cost_usd: z.number().min(0).nullable(),
+    /** The attempts' reported tokens, summed field by field; null when no attempt reported any. */
+    tokens: TokensSchema.nullable().default(null),
     attempts: z.array(AttemptSchema).min(1),
   })
   .strict();

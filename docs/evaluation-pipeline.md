@@ -91,6 +91,6 @@ answer; it wins over the brief. The entry gives the verdict rule and
 ## Deliberately not done yet
 
 - Several blueprints per brief.
-- Run history beyond the run directories.
+- [Run history](../evaluation/perf/README.md) beyond the run directories.
 - Further judges (clue economy, red herrings, tone).
 - Measuring how long a case takes to solve in play.

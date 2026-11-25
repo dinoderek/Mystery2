@@ -17,6 +17,13 @@
 //   stream    writes two events to EVAL_STREAM_FILE, then behaves as ok
 //   streamed_cost  writes a result event with a cost to EVAL_STREAM_FILE and
 //             prints an envelope without one, as the stream-json wrappers do
+//   usage     prints an envelope with cost 0.25 and a `usage` object: 10 input,
+//             20 output, 30 cache read, 40 cache write
+//   usage_invalid  as invalid, with a `usage` object of 1, 2, 3 and 4
+//   usage_odd prints an envelope whose `usage` lacks the cache counts
+//   streamed_usage  writes a result event with a `usage` object (5, 6, 7, 8)
+//             to EVAL_STREAM_FILE and prints an envelope without one
+//   usage_exit  writes that result event, then exits 3
 //   limit     writes the error result event the Claude CLI ends a call with at
 //             the login's usage limit to EVAL_STREAM_FILE, and exits 1, as the
 //             stream-json wrappers do when the CLI fails
@@ -48,6 +55,14 @@ if (process.env.FAKE_WRAPPER_RECORD) {
     })}\n`,
   );
 }
+
+const USAGE_10_20_30_40 = { input_tokens: 10, output_tokens: 20, cache_read_input_tokens: 30, cache_creation_input_tokens: 40 };
+const STREAMED_RESULT = {
+  type: "result",
+  num_turns: 1,
+  total_cost_usd: 0.5,
+  usage: { input_tokens: 5, output_tokens: 6, cache_read_input_tokens: 7, cache_creation_input_tokens: 8 },
+};
 
 const answer = (value) => JSON.stringify({ answer: value });
 
@@ -102,6 +117,26 @@ switch (step) {
       `${JSON.stringify({ type: "result", num_turns: 2, total_cost_usd: 1.5 })}\n{"type":`,
     );
     process.stdout.write(JSON.stringify({ result: answer(42) }));
+    break;
+  case "usage":
+    process.stdout.write(JSON.stringify({ result: answer(42), total_cost_usd: 0.25, usage: USAGE_10_20_30_40 }));
+    break;
+  case "usage_invalid":
+    process.stdout.write(
+      JSON.stringify({ result: answer("no"), total_cost_usd: 0.1, usage: { ...USAGE_10_20_30_40, input_tokens: 1, output_tokens: 2, cache_read_input_tokens: 3, cache_creation_input_tokens: 4 } }),
+    );
+    break;
+  case "usage_odd":
+    process.stdout.write(JSON.stringify({ result: answer(42), usage: { input_tokens: 10, output_tokens: 20 } }));
+    break;
+  case "streamed_usage":
+    fs.appendFileSync(process.env.EVAL_STREAM_FILE, `${JSON.stringify(STREAMED_RESULT)}\n`);
+    process.stdout.write(JSON.stringify({ result: answer(42) }));
+    break;
+  case "usage_exit":
+    fs.appendFileSync(process.env.EVAL_STREAM_FILE, `${JSON.stringify(STREAMED_RESULT)}\n`);
+    process.stderr.write("fake wrapper failed\n");
+    process.exit(3);
     break;
   case "limit":
     fs.appendFileSync(

@@ -42,11 +42,21 @@ const call = {
   prompt_sha256: "a".repeat(64),
   duration_ms: 1200,
   cost_usd: 0.4,
+  tokens: { input: 300, output: 70, cache_read: 5000, cache_write: 90 },
   attempts: [
-    { attempt: 1, outcome: "invalid" as const, duration_ms: 500, cost_usd: 0.2, error: "bad" },
-    { attempt: 2, outcome: "ok" as const, duration_ms: 700, cost_usd: 0.2 },
+    { attempt: 1, outcome: "invalid" as const, duration_ms: 500, cost_usd: 0.2, tokens: { input: 100, output: 20, cache_read: 2000, cache_write: 90 }, error: "bad" },
+    { attempt: 2, outcome: "ok" as const, duration_ms: 700, cost_usd: 0.2, tokens: { input: 200, output: 50, cache_read: 3000, cache_write: 0 } },
   ],
 };
+
+/** `call` as versions 1 and 2 wrote it: no `tokens` anywhere. */
+function withoutTokens(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(withoutTokens);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).filter(([key]) => key !== "tokens").map(([key, each]) => [key, withoutTokens(each)]));
+  }
+  return value;
+}
 
 function verdict(id: string, status: Status, extra: Partial<Verdict> = {}): Verdict {
   return { id, tier: "mechanical", status, ...extra };
@@ -110,6 +120,26 @@ describe("the result schema", () => {
     delete old.judge_versions;
     fs.writeFileSync(file, JSON.stringify({ ...result(), run: old }));
     expect((await readResult(file)).run.judge_versions).toEqual({});
+  });
+
+  it("reads a version 1 or 2 result, which has no tokens, as recording none", async () => {
+    const judged = result([verdict("schema", "pass"), verdict("fairness", "pass", { tier: "judge", call })]);
+    for (const version of ["mystery-eval-result/1", "mystery-eval-result/2"]) {
+      const file = path.join(dir, `${version.slice(-1)}.json`);
+      fs.writeFileSync(file, JSON.stringify(withoutTokens({ ...judged, schema_version: version })));
+      const read = await readResult(file);
+      expect(read.schema_version).toBe(version);
+      expect(read.production?.calls[0].tokens).toBeNull();
+      expect(read.production?.calls[0].attempts.map((attempt) => attempt.tokens)).toEqual([null, null]);
+      expect(read.verdicts[1].call?.tokens).toBeNull();
+    }
+  });
+
+  it("writes version 3 and refuses tokens that are not whole counts", async () => {
+    expect(RESULT_SCHEMA_VERSION).toBe("mystery-eval-result/3");
+    const file = path.join(dir, "result.json");
+    const bad = { ...call, tokens: { input: 1.5, output: 2, cache_read: 3, cache_write: 4 } };
+    await expect(writeResult(file, result([verdict("schema", "pass")], { production: { calls: [bad] } }))).rejects.toThrow(/tokens.input/);
   });
 
   it("reads a version 1 result, which has no rounds", async () => {

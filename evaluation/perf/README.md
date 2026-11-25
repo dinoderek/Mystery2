@@ -56,21 +56,15 @@ Fields absent from a version 3 result read back as null.
 ## The game's narrator calls
 
 `judge turn --narrator server` and `play` narrate through the game, which logs
-each AI call when `AI_CALL_LOG` is set (`packages/game-engine/src/ai-call-log.ts`).
-Both set it, to a file in the run folder (`ai-calls.jsonl`; `play`'s is
-`ai-calls.all.jsonl`), and read the lines back as model calls
-(`evaluation/lib/game-ai-calls.ts`) in `production.calls` of the subject's
-`result.json`, under the binding `server`; `play` lists them after the
-investigator's, told apart by binding. A last line without its newline is still
-being written, and is not read.
+each AI call to `AI_CALL_LOG` (`packages/game-engine/src/ai-call-log.ts`). Both
+set it to a file in the run folder, and `evaluation/lib/game-ai-calls.ts` reads
+it back as model calls in the subject's `production.calls`, binding `server`;
+`play` lists them after the investigator's.
 
-- A turn's calls are the lines carrying the `x-request-id` the harness sent with
-  its request, so concurrent samples never share one, and a turn that failed
-  keeps the calls it made. A game's are the lines of its game id.
-- The model is the AI profile's resolved model; duration, cost and tokens are the
-  line's. The game counts input and output only, the cache folded into input, so
-  both cache counts are null and a provider reporting no usage (mock) gives null
-  tokens and cost.
-- A line is one attempt, retries included. Only the prompt's hash is kept,
-  over its text and context, and an outcome: no prompt, answer or error text
-  reaches `result.json`.
+- A turn's calls are the lines with the `x-request-id` the harness sent, so
+  concurrent samples never mix, and a failed turn keeps its calls. A game's are
+  the lines of its game id. A last line without its newline is not read.
+- Model, duration, cost and tokens are the line's. Cache counts are null (the
+  game folds the cache into input); no usage (mock) gives null tokens and cost.
+- A line is one attempt, retries included. Only the prompt's hash and an
+  outcome are kept, no text.

@@ -27,7 +27,7 @@ export class RunError extends Error {
   }
 }
 
-export const RUN_USAGE = "Usage: ./dev run [--ai <name>] [--db <name>]";
+export const RUN_USAGE = "Usage: ./dev run [--lan] [--ai <name>] [--db <name>]";
 
 /**
  * Whether the claude CLI runs: `CLAUDE_CLI_PATH`, else `claude` on the PATH.
@@ -44,16 +44,18 @@ export function claudeCliRuns(env) {
  * `./dev run`'s arguments.
  *
  * @param {string[]} argv
- * @returns {{ ai: string | null, database: string | null }}
+ * @returns {{ ai: string | null, database: string | null, lan: boolean }}
  * @throws RunError with the usage for anything else, including the old
  * `free|paid|claude` positional
  */
 export function parseRunArgs(argv) {
-  const args = { ai: null, database: null };
+  const args = { ai: null, database: null, lan: false };
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index];
     const value = argv[index + 1];
-    if (token === "--db") {
+    if (token === "--lan") {
+      args.lan = true;
+    } else if (token === "--db") {
       if (!isValidDatabaseName(value ?? "")) throw new RunError(`--db needs a database name (received: "${value ?? ""}")\n${RUN_USAGE}`);
       args.database = value;
       index += 1;

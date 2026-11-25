@@ -100,6 +100,16 @@ Existing sessions keep the AI name they were started with, which is what the
 evaluation pipeline reads.
 See [`docs/ai-configuration.md`](docs/ai-configuration.md).
 
+### Playing on a phone or tablet
+
+```bash
+./dev run --lan
+```
+
+Prints the addresses to open over WiFi or Tailscale. On a Mac, allow incoming
+connections for `node` when the firewall asks on first run. Exposure rules:
+`docs/local-infrastructure.md`.
+
 ## Profiles
 
 There are no seeded accounts. Type a name on the first screen and that profile
@@ -171,8 +181,7 @@ Which blueprint fields shape each image: `docs/blueprint-generation-flows.md`.
 
 ## Your data
 
-Each worktree runs on its own port and database; `npm run prod` uses the
-persistent one. `npm run db:list` shows them all, and each is a SQLite file you
+`npm run db:list` shows every database, each a SQLite file you
 can query while the game runs. `docs/local-infrastructure.md` has the runbook
 and troubleshooting.
 

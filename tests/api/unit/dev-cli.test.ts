@@ -519,9 +519,10 @@ const AIS = {
 
 describe("./dev run --ai", () => {
   it("reads --ai and --db in any order", () => {
-    expect(parseRunArgs(["--ai", "free", "--db", "scratch"])).toEqual({ ai: "free", database: "scratch" });
-    expect(parseRunArgs(["--db", "prod"])).toEqual({ ai: null, database: "prod" });
-    expect(parseRunArgs([])).toEqual({ ai: null, database: null });
+    expect(parseRunArgs(["--ai", "free", "--db", "scratch"])).toEqual({ ai: "free", database: "scratch", lan: false });
+    expect(parseRunArgs(["--db", "prod"])).toEqual({ ai: null, database: "prod", lan: false });
+    expect(parseRunArgs([])).toEqual({ ai: null, database: null, lan: false });
+    expect(parseRunArgs(["--lan", "--ai", "free"])).toEqual({ ai: "free", database: null, lan: true });
   });
 
   it("rejects the old free|paid|claude positional with the usage", () => {

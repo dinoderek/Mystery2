@@ -7,7 +7,12 @@
 
 import type { Handle, ServerInit } from '@sveltejs/kit';
 import { building } from '$app/environment';
+import { ALLOWED_HOSTS_ENV, isHostAllowed, parseAllowedHosts } from '@my2/game-engine';
 import { getEngine, playerCookie } from '$lib/server/engine';
+
+// Set by `./dev run --lan`, which serves every interface; unset, every host is
+// answered (`packages/game-engine/src/allowed-hosts.ts`).
+const allowedHosts = parseAllowedHosts(process.env[ALLOWED_HOSTS_ENV]);
 
 // Opening the engine at start reads `ai.json` and the run override, so a
 // malformed file, or `--ai` naming an AI that cannot narrate, stops the server
@@ -30,6 +35,14 @@ export const handle: Handle = async ({ event, resolve }) => {
 	if (building) {
 		event.locals.player = null;
 		return resolve(event);
+	}
+
+	const host = event.request.headers.get('host');
+	if (allowedHosts && !isHostAllowed(host, allowedHosts)) {
+		console.warn(
+			`Refused a request for host "${host ?? ''}": add it to ${ALLOWED_HOSTS_ENV} to play from that address.`
+		);
+		return new Response(`This game does not answer the host "${host ?? ''}".`, { status: 403 });
 	}
 
 	const playerId = event.cookies.get(playerCookie());

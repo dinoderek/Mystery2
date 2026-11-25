@@ -22,6 +22,9 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          # `baseline status` reads each baseline's run commit, a PR-branch commit.
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -29,6 +32,16 @@ jobs:
           cache: npm
 
       - run: npm ci
+
+      # Report only: it prints which stored eval baselines the code has moved past
+      # and can never fail the job. Squash merges drop the run commits from main, so
+      # the PR heads are fetched too; a commit still missing is reported as unknown.
+      - name: Eval baseline status
+        continue-on-error: true
+        timeout-minutes: 2
+        run: |
+          git fetch --quiet origin '+refs/pull/*/head:refs/remotes/origin/pr/*' || echo "could not fetch the PR heads"
+          ./dev eval baseline status
 
       - name: Cache Playwright browsers
         id: playwright-cache

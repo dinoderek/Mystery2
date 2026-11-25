@@ -68,7 +68,7 @@ describe("the evaluation tree", () => {
 });
 
 describe("./dev eval", () => {
-  it("lists exactly the nine evaluation commands", () => {
+  it("lists exactly the ten evaluation commands", () => {
     expect(COMMANDS.map((command) => command.name)).toEqual([
       "judge blueprint",
       "validate",
@@ -77,12 +77,13 @@ describe("./dev eval", () => {
       "cases",
       "baseline save",
       "baseline compare",
+      "baseline status",
       "play",
       "report",
     ]);
     const listing = listCommands(COMMANDS).split("\n");
     const listed = listing.filter((line) => /^ {2}\S/.test(line));
-    expect(listed).toHaveLength(9);
+    expect(listed).toHaveLength(10);
   });
 
   it("has a test that runs each command's main path on stub bindings", () => {
@@ -96,6 +97,7 @@ describe("./dev eval", () => {
       cases: ["tests/api/unit/no-turn-readers.test.ts", "casesCommand.run("],
       "baseline save": ["tests/api/unit/runtime-expect-run.test.ts", '["baseline", "save"'],
       "baseline compare": ["tests/api/unit/runtime-expect-run.test.ts", '["baseline", "compare"'],
+      "baseline status": ["tests/api/unit/runtime-baseline-status.test.ts", '["baseline", "status"]'],
       play: ["tests/api/integration/playtest-command.test.ts", "['play', ...args"],
       report: ["tests/api/integration/playtest-command.test.ts", "['report', runDir]"],
     };

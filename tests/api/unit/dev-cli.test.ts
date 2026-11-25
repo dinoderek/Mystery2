@@ -627,10 +627,10 @@ describe("./dev doctor's AIs", () => {
   });
 
   it("reports a default that can narrate", () => {
-    expect(describeAIs({ root: clone, env: aiRoot(AIS, undefined, "own") }).lines).toContain('ok   default "own" can narrate');
+    expect(describeAIs({ root: clone, env: aiRoot(AIS, undefined, "own"), claudeRuns: claudeRuns(true) }).lines).toContain('ok   default "own" can narrate');
     const claude = describeAIs({ root: clone, env: aiRoot(AIS, undefined, "claude"), claudeRuns: claudeRuns(true) });
     expect(claude.lines).toContain('ok   default "claude" can narrate');
-    expect(describeAIs({ root: clone, env: aiRoot(AIS, undefined, "mock") }).lines).toContain('ok   default "mock": built in, no real AI');
+    expect(describeAIs({ root: clone, env: aiRoot(AIS, undefined, "mock"), claudeRuns: claudeRuns(true) }).lines).toContain('ok   default "mock": built in, no real AI');
   });
 
   it("fails on a default that cannot narrate, naming it and what it lacks", () => {
@@ -643,7 +643,7 @@ describe("./dev doctor's AIs", () => {
   });
 
   it("fails on a default naming no AI in the file", () => {
-    const report = describeAIs({ root: clone, env: aiRoot(AIS, undefined, "haiku") });
+    const report = describeAIs({ root: clone, env: aiRoot(AIS, undefined, "haiku"), claudeRuns: claudeRuns(true) });
     expect(report.ok).toBe(false);
     expect(report.lines.join("\n")).toMatch(/FAIL .*field "default" names AI "haiku"/);
   });

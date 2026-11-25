@@ -30,7 +30,7 @@ export const E2E_DATABASE_FILE = resolveDatabaseFile(TEST_DATABASE, E2E_CONFIG_R
 
 // Touch journeys live under `e2e/touch/`; `testDir` still covers them, so the
 // gate's `e2e-browser` root and `gate-coverage` count every one.
-const TOUCH_JOURNEYS = /[\\/]touch[\\/].*\.test\.ts$/;
+const TOUCH_JOURNEYS = 'touch/**/*.test.ts';
 
 export default defineConfig({
   globalSetup: './e2e/global-setup.ts',

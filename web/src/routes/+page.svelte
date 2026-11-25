@@ -175,24 +175,25 @@
         {:else}
           <div class="space-y-4">
             {#each gameSessionStore.blueprints as blueprint, i}
-              <button
-                type="button"
-                data-testid={`case-card-${i + 1}`}
-                class="group relative flex w-full flex-col md:flex-row gap-3 border border-t-muted/20 p-4 text-left transition-colors hover:border-t-primary"
-                onclick={() => startCase(blueprint.id)}
-              >
-                <span class="absolute -left-3 -top-3 w-6 h-6 bg-t-bg border border-t-primary flex items-center justify-center font-bold">
+              <!-- The button's ::after covers the card, so the whole card taps; the art stays outside it. -->
+              <div class="group relative flex flex-col md:flex-row gap-3 border border-t-muted/20 p-4 transition-colors hover:border-t-primary">
+                <span class="absolute -left-3 -top-3 z-10 w-6 h-6 bg-t-bg border border-t-primary flex items-center justify-center font-bold">
                   {i + 1}
                 </span>
-                <span class="block md:w-1/2 md:order-2">
+                <div class="md:w-1/2 md:order-2">
                   <CaseArtwork blueprintId={blueprint.id} imageId={blueprint.blueprint_image_id} alt="Case art" />
-                </span>
-                <span class="block md:w-1/2 md:order-1">
+                </div>
+                <button
+                  type="button"
+                  data-testid={`case-card-${i + 1}`}
+                  class="block text-left md:w-1/2 md:order-1 after:absolute after:inset-0 after:content-['']"
+                  onclick={() => startCase(blueprint.id)}
+                >
                   <span class="block text-xl font-bold text-t-bright">{blueprint.title}</span>
                   <span class="block text-t-muted/80 mb-2">{blueprint.one_liner}</span>
                   <span class="block text-xs text-t-dim">Target age: {blueprint.target_age}</span>
-                </span>
-              </button>
+                </button>
+              </div>
             {/each}
           </div>
         {/if}

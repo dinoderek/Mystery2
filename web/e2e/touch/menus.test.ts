@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/test';
-import { signInAsTestProfile } from '../test-profile';
 import { listOnlyMockCase } from '../session-helpers';
 import {
   NARRATOR_SPEAKER,
@@ -11,16 +10,20 @@ import {
 } from '../../../tests/testkit/src/fixtures';
 
 // Runs on the phone and tablet projects. Everything here is a tap: no key is
-// pressed. Leaving a game by touch belongs to the session screen's journey, so
-// each list is reached from a fresh load of the menu.
+// pressed, and the player signs in at the picker. Leaving a game by touch
+// belongs to the session screen's journey, so each list is reached from a fresh
+// load of the menu.
 
 const FINISHED_GAME_ID = '00000000-0000-0000-0000-000000000031';
 
 test('a player starts, resumes and reviews a game by tapping only', async ({ page }) => {
-  await signInAsTestProfile(page, 'touch');
   await listOnlyMockCase(page);
 
-  await page.goto('/');
+  // Sign in through the picker: `fill` sends no key events.
+  await page.goto('/login');
+  await page.locator('#profile-name').fill(`touch-${crypto.randomUUID().slice(0, 8)}`);
+  await page.getByRole('button', { name: '[ START ]' }).tap();
+  await expect(page).toHaveURL(/\/$/);
   await expect(page.getByTestId('menu-row-2')).toBeDisabled();
   await expect(page.getByTestId('menu-row-3')).toBeDisabled();
 

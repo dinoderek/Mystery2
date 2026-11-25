@@ -55,7 +55,7 @@ by hand; the code suites are optional locally.
 ## Running
 
 Integration, API E2E and browser E2E share the worktree's port: run one at a
-time per checkout (`docs/local-infrastructure.md`).
+time per checkout ([`docs/local-infrastructure.md`](local-infrastructure.md)).
 
 Live AI runs (the `test:*:live` scripts) are opt-in, never a gate substitute,
 and call only an AI they are named, from `ai.json`

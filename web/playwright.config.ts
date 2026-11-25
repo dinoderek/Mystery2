@@ -28,6 +28,10 @@ fs.mkdirSync(E2E_CONFIG_ROOT, { recursive: true });
 // derivation. It is inside E2E_CONFIG_ROOT either way, never a real database.
 export const E2E_DATABASE_FILE = resolveDatabaseFile(TEST_DATABASE, E2E_CONFIG_ROOT, {});
 
+// Touch journeys live under `e2e/touch/`; `testDir` still covers them, so the
+// gate's `e2e-browser` root and `gate-coverage` count every one.
+const TOUCH_JOURNEYS = /[\\/]touch[\\/].*\.test\.ts$/;
+
 export default defineConfig({
   globalSetup: './e2e/global-setup.ts',
   globalTeardown: './e2e/global-teardown.ts',
@@ -56,8 +60,22 @@ export default defineConfig({
   /* Configure projects for major browsers */
   projects: [
     {
+      // The whole suite, keyboard and mouse. It proves what a keyboard does.
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      testIgnore: TOUCH_JOURNEYS,
+    },
+    // Phone and tablet: Chromium with touch emulation, so no new browser. They
+    // run only the touch journeys, which tap and never press a key.
+    {
+      name: 'phone',
+      use: { ...devices['Pixel 7'] },
+      testMatch: TOUCH_JOURNEYS,
+    },
+    {
+      name: 'tablet',
+      use: { ...devices['Galaxy Tab S9'] },
+      testMatch: TOUCH_JOURNEYS,
     },
   ],
 

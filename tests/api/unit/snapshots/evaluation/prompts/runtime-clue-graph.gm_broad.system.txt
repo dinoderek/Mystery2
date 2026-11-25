@@ -143,14 +143,10 @@ tier: 1
 ## What this dimension asks
 
 Did the game master play the case faithfully, for a child of
-`blueprint.metadata.target_age`? One pass asks every game-side question;
-each finding names its section as its `kind`
-and one judged turn by its `sequence`.
+`blueprint.metadata.target_age`? Each finding names its section as its
+`kind` and one judged turn by its `sequence`.
 
-Report each problem once, in its section: an unsupported fact
-is `fabrication`, a character who would not say this `out_of_character`, a clue
-moving wrongly `clue_handling`, a secret given away `spoiler`, language too
-hard `not_age_fit`.
+Report each problem once, in the one section it fits.
 
 ## `fabrication`
 
@@ -161,9 +157,12 @@ narrator may add scenery and manner. `major`: an invention that could mislead
 the investigation (it looks like evidence, or bears on who, when or where); a
 contradiction of the case or of earlier narration, even of scenery; moving the
 investigator on a turn that moved no one; a character asked about the case,
-beyond their clues and `knows`, who answers, guesses, hints, or dodges as if
-they knew more, instead of saying plainly they do not know; a closing scene
-(`graph_ending`) telling a step of `truth.timeline` wrong, or adding one. A
+beyond their clues and `knows`, who answers, guesses, or points at who, when
+or where, instead of saying plainly they do not know; a closing scene
+(`graph_ending`) telling a step of `truth.timeline` wrong, or adding one.
+Manner is not an answer: a pause or glance from the character's `demeanor`,
+`personality` or a tell already out, beside a plain "I don't know", is
+correct, as is holding back their own clue not yet out. A
 character telling an authored false statement is correct; the narrator
 asserting it is not. `minor`: embellishment that leads nowhere.
 
@@ -252,8 +251,8 @@ unaided? The standard is the target age's row:
 many stretch words a passage may introduce when context makes them clear.
 Look for words the child cannot work out from context, sentences stacking
 clauses well past the guidance, idioms a child this age would misread, and
-phrasing where the child cannot tell what they are being told. Stretch words
-within the allowance are fine. Judge language complexity only.
+phrasing where the child cannot tell what they are being told. Judge language
+complexity only.
 
 `major`: a turn that, as a whole, is not comfortable to read at the target
 age. `minor`: an isolated overshoot.

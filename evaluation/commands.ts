@@ -12,6 +12,7 @@ import { reportCommand } from "./playtest/report.ts";
 import { judgeTurnCommand } from "./runtime/judge-turn.ts";
 import { perfBaselineCommand } from "./perf/baseline.ts";
 import { perfPushCommand } from "./perf/push.ts";
+import { perfReportCommand } from "./perf/report.ts";
 import { perfSyncCommand } from "./perf/sync.ts";
 import { judgeGame } from "./trace/judge-game.ts";
 
@@ -26,6 +27,7 @@ export const COMMANDS: readonly EvalCommand[] = [
   baselineStatusCommand,
   perfPushCommand,
   perfSyncCommand,
+  perfReportCommand,
   perfBaselineCommand,
   playCommand,
   reportCommand,

@@ -37,6 +37,12 @@ Three phases keep images consistent:
 - References use `input_references[]` in the prompt legend’s order. At most 16 are sent; beyond that the first 16, with a warning.
 - `--chat-packets` writes the same prompts, with the references to upload in
   the same order, for pasting into a chat.
+- A case committed under `blueprints/` is never patched, so the tracked file
+  and the untracked images cannot disagree. Its images are written under
+  fixed names, `<case id>.blueprint.png`, `<case id>.character-<id>.png` and
+  `<case id>.location-<id>.png` (`packages/shared/src/image-ids.ts`),
+  replacing the last ones, and the engine fills in any image id a case does not
+  name from a file under that name.
 
 For `clue-graph/2`, portraits use appearance facts, locations public facts,
 covers cover facts (else the title) and visual direction; artwork is optional.

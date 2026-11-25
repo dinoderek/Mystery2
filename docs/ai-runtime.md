@@ -138,7 +138,8 @@ Contract, prompt, context and provider changes update its tests.
   that breaks its contract, answers `503` with `details.retriable: true`; the
   web client owns the retry policy.
 - A blueprint that cannot be read or parsed is logged (`blueprint.read_failed`,
-  `blueprint.parse_failed`) and treated as missing.
+  `blueprint.parse_failed`) and treated as missing; a parse failure is
+  logged once per version of the file.
 - Every AI call logs one JSON line to stdout with the requested and reported
   model; `AI_CALL_LOG` adds full prompts and outputs
   (`docs/ai-configuration.md`).

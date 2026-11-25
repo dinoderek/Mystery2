@@ -19,6 +19,8 @@ clones and worktrees share content that outlives a checkout; unset, everything
 resolves from the repo root. Machine-specific files carry a `.local` suffix and
 are gitignored.
 
+`MYSTERY_LIST_FIXTURES=1` shows `mock-case` in the menu.
+
 ## Which database
 
 Content is shared across worktrees; databases are not.

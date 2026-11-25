@@ -33,6 +33,12 @@
  * last `result` event in the attempt's stream file, where `--output-format
  * stream-json` puts it. A wrapper whose CLI reports neither records null.
  *
+ * Tokens are read the same way, from the `usage` object beside the cost:
+ * `input_tokens`, `output_tokens`, `cache_read_input_tokens` and
+ * `cache_creation_input_tokens`, all four non-negative integers. Any other
+ * shape records null. A failed attempt keeps what it reported, as it keeps its
+ * cost; a call's tokens are its attempts' summed, null when none reported any.
+ *
  * Each wrapper runs in its own process group, so a timeout kills the CLI it
  * started too. While any wrapper runs, an interrupt (SIGINT, SIGTERM, SIGHUP)
  * or the process exiting kills every running group first; the signal is then
@@ -48,7 +54,7 @@ import { performance } from "node:perf_hooks";
 
 import type { ResolvedBinding } from "./config.ts";
 import { UsageLimitError } from "./errors.ts";
-import type { Attempt, ModelCall } from "./result.ts";
+import { sumTokens, type Attempt, type ModelCall, type Tokens } from "./result.ts";
 import { usageLimitMessage } from "./usage-limit.ts";
 
 export interface ModelCallRequest<T> {
@@ -93,14 +99,24 @@ export function promptSha256(systemPrompt: string, userMessage: string): string 
   return createHash("sha256").update(systemPrompt).update("\0").update(userMessage).digest("hex");
 }
 
+/** What the CLI reported about one attempt's use. */
+interface Reported {
+  costUsd: number | null;
+  tokens: Tokens | null;
+}
+
+const NOTHING_REPORTED: Reported = { costUsd: null, tokens: null };
+
 class AttemptFailure extends Error {
   readonly outcome: Exclude<Attempt["outcome"], "ok">;
   readonly costUsd: number | null;
+  readonly tokens: Tokens | null;
 
-  constructor(outcome: Exclude<Attempt["outcome"], "ok">, message: string, costUsd: number | null = null) {
+  constructor(outcome: Exclude<Attempt["outcome"], "ok">, message: string, reported: Reported = NOTHING_REPORTED) {
     super(message);
     this.outcome = outcome;
-    this.costUsd = costUsd;
+    this.costUsd = reported.costUsd;
+    this.tokens = reported.tokens;
   }
 }
 
@@ -218,6 +234,27 @@ function reportedCost(parsed: unknown): number | null {
   return typeof cost === "number" && Number.isFinite(cost) && cost >= 0 ? cost : null;
 }
 
+function count(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 ? value : null;
+}
+
+/** The Claude CLI's `usage` object at the top of `parsed`, or null unless all four counts are there. */
+function reportedTokens(parsed: unknown): Tokens | null {
+  const usage = walk(parsed, "usage");
+  if (!usage || typeof usage !== "object") return null;
+  const record = usage as Record<string, unknown>;
+  const input = count(record.input_tokens);
+  const output = count(record.output_tokens);
+  const cacheRead = count(record.cache_read_input_tokens);
+  const cacheWrite = count(record.cache_creation_input_tokens);
+  if (input === null || output === null || cacheRead === null || cacheWrite === null) return null;
+  return { input, output, cache_read: cacheRead, cache_write: cacheWrite };
+}
+
+function reported(parsed: unknown): Reported {
+  return { costUsd: reportedCost(parsed), tokens: reportedTokens(parsed) };
+}
+
 function readOrEmpty(file: string): string {
   try {
     return readFileSync(file, "utf8");
@@ -226,47 +263,54 @@ function readOrEmpty(file: string): string {
   }
 }
 
-/** The cost on the last `result` event of a stream file, or null. */
-function streamedCost(streamFile: string): number | null {
+/** What the last `result` event of a stream file reports, or nothing. */
+function streamedReport(streamFile: string): Reported {
   let lines: string[];
   try {
     lines = readFileSync(streamFile, "utf8").trim().split("\n").reverse();
   } catch {
-    return null;
+    return NOTHING_REPORTED;
   }
   for (const line of lines) {
     try {
       const event = JSON.parse(line);
-      if (event?.type === "result") return reportedCost(event);
+      if (event?.type === "result") return reported(event);
     } catch {
       // A partial or non-JSON line: keep looking.
     }
   }
-  return null;
+  return NOTHING_REPORTED;
 }
 
-/** The answer in the wrapper's stdout, and the cost it reports. Throws an `AttemptFailure`. */
-function readAnswer(binding: ResolvedBinding, run: Spawned, output: "json" | "text"): { answer: string; costUsd: number | null } {
+/** What stdout reports, each part falling back to the stream file's when stdout has none. */
+function withStream(fromStdout: Reported, streamFile: string): Reported {
+  if (fromStdout.costUsd !== null && fromStdout.tokens !== null) return fromStdout;
+  const streamed = streamedReport(streamFile);
+  return { costUsd: fromStdout.costUsd ?? streamed.costUsd, tokens: fromStdout.tokens ?? streamed.tokens };
+}
+
+/** The answer in the wrapper's stdout, and the cost and tokens it reports. Throws an `AttemptFailure`. */
+function readAnswer(binding: ResolvedBinding, run: Spawned, output: "json" | "text"): { answer: string } & Reported {
   if (run.spawnError) throw new AttemptFailure("exit", `could not start ${binding.command}: ${run.spawnError.message}`);
   if (run.timedOut) throw new AttemptFailure("timeout", `timed out after ${binding.timeout_ms}ms`);
   if (run.exitCode !== 0) {
     throw new AttemptFailure("exit", `exited with code ${run.exitCode}. stderr: ${run.stderr.slice(0, 1000)}`);
   }
-  if (output === "text") return { answer: run.stdout, costUsd: null };
+  if (output === "text") return { answer: run.stdout, ...NOTHING_REPORTED };
   let parsed: unknown;
   try {
     parsed = JSON.parse(run.stdout);
   } catch {
     throw new AttemptFailure("not_json", `stdout is not JSON. First 500 chars: ${run.stdout.slice(0, 500)}`);
   }
-  const costUsd = reportedCost(parsed);
-  if (binding.extract_path === null) return { answer: run.stdout, costUsd };
+  const fromStdout = reported(parsed);
+  if (binding.extract_path === null) return { answer: run.stdout, ...fromStdout };
   const answer = walk(parsed, binding.extract_path);
   if (typeof answer !== "string") {
     const why = answer === undefined ? "not found" : "not a string";
-    throw new AttemptFailure("not_json", `extract_path "${binding.extract_path}" ${why} in stdout JSON`, costUsd);
+    throw new AttemptFailure("not_json", `extract_path "${binding.extract_path}" ${why} in stdout JSON`, fromStdout);
   }
-  return { answer, costUsd };
+  return { answer, ...fromStdout };
 }
 
 async function writeInvocation(file: string, record: Record<string, unknown>): Promise<void> {
@@ -310,19 +354,19 @@ async function runAttempt<T>(
     stream_file: streamFile,
   });
 
-  let costUsd: number | null = null;
   try {
     const read = readAnswer(binding, run, request.output ?? "json");
-    costUsd = read.costUsd ?? streamedCost(streamFile);
+    const { costUsd, tokens } = withStream(read, streamFile);
     let value: T;
     try {
       value = request.parse ? request.parse(read.answer) : (read.answer as T);
     } catch (error) {
-      throw new AttemptFailure("invalid", (error as Error).message ?? String(error), costUsd);
+      throw new AttemptFailure("invalid", (error as Error).message ?? String(error), { costUsd, tokens });
     }
-    return { record: { attempt, outcome: "ok", duration_ms: durationMs, cost_usd: costUsd }, answer: read.answer, value };
+    return { record: { attempt, outcome: "ok", duration_ms: durationMs, cost_usd: costUsd, tokens }, answer: read.answer, value };
   } catch (error) {
     if (!(error instanceof AttemptFailure)) throw error;
+    const { costUsd, tokens } = withStream(error, streamFile);
     const usageLimit = usageLimitMessage({ stdout: run.stdout, stderr: run.stderr, stream: readOrEmpty(streamFile) });
     return {
       ...(usageLimit ? { usageLimit } : {}),
@@ -330,7 +374,8 @@ async function runAttempt<T>(
         attempt,
         outcome: error.outcome,
         duration_ms: durationMs,
-        cost_usd: error.costUsd ?? costUsd ?? streamedCost(streamFile),
+        cost_usd: costUsd,
+        tokens,
         error: error.message.slice(0, 500),
       },
     };
@@ -390,6 +435,7 @@ export async function runModel<T = string>(request: ModelCallRequest<T>): Promis
     prompt_sha256: promptHash,
     duration_ms: Math.round(performance.now() - startedAt),
     cost_usd: totalCost(attempts),
+    tokens: sumTokens(attempts.map((attempt) => attempt.tokens)),
     attempts,
   };
   const last = attempts[attempts.length - 1];

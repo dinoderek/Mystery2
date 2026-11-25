@@ -200,6 +200,63 @@ describe("runModel", () => {
     expect(summed.call.cost_usd).toBeCloseTo(0.35);
   });
 
+  it("reads tokens from the usage object in the wrapper's JSON stdout", async () => {
+    const result = await call("usage");
+    const tokens = { input: 10, output: 20, cache_read: 30, cache_write: 40 };
+    expect(result.call.tokens).toEqual(tokens);
+    expect(result.call.attempts[0].tokens).toEqual(tokens);
+  });
+
+  it("reads tokens from the stream's result event when stdout carries none", async () => {
+    const result = await call("streamed_usage");
+    expect(result.call.tokens).toEqual({ input: 5, output: 6, cache_read: 7, cache_write: 8 });
+    expect(result.call.cost_usd).toBe(0.5);
+  });
+
+  it("records null tokens when the wrapper reports none, or a usage object of another shape", async () => {
+    const none = await call("nocost");
+    expect(none.call.tokens).toBeNull();
+    expect(none.call.attempts[0].tokens).toBeNull();
+
+    fs.rmSync(path.join(dir, "counter"));
+    const odd = await call("usage_odd");
+    expect(odd.ok).toBe(true);
+    expect(odd.call.tokens).toBeNull();
+
+    fs.rmSync(path.join(dir, "counter"));
+    const text = await call("text", { output: "text" });
+    expect(text.call.tokens).toBeNull();
+  });
+
+  it("sums tokens across retried attempts, field by field", async () => {
+    const result = await call("usage_invalid,usage", { parse: parseAnswer }, { retries: 1 });
+    expect(result.ok).toBe(true);
+    expect(result.call.attempts.map((attempt) => attempt.tokens)).toEqual([
+      { input: 1, output: 2, cache_read: 3, cache_write: 4 },
+      { input: 10, output: 20, cache_read: 30, cache_write: 40 },
+    ]);
+    expect(result.call.tokens).toEqual({ input: 11, output: 22, cache_read: 33, cache_write: 44 });
+  });
+
+  it("sums only the attempts that reported tokens", async () => {
+    const result = await call("exit,usage", {}, { retries: 1 });
+    expect(result.call.attempts.map((attempt) => attempt.tokens)).toEqual([null, { input: 10, output: 20, cache_read: 30, cache_write: 40 }]);
+    expect(result.call.tokens).toEqual({ input: 10, output: 20, cache_read: 30, cache_write: 40 });
+  });
+
+  it("keeps the tokens a failed attempt reported, as it keeps its cost", async () => {
+    const rejected = await call("usage_invalid", { parse: parseAnswer });
+    expect(rejected.ok).toBe(false);
+    expect(rejected.call.attempts[0]).toMatchObject({ outcome: "invalid", cost_usd: 0.1, tokens: { input: 1, output: 2, cache_read: 3, cache_write: 4 } });
+    expect(rejected.call.tokens).toEqual({ input: 1, output: 2, cache_read: 3, cache_write: 4 });
+
+    fs.rmSync(path.join(dir, "counter"));
+    const crashed = await call("usage_exit");
+    expect(crashed.ok).toBe(false);
+    expect(crashed.call.attempts[0]).toMatchObject({ outcome: "exit", cost_usd: 0.5, tokens: { input: 5, output: 6, cache_read: 7, cache_write: 8 } });
+    expect(crashed.call.tokens).toEqual({ input: 5, output: 6, cache_read: 7, cache_write: 8 });
+  });
+
   it("takes the whole of stdout as the answer when there is no extract path", async () => {
     const result = await call("bare", {}, { extract_path: null });
     expect(result.ok && result.answer).toBe('{"answer":42}');

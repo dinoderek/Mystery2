@@ -10,6 +10,7 @@ Each harness has its README beside its code:
 - one turn replayed, `judge turn`, `cases` and `baseline`: `evaluation/runtime/README.md`
 - self-play, `play` and `report`: `evaluation/playtest/README.md`
 - the `gm_*` judges: `evaluation/judges/README.md`
+- what a run records, and `perf` commands with `--suite`/`--label` (to come): `evaluation/perf/README.md`
 - the generator agent's workspace: `evaluation/generator-harness/template/README.md`
 - the judge agent's workspace: `evaluation/judge-harness/template/README.md`
 

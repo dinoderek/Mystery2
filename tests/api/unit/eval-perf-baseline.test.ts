@@ -14,6 +14,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { COMMANDS } from "../../../evaluation/commands.ts";
 import { loadConfig } from "../../../evaluation/core/config.ts";
+import { generateCommand } from "../../../evaluation/generate/commands.ts";
 import { runEval } from "../../../evaluation/core/dispatch.ts";
 import type { EvalCommand } from "../../../evaluation/core/dispatch.ts";
 import { createPerfBaselineCommand, readSuite, suiteNames, suiteRunArgv, SUITES_DIR } from "../../../evaluation/perf/baseline.ts";
@@ -119,6 +120,22 @@ describe("perf baseline", () => {
     expect(result.out).toContain("[perf push] 2 sent");
   });
 
+  it("records no local path in a run's argv when the output root comes from the env", async () => {
+    writeSuite("tiny", { models: { "narrator-claude": "suite-model" }, runs: [RUN] });
+    const command = createPerfBaselineCommand({ suitesDir, readCommit: CLEAN });
+    const err: string[] = [];
+    const env = { MYSTERYEVALS_DIR: outputRoot };
+    const code = await runEval(["perf", "baseline", "tiny", "--config", configFile], { root: ROOT, out: () => {}, err: (t) => err.push(t), env }, [command]);
+
+    expect(err).toEqual([]);
+    expect(code).toBe(0);
+    const [folder] = runFolders(outputRoot);
+    const { argv } = readRecord(folder).run;
+    expect(argv).not.toContain("--output-root");
+    expect(argv.filter((arg) => arg !== configFile && path.isAbsolute(arg))).toEqual([]);
+    expect(argv.slice(0, 1)).toEqual([path.relative(process.cwd(), path.join(ROOT, CASE))]);
+  });
+
   it("refuses a dirty tree before anything runs", async () => {
     writeSuite("tiny", { models: { "narrator-claude": "suite-model" }, runs: [RUN] });
     const dirty = createPerfBaselineCommand({ suitesDir, readCommit: () => ({ commit: "abc", tree_clean: false }) });
@@ -215,6 +232,17 @@ describe("the committed suites", () => {
     const briefs = fs.readdirSync(path.join(ROOT, "blueprints/clue-graph/briefs")).map((file) => `blueprints/clue-graph/briefs/${file}`).sort();
     expect([...run.inputs].sort()).toEqual(briefs);
     expect(run).toMatchObject({ command: "generate", options: { judge: true, repair: 2 } });
+  });
+
+  it.each(["blueprint-loop", "narration-loop"])("%s gives each run only flags its command takes", (name) => {
+    const suite = readSuite(dir, name);
+    const commands = new Map(COMMANDS.map((command) => [command.name, command.help]));
+    commands.set("generate", generateCommand.help);
+    for (const run of suite.runs) {
+      const help = commands.get(run.command) ?? "";
+      const flags = suiteRunArgv(run, { name, models: suite.models }, ROOT).filter((arg) => arg.startsWith("--"));
+      for (const flag of new Set(flags)) expect(help, `${run.command} ${flag}`).toMatch(new RegExp(`^\\s+${flag}\\b`, "m"));
+    }
   });
 
   it("narration-loop makes, per case folder, the run its retained Haiku baseline was saved from", () => {

@@ -211,10 +211,10 @@ export function createPerfBaselineCommand(deps: PerfBaselineDeps = {}): EvalComm
       }
 
       const outputRoot = resolveOutputRoot(common.outputRoot, context.env);
+      // As given: each run's argv is recorded and shared, and the runs resolve the same output root from the same env.
       const passed = [
         ...(common.configPath ? ["--config", common.configPath] : []),
-        "--output-root",
-        outputRoot,
+        ...(common.outputRoot ? ["--output-root", common.outputRoot] : []),
         ...(common.label ? ["--label", common.label] : []),
       ];
       context.out(`[perf baseline] ${name}: ${suite.runs.length} run(s) at ${commit?.slice(0, 12)}`);

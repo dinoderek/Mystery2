@@ -82,8 +82,8 @@ other characters than `A-Za-z0-9._-` become `_`.
 
 `./dev eval perf baseline <name>` (`evaluation/perf/baseline.ts`) makes each
 run in `evaluation/perf/suites/<name>.json` with `--suite <name>`, and the
-file's `models` as `--model-override`s. It refuses a dirty tree, then pushes the new records; a
-failed push is said once, leaving the runs' exit code.
+file's `models` as `--model-override`s. It refuses a dirty tree, then pushes
+the new records; a failed push is said once, leaving the runs' exit code.
 
 - `blueprint-loop`: `generate --judge --repair 2` on the three committed briefs.
 - `narration-loop`: `judge turn` on Haiku, one run per case folder: the run its

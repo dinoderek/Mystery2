@@ -6,10 +6,9 @@ before widgets.
 
 ## Menus
 
-Each landing-menu row, case card and
-session row is a button with its number, disabled where it cannot open; `[ BACK ]`
-is tappable wherever `b` goes back. A tap calls its key's function, never a
-synthetic key event.
+Each landing-menu row, case card and session row is a button with its number,
+disabled where it cannot open; `[ BACK ]` is tappable wherever `b` goes back. A
+tap calls its key's function, never a synthetic key event.
 
 ## Shape
 

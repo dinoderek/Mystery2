@@ -9,6 +9,8 @@ export interface ViewportBox {
 export interface VisualViewportLike {
   height: number;
   offsetTop: number;
+  /** 1 unless the player has pinched in. */
+  scale: number;
   addEventListener(type: 'resize' | 'scroll', listener: () => void): void;
   removeEventListener(type: 'resize' | 'scroll', listener: () => void): void;
 }
@@ -27,9 +29,15 @@ const TEXT_NEEDS_PX = 510;
 /** Less art than this is not worth the space. */
 const ART_MIN_PX = 96;
 
+/**
+ * What is visible, as the keyboard leaves it. A pinch-zoom also shrinks the
+ * visual viewport, but the screen must not re-lay itself out around what the
+ * player zoomed into, so a zoomed page reports the layout viewport.
+ */
 export function visibleBox(win: ViewportWindow): ViewportBox {
   const visual = win.visualViewport;
-  return visual ? { height: visual.height, top: visual.offsetTop } : { height: win.innerHeight, top: 0 };
+  if (!visual || visual.scale > 1.01) return { height: win.innerHeight, top: 0 };
+  return { height: visual.height, top: visual.offsetTop };
 }
 
 /**

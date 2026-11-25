@@ -7,8 +7,12 @@
 
   let scrollContainer = $state<HTMLDivElement | null>(null);
 
-  // Kept as the player scrolls: a resize cannot tell whether they were reading the end.
+  // Whether the player rests at the end, kept as they scroll: a resize cannot
+  // tell whether they were reading it.
   let atEnd = true;
+  // The height `atEnd` was judged at. A scroll event under a new height, such
+  // as a smooth scroll still moving as the keyboard opens, is not the player.
+  let judgedAtHeight = 0;
 
   const page = $derived(gameSessionStore.activePage);
 
@@ -40,10 +44,13 @@
   onMount(() => {
     if (!scrollContainer) return;
     const resize = new ResizeObserver(() => {
-      if (scrollContainer && atEnd && gameSessionStore.isOnLivePage) {
+      if (!scrollContainer) return;
+      if (atEnd && gameSessionStore.isOnLivePage) {
         scrollContainer.scrollTop = scrollContainer.scrollHeight;
       }
+      judgedAtHeight = scrollContainer.clientHeight;
     });
+    judgedAtHeight = scrollContainer.clientHeight;
     resize.observe(scrollContainer);
     return () => resize.disconnect();
   });
@@ -51,7 +58,11 @@
 
 <div
   bind:this={scrollContainer}
-  onscroll={() => scrollContainer && (atEnd = isNearEnd(scrollContainer))}
+  onscroll={() => {
+    if (scrollContainer && scrollContainer.clientHeight === judgedAtHeight) {
+      atEnd = isNearEnd(scrollContainer);
+    }
+  }}
   class="min-h-0 flex-1 overflow-y-auto border border-t-muted/30 p-4 font-mono"
   data-testid="page-narration"
 >

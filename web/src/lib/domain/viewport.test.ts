@@ -11,6 +11,7 @@ import {
 
 class FakeVisualViewport implements VisualViewportLike {
   listeners = new Map<string, Set<() => void>>();
+  scale = 1;
   constructor(
     public height: number,
     public offsetTop = 0,
@@ -35,6 +36,12 @@ describe('visibleBox', () => {
       height: 500,
       top: 12,
     });
+  });
+
+  it('reports the layout viewport while the player is pinched in', () => {
+    const visual = new FakeVisualViewport(300, 40);
+    visual.scale = 2;
+    expect(visibleBox({ innerHeight: 800, visualViewport: visual })).toEqual({ height: 800, top: 0 });
   });
 
   it('falls back to the window where there is no visual viewport', () => {

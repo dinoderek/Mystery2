@@ -3,19 +3,35 @@ import { expect, type Page } from '@playwright/test';
 /** The smallest a finger-sized control may be, in its smaller dimension. */
 export const MIN_TARGET_PX = 44;
 
-/** Nothing on the screen scrolls the page sideways. */
+/**
+ * Nothing on the screen scrolls sideways: not the page, which a fixed screen
+ * never widens, so also not any box that sticks out past the right edge, and
+ * not any scroll area that holds something wider than itself.
+ */
 export async function expectNoSidewaysScroll(page: Page, where: string) {
-  const { scrollWidth, innerWidth } = await page.evaluate(() => ({
-    scrollWidth: document.documentElement.scrollWidth,
-    innerWidth: window.innerWidth,
-  }));
-  expect(scrollWidth, `${where}: the page scrolls sideways`).toBeLessThanOrEqual(innerWidth);
+  const found = await page.evaluate(() => {
+    const out: string[] = [];
+    const width = window.innerWidth;
+    if (document.documentElement.scrollWidth > width) out.push('the page');
+    for (const element of document.querySelectorAll<HTMLElement>('body *')) {
+      const style = getComputedStyle(element);
+      if (style.display === 'none' || style.visibility === 'hidden') continue;
+      const box = element.getBoundingClientRect();
+      const name = `${element.tagName.toLowerCase()} "${(element.textContent ?? '').trim().slice(0, 24)}"`;
+      if (box.width > 0 && box.right > width + 0.5) out.push(`${name} ends at ${Math.round(box.right)}`);
+      if (/auto|scroll/.test(style.overflowX) && element.scrollWidth > element.clientWidth) {
+        out.push(`${name} scrolls sideways`);
+      }
+    }
+    return out;
+  });
+  expect(found, `${where}: something runs past the right edge`).toEqual([]);
 }
 
 /**
  * Every visible, enabled button, link and input is at least `MIN_TARGET_PX` in
- * its smaller dimension. A control hidden by a scroll area or a closed overlay
- * is not visible and is not counted.
+ * its smaller dimension. A control that is not displayed, such as one in a
+ * closed overlay, is not counted; one scrolled out of view is.
  */
 export async function expectTapTargets(page: Page, where: string) {
   const small = await page.evaluate((minimum) => {
@@ -43,13 +59,24 @@ export async function expectScreenFits(page: Page, where: string) {
   await expectTapTargets(page, where);
 }
 
-/** True when the element's box lies inside the visible viewport. */
-export async function isInsideViewport(page: Page, testId: string | { locator: string }): Promise<boolean> {
-  const locator = typeof testId === 'string' ? page.getByTestId(testId) : page.locator(testId.locator);
+/**
+ * True when the element's box lies inside what is visible: the visual
+ * viewport, which the on-screen keyboard shrinks and which can sit below the
+ * top of the layout viewport.
+ */
+export async function isInsideViewport(page: Page, target: string | { locator: string }): Promise<boolean> {
+  const locator = typeof target === 'string' ? page.getByTestId(target) : page.locator(target.locator);
   const box = await locator.boundingBox();
-  const viewport = await page.evaluate(() => ({
+  const visible = await page.evaluate(() => ({
+    top: window.visualViewport?.offsetTop ?? 0,
     height: window.visualViewport?.height ?? window.innerHeight,
     width: window.visualViewport?.width ?? window.innerWidth,
   }));
-  return box !== null && box.y >= 0 && box.y + box.height <= viewport.height && box.x >= 0 && box.x + box.width <= viewport.width;
+  return (
+    box !== null &&
+    box.y >= visible.top &&
+    box.y + box.height <= visible.top + visible.height &&
+    box.x >= 0 &&
+    box.x + box.width <= visible.width
+  );
 }

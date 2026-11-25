@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { signInAsTestProfile } from '../test-profile';
 import { listOnlyMockCase, playedTurn, stubTurns } from '../session-helpers';
 import { expectScreenFits, isInsideViewport } from '../layout-helpers';
@@ -50,6 +50,13 @@ async function seedSessionLists(page: Page) {
       }),
     });
   });
+}
+
+/** The latest line sits wholly inside the narration area (a live page is followed by scrolling smoothly). */
+async function latestLineShowing(page: Page, latest: Locator): Promise<boolean> {
+  const box = await latest.boundingBox();
+  const narration = await page.getByTestId('page-narration').boundingBox();
+  return box !== null && narration !== null && box.y >= narration.y && box.y + box.height <= narration.y + narration.height;
 }
 
 test.beforeEach(async ({ page }) => {
@@ -152,6 +159,7 @@ test('the input and the latest narration stay visible as the viewport shrinks', 
   await page.getByTestId('send-button').tap();
   const latest = page.getByText('LAST LINE OF THE STORY');
   await expect(latest).toBeVisible();
+  await expect.poll(() => latestLineShowing(page, latest)).toBe(true);
 
   // The art is there on a tall screen, and gives way as the keyboard takes the height.
   const art = page.getByTestId('scene-pane');
@@ -162,11 +170,7 @@ test('the input and the latest narration stay visible as the viewport shrinks', 
     await page.setViewportSize({ width: 360, height });
     await expect.poll(() => isInsideViewport(page, { locator: 'input[type="text"]' })).toBe(true);
     await expect.poll(() => isInsideViewport(page, 'send-button')).toBe(true);
-    await expect.poll(async () => {
-      const box = await latest.boundingBox();
-      const narration = await page.getByTestId('page-narration').boundingBox();
-      return box !== null && narration !== null && box.y >= narration.y && box.y + box.height <= narration.y + narration.height;
-    }).toBe(true);
+    await expect.poll(() => latestLineShowing(page, latest)).toBe(true);
     await expect.poll(() => isInsideViewport(page, 'page-narration')).toBe(true);
   }
 
@@ -177,4 +181,61 @@ test('the input and the latest narration stay visible as the viewport shrinks', 
   await page.setViewportSize({ width: 360, height: 640 });
   await expect.poll(async () => (await art.boundingBox())?.height ?? 0).toBeGreaterThan(100);
   expect(failures).toEqual([]);
+});
+
+// On iOS the keyboard shrinks the visual viewport and leaves the layout
+// viewport, `innerHeight` and `dvh` as they were, often scrolling the page so
+// the visual viewport sits below the top. Emulation cannot do that, so the page
+// is given a visual viewport the test controls.
+test('the screen follows the visual viewport when only it shrinks', async ({ page }) => {
+  await page.addInitScript(() => {
+    // Follows the window until the test shrinks it.
+    const target = new EventTarget();
+    let shrunk: { height: number; offsetTop: number } | null = null;
+    const fake = Object.assign(target, { scale: 1 });
+    Object.defineProperties(fake, {
+      height: { get: () => shrunk?.height ?? window.innerHeight },
+      width: { get: () => window.innerWidth },
+      offsetTop: { get: () => shrunk?.offsetTop ?? 0 },
+    });
+    Object.defineProperty(window, 'visualViewport', { value: fake, configurable: true });
+    (window as unknown as { __shrink: (height: number, offsetTop: number) => void }).__shrink = (height, offsetTop) => {
+      shrunk = { height, offsetTop };
+      target.dispatchEvent(new Event('resize'));
+    };
+  });
+  await stubTurns(page, () =>
+    playedTurn('search', 'Clue after clue.\n'.repeat(12), {
+      more: [{ text: 'LAST LINE OF THE STORY', speaker: { kind: 'narrator', key: 'narrator', label: 'Narrator' } }],
+    }),
+  );
+
+  await page.setViewportSize({ width: 360, height: 640 });
+  await page.goto('/');
+  await page.getByTestId('menu-row-1').tap();
+  await page.getByTestId('case-card-1').tap();
+  await page.getByTestId('begin-investigation-prompt').tap();
+  const input = page.locator('input[type="text"]');
+  await input.fill('search');
+  await page.getByTestId('send-button').tap();
+  const latest = page.getByText('LAST LINE OF THE STORY');
+  await expect(latest).toBeVisible();
+  await expect.poll(() => latestLineShowing(page, latest)).toBe(true);
+
+  // The keyboard takes 300 px and the page is scrolled 40 px down: `innerHeight` stays 640.
+  await page.evaluate(() => (window as unknown as { __shrink: (h: number, t: number) => void }).__shrink(300, 40));
+  expect(await page.evaluate(() => window.innerHeight)).toBe(640);
+  await expect.poll(() => isInsideViewport(page, { locator: 'input[type="text"]' })).toBe(true);
+  await expect.poll(() => isInsideViewport(page, 'send-button')).toBe(true);
+  await expect.poll(() => isInsideViewport(page, 'page-narration')).toBe(true);
+  await expect.poll(() => latestLineShowing(page, latest)).toBe(true);
+  expect((await page.getByTestId('scene-pane').boundingBox())?.height ?? 0).toBeLessThanOrEqual(1);
+
+  // A pinch-zoom shrinks the visual viewport too, and must not re-lay the screen out.
+  await page.evaluate(() => {
+    const vv = window.visualViewport as unknown as { scale: number };
+    vv.scale = 2;
+    (window as unknown as { __shrink: (h: number, t: number) => void }).__shrink(320, 0);
+  });
+  await expect.poll(async () => (await page.getByTestId('scene-pane').boundingBox())?.height ?? 0).toBeGreaterThan(90);
 });

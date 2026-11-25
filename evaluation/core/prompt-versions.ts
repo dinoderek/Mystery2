@@ -13,7 +13,8 @@ import { fileURLToPath } from "node:url";
  * What the game's narrator is sent: the role prompts, the guidance they embed,
  * the system messages and the age profile that sets lengths. Every file is under
  * a path `baseline status` treats as read (`baseline-status.ts`); a test holds
- * the two lists together.
+ * the two lists together. A hash needs no upkeep for an edit to these files, but
+ * a prompt moved into a file not listed here must be added to the list.
  */
 export const NARRATOR_PROMPT_FILES: readonly string[] = [
   "packages/game-engine/src/ai-prompts.ts",
@@ -23,9 +24,10 @@ export const NARRATOR_PROMPT_FILES: readonly string[] = [
   "packages/shared/src/age-profile.ts",
 ];
 
-/** What the generator agent is sent: its prompt and the instructions of its workspace. */
+/** What the generator agent is sent: its prompt, the task message beside the brief (`index.ts`) and the instructions of its workspace. */
 export const GENERATOR_PROMPT_FILES: readonly string[] = [
   "packages/blueprint-generator/src/clue-graph-prompt.md",
+  "packages/blueprint-generator/src/index.ts",
   "evaluation/generator-harness/template/clue-graph/CLAUDE.md",
 ];
 

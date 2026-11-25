@@ -20,11 +20,7 @@ export interface RunIdentity {
 
 /** The OS user name: what a run records when the config names no developer. Never an email address. */
 export function osUserName(): string {
-  try {
-    return os.userInfo().username;
-  } catch {
-    return "unknown";
-  }
+  return os.userInfo().username;
 }
 
 /** The identity of a run started with `common`, from the config it reads, else the OS user. */

@@ -55,6 +55,8 @@ vi.mock("node:child_process", async (importOriginal) => {
 });
 
 const WRAPPER = path.join(ROOT, "tests/api/integration/usage-wrapper.mjs");
+const STUB_NARRATOR = path.join(ROOT, "evaluation/runtime/config/wrappers/stub-runtime.sh");
+const STUB_TURN_JUDGE = path.join(ROOT, "evaluation/runtime/config/wrappers/stub-judge.sh");
 const STUB_INVESTIGATOR = path.join(ROOT, "tests/api/integration/stub-investigator.mjs");
 const STUB_GAME_JUDGE = path.join(ROOT, "tests/api/unit/trace-mock-judge.mjs");
 const BRIEFS = "blueprints/clue-graph/briefs";
@@ -94,13 +96,13 @@ function remoteRecords(): string[] {
   return git(remote, "ls-tree", "-r", "--name-only", "main").split("\n").filter((file) => file.startsWith("records/")).sort();
 }
 
-/** The generator: answers each brief with a case of the brief's size and age, and that case again in every repair round. */
+/** The generator: answers each brief, told apart by its title hint, with a case of its size and age, and that case again in every repair round. */
 function writeGenerator(): string {
   const cases: Record<string, unknown> = {};
   for (const file of fs.readdirSync(path.join(ROOT, BRIEFS))) {
     const brief = JSON.parse(fs.readFileSync(path.join(ROOT, BRIEFS, file), "utf8"));
     const made = sizedCase(floors(brief.size), brief.size);
-    cases[brief.size] = { ...made, metadata: { ...made.metadata, target_age: brief.targetAge, title: brief.titleHint } };
+    cases[brief.titleHint] = { ...made, metadata: { ...made.metadata, target_age: brief.targetAge, title: brief.titleHint } };
   }
   const answers = path.join(scratch, "generator-answers.json");
   fs.writeFileSync(answers, JSON.stringify(cases));
@@ -109,7 +111,7 @@ function writeGenerator(): string {
     script,
     `import fs from "node:fs";
      const message = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
-     const answer = JSON.parse(fs.readFileSync(${JSON.stringify(answers)}, "utf8"))[message.story_brief.size];
+     const answer = JSON.parse(fs.readFileSync(${JSON.stringify(answers)}, "utf8"))[message.story_brief.titleHint];
      process.stdout.write(JSON.stringify({ result: JSON.stringify(answer) }));`,
   );
   return script;
@@ -216,6 +218,38 @@ function indexRows(): Record<string, string[]> {
   } finally {
     db.close();
   }
+}
+
+/** Every string in a parsed JSON value. */
+function stringsIn(value: unknown): string[] {
+  if (typeof value === "string") return [value];
+  if (Array.isArray(value)) return value.flatMap(stringsIn);
+  if (value && typeof value === "object") return Object.values(value).flatMap(stringsIn);
+  return [];
+}
+
+/** A log's text as written, and the strings it holds when it is JSON or JSON lines. */
+function textsOf(raw: string): string[] {
+  const parse = (text: string): unknown => {
+    try {
+      return JSON.parse(text);
+    } catch {
+      return null;
+    }
+  };
+  const whole = parse(raw);
+  const parsed = whole !== null ? [whole] : raw.split("\n").map(parse);
+  return [raw, ...parsed.flatMap(stringsIn)];
+}
+
+/** Stretches of prose in a text: each 30 characters from every 30th that has a space, so ids, hashes and numbers, which a record holds, are not among them. */
+function stretchesOf(text: string): string[] {
+  const found: string[] = [];
+  for (let at = 0; at + 30 <= text.length; at += 30) {
+    const stretch = text.slice(at, at + 30);
+    if (/[a-z] [a-z]/i.test(stretch)) found.push(stretch);
+  }
+  return found;
 }
 
 const recordsOf = (folders: readonly string[]): RunRecord[] => folders.map((folder) => readRecord(folder));
@@ -340,16 +374,16 @@ describe("a finished run writes one immutable record", () => {
 
   it("holding none of its prompt, answer or log text", () => {
     for (const folder of allRunFolders()) {
-      const record = fs.readFileSync(path.join(folder, RECORD_FILE), "utf8");
+      // What the record says, decoded: every string in it, so text it held would be found unescaped.
+      const record = stringsIn(readRecord(folder)).join("\0");
       // The stubs' fixed narration, investigator lines and verdict reasoning are answers.
       for (const text of ["Nothing new catches your eye", "search the pantry shelf", "All narration grounded", "Stub verdict", "Sound."]) expect(record, folder).not.toContain(text);
-      // Each call's logs hold its prompt, message and raw answer, and the game's call log the server narrator's: no stretch of any of them is in the record.
+      // Each call's logs hold its prompt, message and raw answer, and the game's call log the server narrator's:
+      // no stretch of their text, as written or as the strings their JSON holds, is in the record.
       const logs = fs.readdirSync(folder, { recursive: true, encoding: "utf8" }).filter((file) => /\.(system|user)\.txt$|\.stdout\.log$|ai-calls[^/]*\.jsonl$/.test(file));
-      expect(logs.length, folder).toBeGreaterThan(0);
-      for (const log of logs) {
-        const text = fs.readFileSync(path.join(folder, log), "utf8");
-        for (let at = 0; at + 60 <= text.length; at += 997) expect(record, log).not.toContain(text.slice(at, at + 60));
-      }
+      const stretches = new Set(logs.flatMap((log) => textsOf(fs.readFileSync(path.join(folder, log), "utf8"))).flatMap(stretchesOf));
+      expect(stretches.size, folder).toBeGreaterThan(0);
+      for (const stretch of stretches) expect(record.includes(stretch), `${folder}: ${stretch}`).toBe(false);
     }
   });
 
@@ -376,7 +410,7 @@ describe("perf push commits unpublished records, one file per run", () => {
   it("then sends every record not yet sent, never one twice, and none that called only stubs", () => {
     const sent = remoteRecords();
     expect(new Set(sent).size).toBe(sent.length);
-    // The baselines' three, generate, judge blueprint and play; the server turn called only the mock.
+    // The baselines', generate's, judge blueprint's and play's; the server turn called only the mock.
     expect(sent).toHaveLength(RECORDS);
     expect(sent).toEqual(expect.arrayContaining(pushedByBaselines));
     for (const folder of [...runs.generate, ...runs.judgeBlueprint, ...runs.play]) expect(sent, folder).toContain(recordPath(readRecord(folder)));
@@ -440,6 +474,8 @@ describe("perf report prints per-loop trends and writes the static HTML page", (
     }
     expect(steps.flatMap((step) => step.judges).some((judge) => judge.judge === "cg_soundness" && judge.version !== null && judge.pass > 0)).toBe(true);
 
+    // Each step names its prompt version, and the pass rate on it, by judge and version.
+    expect(text).toMatch(/^\s+step 1: prompt #\d+ [0-9a-f]{12}; judges [^\n]*cg_soundness v\d+[^\n]*\n\s+\d+ run\(s\), [^;]+; pass rate \d+%/m);
     expect(text).toMatch(/judge pass rates: [^\n]*cg_soundness v\d+ 100%/);
     expect(text).toMatch(new RegExp(`judge\\s+opus\\s+\\d+\\s+\\S+\\s+\\$\\S+\\s+${TOKENS_ADDED}`));
 
@@ -449,6 +485,7 @@ describe("perf report prints per-loop trends and writes the static HTML page", (
     // Per line: the medians table by role and model, the judge pass rates by version, and a chart of each measure.
     expect(html).toContain("<h4>Per call by role and model");
     expect(html).toMatch(new RegExp(`<td>judge</td><td>opus</td>(<td[^>]*>[^<]*</td>){3}<td class="n">${TOKENS_ADDED}</td>`));
+    expect(html).toMatch(/<tr><td class="n">1<\/td><td>#\d+ [0-9a-f]{12}<\/td><td>[^<]*cg_soundness v\d+[^<]*<\/td><td class="n">\d+<\/td><td>[^<]+<\/td><td class="n">\d+%<\/td>/);
     expect(html).toContain("<h4>Judge pass rates</h4>");
     expect(html).toMatch(/<td>cg_soundness<\/td><td>v\d+<\/td><td class="n">100%<\/td>/);
     for (const chart of ["Pass rate per run", "Median duration per call, by role and model", "Median cost per call, by role and model", "Median tokens per call, by role and model"]) {
@@ -468,19 +505,22 @@ describe("each loop's baseline suite runs by one command, and the report compare
     }
     const [blueprint] = recordsOf(runs.blueprintBaseline);
     expect(blueprint.run.attributes).toMatchObject({ suite: "blueprint-loop", models: { generator: ["generator-agent:opus"], judge: ["blueprint-judge:opus"] } });
-    expect(blueprint.run.attributes?.inputs).toHaveLength(3);
-    for (const record of recordsOf(runs.narrationBaseline)) {
-      expect(record.run.attributes).toMatchObject({ suite: "narration-loop", samples: 5, concurrency: 4, models: { narrator: ["narrator-claude:haiku"] } });
+    expect(blueprint.run.attributes?.inputs).toHaveLength(BLUEPRINT_SUITE.runs[0].inputs.length);
+    for (const [i, record] of recordsOf(runs.narrationBaseline).entries()) {
+      const { samples, concurrency } = NARRATION_SUITE.runs[i];
+      expect(record.run.attributes).toMatchObject({ suite: "narration-loop", samples, concurrency, models: { narrator: [`narrator-claude:${NARRATION_SUITE.models["narrator-claude"]}`] } });
     }
   });
 
   it("runs equal on every attribute share a line; matched on fewer, runs that differ elsewhere join it", () => {
     const narration = (match: readonly AttributeName[]) => readReport(outputRoot, { loop: "narration", suite: "narration-loop", since: null, match }).loops[0];
-    // The two case folders differ in their inputs: on every attribute, a line each.
-    expect(narration(ATTRIBUTE_NAMES).lines.map((line) => line.runs.length)).toEqual([1, 1]);
+    // The suite's case folders differ in their inputs: on every attribute, a line each.
+    expect(narration(ATTRIBUTE_NAMES).lines.map((line) => line.runs.length)).toEqual(NARRATION_SUITE.runs.map(() => 1));
+    // They share command, models, samples and concurrency: matched on those, one line holds them all.
+    expect(new Set(NARRATION_SUITE.runs.map((run) => JSON.stringify([run.command, run.samples, run.concurrency]))).size).toBe(1);
     const matched = narration(["command", "models", "samples", "concurrency"]);
     expect(matched.lines).toHaveLength(1);
-    expect(matched.lines[0].runs).toHaveLength(2);
+    expect(matched.lines[0].runs).toHaveLength(NARRATION_SUITE.runs.length);
     expect(matched.lines[0].held.map((held) => held.name)).toEqual(["command", "models", "samples", "concurrency"]);
     expect(matched.lines[0].free).toEqual(expect.arrayContaining(["inputs", "suite"]));
 
@@ -496,6 +536,22 @@ describe("each loop's baseline suite runs by one command, and the report compare
     const { code, out } = printed["report matched"];
     expect(code).toBe(0);
     expect(out).toContain("1 trend line(s), 0 run(s) shown apart");
-    expect(out).toMatch(/line 1: 2 run\(s\)[^\n]*\n\s+holds fixed:\n\s+command: judge turn\n\s+models: [^\n]*narrator-claude:haiku/);
+    expect(out).toMatch(new RegExp(`line 1: ${NARRATION_SUITE.runs.length} run\\(s\\)[^\\n]*\\n\\s+holds fixed:\\n\\s+command: judge turn\\n\\s+models: [^\\n]*narrator-claude:haiku`));
+  });
+});
+
+describe("the usage wrapper", () => {
+  it("answers as the stub narrator and turn judge it stands in for, so the suites run as on the committed stubs", () => {
+    const dir = fs.mkdtempSync(path.join(scratch, "wrapper-"));
+    const answer = (mode: "narrate" | "pass", file: string) => JSON.parse(execFileSync(process.execPath, [WRAPPER, JSON.stringify(TOKENS), mode, file], { encoding: "utf8" })).result;
+    const narrations = { talk: { prompt: "p", context: { role_name: "talk_character" } }, graph: { prompt: "p", context: { role_name: "graph_search" } }, look: { prompt: "p", context: { role_name: "search" } }, text: "Narrate the opening." };
+    for (const [name, payload] of Object.entries(narrations)) {
+      const file = path.join(dir, `${name}.txt`);
+      fs.writeFileSync(file, typeof payload === "string" ? payload : JSON.stringify(payload));
+      expect(answer("narrate", file), name).toBe(execFileSync("bash", [STUB_NARRATOR, file], { encoding: "utf8" }));
+    }
+    const judged = path.join(dir, "judge.json");
+    fs.writeFileSync(judged, JSON.stringify({ target_age: 9, narration: "You look around." }));
+    expect(JSON.parse(answer("pass", judged))).toEqual(JSON.parse(execFileSync("bash", [STUB_TURN_JUDGE, judged], { encoding: "utf8" })));
   });
 });

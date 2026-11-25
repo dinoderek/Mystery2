@@ -36,8 +36,8 @@ conversations prefer portraits. Scenes respect reduced motion; WebGL scenes
 stay still. Failures log once and fall back to illustrations. Narrow screens
 stack art above narration and input.
 
-Enter, the keyboard's action key, dictation and `[ SEND ]` submit the input's
-form, never `keydown`. The input is 16 px (smaller zooms iOS). On a coarse pointer it
+Enter, the keyboard's action key and `[ SEND ]` submit the input's form, never
+`keydown`; dictation arrives as plain input. The input is 16 px (smaller zooms iOS). On a coarse pointer it
 takes focus after a tap or a sent line only. The begin and end prompts are
 buttons that also take any key, once. Key hints show only under `pointer: fine`.
 

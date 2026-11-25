@@ -18,7 +18,7 @@ given, not played, so every run sees identical input.
 | `narrator-stub` | a canned shell script | nothing |
 
 `--model-override narrator-claude=<model>` selects the Claude model; `server`
-also applies engine reveal checks.
+also applies engine reveal checks. Claude runs without tools, MCP or settings.
 
 ### The throwaway server
 
@@ -57,7 +57,7 @@ names a character it lacks. `history` rows have the shape the runtime stores in
 levels above target, default 2), `targetAge` (`flesch`, `age_appropriate_turn`) and
 `blueprintPath` (`gm_*`). Every model judge calls the `turn-judge` binding
 (`--judge-binding judge-stub` always passes); one that cannot run
-stops the run.
+stops the run before any replay.
 
 **Cost:** calls are cases × narrators × samples × (model judges + 1 for a model
 narrator, 2 for an accusation); `flesch` and `expect` cost nothing.
@@ -90,10 +90,8 @@ or be graded counts neither way: the run is INCOMPLETE.
 `./dev eval baseline save <run> <file>` retains a complete summary;
 `baseline compare <baseline> <run>` prints changes; `baseline status` marks
 each baseline current or stale against `HEAD`, listing commits since its
-run touching what runs read (judge briefs and schemas, `evaluation/core`,
-`evaluation/runtime`, the narrator's prompts, the engine; not baselines or
-READMEs). It compares content, as squash merges leave a run's commit off
-`main`; it exits 0, and CI prints it.
+run touching what runs read (`READ_PATHS` in `evaluation/core/baseline-status.ts`). It compares content, as squash merges leave a run's commit off
+`main`, exits 0, and prints in CI.
 
 ### Baseline policy
 
@@ -101,9 +99,10 @@ READMEs). It compares content, as squash merges leave a run's commit off
 - Anyone may change a brief, prompt or engine code: the gate forces the version
   entry and snapshots, and `baseline status` shows the baselines stale.
 - Others need only `npm test`.
-- A stale baseline is refreshed before a comparison relies on it. A rebaseline
-  explains each difference by the commits listed, replaying at commit
-  boundaries when several were batched.
+- A stale baseline is refreshed on demand, before a comparison relies on it; a
+  live rebaseline explains each difference by the commits listed.
+- When several commits were batched, it replays at commit boundaries to
+  attribute them.
 
 ## Frozen grounding experiment
 
@@ -138,7 +137,7 @@ and usage, reserves worst-case charges, and stops on unreconciled calls or limit
 ```
 
 Each subject holds `turn.json` (captured before judging) and `result.json`.
-Narrator failure exits 1; judge failure or error 2.
+A narrator failure exits 1; a judge's, 2.
 
 To re-judge a stored turn:
 
@@ -147,7 +146,7 @@ To re-judge a stored turn:
 ```
 
 Re-judging uses the adjacent result's judges, else `flesch`, or `--judges a,b`,
-with default options (`judgeConfig` and `expect` are not stored).
+with default options: `judgeConfig` and `expect` are unstored.
 
 ### Cases from a played game
 
@@ -163,6 +162,6 @@ A judge is a registry entry listing `turn` among its subjects
 
 ## Tests
 
-`tests/api/unit/runtime-*` and `judges-*` use stub bindings;
+`tests/api/unit/runtime-*` and `judges-*` use stubs;
 `tests/api/integration/eval-turn-server.test.ts` replays through a throwaway
 server. No test calls a model.

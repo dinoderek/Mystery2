@@ -38,6 +38,7 @@ jobs:
       # the PR heads are fetched too; a commit still missing is reported as unknown.
       - name: Eval baseline status
         continue-on-error: true
+        timeout-minutes: 2
         run: |
           git fetch --quiet origin '+refs/pull/*/head:refs/remotes/origin/pr/*' || echo "could not fetch the PR heads"
           ./dev eval baseline status

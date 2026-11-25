@@ -10,7 +10,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { COMMANDS } from "../../../evaluation/commands.ts";
 import { runEval } from "../../../evaluation/core/dispatch.ts";
-import { baselineStatus } from "../../../evaluation/core/baseline-status.ts";
+import { baselineStatus, READ_PATHSPEC } from "../../../evaluation/core/baseline-status.ts";
 
 const REPO_ROOT = process.cwd();
 const REAL_BASELINE = "evaluation/runtime/cases/clue-graph/greenhouse/baselines/haiku.json";
@@ -151,5 +151,42 @@ describe("baseline status", () => {
     const code = await runEval(["baseline", "status"], { root: REPO_ROOT, out, err: out, env: process.env }, COMMANDS);
     expect(code).toBe(0);
     expect(lines.at(-1)).toMatch(/^\[baseline status\] \d+ current, \d+ stale, \d+ unknown$/);
+  });
+});
+
+describe("what a run reads", () => {
+  /** Files `judge turn` reaches only to start a throwaway server or to play, which no `narrator-*` baseline uses. */
+  const SERVER_ONLY = [/^evaluation\/playtest\//, /^scripts\//, /^lib\//, /^web\//];
+
+  function importClosure(entry: string): string[] {
+    const seen = new Set<string>();
+    const queue = [entry];
+    while (queue.length > 0) {
+      const file = queue.pop() as string;
+      if (seen.has(file) || !fs.existsSync(path.join(REPO_ROOT, file))) continue;
+      seen.add(file);
+      const text = fs.readFileSync(path.join(REPO_ROOT, file), "utf8");
+      for (const match of text.matchAll(/(?:from\s+|import\(\s*)["'](\.[^"']+)["']/g)) {
+        queue.push(path.posix.normalize(path.posix.join(path.posix.dirname(file), match[1])));
+      }
+    }
+    return [...seen].sort();
+  }
+
+  it("lists every file `judge turn` imports, bar the server and playtest ones", () => {
+    const read = new Set(execFileSync("git", ["ls-files", "--", ...READ_PATHSPEC], { cwd: REPO_ROOT, encoding: "utf8" }).split("\n"));
+    const missed = importClosure("evaluation/runtime/judge-turn.ts").filter(
+      (file) => !read.has(file) && !SERVER_ONLY.some((pattern) => pattern.test(file)),
+    );
+    expect(missed).toEqual([]);
+  });
+
+  it("lists the files it loads by path", () => {
+    const read = new Set(execFileSync("git", ["ls-files", "--", ...READ_PATHSPEC], { cwd: REPO_ROOT, encoding: "utf8" }).split("\n"));
+    for (const file of ["evaluation/lib/readability.ts", "evaluation/config.example.json", "evaluation/judges/gm-fabrication.md", "packages/game-engine/src/ai-prompts.ts"]) {
+      expect(read.has(file), file).toBe(true);
+    }
+    expect(read.has("evaluation/runtime/README.md")).toBe(false);
+    expect(read.has("evaluation/runtime/cases/clue-graph/greenhouse/baselines/haiku.json")).toBe(false);
   });
 });

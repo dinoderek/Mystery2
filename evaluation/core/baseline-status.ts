@@ -12,8 +12,21 @@
 
 import { spawnSync } from "node:child_process";
 
-/** What a runtime run reads: judge briefs and schemas, the harness, the narrator's prompts and the engine. */
-const READ_PATHS = ["evaluation/core", "evaluation/judges", "evaluation/runtime", "packages/game-engine", "packages/shared"];
+/**
+ * What a runtime run reads: judge briefs and schemas, the harness, the narrator's prompts and the engine,
+ * and the few files outside those folders its `judge turn` imports or loads (the readability metric, the
+ * played-events reader, the judge id checks, and the bindings). A test holds this list to the import closure.
+ */
+export const READ_PATHS = [
+  "evaluation/core",
+  "evaluation/judges",
+  "evaluation/runtime",
+  "evaluation/lib",
+  "evaluation/blueprint/player-view.ts",
+  "evaluation/config.example.json",
+  "packages/game-engine",
+  "packages/shared",
+];
 /** Under the read paths, what no run reads: the baselines themselves and the docs beside the code. */
 const NOT_READ = [":(exclude,glob)evaluation/runtime/**/baselines/*.json", ":(exclude,glob)**/README.md"];
 /** The pathspecs every git call below filters by. */
@@ -34,11 +47,12 @@ interface GitResult {
   ok: boolean;
   code: number | null;
   out: string;
+  err: string;
 }
 
 function git(root: string, args: readonly string[]): GitResult {
   const result = spawnSync("git", args, { cwd: root, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
-  return { ok: result.status === 0, code: result.status, out: (result.stdout ?? "").trim() };
+  return { ok: result.status === 0, code: result.status, out: (result.stdout ?? "").trim(), err: (result.stderr ?? "").trim() };
 }
 
 const lines = (text: string): string[] => (text === "" ? [] : text.split("\n"));
@@ -48,7 +62,7 @@ function sameRead(root: string, a: string, b: string): boolean {
   const diff = git(root, ["diff", "--quiet", a, b, "--", ...READ_PATHSPEC]);
   if (diff.code === 0) return true;
   if (diff.code === 1) return false;
-  throw new Error(`git diff ${a} ${b} failed`);
+  throw new Error(`git diff ${a} ${b} failed (exit ${diff.code}): ${diff.err}`);
 }
 
 interface Touch extends CommitLine {

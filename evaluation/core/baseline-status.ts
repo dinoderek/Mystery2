@@ -15,7 +15,8 @@ import { spawnSync } from "node:child_process";
 /**
  * What a runtime run reads: judge briefs and schemas, the harness, the narrator's prompts and the engine,
  * and the few files outside those folders its `judge turn` imports or loads (the readability metric, the
- * played-events reader, the judge id checks, and the bindings). A test holds this list to the import closure.
+ * played-events reader, the judge id checks, the run record's builder, and the bindings). A test holds this
+ * list to the import closure.
  */
 export const READ_PATHS = [
   "evaluation/core",
@@ -23,6 +24,7 @@ export const READ_PATHS = [
   "evaluation/runtime",
   "evaluation/lib",
   "evaluation/blueprint/player-view.ts",
+  "evaluation/perf/record.ts",
   "evaluation/config.example.json",
   "packages/game-engine",
   "packages/shared",

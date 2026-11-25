@@ -126,7 +126,8 @@ function asVersion(value: Result, version: 1 | 2): unknown {
     }
     return each;
   };
-  const { suite, label, developer, host, parent_run, prompt_versions, attributes, ...run } = value.run;
+  const run: Record<string, unknown> = { ...value.run };
+  for (const later of ["suite", "label", "developer", "host", "parent_run", "prompt_versions", "attributes"]) delete run[later];
   const older = strip({ ...value, schema_version: `mystery-eval-result/${version}`, run }) as Record<string, unknown>;
   if (version === 1) delete older.rounds;
   return older;

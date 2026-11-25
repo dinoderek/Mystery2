@@ -219,8 +219,9 @@ test('the screen follows the visual viewport when only it shrinks', async ({ pag
   await input.fill('search');
   await page.getByTestId('send-button').tap();
   const latest = page.getByText('LAST LINE OF THE STORY');
-  await expect(latest).toBeVisible();
-  await expect.poll(() => latestLineShowing(page, latest)).toBe(true);
+  // At once, while the smooth scroll to the new line is still moving: a keyboard
+  // reopens as each turn lands, because the input takes focus back.
+  await expect(latest).toBeAttached();
 
   // The keyboard takes 300 px and the page is scrolled 40 px down: `innerHeight` stays 640.
   await page.evaluate(() => (window as unknown as { __shrink: (h: number, t: number) => void }).__shrink(300, 40));

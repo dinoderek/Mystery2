@@ -27,10 +27,10 @@ a profile endpoint only once one is chosen.
 
 ## The session screen
 
-Case selection and opening pages preview the first scene recipe; cards are
+Case selection and opening pages preview the first scene; cards are
 stills. In play, scenes follow the viewed location, history included, and
 conversations prefer portraits. Scenes respect reduced motion; WebGL scenes
-stay still.
+stay still. Scene failures fall back to illustrations.
 
 Enter, the keyboard's action key and `[ SEND ]` submit the input's form, never
 `keydown`; dictation arrives as plain input. The input is 16 px (iOS zooms
@@ -41,7 +41,7 @@ only under `pointer: fine`.
 ## Layout
 
 From 360 px wide, portrait and landscape, nothing scrolls sideways and every
-control is at least 44 px (`min-h-11`) in its smaller side. Full-height
+control is at least 44 px in its smaller side. Full-height
 screens use `dvh`, never `h-screen` or `vh`. Below `lg:` art stacks above text.
 The session screen follows the visual viewport (`domain/viewport.ts`), so the
 input and latest narration stay visible with the on-screen keyboard up: art
@@ -67,7 +67,7 @@ noticed tell labelled.
 - Tailwind utilities; a scoped `<style>` block only for what they cannot express.
 - Colours only through the tokens (`text-t-primary`, `bg-t-bg`), never a
   palette colour; borders, hovers and subtle backgrounds are opacity modifiers
-  (`border-t-muted/30`). Green on black; tokens are CSS variables in
+  (`border-t-muted/30`). Tokens are CSS variables in
   `src/routes/layout.css`, mapped through `@theme`.
 - No shared form-control component: copy rows and text inputs from
   `ProfilePicker.svelte`, the selected state (`aria-pressed`) from

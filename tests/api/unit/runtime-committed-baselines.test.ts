@@ -18,10 +18,9 @@ const BASELINES = execFileSync("git", ["ls-files", "--", ":(glob)evaluation/runt
   .split("\n")
   .filter(Boolean);
 
-/** The value after `flag` in a run's argv, or undefined. */
-function flagValue(argv: readonly string[], flag: string): string | undefined {
-  const at = argv.indexOf(flag);
-  return at === -1 ? undefined : argv[at + 1];
+/** Every value that follows `flag` in a run's argv. */
+function flagValues(argv: readonly string[], flag: string): string[] {
+  return argv.flatMap((arg, at) => (arg === flag && at + 1 < argv.length ? [argv[at + 1]] : []));
 }
 
 describe("committed baselines", () => {
@@ -41,9 +40,12 @@ describe("committed baselines", () => {
     const summary = readSummary(path.join(REPO_ROOT, file));
     const { argv } = summary.run;
     expect(argv[0]).toBe(path.posix.dirname(path.posix.dirname(file)));
+    // Past the story folder, every word is a flag or a flag's value: no second subject.
+    const strays = argv.slice(1).filter((arg, at) => !arg.startsWith("--") && !argv[at].startsWith("--"));
+    expect(strays).toEqual([]);
     for (const narrator of summary.narrators) {
       expect(narrator.complete).toBe(true);
-      expect(String(narrator.samples_per_case)).toBe(flagValue(argv, "--samples"));
+      expect(flagValues(argv, "--samples")).toEqual([String(narrator.samples_per_case)]);
       expect(narrator.cases.length).toBeGreaterThan(0);
       for (const tally of narrator.cases) {
         expect({ id: tally.id, samples: tally.samples, incomplete: tally.incomplete }).toEqual({
@@ -60,7 +62,7 @@ describe("committed baselines", () => {
     const name = path.posix.basename(file, ".json");
     for (const narrator of summary.narrators) {
       expect(narrator.model).toBe(`${narrator.narrator}:${name}`);
-      expect(flagValue(summary.run.argv, "--model-override")).toBe(`${narrator.narrator}=${name}`);
+      expect(flagValues(summary.run.argv, "--model-override")).toContain(`${narrator.narrator}=${name}`);
     }
   });
 });

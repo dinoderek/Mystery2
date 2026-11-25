@@ -15,12 +15,13 @@ installs what is missing). `npm run dev` starts it; which AI narrates is
 | AIs and keys | `ai.json`, `.env.local`, `.env.images.local` in the config root |
 
 `MYSTERY_CONFIG_ROOT` is an absolute path that moves all of it outside the
-repo, so clones and worktrees share blueprints and images that survive a
-checkout being deleted. Unset, everything resolves from the repo
-root.
+repo, so clones and worktrees share blueprints and images that outlive a
+checkout. Unset, everything resolves from the repo root.
 
-Machine-specific files carry a `.local` suffix and are gitignored; when a
-template is useful it is committed without the suffix (`.env.images.example`).
+Machine-specific files carry a `.local` suffix and are gitignored; a useful
+template is committed without it (`.env.images.example`).
+
+`MYSTERY_LIST_FIXTURES=1` shows `mock-case` in the menu.
 
 ## Which database
 

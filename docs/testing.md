@@ -108,11 +108,10 @@ purpose with `npm run test:golden:record`; review the diff.
 - **Fixtures.** A test that plays a case plays the mock case,
   `blueprints/clue-graph/mock-case.json` (`tests/testkit/src/mock-case.ts`).
   Its scenes (`tests/testkit/src/mock-case-scenes.json`) are written into each
-  test config root. Players' menus omit
-  it; test servers set `MYSTERY_LIST_FIXTURES=1`.
+  test config root, since `blueprint-scenes/` ships none.
   Use the factories in `tests/testkit/src/fixtures.ts`; never
-  hand-write a shape that has a Zod schema in `packages/shared/src/`.
-  Factories parse at creation: pass only differing overrides. A new
+  hand-write an object for a shape with a Zod schema in `packages/shared/src/`.
+  Factories parse at creation: pass only the overrides that differ. A new
   response type needs its factory. For a TypeScript-only shape, annotate the
   mock so `typecheck` catches drift.
 - **Boundaries that stay proven** (`session-ownership.test.ts`,

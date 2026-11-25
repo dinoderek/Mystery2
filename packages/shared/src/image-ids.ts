@@ -1,8 +1,8 @@
 // The filename a case's image goes by when the case file names none.
 //
-// A committed case carries no image ids: its art sits in the images directory
-// under these names, and the engine fills them in when it loads the case. The
-// image generator writes them for a committed case.
+// A committed case names no image ids, or only these: its art sits in the
+// images directory under these names, and the engine fills in any id a case
+// does not name. The image generator writes them for a committed case.
 
 export type ImageTargetType = "blueprint" | "character" | "location";
 

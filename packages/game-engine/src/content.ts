@@ -6,8 +6,8 @@
 //
 // A case that names no image for a target is given the image filed under that
 // target's conventional name in the images directory, when there is one
-// (`shared/src/image-ids.ts`): a committed case carries no image ids, and its
-// art lives beside every other case's.
+// (`shared/src/image-ids.ts`): a committed case names no image ids, or only
+// those, and its art lives beside every other case's.
 
 import fs from "node:fs";
 import path from "node:path";

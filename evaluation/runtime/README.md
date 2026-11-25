@@ -104,23 +104,6 @@ run touching what runs read (`READ_PATHS` in `evaluation/core/baseline-status.ts
 - When several commits were batched, it replays at commit boundaries to
   attribute them.
 
-## Frozen grounding experiment
-
-`experiments/grounding/manifest.json` freezes the split, rubric, models, samples,
-order, human review and thresholds; [baseline](experiments/grounding/baseline.json)
-retains results. Raw artifacts stay under the output root. Held-out mysteries
-stay sealed until candidate freeze; tuning retires them. Future runs exclude
-OpenRouter; reviews use Codex GPT-6.1 at Medium effort.
-
-CLI replay records
-`output_role` and uses its normal parser; it measures **parsed role output**,
-not every engine admissibility rule. Wrong reveals count as semantic failures;
-parser failures retain calls/raw logs and never pass. Whole games measure
-**engine-admitted play**, including rejected turns and incomplete games. Invalid,
-rejected, transport and judge failures all remain in the denominator.
-`evaluation/core/budget-proxy.ts` serialises requests, records requests/responses
-and usage, reserves worst-case charges, and stops on unreconciled calls or limits.
-
 ## Running
 
 ```bash

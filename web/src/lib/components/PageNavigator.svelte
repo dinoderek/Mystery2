@@ -15,7 +15,7 @@
   >
     <button
       type="button"
-      class="px-1 text-t-primary hover:text-t-bright disabled:opacity-30 disabled:hover:text-t-primary"
+      class="min-h-11 min-w-11 text-t-primary hover:text-t-bright disabled:opacity-30 disabled:hover:text-t-primary"
       onclick={() => gameSessionStore.prevPage()}
       disabled={atStart}
       aria-label="Previous page"
@@ -35,7 +35,7 @@
     {#if !gameSessionStore.isOnLivePage}
       <button
         type="button"
-        class="whitespace-nowrap px-1 text-t-muted/70 hover:text-t-bright"
+        class="min-h-11 whitespace-nowrap px-1 text-t-muted/70 hover:text-t-bright"
         onclick={() => gameSessionStore.goToLivePage()}
         data-testid="page-latest"
       >
@@ -45,7 +45,7 @@
 
     <button
       type="button"
-      class="px-1 text-t-primary hover:text-t-bright disabled:opacity-30 disabled:hover:text-t-primary"
+      class="min-h-11 min-w-11 text-t-primary hover:text-t-bright disabled:opacity-30 disabled:hover:text-t-primary"
       onclick={() => gameSessionStore.nextPage()}
       disabled={atEnd}
       aria-label="Next page"

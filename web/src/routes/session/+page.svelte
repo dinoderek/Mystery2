@@ -11,6 +11,7 @@
   import HelpModal from '$lib/components/HelpModal.svelte';
   import NotebookPanel from '$lib/components/NotebookPanel.svelte';
   import ClueDiscoveredToast from '$lib/components/ClueDiscoveredToast.svelte';
+  import { beginInvestigation, returnToMysteryList } from '$lib/domain/session-prompts';
 
   onMount(() => {
     if (gameSessionStore.status !== 'active' || !gameSessionStore.game_id) {
@@ -48,7 +49,7 @@
       // notebook, so it must not double as "begin the investigation".
       if (gameSessionStore.status === 'loading' || event.key === 'Tab') return;
       event.preventDefault();
-      await gameSessionStore.enterStartingLocation();
+      await beginInvestigation(gameSessionStore);
       return;
     }
 
@@ -63,12 +64,7 @@
     }
 
     event.preventDefault();
-    try {
-      await gameSessionStore.loadSessionCatalog(true);
-    } finally {
-      gameSessionStore.clearSessionForMysteryList();
-      await goto('/');
-    }
+    await returnToMysteryList(gameSessionStore, goto);
   }
 </script>
 

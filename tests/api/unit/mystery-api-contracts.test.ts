@@ -295,6 +295,7 @@ describe("AI settings", () => {
       { name: "claude", backend: "claude-cli", model: "sonnet", problem: null },
     ],
     chosen: "luna6",
+    configured_default: null,
     override: null,
     narrator: { name: "luna6", backend: "openrouter", model: "openai/gpt-6-luna" },
     narrator_error: null,
@@ -323,6 +324,10 @@ describe("AI settings", () => {
     });
     expect(parsed.override?.backend).toBe("claude-cli");
     expect(parsed.narrator_error).toMatch(/"gone"/);
+  });
+
+  it("accepts the AI ai.json names as its default", () => {
+    expect(AISettingsStateSchema.parse({ ...state, chosen: null, configured_default: "luna6" }).configured_default).toBe("luna6");
   });
 
   it("accepts nothing chosen, and an AI that lacks what it needs", () => {

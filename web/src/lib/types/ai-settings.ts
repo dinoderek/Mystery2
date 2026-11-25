@@ -26,10 +26,12 @@ export interface AISettingsState {
 	ais: AIChoice[];
 	/** The name chosen on the page, or null when nothing has been chosen. */
 	chosen: string | null;
+	/** The AI ai.json names as its default, which narrates while nothing is chosen, or null. */
+	configured_default: string | null;
 	/** The AI the server was started with, which narrates instead of the choice. */
 	override: AISummary | null;
 	/** The AI that narrates a game started now. Null exactly when `narrator_error` is set. */
 	narrator: AISummary | null;
-	/** Why nothing can narrate: the choice names an AI that is missing or broken. */
+	/** Why nothing can narrate: the choice or the default names an AI that is missing or broken. */
 	narrator_error: string | null;
 }

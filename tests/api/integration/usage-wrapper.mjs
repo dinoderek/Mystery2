@@ -3,13 +3,16 @@
 // real model does. No model is called.
 //
 // Usage (as a binding's cmd and args; extract_path "result" for the first two):
-//   node usage-wrapper.mjs narrate <user file>   answers as the stub narrator,
-//       evaluation/runtime/config/wrappers/stub-runtime.sh, does
-//   node usage-wrapper.mjs pass <user file>      answers as the stub turn judge,
-//       evaluation/runtime/config/wrappers/stub-judge.sh, does: nothing wrong
-//   node usage-wrapper.mjs add <cmd> [args...]   runs a stub that prints the
-//       Claude CLI's JSON envelope, and prints it with "usage" added, and a cost
-//       if it has none; the stub's exit code is passed on
+//   node usage-wrapper.mjs <tokens> narrate <user file>   answers as the stub
+//       narrator, evaluation/runtime/config/wrappers/stub-runtime.sh, does
+//   node usage-wrapper.mjs <tokens> pass <user file>      answers as the stub turn
+//       judge, evaluation/runtime/config/wrappers/stub-judge.sh, does: nothing wrong
+//   node usage-wrapper.mjs <tokens> add <cmd> [args...]   runs a stub that prints
+//       the Claude CLI's JSON envelope, and prints it with "usage" added, and a
+//       cost if it has none; the stub's exit code is passed on
+//
+// <tokens> is the JSON {input, output, cache_read, cache_write} every call
+// reports, as the CLI's `usage` counts.
 //
 // The narrator and turn judge answer in this process rather than through their
 // shell stubs: a narration suite makes hundreds of calls, and each spawn counts.
@@ -18,8 +21,6 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import process from "node:process";
 
-/** The counts every call reports: input, output, cache read and cache write. */
-const USAGE = { input_tokens: 120, output_tokens: 30, cache_read_input_tokens: 400, cache_creation_input_tokens: 50 };
 const COST_USD = 0.002;
 const LOOK = "You take a slow look around. Nothing new catches your eye just yet.";
 
@@ -59,5 +60,7 @@ function envelope(mode, args) {
   process.exit(2);
 }
 
-const [mode, ...args] = process.argv.slice(2);
-process.stdout.write(JSON.stringify({ total_cost_usd: COST_USD, ...envelope(mode, args), usage: USAGE }));
+const [tokens, mode, ...args] = process.argv.slice(2);
+const { input, output, cache_read, cache_write } = JSON.parse(tokens);
+const usage = { input_tokens: input, output_tokens: output, cache_read_input_tokens: cache_read, cache_creation_input_tokens: cache_write };
+process.stdout.write(JSON.stringify({ total_cost_usd: COST_USD, ...envelope(mode, args), usage }));

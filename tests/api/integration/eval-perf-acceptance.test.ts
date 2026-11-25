@@ -35,6 +35,7 @@ import { REPORT_DIR, REPORT_FILE } from "../../../evaluation/perf/report.ts";
 import { ATTRIBUTE_NAMES, readReport } from "../../../evaluation/perf/report-data.ts";
 import type { AttributeName } from "../../../evaluation/perf/report-data.ts";
 import { runFolders } from "../../../evaluation/perf/run-folders.ts";
+import { readSuite, SUITES_DIR } from "../../../evaluation/perf/baseline.ts";
 import { createPlayCommand } from "../../../evaluation/playtest/play.ts";
 import { createJudgeTurnCommand } from "../../../evaluation/runtime/judge-turn.ts";
 import type { StartServer, ThrowawayServer } from "../../../evaluation/runtime/lib/replay-server.ts";
@@ -59,8 +60,16 @@ const STUB_GAME_JUDGE = path.join(ROOT, "tests/api/unit/trace-mock-judge.mjs");
 const BRIEFS = "blueprints/clue-graph/briefs";
 const TURN_CASES = "evaluation/runtime/cases/clue-graph/mock-case/readability.ts";
 const JUDGED_CASE = "blueprints/clue-graph/greenhouse-prizewinner.json";
-/** The tokens `usage-wrapper.mjs` reports for every call. */
+/** The tokens `usage-wrapper.mjs` reports for every call, and their sum, which the report gives per call. */
 const TOKENS = { input: 120, output: 30, cache_read: 400, cache_write: 50 };
+const TOKENS_ADDED = Object.values(TOKENS).reduce((sum, each) => sum + each, 0);
+/** The committed baseline suites, which the counts below follow. */
+const BLUEPRINT_SUITE = readSuite(path.join(ROOT, SUITES_DIR), "blueprint-loop");
+const NARRATION_SUITE = readSuite(path.join(ROOT, SUITES_DIR), "narration-loop");
+/** A run folder per suite run: the blueprint suite's one run judges all its briefs. */
+const BASELINE_RUNS = BLUEPRINT_SUITE.runs.length + NARRATION_SUITE.runs.length;
+/** The records `perf push` finds sent or to send: the baselines', generate's, judge blueprint's and play's. */
+const RECORDS = BASELINE_RUNS + 3;
 const PROMPT_FILES = ["{{system_prompt_file}}", "{{user_message_file}}"];
 
 let scratch = "";
@@ -125,7 +134,7 @@ function writeBlueprintJudge(): string {
 
 /** A binding that answers through the usage wrapper, on `model`: as the stub narrator or turn judge, or by running `stub`. */
 function binding(mode: "narrate" | "pass" | "add", stub: string[], model: string, extractPath: string | null) {
-  return { cmd: process.execPath, args: [WRAPPER, mode, ...stub], extract_path: extractPath, model, timeout_ms: 60_000, retries: 0 };
+  return { cmd: process.execPath, args: [WRAPPER, JSON.stringify(TOKENS), mode, ...stub], extract_path: extractPath, model, timeout_ms: 60_000, retries: 0 };
 }
 
 function writeConfig(): void {
@@ -257,7 +266,8 @@ describe("every command ran", () => {
   it("each exited as its stubs decide, and none broke: the content-free stub narration fails the narration cases' expectations, and the rest passed", () => {
     for (const [step, { code, out, err }] of Object.entries(printed)) expect(code, `${step}:\n${out}\n${err}`).toBe(step === "narration baseline" ? 2 : 0);
     for (const [name, folders] of Object.entries(runs)) expect(folders.length, name).toBeGreaterThan(0);
-    expect(runs.narrationBaseline).toHaveLength(2);
+    expect(runs.blueprintBaseline).toHaveLength(BLUEPRINT_SUITE.runs.length);
+    expect(runs.narrationBaseline).toHaveLength(NARRATION_SUITE.runs.length);
     for (const record of recordsOf(allRunFolders())) {
       expect(record.subjects.filter((subject) => subject.run_error_stage !== null), record.run.id).toEqual([]);
     }
@@ -321,7 +331,7 @@ describe("a finished run writes one immutable record", () => {
       expect(record.comparable, folder).toBe(true);
     }
     const [blueprint] = recordsOf(runs.blueprintBaseline);
-    expect(blueprint.subjects).toHaveLength(3);
+    expect(blueprint.subjects).toHaveLength(BLUEPRINT_SUITE.runs[0].inputs.length);
     expect(new Set(blueprint.calls.map((call) => call.role))).toEqual(new Set(["generator", "judge"]));
     expect(blueprint.verdicts.some((verdict) => verdict.tier === "judge" && verdict.judge_version !== null)).toBe(true);
     const [play] = recordsOf(runs.play);
@@ -357,7 +367,7 @@ describe("a finished run writes one immutable record", () => {
 
 describe("perf push commits unpublished records, one file per run", () => {
   it("a baseline run pushes its own when it ends", () => {
-    expect(pushedByBaselines).toHaveLength(3);
+    expect(pushedByBaselines).toHaveLength(BASELINE_RUNS);
     for (const folder of [...runs.blueprintBaseline, ...runs.narrationBaseline]) {
       expect(pushedByBaselines).toContain(recordPath(readRecord(folder)));
     }
@@ -367,11 +377,11 @@ describe("perf push commits unpublished records, one file per run", () => {
     const sent = remoteRecords();
     expect(new Set(sent).size).toBe(sent.length);
     // The baselines' three, generate, judge blueprint and play; the server turn called only the mock.
-    expect(sent).toHaveLength(6);
+    expect(sent).toHaveLength(RECORDS);
     expect(sent).toEqual(expect.arrayContaining(pushedByBaselines));
     for (const folder of [...runs.generate, ...runs.judgeBlueprint, ...runs.play]) expect(sent, folder).toContain(recordPath(readRecord(folder)));
     expect(sent).not.toContain(recordPath(readRecord(runs.serverTurn[0])));
-    expect(printed.push.out).toContain("3 sent, 3 already in the data repository, 1 stub-only skipped");
+    expect(printed.push.out).toContain(`3 sent, ${BASELINE_RUNS} already in the data repository, 1 stub-only skipped`);
     // The two history runs predate records, and stay local.
     expect(printed.push.out).toContain("2 run folder(s) have no record.json and stay local");
   });
@@ -381,7 +391,7 @@ describe("perf sync builds perf.db from run folders and fetched records", () => 
   it("indexes every run once, the shared ones from the data repository, and version 1 and 2 history with the new fields empty", () => {
     const rows = indexRows();
     expect(rows.runs).toHaveLength(allRunFolders().length + runs.history.length);
-    expect(printed.sync.out).toContain(`indexed ${rows.runs.length} run(s) (3 local, 0 shared, 6 in both)`);
+    expect(printed.sync.out).toContain(`indexed ${rows.runs.length} run(s) (3 local, 0 shared, ${RECORDS} in both)`);
     expect(printed.sync.err).toBe("");
     const history = rows.runs.map((row) => JSON.parse(row)).filter((row) => row.result_version !== "mystery-eval-result/3");
     expect(history.map((row) => [row.run_id, row.result_version]).sort()).toEqual([
@@ -405,7 +415,7 @@ describe("perf sync builds perf.db from run folders and fetched records", () => 
     const out: string[] = [];
     const code = await runEval(["perf", "sync", "--config", config, "--output-root", elsewhere], { root: ROOT, out: (t) => out.push(t), err: () => {}, env: process.env }, COMMAND_SET);
     expect(code).toBe(0);
-    expect(out.join("\n")).toContain("indexed 6 run(s) (0 local, 6 shared, 0 in both)");
+    expect(out.join("\n")).toContain(`indexed ${RECORDS} run(s) (0 local, ${RECORDS} shared, 0 in both)`);
   });
 });
 
@@ -424,16 +434,27 @@ describe("perf report prints per-loop trends and writes the static HTML page", (
       expect(step.version.prompt).toMatch(/^[0-9a-f]{12}$/);
       for (const stats of step.perRoleModel) {
         // The game's mock narrator reports no usage; every stub behind the usage wrapper reports the same counts.
-        const reported = stats.model.startsWith("mock") ? { medianCostUsd: null, medianTokens: null } : { medianCostUsd: expect.any(Number), medianTokens: 600 };
+        const reported = stats.model.startsWith("mock") ? { medianCostUsd: null, medianTokens: null } : { medianCostUsd: expect.any(Number), medianTokens: TOKENS_ADDED };
         expect(stats, `${stats.role} ${stats.model}`).toMatchObject({ medianDurationMs: expect.any(Number), ...reported });
       }
     }
     expect(steps.flatMap((step) => step.judges).some((judge) => judge.judge === "cg_soundness" && judge.version !== null && judge.pass > 0)).toBe(true);
 
+    expect(text).toMatch(/judge pass rates: [^\n]*cg_soundness v\d+ 100%/);
+    expect(text).toMatch(new RegExp(`judge\\s+opus\\s+\\d+\\s+\\S+\\s+\\$\\S+\\s+${TOKENS_ADDED}`));
+
     const html = fs.readFileSync(path.join(outputRoot, REPORT_DIR, REPORT_FILE), "utf8");
-    expect(html).toContain("<svg");
     expect(html).toContain("blueprint-loop");
     expect(html).toContain("narration-loop");
+    // Per line: the medians table by role and model, the judge pass rates by version, and a chart of each measure.
+    expect(html).toContain("<h4>Per call by role and model");
+    expect(html).toMatch(new RegExp(`<td>judge</td><td>opus</td>(<td[^>]*>[^<]*</td>){3}<td class="n">${TOKENS_ADDED}</td>`));
+    expect(html).toContain("<h4>Judge pass rates</h4>");
+    expect(html).toMatch(/<td>cg_soundness<\/td><td>v\d+<\/td><td class="n">100%<\/td>/);
+    for (const chart of ["Pass rate per run", "Median duration per call, by role and model", "Median cost per call, by role and model", "Median tokens per call, by role and model"]) {
+      expect(html, chart).toContain(chart);
+    }
+    expect(html).toContain("<svg");
     // One self-contained file: nothing is fetched.
     expect(html).not.toMatch(/<script[^>]+src=|<link[^>]+href=|url\(\s*["']?https?:/i);
   });

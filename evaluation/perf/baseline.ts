@@ -37,7 +37,7 @@ import { readCommit as readCheckoutCommit, resolveOutputRoot } from "../core/run
 import { generateCommand } from "../generate/commands.ts";
 import { judgeTurnCommand } from "../runtime/judge-turn.ts";
 import { pushFolders, requirePerfRemote } from "./push.ts";
-import { runFolders } from "./run-folders.ts";
+import { relativeTo, runFolders } from "./run-folders.ts";
 import { RECORD_FILE, readRecord } from "./record.ts";
 
 export const SUITES_DIR = path.join("evaluation", "perf", "suites");
@@ -156,7 +156,7 @@ export interface PerfBaselineDeps {
   commands?: readonly EvalCommand[];
 }
 
-/** The record in `folder`, or null when it cannot be read: the push says so, once. */
+/** The record in `folder`, or null when it cannot be read: the push, or its absence, says so, once. */
 function recordOrNull(folder: string) {
   try {
     return readRecord(folder);
@@ -231,11 +231,27 @@ export function createPerfBaselineCommand(deps: PerfBaselineDeps = {}): EvalComm
       const folders = suiteFolders(outputRoot, before, name);
       for (const folder of folders) unpinnedBindings(folder, suite.models, context);
       context.out(`[perf baseline] ${name}: ${folders.length} run(s) recorded, exit ${exit}`);
+      const notPushed = (error: unknown) =>
+        context.err(`[perf baseline] not pushed: ${(error as Error).message}. The records stay in their run folders; ./dev eval perf push sends them`);
+      let remote: string;
       try {
-        const remote = requirePerfRemote({ root: context.root, configPath: common.configPath });
+        remote = requirePerfRemote({ root: context.root, configPath: common.configPath });
+      } catch (error) {
+        // With no push to report them, an unreadable record is said here.
+        for (const folder of folders) {
+          try {
+            readRecord(folder);
+          } catch (readError) {
+            context.err(`[perf baseline] unreadable record: ${relativeTo(outputRoot, folder)}: ${(readError as Error).message}`);
+          }
+        }
+        notPushed(error);
+        return exit;
+      }
+      try {
         pushFolders(folders, { root: context.root, configPath: common.configPath, outputRoot, remote, context });
       } catch (error) {
-        context.err(`[perf baseline] not pushed: ${(error as Error).message}. The records stay in their run folders; ./dev eval perf push sends them`);
+        notPushed(error);
       }
       return exit;
     },

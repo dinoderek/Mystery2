@@ -179,6 +179,29 @@ describe("perf baseline", () => {
     expect(result.err).toContain("perf.remote is not set");
   });
 
+  it("names a record it cannot read when there is no push to say so", async () => {
+    writeSuite("tiny", { models: { "narrator-claude": "suite-model" }, runs: [RUN] });
+    writeConfig(null);
+    // A run command that leaves a broken record, as a run cut off mid-write would.
+    const broken: EvalCommand = {
+      name: "judge turn",
+      summary: "",
+      help: "",
+      async run() {
+        const folder = path.join(outputRoot, "2026-11-25", "10-00-00-judge-turn");
+        fs.mkdirSync(folder, { recursive: true });
+        fs.writeFileSync(path.join(folder, "record.json"), "{");
+        return 0;
+      },
+    };
+
+    const result = await baseline(["tiny"], createPerfBaselineCommand({ suitesDir, readCommit: CLEAN, commands: [broken] }));
+
+    expect(result.code).toBe(0);
+    expect(result.err.match(/unreadable record: 2026-11-25\/10-00-00-judge-turn/g)).toHaveLength(1);
+    expect(result.err.match(/not pushed/g)).toHaveLength(1);
+  });
+
   it("names a binding the suite left on the config's model", async () => {
     writeSuite("tiny", { models: {}, runs: [RUN] });
 

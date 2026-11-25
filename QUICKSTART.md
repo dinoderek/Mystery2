@@ -96,13 +96,22 @@ process, and the page shows a banner saying so.
 
 ### Switching model
 
-Change it on the settings page; no restart. A session resolves its AI on every
-request, so the switch takes effect on the next turn of a game in progress. A
-new or edited `ai.json` entry needs a restart.
+Change it on the settings page; no restart. It takes effect on the next turn,
+even mid-game. A new or edited `ai.json` entry needs a restart.
 
 Existing sessions keep the AI name they were started with, which is what the
 evaluation pipeline reads.
 See [`docs/ai-configuration.md`](docs/ai-configuration.md).
+
+### Playing on a phone or tablet
+
+```bash
+./dev run --lan
+```
+
+Serves WiFi and Tailscale, printing the addresses. On a Mac, allow `node`
+incoming connections when the firewall asks. Rules:
+`docs/local-infrastructure.md`.
 
 ## Profiles
 
@@ -175,8 +184,7 @@ Which blueprint fields shape each image: `docs/blueprint-generation-flows.md`.
 
 ## Your data
 
-Each worktree runs on its own port and database; `npm run prod` uses the
-persistent one. `npm run db:list` shows them all, and each is a SQLite file you
+`npm run db:list` shows every database, each a SQLite file you
 can query while the game runs. `docs/local-infrastructure.md` has the runbook
 and troubleshooting.
 

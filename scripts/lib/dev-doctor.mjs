@@ -10,6 +10,7 @@ import { createRequire } from "node:module";
 import net from "node:net";
 import path from "node:path";
 
+import { LAN_PORT, describeAddresses, discoverNetwork, isPortAnswering } from "./lan-network.mjs";
 import { npmBin } from "./process.mjs";
 import { resolveWorktreePorts } from "../../lib/worktree-ports.mjs";
 
@@ -82,6 +83,23 @@ export function isPortFree(port) {
     server.once("error", () => resolve(false));
     server.listen(port, "127.0.0.1", () => server.close(() => resolve(true)));
   });
+}
+
+/**
+ * The lines about `./dev run --lan`: whether its port is free, and the
+ * addresses another device would open. Neither fails doctor: a busy port may
+ * be the LAN game itself, and a machine need not be on a network to develop.
+ *
+ * @param {boolean} portFree
+ * @param {import("./lan-network.mjs").Network} network
+ */
+export function describeLan(portFree, network) {
+  return [
+    portFree
+      ? `ok   LAN port ${LAN_PORT} is free for ./dev run --lan, which will answer on:`
+      : `warn LAN port ${LAN_PORT} is in use: a LAN game may already be running. It answers on:`,
+    ...describeAddresses(network, LAN_PORT).map((line) => (line.startsWith("  ") ? `    ${line}` : `info ${line}`)),
+  ];
 }
 
 /** The chromium Playwright would launch, if it is installed. @param {string} root */
@@ -168,6 +186,8 @@ export async function runDoctor(root, { log = console.log, install = installDepe
       ? `ok   port ${ports.web} is free (${worktreeName ?? "main checkout"})`
       : `warn port ${ports.web} is in use (${worktreeName ?? "main checkout"}): a game or a gate may already be running here`,
   );
+
+  for (const line of describeLan(!(await isPortAnswering(LAN_PORT)), discoverNetwork())) log(line);
 
   return failed ? 1 : 0;
 }

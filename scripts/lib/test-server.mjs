@@ -100,7 +100,7 @@ export function buildWebApp(repoRoot, configRoot, buildDir, run = spawnSync) {
   if (!fs.existsSync(path.join(repoRoot, "web", ".svelte-kit", "tsconfig.json"))) {
     const sync = run(npmBin, ["-w", "web", "exec", "--", "svelte-kit", "sync"], { cwd: repoRoot, stdio: "inherit" });
     if ((sync.status ?? 1) !== 0) {
-      throw new Error("Failed to sync the web app (svelte-kit sync) for the test run");
+      throw new Error("Failed to sync the web app (svelte-kit sync)");
     }
   }
   const result = run(npmBin, ["-w", "web", "run", "build"], {
@@ -109,7 +109,7 @@ export function buildWebApp(repoRoot, configRoot, buildDir, run = spawnSync) {
     env: { ...process.env, MYSTERY_CONFIG_ROOT: configRoot, MYSTERY_WEB_BUILD_DIR: buildDir },
   });
   if ((result.status ?? 1) !== 0) {
-    throw new Error("Failed to build the web app for the test run");
+    throw new Error("Failed to build the web app");
   }
   const databases = resolveDatabasesRoot(repoRoot, { MYSTERY_CONFIG_ROOT: configRoot });
   if (fs.existsSync(databases)) {
@@ -173,7 +173,8 @@ export async function assertPortIsFree(host, port) {
   }
 }
 
-async function waitForReady(url, hasExited) {
+/** Resolves once the server at `url` answers `/api/players`; rejects if it exits first or never does. */
+export async function waitForReady(url, hasExited) {
   const deadline = Date.now() + READY_TIMEOUT_MS;
 
   while (Date.now() < deadline) {
@@ -185,7 +186,7 @@ async function waitForReady(url, hasExited) {
     // EADDRINUSE.)
     if (hasExited()) {
       throw new Error(
-        "Test server exited during startup. See its output above.",
+        "The game server exited during startup. See its output above.",
       );
     }
 
@@ -198,7 +199,7 @@ async function waitForReady(url, hasExited) {
     await new Promise((resolve) => setTimeout(resolve, READY_POLL_MS));
   }
 
-  throw new Error(`Test server did not become ready at ${url}`);
+  throw new Error(`The game server did not become ready at ${url}`);
 }
 
 /**

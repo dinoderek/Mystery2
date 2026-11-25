@@ -69,6 +69,7 @@ export {
   type LoadedAIConfig,
   type RunOverride,
 } from "./ai-config.ts";
+export { ALLOWED_HOSTS_ENV, isHostAllowed, parseAllowedHosts } from "./allowed-hosts.ts";
 export { AIChoiceError, chooseAI, describeAISettings, handleAIChoice } from "./ai-choice.ts";
 export {
   createLocalContentStore,

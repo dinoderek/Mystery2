@@ -77,7 +77,7 @@
 
     inputValue = "";
     focusWhenReady = true;
-    // Inside the gesture, so a tap on [ SEND ] does not drop the keyboard.
+    // Takes focus off the [ SEND ] button now; the effect gives it back once the turn ends.
     inputElement?.focus();
     await gameSessionStore.submitInput(text);
   }

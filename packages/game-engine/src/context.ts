@@ -162,6 +162,8 @@ export interface BlueprintSummaryEntry {
   blueprint: PlayableCase;
   /** Storage key / filename the blueprint was read from, for diagnostics. */
   source: string;
+  /** A test fixture: it loads by id, but the player's catalog leaves it out. */
+  unlisted?: true;
 }
 
 export interface ContentStore {

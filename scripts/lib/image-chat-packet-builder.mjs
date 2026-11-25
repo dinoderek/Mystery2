@@ -84,13 +84,14 @@ export function buildImageChatPacket({
   blueprint,
   target,
   aspectRatio,
+  imageFilename = null,
 }) {
   const referenceManifest = buildImageReferenceManifest(blueprint, target);
   const prompt = buildImagePrompt(blueprint, target, {
     referenceImages: referenceManifest.map(({ label }) => ({ label })),
     aspectRatio,
   });
-  const recommendedImageFilename = `${createImageId(
+  const recommendedImageFilename = imageFilename ?? `${createImageId(
     blueprint.metadata?.title ?? blueprint.id,
     target.targetType,
     target.targetKey,

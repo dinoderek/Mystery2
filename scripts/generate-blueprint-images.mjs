@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import {
   DEFAULT_IMAGE_ASPECT_RATIO,
@@ -19,6 +19,7 @@ import {
 } from "./local-config.mjs";
 import { patchBlueprintFile } from "./lib/patch-blueprint-images.mjs";
 import { projectClueGraphArtwork } from "./lib/clue-graph-artwork.mjs";
+import { conventionalImageId } from "../packages/shared/src/image-ids.ts";
 import { resolveImageTargets } from "./lib/image-targets.mjs";
 import { loadEnvFile } from "./lib/env-file.mjs";
 
@@ -82,6 +83,18 @@ export async function resolveBlueprintPath(value, repoRoot = process.cwd(), env 
   }
 }
 
+const REPO_BLUEPRINTS_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "blueprints");
+
+/**
+ * Whether the file is one of the repo's committed cases. A committed case is
+ * never patched: its images are written under their conventional names, which
+ * the engine fills in when it loads the case (`packages/shared/src/image-ids.ts`).
+ */
+export function isCommittedCase(blueprintPath) {
+  const relative = path.relative(REPO_BLUEPRINTS_DIR, path.resolve(blueprintPath));
+  return relative !== "" && !relative.startsWith("..") && !path.isAbsolute(relative);
+}
+
 async function fetchWithTimeout(fetchImpl, url, init, timeoutMs) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -100,7 +113,11 @@ export const IMAGE_USAGE = `Usage: ./dev gen-images --blueprint-path <path> [tar
 
 Generates a blueprint's artwork through OpenRouter's Images API and patches the
 new image ids into the blueprint. Portraits come first, then locations (given
-the portraits as references), then the cover (given both).
+the portraits as references), then the cover (given both). A case committed
+under the repo's blueprints/ is never patched: its images are written as
+<case id>.blueprint.png, <case id>.character-<id>.png and
+<case id>.location-<id>.png, replacing any already there, and the game finds
+them by those names.
 
   --blueprint-path <path>      Blueprint JSON. Looked up in
                                <config root>/blueprints/ first.
@@ -547,6 +564,10 @@ function buildOutputFilename(baseImageId) {
   return `${baseImageId}.png`;
 }
 
+function fixedOutput(outputDir, imageId) {
+  return { imageId, filename: imageId, outputPath: path.join(outputDir, imageId) };
+}
+
 async function findUniqueOutput(outputDir, baseImageId) {
   const filename = buildOutputFilename(baseImageId);
   const outputPath = path.join(outputDir, filename);
@@ -581,11 +602,11 @@ async function generateSingleTarget({
   timeoutMs,
   referenceImages = [],
 }) {
-  const baseImageId = createImageId(blueprintName, target.targetType, target.targetKey);
-  const { imageId, filename, outputPath } = await findUniqueOutput(
-    options.outputDir,
-    baseImageId,
-  );
+  // A committed case's image replaces the last one under its fixed name; any
+  // other case's gets a fresh name, which is patched into the case.
+  const { imageId, filename, outputPath } = options.committedCaseId
+    ? fixedOutput(options.outputDir, conventionalImageId(options.committedCaseId, target.targetType, target.targetKey))
+    : await findUniqueOutput(options.outputDir, createImageId(blueprintName, target.targetType, target.targetKey));
   const label = formatImageTargetLabel(target);
 
   if (options.dryRun) {
@@ -731,8 +752,9 @@ async function importGeneratedImages({
   const results = [];
 
   for (const target of targets) {
-    const baseImageId = createImageId(blueprintName, target.targetType, target.targetKey);
-    const expectedFilename = `${baseImageId}.png`;
+    const expectedFilename = options.committedCaseId
+      ? conventionalImageId(options.committedCaseId, target.targetType, target.targetKey)
+      : `${createImageId(blueprintName, target.targetType, target.targetKey)}.png`;
     const label = formatImageTargetLabel(target);
 
     if (pngFiles.has(expectedFilename)) {
@@ -765,7 +787,7 @@ async function importGeneratedImages({
     `[summary] ${matched.length} matched, ${missing.length} missing`,
   );
 
-  if (matched.length > 0) {
+  if (matched.length > 0 && !options.committedCaseId) {
     await patchBlueprintFile(options.blueprintPath, results);
     console.log(`[patched] Blueprint updated with ${matched.length} image ID(s)`);
   }
@@ -811,6 +833,9 @@ async function exportImageChatPackets({
       blueprint,
       target,
       aspectRatio: options.aspectRatio,
+      imageFilename: options.committedCaseId
+        ? conventionalImageId(options.committedCaseId, target.targetType, target.targetKey)
+        : null,
     });
 
     if (options.chatPacketsCombined) {
@@ -872,6 +897,7 @@ export async function runImageGeneration(rawOptions, dependencies = {}) {
     throw new Error(`Unknown case format: ${parsed?.format ?? parsed?.schema_version ?? "none"}. The image generator reads ${CLUE_GRAPH_FORMAT} cases.`);
   }
   const blueprint = projectClueGraphArtwork(ClueGraphCaseSchema.parse(parsed));
+  options.committedCaseId = isCommittedCase(options.blueprintPath) ? blueprint.id : null;
 
   const targets = resolveImageTargets(blueprint, {
     scope: options.scope,
@@ -1032,7 +1058,11 @@ export async function runImageGeneration(rawOptions, dependencies = {}) {
 
   const results = [...phase1Results, ...phase2Results, ...phase3Results];
 
-  await patchBlueprintFile(options.blueprintPath, results);
+  if (options.committedCaseId) {
+    console.log(`[filed] A committed case is not patched; the engine finds its images by name in ${options.outputDir}`);
+  } else {
+    await patchBlueprintFile(options.blueprintPath, results);
+  }
 
   return {
     blueprint_id: blueprint.id,

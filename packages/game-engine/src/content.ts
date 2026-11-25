@@ -1,14 +1,21 @@
 // `ContentStore` over the filesystem.
 //
 // One malformed blueprint is skipped and logged, never fatal: a single bad
-// file must not take down the whole catalog.
+// file must not take down the whole catalog. It is logged once per version of
+// the file, not on every listing.
+//
+// A case that names no image for a target is given the image filed under that
+// target's conventional name in the images directory, when there is one
+// (`shared/src/image-ids.ts`): a committed case names no image ids, or only
+// those, and its art lives beside every other case's.
 
 import fs from "node:fs";
 import path from "node:path";
 import type { PlayableCase } from "../../shared/src/playable-case.ts";
 import { buildClueGraphWorld } from "../../shared/src/clue-graph-case.ts";
 import { validateClueGraph } from "../../shared/src/clue-graph-validator.ts";
-import { CLUE_GRAPH_FORMAT } from "../../shared/src/clue-graph-schema.ts";
+import { CLUE_GRAPH_FORMAT, type ClueGraphCase } from "../../shared/src/clue-graph-schema.ts";
+import { conventionalImageId, type ImageTargetType } from "../../shared/src/image-ids.ts";
 import type { BlueprintSummaryEntry, ContentStore } from "./context.ts";
 import type { LogWriter } from "./logging.ts";
 import { validateSceneManifest, type SceneManifest } from "../../shared/src/scene-schema.ts";
@@ -19,13 +26,21 @@ export interface LocalContentOptions {
   /** Directory holding image files, flat, named by image id. */
   imagesDir: string;
   sceneDirs: string[];
+  /**
+   * List the test fixtures (`FIXTURE_CASE_IDS`) in the player's catalog. They
+   * load by id either way.
+   */
+  listFixtures?: boolean;
 }
 
-interface CachedBlueprint {
-  /** mtime + size of the file the blueprint was parsed from. */
-  stamp: string;
-  blueprint: PlayableCase;
-}
+/** Cases that exist for the suites, not for players. */
+export const FIXTURE_CASE_IDS: ReadonlySet<string> = new Set(["mock-case"]);
+
+/** A file's version, as the cache sees it, and what reading it gave. */
+type CachedRead =
+  | { stamp: string; graph: ClueGraphCase }
+  | { stamp: string; failure: string };
+
 
 /** The format a case file names, under any key a case format has used, or "none". */
 function formatNameOf(candidate: unknown): string {
@@ -54,23 +69,59 @@ export function createLocalContentStore(
   options: LocalContentOptions,
 ): ContentStore {
   // Keyed on absolute path. An entry survives only while the file it came from
-  // is unchanged, so editing a blueprint takes effect without a restart.
-  const cache = new Map<string, CachedBlueprint>();
+  // is unchanged, so editing a blueprint takes effect without a restart, and a
+  // file that fails is logged again only once it changes.
+  const cache = new Map<string, CachedRead>();
 
-  function readBlueprintFile(
-    filePath: string,
-    logger?: LogWriter,
-  ): PlayableCase | null {
+  /** The case with every image it does not name filled from the images directory. */
+  function withFiledImages(graph: ClueGraphCase): ClueGraphCase {
+    const caseId = graph.metadata.id;
+    if (!isSafeSegment(caseId)) return graph;
+    const filed = (targetType: ImageTargetType, targetKey: string | null = null): string | undefined => {
+      const imageId = conventionalImageId(caseId, targetType, targetKey);
+      return isSafeSegment(imageId) && fs.existsSync(path.join(options.imagesDir, imageId)) ? imageId : undefined;
+    };
+    const cover = graph.metadata.image_id ?? filed("blueprint");
+    return {
+      ...graph,
+      metadata: { ...graph.metadata, ...(cover ? { image_id: cover } : {}) },
+      characters: Object.fromEntries(Object.entries(graph.characters).map(([id, person]) => {
+        const portrait = person.portrait_image_id ?? filed("character", id);
+        return [id, portrait ? { ...person, portrait_image_id: portrait } : person];
+      })),
+      locations: Object.fromEntries(Object.entries(graph.locations).map(([id, place]) => {
+        const image = place.location_image_id ?? filed("location", id);
+        return [id, image ? { ...place, location_image_id: image } : place];
+      })),
+    };
+  }
+
+  /** The file's case, read or from the cache; null, logged on its first failure, when it has none. */
+  function readCaseFile(filePath: string, logger?: LogWriter): ClueGraphCase | null {
     let stats: fs.Stats;
-    let text: string;
     try {
       stats = fs.statSync(filePath);
-      const cached = cache.get(filePath);
-      if (cached && cached.stamp === stampOf(stats)) return cached.blueprint;
-      text = fs.readFileSync(filePath, "utf-8");
-    } catch (readError) {
+    } catch (statError) {
       // Missing is the common case (probing for `<id>.json`) and is not worth
       // a log line; anything else is.
+      if ((statError as NodeJS.ErrnoException).code !== "ENOENT") {
+        logger?.logError("blueprint.read_failed", {
+          object: path.basename(filePath),
+          error: statError instanceof Error ? statError.message : String(statError),
+        });
+      }
+      return null;
+    }
+
+    const stamp = stampOf(stats);
+    const cached = cache.get(filePath);
+    if (cached?.stamp === stamp) return "graph" in cached ? cached.graph : null;
+
+    let text: string;
+    try {
+      text = fs.readFileSync(filePath, "utf-8");
+    } catch (readError) {
+      // Not cached: a file that cannot be read now may be readable next time.
       if ((readError as NodeJS.ErrnoException).code !== "ENOENT") {
         logger?.logError("blueprint.read_failed", {
           object: path.basename(filePath),
@@ -85,16 +136,20 @@ export function createLocalContentStore(
       // The clue graph is the one case format; any other is rejected by its name.
       const format = formatNameOf(candidate);
       if (format !== CLUE_GRAPH_FORMAT) throw new Error(`Unknown case format: ${format}`);
-      const blueprint = buildClueGraphWorld(validateClueGraph(candidate));
-      cache.set(filePath, { stamp: stampOf(stats), blueprint });
-      return blueprint;
+      const graph = validateClueGraph(candidate);
+      cache.set(filePath, { stamp, graph });
+      return graph;
     } catch (parseError) {
-      logger?.logError("blueprint.parse_failed", {
-        object: path.basename(filePath),
-        error: parseError instanceof Error ? parseError.message : String(parseError),
-      });
+      const failure = parseError instanceof Error ? parseError.message : String(parseError);
+      cache.set(filePath, { stamp, failure });
+      logger?.logError("blueprint.parse_failed", { object: path.basename(filePath), error: failure });
       return null;
     }
+  }
+
+  function readBlueprintFile(filePath: string, logger?: LogWriter): PlayableCase | null {
+    const graph = readCaseFile(filePath, logger);
+    return graph ? buildClueGraphWorld(withFiledImages(graph)) : null;
   }
 
   /** Every `*.json` under the configured directories, in precedence order. */
@@ -151,7 +206,12 @@ export function createLocalContentStore(
         if (!blueprint || seen.has(blueprint.id)) continue;
 
         seen.add(blueprint.id);
-        entries.push({ blueprint, source: path.basename(filePath) });
+        const fixture = FIXTURE_CASE_IDS.has(blueprint.clue_graph.metadata.id);
+        entries.push({
+          blueprint,
+          source: path.basename(filePath),
+          ...(fixture && !options.listFixtures ? { unlisted: true as const } : {}),
+        });
       }
 
       return entries;

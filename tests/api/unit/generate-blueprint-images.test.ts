@@ -1,4 +1,4 @@
-import { copyFile, mkdtemp, readFile } from "node:fs/promises";
+import { copyFile, mkdtemp, readdir, readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
@@ -9,6 +9,7 @@ import {
   OPENROUTER_IMAGES_URL,
   buildImageGenerationRequest,
   generateImageAsset,
+  isCommittedCase,
   parseGenerateImageArgs,
   parseImagePayload,
   runImageGeneration,
@@ -327,6 +328,30 @@ describe("runImageGeneration", () => {
 
     const patched = JSON.parse(await readFile(blueprintPath, "utf-8"));
     expect(patched.characters[characterKey].portrait_image_id).toBe(expectedId);
+  });
+
+  it("files a committed case's images under their conventional names and leaves the case unpatched", async () => {
+    const outputDir = await mkdtemp(path.join(os.tmpdir(), "mystery-images-"));
+    const before = await readFile(MOCK_CASE, "utf-8");
+    const fetchMock = vi.fn().mockImplementation(async () => imagesApiResponse());
+    const options = parseGenerateImageArgs(["--blueprint-path", MOCK_CASE, "--output-dir", outputDir, "--characters", characterKey]);
+
+    for (let run = 0; run < 2; run += 1) {
+      const output = await runImageGeneration(options, { fetchImpl: fetchMock, apiKey: "test-key", env: {} });
+      expect(output.results).toEqual([
+        expect.objectContaining({ status: "generated", image_id: `mock-case.character-${characterKey}.png` }),
+      ]);
+    }
+
+    // The second run replaced the first image rather than writing a `-1` beside it.
+    expect(await readdir(outputDir)).toEqual([`mock-case.character-${characterKey}.png`]);
+    expect(await readFile(MOCK_CASE, "utf-8")).toBe(before);
+  });
+
+  it("tells a committed case from one outside the repo's blueprints", () => {
+    expect(isCommittedCase(MOCK_CASE)).toBe(true);
+    expect(isCommittedCase(path.resolve("blueprints"))).toBe(false);
+    expect(isCommittedCase(path.join(os.tmpdir(), "blueprints", "case.json"))).toBe(false);
   });
 
   it("reports a failed target without aborting the run", async () => {

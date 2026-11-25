@@ -128,7 +128,7 @@
       <header class="shrink-0 border-b border-t-muted/30 pb-2">
         <div class="flex items-baseline justify-between gap-4">
           <h2 id="notebook-title" class="text-xl font-bold text-t-primary">CASE NOTEBOOK</h2>
-          <p class="text-xs text-t-muted/50 hidden sm:block">
+          <p class="text-xs text-t-muted/50 hidden pointer-fine:block">
             ←/→ sections · ↑/↓ scroll · 1-4 jump · Tab close
           </p>
         </div>

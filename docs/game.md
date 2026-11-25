@@ -18,7 +18,7 @@ contract; prompts: `docs/ai-runtime.md`, screens: `docs/ui.md`.
 ## Starting a case
 
 The player picks a mystery. The premise appears on a page of its own with a
-line pointing to the notebook, and waits for a keypress; the narrator then
+line pointing to the notebook, and waits for a keypress or tap; the narrator then
 describes arrival at the starting location.
 
 ## Commands and what they cost

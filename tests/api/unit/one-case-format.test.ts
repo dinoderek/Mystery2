@@ -226,6 +226,7 @@ describe("evaluation", () => {
       "baseline save",
       "baseline compare",
       "baseline status",
+      "perf push",
       "play",
       "report",
     ]);

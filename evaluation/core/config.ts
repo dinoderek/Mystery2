@@ -4,9 +4,12 @@
  * `evaluation/config.json` (gitignored) is read when it exists, else the
  * committed `evaluation/config.example.json`; `--config <file>` replaces both.
  * Each top-level key is a binding name; keys starting with `_` are comments,
- * and `developer` is not a binding: the name a run records as who ran it
- * (`configuredDeveloper`), a name and never an email address; null, as in the
- * committed example, leaves it to the OS user name.
+ * and `developer` and `perf` are not bindings. `developer` is the name a run
+ * records as who ran it (`configuredDeveloper`), a name and never an email
+ * address; null, as in the committed example, leaves it to the OS user name.
+ * `perf.remote` is the git URL (or path) of the shared data repository
+ * `perf push` sends run records to (`configuredPerfRemote`); null, as in the
+ * committed example, means none, and `perf push` stops naming this setting.
  * A binding says how to start the wrapper that makes one model call:
  *
  * - `cmd`, `args`: the wrapper and its arguments. A `cmd` containing a `/` is
@@ -33,8 +36,11 @@ import { ConfigError, UsageError } from "./errors.ts";
 export const CONFIG_FILE = path.join("evaluation", "config.json");
 export const EXAMPLE_CONFIG_FILE = path.join("evaluation", "config.example.json");
 
-/** The one top-level key that names no binding. */
+/** The top-level key naming who ran: not a binding. */
 export const DEVELOPER_KEY = "developer";
+
+/** The top-level key holding the performance settings, `remote` among them: not a binding. */
+export const PERF_KEY = "perf";
 
 const BINDING_NAME = /^[a-z][a-z0-9-]*$/;
 
@@ -85,7 +91,7 @@ function parseBindings(file: string, raw: unknown): Record<string, Binding> {
   }
   const bindings: Record<string, Binding> = {};
   for (const [name, value] of Object.entries(raw)) {
-    if (name.startsWith("_") || name === DEVELOPER_KEY) continue;
+    if (name.startsWith("_") || name === DEVELOPER_KEY || name === PERF_KEY) continue;
     if (!BINDING_NAME.test(name)) {
       throw new ConfigError(`${file}: binding name "${name}" must be lower-case words joined by "-"`);
     }
@@ -145,6 +151,24 @@ export function configuredDeveloper(options: Pick<LoadConfigOptions, "root" | "c
     throw new ConfigError(`${file}: "${DEVELOPER_KEY}" must be a name (not blank, not an email address)`);
   }
   return developer.trim();
+}
+
+/**
+ * The config's `perf.remote`, or null when it has none (or there is no config
+ * file): where the shared data repository is, as `git clone` is told it. Never
+ * a binding; a value that is not a non-blank string is a config error.
+ */
+export function configuredPerfRemote(options: Pick<LoadConfigOptions, "root" | "configPath">): string | null {
+  if (!fs.existsSync(chooseConfigFile(options.root, options.configPath))) return null;
+  const { file, raw } = readConfigFile(options);
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const perf = (raw as Record<string, unknown>)[PERF_KEY];
+  if (perf === undefined || perf === null) return null;
+  if (typeof perf !== "object" || Array.isArray(perf)) throw new ConfigError(`${file}: "${PERF_KEY}" must be an object`);
+  const remote = (perf as Record<string, unknown>).remote;
+  if (remote === undefined || remote === null) return null;
+  if (typeof remote !== "string" || remote.trim() === "") throw new ConfigError(`${file}: "${PERF_KEY}.remote" must be a git URL or path, not blank`);
+  return remote.trim();
 }
 
 function unknownBinding(file: string, bindings: Record<string, Binding>, name: string): ConfigError {

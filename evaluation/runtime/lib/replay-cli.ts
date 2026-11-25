@@ -33,11 +33,14 @@ import type { TurnResponse } from "./transcript.ts";
 /** Narration roles reply with prose rather than a role-output JSON contract. */
 const NARRATION_ROLES = new Set(["intro", "ambience"]);
 
+/** Where a replay failed: `replay` is the game server failing the case, the others a narrator binding. */
+export type ReplayStage = "parser" | "admissibility" | "transport" | "replay";
+
 export class NarratorReplayError extends Error {
   readonly calls: ModelCall[];
-  readonly stage: "parser" | "admissibility" | "transport";
-  constructor(message: string, calls: ModelCall[], stage: "parser" | "admissibility" | "transport") {
-    super(message);
+  readonly stage: ReplayStage;
+  constructor(message: string, calls: ModelCall[], stage: ReplayStage, options?: ErrorOptions) {
+    super(message, options);
     this.calls = calls;
     this.stage = stage;
   }

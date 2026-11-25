@@ -12,6 +12,11 @@
  * copied from the config root in force with the key each will use
  * (`scripts/lib/ai-seed.mjs`), and each request names one of them. `mock` needs
  * no entry, and `default` resolves to mock: the root's database is fresh.
+ *
+ * Once told where (`logCallsTo`), the server logs every AI call it makes
+ * (`AI_CALL_LOG`), and each replay is sent under a request id of its own, so
+ * its calls are the log's lines with that id: they come back as model calls
+ * beside the replay, whether it worked or not.
  */
 
 import { randomUUID } from "node:crypto";
@@ -22,7 +27,10 @@ import path from "node:path";
 import { signIn } from "../../playtest/lib/api.ts";
 import { seedAIs } from "../../../scripts/lib/ai-seed.mjs";
 import { startTestServer } from "../../../scripts/lib/test-server.mjs";
+import { readModelCalls } from "../../lib/game-ai-calls.ts";
+import type { ModelCall } from "../../core/result.ts";
 import type { BlueprintLike, TurnCase } from "./case.ts";
+import { NarratorReplayError } from "./replay-cli.ts";
 import type { Collected } from "./replay-cli.ts";
 import { getAction } from "./roles.ts";
 import { seedSessionWithHistory } from "./seed.ts";
@@ -88,6 +96,7 @@ export class ServerNarrator {
   private readonly start: StartServer;
   private readonly seed: ((configRoot: string) => void) | undefined;
   private server: Promise<ThrowawayServer> | null = null;
+  private callLog: string | null = null;
 
   /** @throws AIConfigError for a named AI that is not in `ai.json` or has no key */
   constructor({ repoRoot, start = startThrowawayServer, env = process.env, ais = [] }: ServerNarratorOptions) {
@@ -96,8 +105,15 @@ export class ServerNarrator {
     this.seed = seedAIs({ repoRoot, env, names: ais });
   }
 
+  /** Has the server log its AI calls to `file`, which a replay's calls are read from; before the first replay. */
+  logCallsTo(file: string): void {
+    if (this.server !== null) throw new Error("the server is already running: say where its calls are logged before the first replay");
+    this.callLog = file;
+  }
+
   private ensureServer(): Promise<ThrowawayServer> {
-    this.server ??= freePort().then((port) => this.start({ repoRoot: this.repoRoot, port, seed: this.seed }));
+    const env = this.callLog === null ? undefined : { AI_CALL_LOG: this.callLog };
+    this.server ??= freePort().then((port) => this.start({ repoRoot: this.repoRoot, port, seed: this.seed, env }));
     return this.server;
   }
 
@@ -131,19 +147,35 @@ export class ServerNarrator {
       : seedSessionWithHistory({ databaseFile: server.databaseFile, blueprint, given: testCase.given, aiProfile, playerName });
 
     const body = action.endpoint.body(testCase.given, testCase.action, gameId, { blueprint, aiProfile });
-    const answer = await api.post<Record<string, unknown>>(action.endpoint.name, body);
-    if (!answer.ok) {
-      throw new Error(`${action.endpoint.name} failed: HTTP ${answer.status} ${JSON.stringify(answer.body).slice(0, 500)}`);
-    }
-    if (action.endpoint.name === "game-turn") assertTurnPlayed(answer.body, String(body.input), action);
+    const requestId = `eval-${randomUUID()}`;
+    const callsOf = () => readModelCalls(this.callLog, (line) => line.request_id === requestId);
+    try {
+      const answer = await api.post<Record<string, unknown>>(action.endpoint.name, body, requestId);
+      if (!answer.ok) {
+        throw new Error(`${action.endpoint.name} failed: HTTP ${answer.status} ${JSON.stringify(answer.body).slice(0, 500)}`);
+      }
+      if (action.endpoint.name === "game-turn") assertTurnPlayed(answer.body, String(body.input), action);
 
-    const response = makeResponse({
-      action: testCase.action.type,
-      request: body,
-      parts: extractNarrationParts(testCase.action.type, answer.body),
-      raw: answer.body,
-    });
-    return { response, model: aiProfile, calls: [] };
+      const response = makeResponse({
+        action: testCase.action.type,
+        request: body,
+        parts: extractNarrationParts(testCase.action.type, answer.body),
+        raw: answer.body,
+      });
+      return { response, model: aiProfile, calls: callsOf() };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      // The calls the game made before it failed were still made, and cost what they cost. A log that cannot
+      // be read is said beside the failure, never in its place.
+      let calls: ModelCall[] = [];
+      let unread = "";
+      try {
+        calls = callsOf();
+      } catch (logError) {
+        unread = ` (and its AI call log could not be read: ${logError instanceof Error ? logError.message : String(logError)})`;
+      }
+      throw new NarratorReplayError(`${message}${unread}`, calls, "replay", { cause: error });
+    }
   }
 
   /** Stops the server, if one was started, and removes its config root. */

@@ -32,6 +32,10 @@ const MOCK_ONLY_ENV = {
   AI_CALL_LOG: "",
 };
 
+/** The server of the suite's own build, with what the harness asked for (its call log) on top of the mock-only environment. */
+const startMockServer: StartServer = (options) =>
+  startTestServer({ ...options, build: false, env: { ...MOCK_ONLY_ENV, ...options.env } }) as Promise<ThrowawayServer>;
+
 let scratch = "";
 let decoy = "";
 
@@ -63,7 +67,7 @@ describe("judge turn through a throwaway server", () => {
     const seeded: Array<Record<string, unknown>> = [];
     const played: Array<Record<string, unknown>> = [];
     const startServer: StartServer = async (options) => {
-      const server = (await startTestServer({ ...options, build: false, env: MOCK_ONLY_ENV })) as ThrowawayServer;
+      const server = await startMockServer(options);
       started = server;
       return {
         ...server,
@@ -103,12 +107,16 @@ describe("judge turn through a throwaway server", () => {
 
     const [day] = fs.readdirSync(outputRoot);
     const [run] = fs.readdirSync(path.join(outputRoot, day));
-    const subjects = fs.readdirSync(path.join(outputRoot, day, run)).filter((name) => name !== "run.json");
+    const subjects = fs.readdirSync(path.join(outputRoot, day, run), { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => entry.name);
+    expect(fs.existsSync(path.join(outputRoot, day, run, "ai-calls.jsonl"))).toBe(true);
     expect(subjects).toHaveLength(2);
     for (const subject of subjects) {
       const result = await readResult(path.join(outputRoot, day, run, subject, "result.json"));
       expect(result.summary.passed).toBe(true);
-      expect(result.production).toBeNull();
+      // The narrator's call, which the game logged: on the mock it reports no usage, and is told apart by its binding.
+      expect(result.production?.calls).toHaveLength(1);
+      expect(result.production?.calls[0]).toMatchObject({ binding: "server", model: expect.stringMatching(/^mock/), cost_usd: null, tokens: null, attempts: [{ outcome: "ok" }] });
+      expect(result.production?.calls[0].duration_ms).toBeGreaterThanOrEqual(0);
       const turn = JSON.parse(fs.readFileSync(path.join(outputRoot, day, run, subject, "turn.json"), "utf8"));
       expect(turn).toMatchObject({ narrator: "server", model: "mock" });
       expect(turn.response.narration_text.length).toBeGreaterThan(0);
@@ -118,7 +126,7 @@ describe("judge turn through a throwaway server", () => {
   it("grades an expect case on what the server saved, over every sample", async () => {
     const config = path.join(scratch, "config-expect.json");
     fs.writeFileSync(config, JSON.stringify({}));
-    const startServer: StartServer = (options) => startTestServer({ ...options, build: false, env: MOCK_ONLY_ENV }) as Promise<ThrowawayServer>;
+    const startServer = startMockServer;
 
     const lines: string[] = [];
     const outputRoot = path.join(scratch, "out-expect");
@@ -133,6 +141,14 @@ describe("judge turn through a throwaway server", () => {
     const [run] = fs.readdirSync(path.join(outputRoot, day));
     const summary = readSummary(path.join(outputRoot, day, run));
     expect(summary.complete).toBe(true);
+    // Every sample is its own subject, and its result holds the narrator calls of that sample alone.
+    const samples = fs.readdirSync(path.join(outputRoot, day, run), { withFileTypes: true }).filter((entry) => entry.isDirectory());
+    expect(samples).toHaveLength(6);
+    for (const sample of samples) {
+      const { production } = await readResult(path.join(outputRoot, day, run, sample.name, "result.json"));
+      expect(production?.calls.length, sample.name).toBeGreaterThanOrEqual(1);
+      expect(production?.calls.every((call) => call.binding === "server" && call.model?.startsWith("mock"))).toBe(true);
+    }
     expect(summary.narrators.map((entry) => [entry.narrator, entry.model])).toEqual([["server", "mock"]]);
     // The mock reveals the clue in the spot a search names, the answer Alice gives about noon, and a win for a well-argued accusation.
     expect(summary.narrators[0].cases.map((entry) => [entry.id, entry.right, entry.graded])).toEqual([
@@ -172,7 +188,7 @@ describe("judge turn through a throwaway server", () => {
 
     const saved: { sessions: Array<Record<string, unknown>>; events: Array<Record<string, unknown>> } = { sessions: [], events: [] };
     const startServer: StartServer = async (options) => {
-      const server = (await startTestServer({ ...options, build: false, env: MOCK_ONLY_ENV })) as ThrowawayServer;
+      const server = await startMockServer(options);
       return {
         ...server,
         stop: async () => {
@@ -203,7 +219,7 @@ describe("judge turn through a throwaway server", () => {
 
     const [day] = fs.readdirSync(outputRoot);
     const [run] = fs.readdirSync(path.join(outputRoot, day));
-    const [subject] = fs.readdirSync(path.join(outputRoot, day, run)).filter((name) => name !== "run.json");
+    const [subject] = fs.readdirSync(path.join(outputRoot, day, run)).filter((name) => name !== "run.json" && name !== "ai-calls.jsonl");
     const turn = JSON.parse(fs.readFileSync(path.join(outputRoot, day, run, subject, "turn.json"), "utf8"));
     expect(turn).toMatchObject({ narrator: "server", model: "mock" });
     expect(turn.response.narration_text.length).toBeGreaterThan(0);

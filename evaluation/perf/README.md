@@ -52,7 +52,7 @@ tokens are the comparable measure.
 **Suite attributes.** `run.attributes` holds what the run held fixed:
 command, options that change what runs, each input's id and content hash,
 judges, models per role, samples, concurrency and suite; null where one does
-not apply (`evaluation/core/suite-attributes.ts`). Runs match input by input.
+not apply (`evaluation/core/suite-attributes.ts`). Hashes are per input.
 
 ## The game's narrator calls
 

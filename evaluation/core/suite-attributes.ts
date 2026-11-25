@@ -8,7 +8,7 @@
  * | ------------- | ----- |
  * | `command`     | The command, as typed after `./dev eval` |
  * | `options`     | The command's options that change what runs, by name, with their effective values: `generate`'s `repair`, `play`'s `persona` and `max_steps` |
- * | `inputs`      | Each brief, case (with its blueprint), stored turn, trace or replay script: its id and a hash of its content (`contentHash`), sorted by id |
+ * | `inputs`      | Each brief, case (with its blueprint file), stored turn (alone: its blueprint path may not exist elsewhere), trace or replay script: its id and a hash of its content as stored (`contentHash`), sorted by id |
  * | `judges`      | The ids of the judges and checks the run selected, sorted; versions are recorded apart |
  * | `models`      | One entry per role (`generator`, `narrator`, `investigator`, `judge`): the sorted labels the role ran on (`bindingLabel`, `serverNarratorLabel`), null when the run has no such role |
  * | `samples`     | How many times each input is run: `judge turn`'s `--samples` when a case has `expect`, `play`'s `--games`; null otherwise |

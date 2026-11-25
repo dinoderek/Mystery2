@@ -282,8 +282,21 @@ describe("play's suite attributes", () => {
 			models: { narrator: ['server:mock'], investigator: null },
 			samples: 1
 		});
-		expect(replayed.inputs.map((input: { id: string }) => input.id)).toEqual([MOCK_CASE_ID, 'replay-script']);
-		expect(replayed.inputs[0].hash).toBe(caseHash());
+		expect(replayed.inputs).toEqual([
+			{ id: MOCK_CASE_ID, hash: caseHash() },
+			{ id: 'replay-script', hash: contentHash(script) }
+		]);
+
+		// Editing the script changes its hash alone; laying it out otherwise changes nothing.
+		fs.writeFileSync(scriptFile, JSON.stringify(script, null, 2));
+		expect(await attributesOf(['--replay', scriptFile, '--narrator', 'mock'])).toEqual(replayed);
+		const edited = { ...script, inputs: ['search', 'talk to bob'] };
+		fs.writeFileSync(scriptFile, JSON.stringify(edited));
+		expect(await attributesOf(['--replay', scriptFile, '--narrator', 'mock'])).toEqual({
+			...replayed,
+			inputs: [replayed.inputs[0], { id: 'replay-script', hash: contentHash(edited) }]
+		});
+		expect(contentHash(edited)).not.toBe(contentHash(script));
 	});
 });
 

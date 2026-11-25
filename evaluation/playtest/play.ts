@@ -252,6 +252,8 @@ function playAttributes(run: {
   options: PlayOptions;
   blueprint: { id: string; content: unknown };
   script: ReplayScript | null;
+  /** The script file's JSON as stored, which its hash is taken over. */
+  scriptContent: unknown;
   persona: string;
   bindings: readonly ResolvedBinding[];
   narrator: string;
@@ -265,7 +267,7 @@ function playAttributes(run: {
     },
     inputs: [
       { id: run.blueprint.id, hash: contentHash(run.blueprint.content) },
-      ...(script ? [{ id: "replay-script", hash: contentHash(script) }] : []),
+      ...(script ? [{ id: "replay-script", hash: contentHash(run.scriptContent) }] : []),
     ],
     judges: options.judge ? judgesFor("game").map((entry) => entry.id) : [],
     models: { narrator: [run.narrator], investigator: role(INVESTIGATOR_BINDING), judge: role(GAME_JUDGE_BINDING) },
@@ -563,6 +565,7 @@ async function runPlay(argv: string[], context: EvalContext, startServer: StartS
       options,
       blueprint: { id: blueprint.id, content: JSON.parse(fs.readFileSync(blueprintFile, "utf8")) },
       script,
+      scriptContent: scriptFile ? JSON.parse(fs.readFileSync(scriptFile, "utf8")) : null,
       persona: script ? script.persona : options.persona,
       bindings,
       narrator: narratorLabel(options, root, context.env),

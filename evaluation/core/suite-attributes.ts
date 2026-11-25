@@ -91,7 +91,8 @@ export function bindingLabel(binding: { name: string; model: string | null }): s
  * How a game server's narrator is named in `models`: `server:<backend>:<model>`
  * for an AI from `ai.json`, else `server:<name>` for one the server resolves
  * itself (`mock`, `default`). The backend and model, not the entry's name,
- * since names differ between machines.
+ * since names differ between machines. `default` stays its own label, though
+ * a fresh database makes it mock: what it resolves to is the server's choice.
  */
 export function serverNarratorLabel(name: string, entry: { backend: string; model: string } | undefined): string {
   return entry ? `server:${entry.backend}:${entry.model}` : `server:${name}`;

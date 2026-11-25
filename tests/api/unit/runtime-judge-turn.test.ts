@@ -197,6 +197,25 @@ describe("judge turn's suite attributes", () => {
     expect(edited).toEqual({ ...attributes, inputs: [attributes?.inputs[0], edited?.inputs[1]] });
   });
 
+  it("hashes a case with its blueprint file as stored: editing the file changes the hash, its layout does not", async () => {
+    const blueprintFile = path.join(scratch, "blueprint-under-test.json");
+    const blueprint = JSON.parse(fs.readFileSync(MOCK_CASE_PATH, "utf8")) as { metadata: Record<string, unknown> };
+    fs.writeFileSync(blueprintFile, JSON.stringify(blueprint));
+    const cases = await caseFile();
+    const onCopy = JSON.parse(fs.readFileSync(cases, "utf8")).map((testCase: Record<string, unknown>) => ({ ...testCase, blueprint: { path: blueprintFile } }));
+    fs.writeFileSync(cases, JSON.stringify(onCopy));
+    const hashes = async () => attributesOf(await run([cases, ...ARGS]))?.inputs.map((input) => input.hash);
+
+    const before = await hashes();
+    // The file's own JSON, not the world view built from it.
+    expect(before).toEqual(onCopy.map((testCase: Record<string, unknown>) => contentHash({ case: testCase, blueprint })));
+    fs.writeFileSync(blueprintFile, JSON.stringify(blueprint, null, 2));
+    expect(await hashes()).toEqual(before);
+    fs.writeFileSync(blueprintFile, JSON.stringify({ ...blueprint, metadata: { ...blueprint.metadata, title: "Another title" } }));
+    const after = await hashes();
+    expect(after?.every((hash, index) => hash !== before?.[index])).toBe(true);
+  });
+
   it("shows a model override in the narrator's models", async () => {
     const attributes = attributesOf(await run([CASES, "--narrator", "narrator-stub", "--model-override", "narrator-stub=other-model"]));
     expect(attributes?.models).toEqual({ generator: null, narrator: ["narrator-stub:other-model"], investigator: null, judge: null });

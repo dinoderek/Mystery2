@@ -421,10 +421,15 @@ function inputId(input: Input): string {
   return input.kind === "case" ? input.testCase.id : `${input.turn.case_id}__${input.turn.narrator}`;
 }
 
-/** An input's content: a case with the blueprint it is played on, or the stored turn. */
+/**
+ * An input's content: a case with the blueprint file it is played on, as
+ * stored (not the world view the code builds from it, which a commit may
+ * change while the file stays the same), or the stored turn.
+ */
 async function inputContent(input: Input, root: string): Promise<unknown> {
   if (input.kind === "stored") return input.turn;
-  return { case: input.testCase, blueprint: (await readBlueprint(input.testCase.blueprint.path, root)).blueprint };
+  const file = path.resolve(root, input.testCase.blueprint.path);
+  return { case: input.testCase, blueprint: JSON.parse(await fs.promises.readFile(file, "utf8")) as unknown };
 }
 
 /**
@@ -436,12 +441,10 @@ async function turnAttributes(
   items: readonly WorkItem[],
   inputs: readonly Input[],
   bindings: { narrators: Map<string, ResolvedBinding>; judge: ResolvedBinding | null },
-  settings: { samples: number; concurrency: number; aiProfile: string | null; context: EvalContext },
+  settings: { samples: number; concurrency: number; aiProfile: string | null; asked: string[]; context: EvalContext },
 ): Promise<CommandAttributes> {
-  const asked = items.flatMap((item) =>
-    item.narrator === SERVER_NARRATOR && item.input.kind === "case" ? [serverAI(item.input.testCase, settings.aiProfile)] : [],
-  );
-  const { ais } = pickAIs({ repoRoot: settings.context.root, env: settings.context.env, names: asked });
+  // The AIs the server was seeded with, read again for their backend and model; their keys are not kept.
+  const { ais } = pickAIs({ repoRoot: settings.context.root, env: settings.context.env, names: settings.asked });
   const narrators = items.flatMap((item) => {
     if (item.narrator === null) return [];
     if (item.narrator !== SERVER_NARRATOR) return [bindingLabel(bindings.narrators.get(item.narrator) as ResolvedBinding)];
@@ -524,7 +527,7 @@ export function createJudgeTurnCommand({ startServer = startThrowawayServer }: J
         root: context.root,
         identity: runIdentity(common, context.root),
         bindings: [...narratorBindings.values(), ...(judgeBinding ? [judgeBinding] : [])],
-        attributes: await turnAttributes(items, inputs, { narrators: narratorBindings, judge: judgeBinding }, { samples, concurrency, aiProfile, context }),
+        attributes: await turnAttributes(items, inputs, { narrators: narratorBindings, judge: judgeBinding }, { samples, concurrency, aiProfile, asked, context }),
       });
       // Its calls come back as the turns' model calls; the log itself stays in the run's folder.
       server.logCallsTo(path.join(folder.dir, "ai-calls.jsonl"));

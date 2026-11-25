@@ -105,7 +105,8 @@ export function checkRunAI({ root, env, ai, claudeRuns = claudeCliRuns }) {
  * whether it has what it needs. Never prints a key.
  *
  * A malformed file fails. An AI missing its key or its executable is a warning,
- * since a config root shared between machines may name AIs meant for another.
+ * since a config root shared between machines may name AIs meant for another;
+ * the default missing either fails, since it narrates here.
  *
  * @param {{ root: string, env: Record<string, string | undefined>, claudeRuns?: typeof claudeCliRuns }} options
  * @returns {{ ok: boolean, lines: string[] }}
@@ -133,5 +134,27 @@ export function describeAIs({ root, env, claudeRuns = claudeCliRuns }) {
       lines.push(ok ? `ok   ${what}, "${cli}" runs` : `warn ${what}, "${cli}" did not run: install Claude Code or set CLAUDE_CLI_PATH`);
     }
   }
-  return { ok: true, lines };
+  return describeDefault({ loaded, env, claudeRuns, lines });
+}
+
+/**
+ * Adds the line about the file's `default`. A default that cannot narrate
+ * fails: every game on a database with nothing chosen would fail with it.
+ */
+function describeDefault({ loaded, env, claudeRuns, lines }) {
+  const name = loaded.config.default;
+  if (name === undefined) return { ok: true, lines: [...lines, "ok   no default in ai.json: a database with nothing chosen narrates with mock"] };
+
+  const what = `default "${name}"`;
+  const entry = loaded.config.ais[name];
+  if (!entry) return { ok: true, lines: [...lines, `ok   ${what}: built in, no real AI`] };
+  if (entry.backend === "openrouter") {
+    return findOpenRouterKey(entry, loaded.sources)
+      ? { ok: true, lines: [...lines, `ok   ${what} can narrate`] }
+      : { ok: false, lines: [...lines, `FAIL ${what} cannot narrate: no key in ai.json, OPENROUTER_API_KEY or .env.local`] };
+  }
+  const { ok, cli } = claudeRuns(env);
+  return ok
+    ? { ok: true, lines: [...lines, `ok   ${what} can narrate`] }
+    : { ok: false, lines: [...lines, `FAIL ${what} cannot narrate: "${cli}" did not run`] };
 }

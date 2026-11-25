@@ -7,7 +7,10 @@ export interface AIRow {
 	name: string;
 	/** Backend and model, never a key: the state carries none. */
 	detail: string;
-	/** Marked on the page. Mock is marked while nothing has been chosen, because it narrates then. */
+	/**
+	 * Marked on the page. While nothing has been chosen, the ai.json default is
+	 * marked, else mock, because it narrates then.
+	 */
 	selected: boolean;
 	/** Why it cannot be chosen, or null. */
 	problem: string | null;
@@ -19,7 +22,7 @@ function detail(ai: AISummary): string {
 
 /** The name the page marks. */
 export function selectedName(state: AISettingsState): string {
-	return state.chosen ?? 'mock';
+	return state.chosen ?? state.configured_default ?? 'mock';
 }
 
 /** One row per AI, mock first. */
@@ -27,7 +30,7 @@ export function aiRows(state: AISettingsState): AIRow[] {
 	const selected = selectedName(state);
 	return state.ais.map((ai: AIChoice) => ({
 		name: ai.name,
-		detail: detail(ai),
+		detail: ai.name === state.configured_default ? `${detail(ai)}, ai.json default` : detail(ai),
 		selected: ai.name === selected,
 		problem: ai.problem
 	}));

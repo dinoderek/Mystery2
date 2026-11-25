@@ -349,6 +349,8 @@ export const AISettingsStateSchema = z.object({
   ais: z.array(AIChoiceSchema),
   /** The name chosen on the page, or null when nothing has been chosen. */
   chosen: z.string().min(1).nullable(),
+  /** The AI `ai.json` names as its default, which narrates while nothing is chosen, or null. */
+  configured_default: z.string().min(1).nullable(),
   /**
    * The AI the server was started with (`./dev run --ai <name>`). Present
    * means it narrates instead of the choice above.
@@ -356,7 +358,7 @@ export const AISettingsStateSchema = z.object({
   override: AISummarySchema.nullable(),
   /** The AI that narrates a game started now. Null exactly when `narrator_error` is set. */
   narrator: AISummarySchema.nullable(),
-  /** Why nothing can narrate: the choice names an AI that is missing or broken. */
+  /** Why nothing can narrate: the choice or the default names an AI that is missing or broken. */
   narrator_error: z.string().min(1).nullable(),
 });
 

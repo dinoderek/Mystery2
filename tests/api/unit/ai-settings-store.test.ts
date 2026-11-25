@@ -119,10 +119,31 @@ describe("what the settings page shows", () => {
   it("names mock as the narrator while nothing is chosen", () => {
     expect(describeAISettings(load(), settings)).toMatchObject({
       chosen: null,
+      configured_default: null,
       override: null,
       narrator: { name: "mock", backend: "mock" },
       narrator_error: null,
     });
+  });
+
+  it("names the file's default as the narrator while nothing is chosen, and carries it for the page", () => {
+    expect(describeAISettings(load({ ...FILE, default: "luna6" }), settings)).toMatchObject({
+      chosen: null,
+      configured_default: "luna6",
+      narrator: { name: "luna6", backend: "openrouter", model: "openai/gpt-6-luna" },
+      narrator_error: null,
+    });
+  });
+
+  it("names the chosen AI over the file's default", () => {
+    settings.setChoice("claude");
+    expect(describeAISettings(load({ ...FILE, default: "luna6" }), settings).narrator).toMatchObject({ name: "claude" });
+  });
+
+  it("says why nothing narrates when the file's default cannot, naming it", () => {
+    const state = describeAISettings(load({ ...FILE, default: "free" }), settings);
+    expect(state.narrator).toBeNull();
+    expect(state.narrator_error).toMatch(/The default in .*ai\.json, "free", cannot narrate/);
   });
 
   it("names the chosen AI as the narrator", () => {

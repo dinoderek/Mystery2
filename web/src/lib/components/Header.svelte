@@ -9,6 +9,6 @@
   });
 </script>
 
-<header class="border-b border-t-muted/30 pb-2 mb-4">
+<header class="border-b border-t-muted/30 pb-2 mb-4 group-data-[compact=true]:hidden">
   <h1 class="text-xl font-bold truncate">Mystery: {mysteryTitle}</h1>
 </header>

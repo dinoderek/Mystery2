@@ -88,7 +88,7 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<main class="bg-t-bg text-t-primary font-mono p-4 flex flex-col h-screen max-w-6xl mx-auto">
+<main class="bg-t-bg text-t-primary font-mono p-4 flex flex-col h-dvh max-w-6xl mx-auto">
   {#if isStartingGame}
     <div class="flex-1 flex items-center justify-center">
       <div class="text-center space-y-4">
@@ -99,20 +99,20 @@
   {:else}
     <!-- Fixed header -->
     <div class="mb-4">
-      <div class="flex items-center justify-between mb-2">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
         <h1 class="text-3xl font-bold">MYSTERY GAME TERMINAL</h1>
         <div class="flex gap-2">
           <button
             type="button"
             data-testid="settings-link"
-            class="border border-t-muted/40 px-3 py-1 text-xs text-t-muted hover:border-t-primary hover:text-t-primary"
+            class="min-h-11 border border-t-muted/40 px-3 text-xs text-t-muted hover:border-t-primary hover:text-t-primary"
             onclick={() => goto('/settings')}
           >
             SETTINGS
           </button>
           <button
             type="button"
-            class="border border-t-muted/40 px-3 py-1 text-xs text-t-muted hover:border-t-primary hover:text-t-primary"
+            class="min-h-11 border border-t-muted/40 px-3 text-xs text-t-muted hover:border-t-primary hover:text-t-primary"
             onclick={() => playerStore.signOut()}
           >
             LOGOUT

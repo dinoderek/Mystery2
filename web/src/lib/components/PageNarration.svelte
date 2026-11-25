@@ -1,10 +1,14 @@
 <script lang="ts">
-  import { tick } from 'svelte';
+  import { onMount, tick } from 'svelte';
+  import { isNearEnd } from '$lib/domain/viewport';
   import { gameSessionStore } from '$lib/domain/store.svelte';
   import TerminalMessage from './TerminalMessage.svelte';
   import TerminalSpinner from './TerminalSpinner.svelte';
 
   let scrollContainer = $state<HTMLDivElement | null>(null);
+
+  // Kept as the player scrolls: a resize cannot tell whether they were reading the end.
+  let atEnd = true;
 
   const page = $derived(gameSessionStore.activePage);
 
@@ -31,10 +35,23 @@
       });
     });
   });
+
+  // The on-screen keyboard shrinks this area; a live page keeps its last line in view.
+  onMount(() => {
+    if (!scrollContainer) return;
+    const resize = new ResizeObserver(() => {
+      if (scrollContainer && atEnd && gameSessionStore.isOnLivePage) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
+    });
+    resize.observe(scrollContainer);
+    return () => resize.disconnect();
+  });
 </script>
 
 <div
   bind:this={scrollContainer}
+  onscroll={() => scrollContainer && (atEnd = isNearEnd(scrollContainer))}
   class="min-h-0 flex-1 overflow-y-auto border border-t-muted/30 p-4 font-mono"
   data-testid="page-narration"
 >

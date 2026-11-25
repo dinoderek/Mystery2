@@ -19,7 +19,7 @@
     onclick={handleBackdropClick}
   >
     <div
-      class="bg-t-bg border border-t-muted shadow-[0_0_15px_var(--t-glow)] p-6 max-w-lg w-full max-h-[85vh] flex flex-col font-mono"
+      class="bg-t-bg border border-t-muted shadow-[0_0_15px_var(--t-glow)] p-6 max-w-lg w-full max-h-[85dvh] flex flex-col font-mono"
     >
       <h2
         class="text-xl font-bold text-t-primary border-b border-t-muted/30 pb-2 mb-4 shrink-0"
@@ -98,7 +98,7 @@
       </div>
 
       <button
-        class="mt-6 w-full border border-t-muted/50 hover:bg-t-muted/10 text-t-primary py-2 transition-colors cursor-pointer shrink-0"
+        class="mt-6 min-h-11 w-full border border-t-muted/50 hover:bg-t-muted/10 text-t-primary transition-colors cursor-pointer shrink-0"
         onclick={close}
       >
         [ CLOSE ]

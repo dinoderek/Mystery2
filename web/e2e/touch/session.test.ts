@@ -20,7 +20,7 @@ test('a player plays a whole case to its end by touch and text entry only', asyn
   await listOnlyMockCase(page);
   const lines: string[] = [];
   page.on('request', (request) => {
-    if (request.url().includes('/api/game-turn')) lines.push((request.postDataJSON() as { input: string }).input);
+    if (request.method() === 'POST' && request.url().includes('/api/game-turn')) lines.push((request.postDataJSON() as { input: string }).input);
   });
 
   // Sign in through the picker, and start the case.

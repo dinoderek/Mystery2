@@ -110,15 +110,15 @@ See [`docs/ai-configuration.md`](docs/ai-configuration.md).
 ```
 
 Serves WiFi and Tailscale, printing the addresses. Play by tap and the on-screen
-keyboard, dictation included. On a Mac, allow `node` incoming connections when the firewall asks. Rules:
-`docs/local-infrastructure.md`.
+keyboard, dictation included. On a Mac, allow `node` incoming connections when
+the firewall asks. Rules: `docs/local-infrastructure.md`.
 
 ## Profiles
 
-Type a name on the first screen and that profile
-exists; type a different one and you get a separate set of cases. Profiles are
-local to the machine and have no passwords — they keep one person's cases apart
-from another's, not anyone out.
+Type a name on the first screen and that profile exists; type a different one
+and you get a separate set of cases. Profiles are local to the machine and have
+no passwords — they keep one person's cases apart from another's, not anyone
+out.
 
 ## Blueprint Generation
 

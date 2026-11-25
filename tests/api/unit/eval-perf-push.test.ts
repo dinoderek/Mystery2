@@ -295,6 +295,36 @@ describe("publishing records", () => {
     expect(outcome.sent).toEqual([PATH_A]);
   });
 
+  /** Makes the remote refuse every push, saying `denied by test`; returns a function that lifts the refusal. */
+  function refusePushes(bare: string): () => void {
+    const hook = path.join(bare, "hooks", "pre-receive");
+    fs.writeFileSync(hook, "#!/bin/sh\necho 'denied by test' >&2\nexit 1\n", { mode: 0o755 });
+    return () => fs.rmSync(hook);
+  }
+
+  it("does not retry a push the remote refuses, and says what git said", () => {
+    refusePushes(remote);
+    let attempts = 0;
+    expect(() =>
+      publishRecords({ clone: dataCloneDir(outputRoot), remote, files: files([PATH_A, "{}\n"]), author: "ada", beforePush: () => (attempts += 1) }),
+    ).toThrow(/denied by test/);
+    expect(attempts).toBe(1);
+  });
+
+  it("sends a record on a remote with no commits after an earlier push of it failed", () => {
+    const empty = makeRemote("empty", false);
+    const lift = refusePushes(empty);
+    const clone = dataCloneDir(outputRoot);
+    expect(() => publishRecords({ clone, remote: empty, files: files([PATH_A, "{}\n"]), author: "ada" })).toThrow(/denied by test/);
+    expect(remoteFiles(empty)).toEqual([]);
+
+    lift();
+    const outcome = publishRecords({ clone, remote: empty, files: files([PATH_A, "{}\n"]), author: "ada" });
+
+    expect(outcome).toEqual({ sent: [PATH_A], present: [] });
+    expect(remoteFiles(empty)).toEqual([PATH_A]);
+  });
+
   it("does not retry a failure that is not a lost race", () => {
     expect(() =>
       publishRecords({ clone: dataCloneDir(outputRoot), remote: path.join(scratch, "missing.git"), files: files([PATH_A, "{}\n"]), author: "ada" }),
@@ -371,6 +401,14 @@ describe("the perf.remote setting", () => {
     expect(() => configuredPerfRemote({ root: ROOT, configPath: configFile })).toThrow(/perf\.remote/);
     writeConfig([]);
     expect(() => configuredPerfRemote({ root: ROOT, configPath: configFile })).toThrow(/"perf" must be an object/);
+  });
+
+  it("resolves a path from the repo root, and leaves a URL as it is", () => {
+    writeConfig({ remote: "data.git" });
+    expect(configuredPerfRemote({ root: scratch, configPath: configFile })).toBe(path.join(scratch, "data.git"));
+    expect(configuredPerfRemote({ root: ROOT, configPath: configFile })).toBe("data.git");
+    writeConfig({ remote: "git@example.test:data.git" });
+    expect(configuredPerfRemote({ root: scratch, configPath: configFile })).toBe("git@example.test:data.git");
   });
 
   it("is null in the committed example", () => {

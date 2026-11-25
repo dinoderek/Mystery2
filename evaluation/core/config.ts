@@ -155,8 +155,8 @@ export function configuredDeveloper(options: Pick<LoadConfigOptions, "root" | "c
 
 /**
  * The config's `perf.remote`, or null when it has none (or there is no config
- * file): where the shared data repository is, as `git clone` is told it. Never
- * a binding; a value that is not a non-blank string is a config error.
+ * file): where the shared data repository is, as `git clone` is told it: a URL, or a
+ * path (resolved from the repo root). Never a binding; a value that is not a non-blank string is a config error.
  */
 export function configuredPerfRemote(options: Pick<LoadConfigOptions, "root" | "configPath">): string | null {
   if (!fs.existsSync(chooseConfigFile(options.root, options.configPath))) return null;
@@ -168,7 +168,9 @@ export function configuredPerfRemote(options: Pick<LoadConfigOptions, "root" | "
   const remote = (perf as Record<string, unknown>).remote;
   if (remote === undefined || remote === null) return null;
   if (typeof remote !== "string" || remote.trim() === "") throw new ConfigError(`${file}: "${PERF_KEY}.remote" must be a git URL or path, not blank`);
-  return remote.trim();
+  // A path is taken from the repo root, whatever folder git later runs in; a URL is not a file there.
+  const asPath = path.resolve(options.root, remote.trim());
+  return fs.existsSync(asPath) ? asPath : remote.trim();
 }
 
 function unknownBinding(file: string, bindings: Record<string, Binding>, name: string): ConfigError {

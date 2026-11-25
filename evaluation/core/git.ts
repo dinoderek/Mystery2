@@ -8,8 +8,8 @@ import { spawnSync } from "node:child_process";
 
 import { InputError } from "./errors.ts";
 
-/** A `git` command that failed, with what git said. */
-export class GitError extends Error {
+/** A `git` command that failed, with what git said; the dispatcher prints its message without a stack. */
+export class GitError extends InputError {
   readonly stderr: string;
 
   constructor(args: readonly string[], stderr: string) {

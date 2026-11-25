@@ -57,6 +57,9 @@ function ensureClone(clone: string, remote: string): void {
   if (git(clone, ["remote", "get-url", "origin"]).trim() !== remote) git(clone, ["remote", "set-url", "origin", remote]);
 }
 
+/** The push refusals that mean the remote moved on, as git prints them; a remote's own refusal is `[remote rejected]`, and is not one. */
+const LOST_RACE = /!\s+\[rejected\]|stale info/;
+
 /** Rewinds the clone to the remote's `main`; on a remote with none yet, to an empty `main`. */
 function syncToRemote(clone: string): void {
   git(clone, ["fetch", "--quiet", "origin"]);
@@ -64,7 +67,11 @@ function syncToRemote(clone: string): void {
     git(clone, ["checkout", "--quiet", "--force", "-B", DATA_BRANCH, `origin/${DATA_BRANCH}`]);
     git(clone, ["clean", "--quiet", "-fd"]);
   } else {
+    // No `main` on the remote yet: drop any commit an earlier push left here, so a record is "present" only if the remote has it.
     git(clone, ["symbolic-ref", "HEAD", `refs/heads/${DATA_BRANCH}`]);
+    git(clone, ["update-ref", "-d", `refs/heads/${DATA_BRANCH}`]);
+    git(clone, ["read-tree", "--empty"]);
+    git(clone, ["clean", "--quiet", "-fdx"]);
   }
 }
 
@@ -118,6 +125,7 @@ export function publishRecords(options: PublishOptions): PublishOutcome {
   const attempts = options.attempts ?? PUSH_ATTEMPTS;
   ensureClone(clone, remote);
   const identity = identityFallback(clone, author);
+  let lastSaid = "";
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     syncToRemote(clone);
     const present = files.filter((file) => fs.existsSync(path.join(clone, file.path))).map((file) => file.path);
@@ -136,10 +144,11 @@ export function publishRecords(options: PublishOptions): PublishOutcome {
       git(clone, ["push", "--quiet", "origin", `HEAD:refs/heads/${DATA_BRANCH}`]);
       return { sent, present };
     } catch (error) {
-      if (!(error instanceof GitError) || !/rejected|non-fast-forward|fetch first|stale info/i.test(error.stderr)) throw error;
+      if (!(error instanceof GitError) || !LOST_RACE.test(error.stderr)) throw error;
+      lastSaid = error.stderr.trim();
     }
   }
   throw new InputError(
-    `could not push to ${remote}: the remote moved under ${attempts} attempts in a row. Nothing was lost; run perf push again.`,
+    `could not push to ${remote}: the remote moved under ${attempts} attempts in a row. Nothing was lost; run perf push again. Git said: ${lastSaid}`,
   );
 }

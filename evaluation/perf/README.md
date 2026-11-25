@@ -43,7 +43,8 @@ subject's `production.calls`, binding `server`.
 
 - A turn's calls are the lines with the `x-request-id` the harness sent; a
   game's carry its game id.
-- Model, duration, cost and tokens are the line's; cache counts, null.
+- Model, duration, cost and tokens are the line's; cache counts, null; the
+  prompt as its hash only.
 
 ## The run record
 
@@ -65,8 +66,8 @@ position and round (null without rounds).
 
 ## The data repository
 
-Records are shared through a private git repository: its URL is `remote` under
-a top-level `perf` key in `evaluation/config.json`.
+Records are shared through a private git repository: its URL (or path) is `remote`
+under a top-level `perf` key in `evaluation/config.json`.
 
 `./dev eval perf push [<run>...]` (`evaluation/perf/push.ts`) sends the records
 of every run under the output root, or of the runs named (a folder, or an id
@@ -74,7 +75,7 @@ like `2026-11-25/10-00-00-generate`), to
 `records/<yyyy>/<mm>/<developer>/<run>.json`: the UTC month the run started; in
 the developer and run id, each `/` or character outside `A-Za-z0-9._-` becomes `_`.
 
-- Files are added, never edited: a record already there is left alone.
+- Files are added, never edited.
 - Never sent: a run with no `record.json`, or whose calls all went to stubs
   (no model, or the game's `mock`).
 - It clones to `<output-root>/.perf/data`, rewound to `main` on each use, with

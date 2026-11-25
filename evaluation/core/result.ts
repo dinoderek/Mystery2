@@ -18,7 +18,8 @@
  * command can judge it again; only `result.json` carries this version.
  *
  * Versions: 1 lacks `rounds`; 2 lacks `tokens` on attempts and calls, which
- * read back as null. Version 3 is the one written. A field a later task adds
+ * read back as null. Versions 1 and 2 may hold `analyzer` verdicts; version 3
+ * refuses them. Version 3 is the one written. A field a later task adds
  * to version 3 defaults to null (or empty) when absent, so every version 3
  * result already written stays readable.
  */
@@ -167,10 +168,13 @@ export const SubjectSchema = z
   .strict();
 export type Subject = z.infer<typeof SubjectSchema>;
 
+/** A verdict's tier; `analyzer` only in versions 1 and 2 (see the file's header). */
+export const VERDICT_TIERS = ["mechanical", "analyzer", "judge"] as const;
+
 export const VerdictSchema = z
   .object({
     id: z.string().min(1),
-    tier: z.enum(["mechanical", "judge"]),
+    tier: z.enum(VERDICT_TIERS),
     status: StatusSchema,
     findings: z.array(z.unknown()).optional(),
     details: z.unknown().optional(),
@@ -251,6 +255,7 @@ export const ResultSchema = z
   .strict()
   .superRefine((result, ctx) => {
     if (result.rounds !== undefined) checkRounds(result as Result, ctx);
+    if (result.schema_version === RESULT_SCHEMA_VERSION) refuseAnalyzers(result as Result, ctx);
     const expected = summarize(result.verdicts, result.run_error);
     if (JSON.stringify(expected) !== JSON.stringify(result.summary)) {
       ctx.addIssue({
@@ -285,6 +290,21 @@ function checkRounds(result: Result, ctx: z.RefinementCtx): void {
   }
   if (last.path !== result.subject.path) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["rounds"], message: `the last round's blueprint ${last.path} is not the subject's (${result.subject.path})` });
+  }
+}
+
+/** Version 3 holds no `analyzer` verdict, in the result or any round. */
+function refuseAnalyzers(result: Result, ctx: z.RefinementCtx): void {
+  const lists: Array<[Array<string | number>, readonly Verdict[]]> = [
+    [["verdicts"], result.verdicts],
+    ...(result.rounds ?? []).map((round, index): [Array<string | number>, readonly Verdict[]] => [["rounds", index, "verdicts"], round.verdicts]),
+  ];
+  for (const [at, verdicts] of lists) {
+    verdicts.forEach((verdict, index) => {
+      if (verdict.tier === "analyzer") {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: [...at, index, "tier"], message: `${RESULT_SCHEMA_VERSION} has no analyzer verdicts` });
+      }
+    });
   }
 }
 

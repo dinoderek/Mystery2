@@ -284,7 +284,7 @@ describe("a case without expect", () => {
       const result = await readResult(path.join(runDir, subject.dir, "result.json"));
       expect(result.verdicts.map((verdict) => verdict.id)).toEqual(["flesch"]);
     }
-    expect(fs.readdirSync(runDir).sort()).toEqual(["ask-alice-alibi-pressure-narrator-stub", "run.json", "talk-bob-open-narrator-stub"]);
+    expect(fs.readdirSync(runDir).sort()).toEqual(["ask-alice-alibi-pressure-narrator-stub", "record.json", "run.json", "talk-bob-open-narrator-stub"]);
     const lines = output.split("\n");
     expect(lines).toHaveLength(4);
     expect(lines[0]).toMatch(/^\[judge turn\] 2 turn\(s\) -> /);

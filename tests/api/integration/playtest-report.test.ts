@@ -101,6 +101,8 @@ describe('playtest report', () => {
 				summary: summarize([], runError),
 				run_error: runError
 			});
+			// A run finishes once and its record is never replaced; this test grades one folder twice.
+			fs.rmSync(path.join(run.dir, 'record.json'), { force: true });
 			await run.finish();
 		};
 		await writeVerdicts([]);

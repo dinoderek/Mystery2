@@ -1,0 +1,20 @@
+{
+  "_comment": "The blueprint loop's baseline suite: ./dev eval perf baseline blueprint-loop. Generates, judges and repairs the three committed briefs on these models, whatever the local config names. Fields: evaluation/perf/baseline.ts.",
+  "models": {
+    "generator-agent": "opus",
+    "blueprint-judge": "opus"
+  },
+  "runs": [
+    {
+      "command": "generate",
+      "inputs": [
+        "blueprints/clue-graph/briefs/clock-tower-key.brief.json",
+        "blueprints/clue-graph/briefs/dog-show-rosette.brief.json",
+        "blueprints/clue-graph/briefs/museum-sleepover-train.brief.json"
+      ],
+      "options": { "judge": true, "repair": 2 },
+      "samples": null,
+      "concurrency": 3
+    }
+  ]
+}

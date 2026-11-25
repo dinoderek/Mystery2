@@ -100,8 +100,8 @@ run touching what runs read (`READ_PATHS` in `evaluation/core/baseline-status.ts
 - Anyone may change a brief, prompt or engine code: the gate forces the version
   entry and snapshots, and `baseline status` shows the baselines stale.
 - Others need only `npm test`.
-- A stale baseline is refreshed on demand, before a comparison relies on it; a
-  live rebaseline explains each difference by the commits listed.
+- A stale baseline is refreshed on demand, before a comparison uses it: Haiku's
+  by `perf baseline narration-loop`, explaining differences by the commits listed.
 - When several commits were batched, it replays at commit boundaries to
   attribute them.
 

@@ -29,7 +29,7 @@ const HELP = formatHelp({
 });
 
 /** The run folders under `outputRoot` (`<date>/<time>-<command>`), oldest first. */
-function runFolders(outputRoot: string): string[] {
+export function runFolders(outputRoot: string): string[] {
   if (!fs.existsSync(outputRoot)) return [];
   const folders: string[] = [];
   for (const day of fs.readdirSync(outputRoot).sort()) {
@@ -58,6 +58,83 @@ function relativeTo(root: string, folder: string): string {
   return relative.startsWith("..") ? folder : relative;
 }
 
+/** The data repository's URL from the eval config; a usage error naming the setting when it has none. */
+export function requirePerfRemote(options: { root: string; configPath: string | undefined }): string {
+  const remote = configuredPerfRemote(options);
+  if (!remote) {
+    throw new UsageError(
+      'perf.remote is not set: give the data repository\'s git URL as "remote" under the top-level "perf" key of the eval config (the committed example shows where)',
+    );
+  }
+  return remote;
+}
+
+export interface PushSettings {
+  root: string;
+  configPath: string | undefined;
+  outputRoot: string;
+  remote: string;
+  context: Pick<EvalContext, "out" | "err">;
+}
+
+/**
+ * Sends the records of `folders` not yet in the data repository, saying what it
+ * sent and skipped. Returns 1 when a record could not be read, else 0; a git
+ * failure throws, with what git said.
+ */
+export function pushFolders(folders: readonly string[], { root, configPath, outputRoot, remote, context }: PushSettings): number {
+  const files: RecordFile[] = [];
+  const seen = new Set<string>();
+  const broken: string[] = [];
+  let withoutRecord = 0;
+  let stubOnly = 0;
+  for (const folder of folders) {
+    if (!fs.existsSync(path.join(folder, RECORD_FILE))) {
+      withoutRecord += 1;
+      continue;
+    }
+    let record;
+    try {
+      record = readRecord(folder);
+    } catch (error) {
+      broken.push(`${relativeTo(outputRoot, folder)}: ${(error as Error).message}`);
+      continue;
+    }
+    if (measuresNothing(record)) {
+      stubOnly += 1;
+      context.out(`[perf push] skipped ${record.run.id}: ${record.calls.length === 0 ? "it made no model call" : "every model call went to a stub"}`);
+      continue;
+    }
+    const target = recordPath(record);
+    if (seen.has(target)) continue;
+    seen.add(target);
+    files.push({ path: target, content: fs.readFileSync(path.join(folder, RECORD_FILE), "utf8") });
+  }
+
+  let exit = 0;
+  for (const message of broken) {
+    context.err(`[perf push] not sent, unreadable record: ${message}`);
+    exit = 1;
+  }
+  if (withoutRecord > 0) context.out(`[perf push] ${withoutRecord} run folder(s) have no ${RECORD_FILE} and stay local`);
+
+  if (files.length === 0) {
+    context.out(`[perf push] nothing to send${stubOnly > 0 ? ` (${stubOnly} stub-only run(s) skipped)` : ""}`);
+    return exit;
+  }
+  const outcome = publishRecords({
+    clone: dataCloneDir(outputRoot),
+    remote,
+    files,
+    author: configuredDeveloper({ root, configPath }) ?? osUserName(),
+  });
+  for (const sent of outcome.sent) context.out(`[perf push] sent ${sent}`);
+  context.out(
+    `[perf push] ${outcome.sent.length} sent, ${outcome.present.length} already in the data repository${stubOnly > 0 ? `, ${stubOnly} stub-only skipped` : ""}`,
+  );
+  return exit;
+}
+
 export const perfPushCommand: EvalCommand = {
   name: "perf push",
   summary: "Send run records to the shared data repository",
@@ -68,65 +145,9 @@ export const perfPushCommand: EvalCommand = {
       context.out(HELP);
       return 0;
     }
-    const remote = configuredPerfRemote({ root: context.root, configPath: common.configPath });
-    if (!remote) {
-      throw new UsageError(
-        'perf.remote is not set: give the data repository\'s git URL as "remote" under the top-level "perf" key of the eval config (the committed example shows where)',
-      );
-    }
+    const remote = requirePerfRemote({ root: context.root, configPath: common.configPath });
     const outputRoot = resolveOutputRoot(common.outputRoot, context.env);
-    const named = positionals.length > 0;
-    const folders = named ? positionals.map((name) => namedFolder(name, outputRoot)) : runFolders(outputRoot);
-
-    const files: RecordFile[] = [];
-    const seen = new Set<string>();
-    const broken: string[] = [];
-    let withoutRecord = 0;
-    let stubOnly = 0;
-    for (const folder of folders) {
-      if (!fs.existsSync(path.join(folder, RECORD_FILE))) {
-        withoutRecord += 1;
-        continue;
-      }
-      let record;
-      try {
-        record = readRecord(folder);
-      } catch (error) {
-        broken.push(`${relativeTo(outputRoot, folder)}: ${(error as Error).message}`);
-        continue;
-      }
-      if (measuresNothing(record)) {
-        stubOnly += 1;
-        context.out(`[perf push] skipped ${record.run.id}: ${record.calls.length === 0 ? "it made no model call" : "every model call went to a stub"}`);
-        continue;
-      }
-      const target = recordPath(record);
-      if (seen.has(target)) continue;
-      seen.add(target);
-      files.push({ path: target, content: fs.readFileSync(path.join(folder, RECORD_FILE), "utf8") });
-    }
-
-    let exit = 0;
-    for (const message of broken) {
-      context.err(`[perf push] not sent, unreadable record: ${message}`);
-      exit = 1;
-    }
-    if (withoutRecord > 0) context.out(`[perf push] ${withoutRecord} run folder(s) have no ${RECORD_FILE} and stay local`);
-
-    if (files.length === 0) {
-      context.out(`[perf push] nothing to send${stubOnly > 0 ? ` (${stubOnly} stub-only run(s) skipped)` : ""}`);
-      return exit;
-    }
-    const outcome = publishRecords({
-      clone: dataCloneDir(outputRoot),
-      remote,
-      files,
-      author: configuredDeveloper({ root: context.root, configPath: common.configPath }) ?? osUserName(),
-    });
-    for (const sent of outcome.sent) context.out(`[perf push] sent ${sent}`);
-    context.out(
-      `[perf push] ${outcome.sent.length} sent, ${outcome.present.length} already in the data repository${stubOnly > 0 ? `, ${stubOnly} stub-only skipped` : ""}`,
-    );
-    return exit;
+    const folders = positionals.length > 0 ? positionals.map((name) => namedFolder(name, outputRoot)) : runFolders(outputRoot);
+    return pushFolders(folders, { root: context.root, configPath: common.configPath, outputRoot, remote, context });
   },
 };

@@ -1,0 +1,23 @@
+{
+  "_comment": "The narration loop's baseline suite: ./dev eval perf baseline narration-loop. Replays each case folder on the Haiku narrator, one run per folder, so each run is the one that folder's baselines/haiku.json is saved from. Fields: evaluation/perf/baseline.ts.",
+  "models": {
+    "narrator-claude": "haiku",
+    "turn-judge": "sonnet"
+  },
+  "runs": [
+    {
+      "command": "judge turn",
+      "inputs": ["evaluation/runtime/cases/clue-graph/greenhouse"],
+      "options": { "narrator": "narrator-claude" },
+      "samples": 5,
+      "concurrency": 4
+    },
+    {
+      "command": "judge turn",
+      "inputs": ["evaluation/runtime/cases/clue-graph/dragon-crown"],
+      "options": { "narrator": "narrator-claude" },
+      "samples": 5,
+      "concurrency": 4
+    }
+  ]
+}

@@ -1,7 +1,9 @@
 {
-  "_comment": "Model bindings for ./dev eval. Copy to evaluation/config.json (gitignored) to change one; --config <file> replaces both. Each binding starts cmd (repo-relative when it holds a /, else found on PATH) with args, where {{system_prompt_file}} and {{user_message_file}} become the paths of the prompt files. The wrapper gets model as EVAL_MODEL. extract_path is the dotted path to the answer in the JSON the wrapper prints, or null when stdout is the answer. retries is how many more attempts follow a failed first one. The top-level developer is the name your runs record as who ran them: a name, never an email address; leave it null to use your OS user name. The fields are documented in evaluation/core/config.ts.",
+  "_comment": "Model bindings for ./dev eval. Copy to evaluation/config.json (gitignored) to change one; --config <file> replaces both. Each binding starts cmd (repo-relative when it holds a /, else found on PATH) with args, where {{system_prompt_file}} and {{user_message_file}} become the paths of the prompt files. The wrapper gets model as EVAL_MODEL. extract_path is the dotted path to the answer in the JSON the wrapper prints, or null when stdout is the answer. retries is how many more attempts follow a failed first one. The top-level developer is the name your runs record as who ran them: a name, never an email address; leave it null to use your OS user name. perf.remote is the git URL of the shared data repository that ./dev eval perf push sends run records to (the operator gives it); null means none, and perf push stops naming it. The fields are documented in evaluation/core/config.ts.",
 
   "developer": null,
+
+  "perf": { "remote": null },
 
   "generator-agent": {
     "description": "A Claude agent in a generator workspace writes a clue-graph case from a brief.",

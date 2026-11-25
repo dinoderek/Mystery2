@@ -23,12 +23,12 @@
 </script>
 
 <div
-  class="flex justify-between items-center border border-t-muted/30 p-2 bg-t-muted/5 mt-4 text-sm"
+  class="flex flex-wrap justify-between items-center gap-x-4 border border-t-muted/30 p-2 bg-t-muted/5 mt-4 text-sm group-data-[compact=true]:mt-2"
 >
   <span><span class="text-t-muted/70 font-bold">LOCATION:</span> {currentLocationName}</span>
-  <div class="flex items-center gap-4">
+  <div class="flex flex-wrap items-center gap-x-4">
     <button
-      class="text-t-primary hover:text-t-bright transition-colors cursor-pointer"
+      class="min-h-11 min-w-11 text-t-primary hover:text-t-bright transition-colors cursor-pointer"
       onclick={() => gameSessionStore.openNotebook()}
     >
       <span class="text-t-muted/70 font-bold">CLUES:</span>
@@ -41,7 +41,7 @@
     >
   </div>
 </div>
-<div class="flex items-center border border-t-muted/30 p-2 bg-t-muted/5 mt-2 text-sm">
+<div class="flex items-center border border-t-muted/30 p-2 bg-t-muted/5 mt-2 text-sm group-data-[compact=true]:hidden">
   <div class="flex gap-2">
     <span class="text-t-muted/70 font-bold">CHARACTERS:</span>
     <div>

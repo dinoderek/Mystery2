@@ -46,7 +46,7 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<main class="bg-t-bg text-t-primary font-mono p-4 flex flex-col h-screen max-w-6xl mx-auto">
+<main class="bg-t-bg text-t-primary font-mono p-4 flex flex-col h-dvh max-w-6xl mx-auto">
   <!-- Fixed header -->
   <div class="mb-4">
     <h1 class="text-2xl font-bold mb-2">IN-PROGRESS SESSIONS</h1>

@@ -133,7 +133,7 @@
           </p>
         </div>
 
-        <div class="flex gap-4 mt-3 text-sm" role="tablist" aria-label="Notebook sections">
+        <div class="flex flex-wrap gap-x-4 mt-3 text-sm" role="tablist" aria-label="Notebook sections">
           {#each NOTEBOOK_SECTIONS as section (section.id)}
             <button
               type="button"
@@ -142,7 +142,7 @@
               aria-controls="nb-panel"
               aria-selected={section.id === active}
               tabindex={section.id === active ? 0 : -1}
-              class="pb-1 -mb-[1px] border-b-2 transition-colors cursor-pointer {section.id ===
+              class="min-h-11 -mb-[1px] border-b-2 transition-colors cursor-pointer {section.id ===
               active
                 ? 'text-t-bright border-t-primary font-bold'
                 : 'text-t-muted/60 border-transparent hover:text-t-primary'}"
@@ -272,7 +272,7 @@
       </div>
 
       <button
-        class="shrink-0 w-full border border-t-muted/50 hover:bg-t-muted/10 text-t-primary py-2 transition-colors cursor-pointer"
+        class="shrink-0 min-h-11 w-full border border-t-muted/50 hover:bg-t-muted/10 text-t-primary transition-colors cursor-pointer"
         onclick={close}
       >
         [ CLOSE ]

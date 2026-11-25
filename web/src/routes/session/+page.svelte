@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { artPaneHeight, followVisualViewport, isCompact, type ViewportBox } from '$lib/domain/viewport';
   import { goto } from '$app/navigation';
   import { gameSessionStore } from '$lib/domain/store.svelte';
   import Header from '$lib/components/Header.svelte';
@@ -13,10 +14,17 @@
   import ClueDiscoveredToast from '$lib/components/ClueDiscoveredToast.svelte';
   import { beginInvestigation, returnToMysteryList } from '$lib/domain/session-prompts';
 
+  // The visible part of the screen. It shrinks under the on-screen keyboard, so
+  // the screen is sized to it rather than to the layout viewport; until it is
+  // measured `dvh` stands in.
+  let visible = $state<ViewportBox | null>(null);
+  const compact = $derived(visible !== null && isCompact(visible.height));
+
   onMount(() => {
     if (gameSessionStore.status !== 'active' || !gameSessionStore.game_id) {
       goto('/');
     }
+    return followVisualViewport(window, (box) => (visible = box));
   });
 
   async function handleKeydown(event: KeyboardEvent) {
@@ -70,8 +78,14 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<main class="flex h-dvh w-screen flex-col bg-t-bg font-mono text-t-primary lg:flex-row">
-  <section class="order-2 flex min-h-0 min-w-0 flex-1 flex-col p-4 lg:order-1 lg:h-full lg:basis-1/3">
+<main
+  class="group fixed inset-x-0 top-0 flex h-dvh flex-col overflow-hidden bg-t-bg font-mono text-t-primary lg:flex-row"
+  data-compact={compact}
+  style:top={visible ? `${visible.top}px` : undefined}
+  style:height={visible ? `${visible.height}px` : undefined}
+  style:--art-height={visible ? `${artPaneHeight(visible.height)}px` : '32dvh'}
+>
+  <section class="order-2 flex min-h-0 min-w-0 flex-1 flex-col p-4 group-data-[compact=true]:p-2 lg:order-1 lg:h-full lg:basis-1/3">
     <Header />
     <PageNavigator />
     <PageNarration />
@@ -79,7 +93,7 @@
     <InputBox />
   </section>
 
-  <aside class="order-1 h-[32dvh] shrink-0 overflow-hidden lg:order-2 lg:h-full lg:basis-2/3">
+  <aside class="order-1 h-[var(--art-height)] shrink-0 overflow-hidden lg:order-2 lg:h-full lg:basis-2/3">
     <ScenePane />
   </aside>
 

@@ -54,7 +54,7 @@
 	redirect.
 -->
 {#if playerStore.loading}
-	<main class="min-h-screen bg-t-bg text-t-primary font-mono flex items-center justify-center">
+	<main class="min-h-dvh bg-t-bg text-t-primary font-mono flex items-center justify-center">
 		<TerminalSpinner text="Loading profiles..." />
 	</main>
 {:else if playerStore.player || PUBLIC_PATHS.includes($page.url.pathname)}

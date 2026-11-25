@@ -35,7 +35,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <main
-	class="bg-t-bg text-t-primary font-mono min-h-screen p-4 flex flex-col max-w-3xl mx-auto"
+	class="bg-t-bg text-t-primary font-mono min-h-dvh p-4 flex flex-col max-w-3xl mx-auto"
 >
 	<div class="mb-4">
 		<h1 class="text-2xl font-bold mb-2 text-t-bright">AI SETTINGS</h1>

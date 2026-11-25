@@ -218,6 +218,8 @@ export function testServerEnv(processEnv, env, { port, host, configRoot, repoRoo
     // Pinned rather than left to the worktree-derived default, so the
     // testkit can find the file without repeating the derivation.
     MYSTERY_DATABASE: TEST_DATABASE,
+    // The suites start the mock case from the menu, which hides it from players.
+    MYSTERY_LIST_FIXTURES: "1",
   };
 }
 

@@ -114,6 +114,8 @@ export function createLocalEngine(
     blueprintDirs: resolveBlueprintDirs(repoRoot, env),
     imagesDir,
     sceneDirs: resolveBlueprintSceneDirs(repoRoot, env),
+    // The suites' servers set it: their tests start the mock case from the menu.
+    listFixtures: env.MYSTERY_LIST_FIXTURES === "1",
   });
   const aiSettings = createAISettingsStore(db);
   const aiProfiles = createLocalAIProfileStore(aiConfig, aiSettings);

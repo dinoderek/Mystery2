@@ -12,7 +12,7 @@ export async function handle(
   try {
     const entries = await ctx.content.listBlueprints(logger);
 
-    const blueprints = entries.map(({ blueprint }) => ({
+    const blueprints = entries.filter((entry) => !entry.unlisted).map(({ blueprint }) => ({
       id: blueprint.id,
       title: blueprint.metadata.title,
       one_liner: blueprint.metadata.one_liner,

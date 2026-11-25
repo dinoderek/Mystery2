@@ -112,6 +112,12 @@ describe("reading the log", () => {
     expect(readAICallLog(null, () => true)).toEqual([]);
   });
 
+  it("leaves a last line still being written, which has no newline yet", () => {
+    const file = path.join(scratch, "unfinished.jsonl");
+    fs.writeFileSync(file, `${JSON.stringify(line({ latency_ms: 7 }))}\n${JSON.stringify(line()).slice(0, 60)}`);
+    expect(readModelCalls(file, () => true).map((call) => call.duration_ms)).toEqual([7]);
+  });
+
   it("fails on a line it cannot read, naming the file and the line", () => {
     const file = path.join(scratch, "broken.jsonl");
     fs.writeFileSync(file, `${JSON.stringify(line())}\n{"half":\n`);

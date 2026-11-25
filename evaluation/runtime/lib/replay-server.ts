@@ -28,6 +28,7 @@ import { signIn } from "../../playtest/lib/api.ts";
 import { seedAIs } from "../../../scripts/lib/ai-seed.mjs";
 import { startTestServer } from "../../../scripts/lib/test-server.mjs";
 import { readModelCalls } from "../../lib/game-ai-calls.ts";
+import type { ModelCall } from "../../core/result.ts";
 import type { BlueprintLike, TurnCase } from "./case.ts";
 import { NarratorReplayError } from "./replay-cli.ts";
 import type { Collected } from "./replay-cli.ts";
@@ -163,8 +164,17 @@ export class ServerNarrator {
       });
       return { response, model: aiProfile, calls: callsOf() };
     } catch (error) {
-      // The calls the game made before it failed were still made, and cost what they cost.
-      throw new NarratorReplayError(error instanceof Error ? error.message : String(error), callsOf(), "replay");
+      const message = error instanceof Error ? error.message : String(error);
+      // The calls the game made before it failed were still made, and cost what they cost. A log that cannot
+      // be read is said beside the failure, never in its place.
+      let calls: ModelCall[] = [];
+      let unread = "";
+      try {
+        calls = callsOf();
+      } catch (logError) {
+        unread = ` (and its AI call log could not be read: ${logError instanceof Error ? logError.message : String(logError)})`;
+      }
+      throw new NarratorReplayError(`${message}${unread}`, calls, "replay", { cause: error });
     }
   }
 

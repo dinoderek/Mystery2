@@ -39,8 +39,8 @@ export type ReplayStage = "parser" | "admissibility" | "transport" | "replay";
 export class NarratorReplayError extends Error {
   readonly calls: ModelCall[];
   readonly stage: ReplayStage;
-  constructor(message: string, calls: ModelCall[], stage: ReplayStage) {
-    super(message);
+  constructor(message: string, calls: ModelCall[], stage: ReplayStage, options?: ErrorOptions) {
+    super(message, options);
     this.calls = calls;
     this.stage = stage;
   }

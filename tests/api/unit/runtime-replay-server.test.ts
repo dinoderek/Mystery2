@@ -234,6 +234,24 @@ describe("replaying through a throwaway server", () => {
     expect(JSON.stringify(error.calls)).not.toMatch(/bad json/);
   });
 
+  it("says a failed turn's own error when its call log cannot be read as well", async () => {
+    const log = path.join(scratch, "calls-unreadable.jsonl");
+    const { start } = fakeServer(() => ({ status: 400, body: { error: "Invalid ai_profile" } }));
+    const made = narrator(start);
+    made.logCallsTo(log);
+    // A complete line that is no log line: written before the replay, so the read after the failure meets it.
+    fs.writeFileSync(log, '{"not":"a log line"}\n');
+    const failure = (await made.replay(request(askCase)).then(
+      () => null,
+      (error: unknown) => error,
+    )) as NarratorReplayError;
+    expect(failure).toBeInstanceOf(NarratorReplayError);
+    expect(failure.message).toMatch(/game-turn failed: HTTP 400.*Invalid ai_profile.*AI call log could not be read.*is not an AI call log line/);
+    expect(failure.stage).toBe("replay");
+    expect(failure.calls).toEqual([]);
+    expect((failure.cause as Error).message).toMatch(/game-turn failed/);
+  });
+
   it("records no calls when it was never told where the server logs them", async () => {
     const { start, seen } = fakeServer(defaultAnswer, (id) => [logLine(id)]);
     const collected = await narrator(start).replay(request(askCase));

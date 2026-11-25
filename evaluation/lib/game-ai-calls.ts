@@ -47,23 +47,25 @@ export type AICallLine = z.infer<typeof LogLineSchema>;
 export function readAICallLog(file: string | null, keep: (line: AICallLine) => boolean): AICallLine[] {
   if (file === null || !fs.existsSync(file)) return [];
   const lines: AICallLine[] = [];
-  fs.readFileSync(file, "utf8")
-    .split("\n")
-    .forEach((text, index) => {
-      if (text === "") return;
-      let value: unknown;
-      try {
-        value = JSON.parse(text);
-      } catch (error) {
-        throw new Error(`${file} line ${index + 1} is not JSON: ${(error as Error).message}`, { cause: error });
-      }
-      const parsed = LogLineSchema.safeParse(value);
-      if (!parsed.success) {
-        const issues = parsed.error.issues.map((issue) => `${issue.path.join(".") || "(root)"}: ${issue.message}`).join("; ");
-        throw new Error(`${file} line ${index + 1} is not an AI call log line: ${issues}`);
-      }
-      if (keep(parsed.data)) lines.push(parsed.data);
-    });
+  const segments = fs.readFileSync(file, "utf8").split("\n");
+  // The server appends while a run reads: a last line without its newline is still being written, and is
+  // never one of a finished request's, whose lines are complete before it answers.
+  segments.pop();
+  segments.forEach((text, index) => {
+    if (text === "") return;
+    let value: unknown;
+    try {
+      value = JSON.parse(text);
+    } catch (error) {
+      throw new Error(`${file} line ${index + 1} is not JSON: ${(error as Error).message}`, { cause: error });
+    }
+    const parsed = LogLineSchema.safeParse(value);
+    if (!parsed.success) {
+      const issues = parsed.error.issues.map((issue) => `${issue.path.join(".") || "(root)"}: ${issue.message}`).join("; ");
+      throw new Error(`${file} line ${index + 1} is not an AI call log line: ${issues}`);
+    }
+    if (keep(parsed.data)) lines.push(parsed.data);
+  });
   return lines;
 }
 

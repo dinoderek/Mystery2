@@ -16,7 +16,8 @@ Every model call through the runner (`evaluation/core/runner.ts`) is written to
 with its duration, cost and tokens, per attempt and summed per call.
 
 **Tokens.** An attempt's `tokens` holds `input`, `output`, `cache_read` and
-`cache_write` (null where a source counts none, as below): the Claude CLI's `usage` counts, read where its cost is read, from
+`cache_write` (null where a source counts none, as below): the Claude CLI's
+`usage` counts, read where its cost is read, from
 the top of the wrapper's JSON stdout, else the last `result` event of the
 attempt's stream file. Cost is the CLI's own estimate and differs by login;
 tokens are the comparable measure.
@@ -36,9 +37,11 @@ tokens are the comparable measure.
 `judge turn --narrator server` and `play` narrate through the game, which logs
 each AI call when `AI_CALL_LOG` is set (`packages/game-engine/src/ai-call-log.ts`).
 Both set it, to a file in the run folder (`ai-calls.jsonl`; `play`'s is
-`ai-calls.all.jsonl`), and read the lines back as model calls (`evaluation/lib/game-ai-calls.ts`) in `production.calls` of the
-subject's `result.json`, under the binding `server`; `play` lists them after the
-investigator's, told apart by binding.
+`ai-calls.all.jsonl`), and read the lines back as model calls
+(`evaluation/lib/game-ai-calls.ts`) in `production.calls` of the subject's
+`result.json`, under the binding `server`; `play` lists them after the
+investigator's, told apart by binding. A last line without its newline is still
+being written, and is not read.
 
 - A turn's calls are the lines carrying the `x-request-id` the harness sent with
   its request, so concurrent samples never share one, and a turn that failed

@@ -146,8 +146,7 @@ Did the game master **invent material facts the case does not support**?
 
 Every concrete claim the game master makes about the world — who was where,
 what a character did or knows, what a clue says, how the crime happened — must
-be grounded in the case. Invented facts mislead the player, can make the case
-unsolvable or unfair, and break continuity.
+be grounded in the case.
 
 Scope boundaries with the rest of this battery:
 
@@ -194,10 +193,11 @@ an invention.
      earlier turn.
 3. **Saying "I don't know."** A character asked about something that bears on
    the case, outside their own clues and `knows`, says plainly that they do
-   not know. An answer, a guess, or a hint at who, when or where is an
-   invention (`event` or `person`); so is a dodge that suggests they know
-   more. A character holding back a clue of their own that is not yet out is
-   the game working.
+   not know. An answer, a guess, or words that point at who, when or where
+   are an invention (`event` or `person`). Manner is not an answer: a pause
+   or a glance drawn from the character's `demeanor`, `personality` or a tell
+   already out, beside a plain "I don't know", is correct. So is a character
+   holding back a clue of their own that is not yet out.
 4. **The closing scene** (`graph_ending`) is judged against `truth.timeline`,
    `truth.motive` and the culprit conclusion: a step told wrong, or added, or
    any contradiction, is a finding.
@@ -207,8 +207,7 @@ an invention.
    what they were shown.
    Embellishment that strays past the text but leads nowhere is `minor`.
 
-Do not penalize player-facing uncertainty, declining to reveal, or a
-character's authored false statement.
+Do not penalize player-facing uncertainty or declining to reveal.
 
 ## Output
 

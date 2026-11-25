@@ -20,7 +20,7 @@ import path from "node:path";
 import { buildClueGraphGenerationChatInput, ClueGraphBriefSchema } from "../../packages/blueprint-generator/src/index.ts";
 import type { ClueGraphBrief } from "../../packages/blueprint-generator/src/index.ts";
 import { getBlueprintsDir } from "../../scripts/local-config.mjs";
-import { judgeBindingFor, summaryLines } from "../blueprint/commands.ts";
+import { judgeBindingFor, selectedJudgeIds, summaryLines } from "../blueprint/commands.ts";
 import { readJsonFile, resolveBrief } from "../blueprint/inputs.ts";
 import { judgeBlueprintSubject, runErrorOf, validateBlueprintSubject, writeBlueprintResult } from "../blueprint/subject.ts";
 import type { BlueprintSubject } from "../blueprint/subject.ts";
@@ -37,6 +37,7 @@ import { runIdentity } from "../core/run-identity.ts";
 import type { RunFolder } from "../core/run-folder.ts";
 import type { Result } from "../core/result.ts";
 import { runModel } from "../core/runner.ts";
+import { bindingLabel, contentHash } from "../core/suite-attributes.ts";
 import { createRunTimer } from "../core/timing.ts";
 import { caseParser } from "./blueprint-answer.ts";
 import { repairLoop, roundLines, runCostLine } from "./repair.ts";
@@ -291,6 +292,15 @@ export const generateCommand: EvalCommand = {
       root: context.root,
       identity: runIdentity(common, context.root),
       bindings: bindingsUsed(jobs, judge),
+      attributes: {
+        // `--install` acts after the run, on what it made; `--judge` shows in the judges.
+        options: { repair },
+        inputs: briefs.map(({ slug, brief }) => ({ id: slug, hash: contentHash(brief) })),
+        judges: selectedJudgeIds(judge ? "all" : "none"),
+        models: { generator: jobs.map((job) => bindingLabel(job.binding)), judge: judge ? [bindingLabel(judge)] : [] },
+        samples: null,
+        concurrency: parallelism,
+      },
     });
     context.out(`[eval] run=${run.dir}`);
     const settings = { run, quiet, write: context.out, binding: judge, repair };

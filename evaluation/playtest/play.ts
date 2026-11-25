@@ -43,7 +43,10 @@ import { runIdentity } from "../core/run-identity.ts";
 import type { RunFolder, SubjectFolder } from "../core/run-folder.ts";
 import { RESULT_SCHEMA_VERSION, summarize, writeResult } from "../core/result.ts";
 import type { Result, RunError } from "../core/result.ts";
-import { seedAIs, writeAIConfig } from "../../scripts/lib/ai-seed.mjs";
+import { pickAIs, seedAIs, writeAIConfig } from "../../scripts/lib/ai-seed.mjs";
+import { bindingLabel, contentHash, serverNarratorLabel } from "../core/suite-attributes.ts";
+import type { CommandAttributes } from "../core/suite-attributes.ts";
+import { judgesFor } from "../core/registry.ts";
 import { startThrowawayServer } from "../runtime/lib/replay-server.ts";
 import type { StartServer, ThrowawayServer } from "../runtime/lib/replay-server.ts";
 import { signIn } from "./lib/api.ts";
@@ -232,6 +235,49 @@ function narratorSeed(options: PlayOptions, root: string, env: NodeJS.ProcessEnv
   return (configRoot) => writeAIConfig(configRoot, config);
 }
 
+/** How the game's narrator is named in the suite attributes: always a server's (`serverNarratorLabel`). */
+function narratorLabel(options: PlayOptions, root: string, env: NodeJS.ProcessEnv): string {
+  if (options.aiProfile) return serverNarratorLabel(options.aiProfile, pickAIs({ repoRoot: root, env, names: [options.aiProfile] }).ais[options.aiProfile]);
+  if (options.narrator === "mock") return serverNarratorLabel("mock", undefined);
+  return serverNarratorLabel(NARRATOR_AI, { backend: "claude-cli", model: options.narratorModel });
+}
+
+/**
+ * What a play run holds fixed. Its inputs are the case and, with `--replay`,
+ * the script; its samples are `--games`. `--port` changes only where the
+ * server listens.
+ */
+function playAttributes(run: {
+  options: PlayOptions;
+  blueprint: { id: string; content: unknown };
+  script: ReplayScript | null;
+  persona: string;
+  bindings: readonly ResolvedBinding[];
+  narrator: string;
+}): CommandAttributes {
+  const { options, script } = run;
+  const role = (name: string) => run.bindings.filter((binding) => binding.name === name).map(bindingLabel);
+  return {
+    options: {
+      persona: run.persona,
+      max_steps: maxStepsFor(options, script),
+    },
+    inputs: [
+      { id: run.blueprint.id, hash: contentHash(run.blueprint.content) },
+      ...(script ? [{ id: "replay-script", hash: contentHash(script) }] : []),
+    ],
+    judges: options.judge ? judgesFor("game").map((entry) => entry.id) : [],
+    models: { narrator: [run.narrator], investigator: role(INVESTIGATOR_BINDING), judge: role(GAME_JUDGE_BINDING) },
+    samples: options.games,
+    concurrency: options.concurrency,
+  };
+}
+
+/** The most investigator inputs a game takes: `--max-steps`, else the whole script and one more, else the default. */
+function maxStepsFor(options: PlayOptions, script: ReplayScript | null): number {
+  return options.maxSteps ?? (script ? script.inputs.length + 1 : DEFAULT_MAX_STEPS);
+}
+
 /** What every game of one run shares. */
 interface Play {
   root: string;
@@ -358,7 +404,7 @@ async function playOne(play: Play, number: number): Promise<GameRecord> {
       blueprint: { id: play.blueprint.id, title: play.blueprint.metadata.title },
       investigator,
       // One step past the script, to compare where the game ended up.
-      maxSteps: play.options.maxSteps ?? (play.script ? play.script.inputs.length + 1 : DEFAULT_MAX_STEPS),
+      maxSteps: maxStepsFor(play.options, play.script),
       onStep: (step) =>
         say(play, number, `step ${step.step} (${step.mode_before}, ${step.time_before} left) > ${step.input}`),
     });
@@ -508,6 +554,14 @@ async function runPlay(argv: string[], context: EvalContext, startServer: StartS
     root,
     identity: runIdentity(parsed.common, root),
     bindings,
+    attributes: playAttributes({
+      options,
+      blueprint: { id: blueprint.id, content: JSON.parse(fs.readFileSync(blueprintFile, "utf8")) },
+      script,
+      persona: script ? script.persona : options.persona,
+      bindings,
+      narrator: narratorLabel(options, root, context.env),
+    }),
   });
   const callLogFile = path.join(run.dir, "ai-calls.all.jsonl");
   const server = await startServer({

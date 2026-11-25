@@ -44,6 +44,9 @@ import type { ModelCall, Result, RunError, Verdict } from "../core/result.ts";
 import { createRunFolder, resolveOutputRoot } from "../core/run-folder.ts";
 import { runIdentity } from "../core/run-identity.ts";
 import type { RunFolder } from "../core/run-folder.ts";
+import { bindingLabel, contentHash, serverNarratorLabel } from "../core/suite-attributes.ts";
+import type { CommandAttributes } from "../core/suite-attributes.ts";
+import { pickAIs } from "../../scripts/lib/ai-seed.mjs";
 import { assertCaseCharacters, loadCasesFrom, readBlueprint, validateCase } from "./lib/case.ts";
 import type { BlueprintLike, JudgeOptions, TurnCase } from "./lib/case.ts";
 import { EXPECT_VERDICT, expectJudges, gradeExpect, validateExpect, type ComesWith } from "./lib/expect.ts";
@@ -412,6 +415,48 @@ function describe(result: Result): string {
   return verdicts.join(" ") || "(no judges)";
 }
 
+/** What names an input in the suite attributes: a case by its id, a stored turn as its subject is named. */
+function inputId(input: Input): string {
+  return input.kind === "case" ? input.testCase.id : `${input.turn.case_id}__${input.turn.narrator}`;
+}
+
+/** An input's content: a case with the blueprint it is played on, or the stored turn. */
+async function inputContent(input: Input, root: string): Promise<unknown> {
+  if (input.kind === "stored") return input.turn;
+  return { case: input.testCase, blueprint: (await readBlueprint(input.testCase.blueprint.path, root)).blueprint };
+}
+
+/**
+ * What this run holds fixed. A narrator is its binding's label, or a server's
+ * (`serverNarratorLabel`); `--samples` counts only when a case has `expect`,
+ * and `--ai-profile` shows in the server narrator's label.
+ */
+async function turnAttributes(
+  items: readonly WorkItem[],
+  inputs: readonly Input[],
+  bindings: { narrators: Map<string, ResolvedBinding>; judge: ResolvedBinding | null },
+  settings: { samples: number; concurrency: number; aiProfile: string | null; context: EvalContext },
+): Promise<CommandAttributes> {
+  const asked = items.flatMap((item) =>
+    item.narrator === SERVER_NARRATOR && item.input.kind === "case" ? [serverAI(item.input.testCase, settings.aiProfile)] : [],
+  );
+  const { ais } = pickAIs({ repoRoot: settings.context.root, env: settings.context.env, names: asked });
+  const narrators = items.flatMap((item) => {
+    if (item.narrator === null) return [];
+    if (item.narrator !== SERVER_NARRATOR) return [bindingLabel(bindings.narrators.get(item.narrator) as ResolvedBinding)];
+    const name = serverAI((item.input as Extract<Input, { kind: "case" }>).testCase, settings.aiProfile);
+    return [serverNarratorLabel(name, ais[name])];
+  });
+  return {
+    options: {},
+    inputs: await Promise.all(inputs.map(async (input) => ({ id: inputId(input), hash: contentHash(await inputContent(input, settings.context.root)) }))),
+    judges: items.flatMap((item) => item.judges),
+    models: { narrator: narrators, judge: bindings.judge ? [bindingLabel(bindings.judge)] : [] },
+    samples: items.some((item) => item.sample !== null) ? settings.samples : null,
+    concurrency: settings.concurrency,
+  };
+}
+
 export interface JudgeTurnDeps {
   /** Starts the throwaway server; replaced in tests. */
   startServer?: StartServer;
@@ -478,6 +523,7 @@ export function createJudgeTurnCommand({ startServer = startThrowawayServer }: J
         root: context.root,
         identity: runIdentity(common, context.root),
         bindings: [...narratorBindings.values(), ...(judgeBinding ? [judgeBinding] : [])],
+        attributes: await turnAttributes(items, inputs, { narrators: narratorBindings, judge: judgeBinding }, { samples, concurrency, aiProfile, context }),
       });
       const runtime: Runtime = { context, folder, judgeBinding, narrators: narratorBindings, server, aiProfile };
 

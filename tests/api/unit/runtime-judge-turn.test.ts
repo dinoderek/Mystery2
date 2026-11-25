@@ -13,6 +13,8 @@ import { readResult } from "../../../evaluation/core/result.ts";
 import { readRunIndex } from "../../../evaluation/core/run-folder.ts";
 import type { Result } from "../../../evaluation/core/result.ts";
 import { createJudgeTurnCommand, judgeTurnCommand } from "../../../evaluation/runtime/judge-turn.ts";
+import { contentHash } from "../../../evaluation/core/suite-attributes.ts";
+import { loadCasesFrom } from "../../../evaluation/runtime/lib/case.ts";
 import { makeTurn } from "./runtime-turn-helpers.ts";
 import { MOCK_CASE_PATH } from "../../testkit/src/mock-case.ts";
 
@@ -152,6 +154,81 @@ describe("judge turn over a case set", () => {
   it("records a model override in the bindings the run used", async () => {
     const { runDir } = await run([CASES, "--narrator", "narrator-stub", "--model-override", "narrator-stub=other-model"]);
     expect(readRunIndex(runDir).run.bindings["narrator-stub"].model).toBe("other-model");
+  });
+});
+
+describe("judge turn's suite attributes", () => {
+  /** The readability cases as a JSON case file of the test's own, with `edit` applied to the second. */
+  async function caseFile(edit: (testCase: Record<string, unknown>) => void = () => {}): Promise<string> {
+    const cases = (await loadCasesFrom(path.resolve(CASES))) as unknown as Array<Record<string, unknown>>;
+    edit(cases[1]);
+    const file = path.join(scratch, "cases.json");
+    fs.writeFileSync(file, JSON.stringify(cases));
+    return file;
+  }
+
+  const attributesOf = (ran: Ran) => readRunIndex(ran.runDir).run.attributes;
+  const ARGS = ["--narrator", "narrator-stub", "--judges", "flesch,age_appropriate_turn", "--judge-binding", "judge-stub", "--concurrency", "2"];
+
+  it("records each case's hash, the judges, the narrator and judge models and the concurrency", async () => {
+    const attributes = attributesOf(await run([await caseFile(), ...ARGS, "--suite", "narration-loop"]));
+    expect(attributes).toEqual({
+      command: "judge turn",
+      options: {},
+      inputs: [
+        { id: "ask-alice-alibi-pressure", hash: expect.stringMatching(/^[0-9a-f]{12}$/) },
+        { id: "talk-bob-open", hash: expect.stringMatching(/^[0-9a-f]{12}$/) },
+      ],
+      judges: ["age_appropriate_turn", "flesch"],
+      models: { generator: null, narrator: ["narrator-stub"], investigator: null, judge: ["judge-stub"] },
+      // No case has `expect`, so nothing is sampled.
+      samples: null,
+      concurrency: 2,
+      suite: "narration-loop",
+    });
+
+    // The same cases, in a file of another layout, with only output and naming options added: the same attributes.
+    expect(attributesOf(await run([CASES, ...ARGS, "--suite", "narration-loop", "--label", "again"]))).toEqual(attributes);
+
+    // Editing one case changes its hash alone.
+    const edited = attributesOf(await run([await caseFile((testCase) => ((testCase.action as Record<string, unknown>).text = "Hello again, Bob.")), ...ARGS, "--suite", "narration-loop"]));
+    expect(edited?.inputs[0]).toEqual(attributes?.inputs[0]);
+    expect(edited?.inputs[1].hash).not.toBe(attributes?.inputs[1].hash);
+    expect(edited).toEqual({ ...attributes, inputs: [attributes?.inputs[0], edited?.inputs[1]] });
+  });
+
+  it("shows a model override in the narrator's models", async () => {
+    const attributes = attributesOf(await run([CASES, "--narrator", "narrator-stub", "--model-override", "narrator-stub=other-model"]));
+    expect(attributes?.models).toEqual({ generator: null, narrator: ["narrator-stub:other-model"], investigator: null, judge: null });
+    expect(attributes?.judges).toEqual(["flesch"]);
+  });
+
+  it("records the samples when a case is graded by expect", async () => {
+    const attributes = attributesOf(await run(["evaluation/runtime/cases/clue-graph/mock-case/expect.ts", "--narrator", "narrator-stub", "--samples", "2"]));
+    expect(attributes).toMatchObject({ samples: 2, concurrency: 4 });
+  });
+
+  it("names a server narrator by the AI's backend and model, or by the name the server resolves", async () => {
+    const root = fs.mkdtempSync(path.join(scratch, "ai-root-"));
+    fs.writeFileSync(path.join(root, "ai.json"), JSON.stringify({ ais: { free: { backend: "openrouter", model: "vendor/free", key: "sk-test-throwaway" } } }));
+    const env = { MYSTERY_CONFIG_ROOT: root };
+    const command = createJudgeTurnCommand({ startServer: async () => { throw new Error("no server in this test"); } });
+    const base = [CASES, "--narrator", "server", "--judges", "flesch"];
+    expect(attributesOf(await run([...base, "--ai-profile", "free"], configFile, env, command))?.models.narrator).toEqual(["server:openrouter:vendor/free"]);
+    expect(attributesOf(await run([...base, "--ai-profile", "mock"], configFile, env, command))?.models.narrator).toEqual(["server:mock"]);
+    expect(attributesOf(await run(base, configFile, env, command))?.models.narrator).toEqual(["server:default"]);
+  });
+
+  it("records a stored turn by its subject's name and its content's hash", async () => {
+    const lone = path.join(scratch, "lone-turn.json");
+    const turn = makeTurn({ blueprint_path: path.resolve(MOCK_CASE_PATH) });
+    fs.writeFileSync(lone, JSON.stringify(turn));
+    expect(attributesOf(await run([lone]))).toMatchObject({
+      inputs: [{ id: `${turn.case_id}__${turn.narrator}`, hash: contentHash(turn) }],
+      judges: ["flesch"],
+      models: { narrator: null, judge: null },
+      samples: null,
+    });
   });
 });
 

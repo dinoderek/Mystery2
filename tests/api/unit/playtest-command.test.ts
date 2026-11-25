@@ -11,6 +11,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { readAIConfig } from '../../../packages/game-engine/src/ai-config.ts';
 import { runEval } from '../../../evaluation/core/dispatch.ts';
+import { judgesFor } from '../../../evaluation/core/registry.ts';
+import { contentHash } from '../../../evaluation/core/suite-attributes.ts';
+import { DEFAULT_MAX_STEPS } from '../../../evaluation/playtest/lib/game.ts';
 import { parseReply } from '../../../evaluation/playtest/lib/investigator.ts';
 import { createPlayCommand, findBlueprint } from '../../../evaluation/playtest/play.ts';
 import { reportCommand } from '../../../evaluation/playtest/report.ts';
@@ -221,6 +224,66 @@ describe('play refuses what it cannot run, before it starts a server', () => {
 		expect(code).toBe(1);
 		expect(output).toContain('The script was played on "someone-else"');
 		expect(startServer).not.toHaveBeenCalled();
+	});
+});
+
+describe("play's suite attributes", () => {
+	/** Plays on a server that is not there, so every game fails at sign-in, and reads back the run's attributes. */
+	async function attributesOf(args: string[], env: NodeJS.ProcessEnv = {}) {
+		const startServer = vi.fn(async () => ({ url: 'http://127.0.0.1:9', configRoot: scratch, databaseFile: path.join(scratch, 'none.db'), stop: async () => {} }));
+		const outputRoot = path.join(scratch, `out-${fs.readdirSync(scratch).length}`);
+		const config = writeConfig({ investigator: { ...STUB_BINDING, model: 'sonnet' }, 'game-judge': STUB_BINDING });
+		await run(createPlayCommand({ startServer }), ['play', ...args, '--config', config, '--output-root', outputRoot], env);
+		const [day] = fs.readdirSync(outputRoot);
+		const runDir = path.join(outputRoot, day, fs.readdirSync(path.join(outputRoot, day))[0]);
+		return JSON.parse(fs.readFileSync(path.join(runDir, 'game-1', 'result.json'), 'utf8')).run.attributes;
+	}
+
+	const caseHash = () => contentHash(JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'blueprints', 'clue-graph', 'mock-case.json'), 'utf8')));
+
+	it('records the case, persona and step limit, the narrator, investigator and judge, and games as samples', async () => {
+		const attributes = await attributesOf(['--blueprint', 'mock-case', '--narrator', 'mock', '--judge', '--games', '2', '--concurrency', '1', '--suite', 'narration-loop']);
+		expect(attributes).toEqual({
+			command: 'play',
+			options: { persona: 'detective', max_steps: DEFAULT_MAX_STEPS },
+			inputs: [{ id: MOCK_CASE_ID, hash: caseHash() }],
+			judges: judgesFor('game').map((entry) => entry.id).sort(),
+			models: { generator: null, narrator: ['server:mock'], investigator: ['investigator:sonnet'], judge: ['game-judge'] },
+			samples: 2,
+			concurrency: 1,
+			suite: 'narration-loop'
+		});
+
+		// The port and the label change nothing that runs; a model override and the narrator's model do.
+		const same = await attributesOf(['--blueprint', 'mock-case', '--narrator', 'mock', '--judge', '--games', '2', '--concurrency', '1', '--suite', 'narration-loop', '--port', '9', '--label', 'again']);
+		expect(same).toEqual(attributes);
+		const other = await attributesOf(['--blueprint', 'mock-case', '--narrator-model', 'haiku', '--model-override', 'investigator=opus', '--max-steps', '3']);
+		expect(other).toMatchObject({
+			options: { persona: 'detective', max_steps: 3 },
+			judges: [],
+			models: { narrator: ['server:claude-cli:haiku'], investigator: ['investigator:opus'], judge: null },
+			samples: 1,
+			concurrency: 2,
+			suite: null
+		});
+	});
+
+	it("names an ai.json narrator by its backend and model, and a replay's script as an input", async () => {
+		fs.writeFileSync(path.join(scratch, 'ai.json'), JSON.stringify({ ais: { measured: { backend: 'openrouter', model: 'test-model', key: 'test-key' } } }));
+		const profiled = await attributesOf(['--blueprint', MOCK_CASE_SLUG, '--ai-profile', 'measured'], { MYSTERY_CONFIG_ROOT: scratch });
+		expect(profiled.models.narrator).toEqual(['server:openrouter:test-model']);
+
+		const script = { blueprint_id: MOCK_CASE_ID, persona: 'kid-7', inputs: ['search', 'talk to alice'] };
+		const scriptFile = path.join(scratch, 'script.json');
+		fs.writeFileSync(scriptFile, JSON.stringify(script));
+		const replayed = await attributesOf(['--replay', scriptFile, '--narrator', 'mock']);
+		expect(replayed).toMatchObject({
+			options: { persona: 'kid-7', max_steps: 3 },
+			models: { narrator: ['server:mock'], investigator: null },
+			samples: 1
+		});
+		expect(replayed.inputs.map((input: { id: string }) => input.id)).toEqual([MOCK_CASE_ID, 'replay-script']);
+		expect(replayed.inputs[0].hash).toBe(caseHash());
 	});
 });
 

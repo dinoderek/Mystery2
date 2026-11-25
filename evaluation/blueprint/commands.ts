@@ -20,6 +20,7 @@ import { createRunFolder, resolveOutputRoot } from "../core/run-folder.ts";
 import { runIdentity } from "../core/run-identity.ts";
 import { judgesFor } from "../core/registry.ts";
 import type { Result } from "../core/result.ts";
+import { bindingLabel, contentHash } from "../core/suite-attributes.ts";
 import { createRunTimer, formatTimingSummary } from "../core/timing.ts";
 import { blueprintSubjectId, readJsonFile } from "./inputs.ts";
 import type { JudgeSelection } from "./judge.ts";
@@ -64,6 +65,13 @@ export function parseSelection(values: Record<string, OptionValue>): JudgeSelect
     throw new UsageError(`--judges needs judge ids from: ${known.join(", ")}${unknown.length > 0 ? ` (got ${unknown.join(", ")})` : ""}`);
   }
   return ids;
+}
+
+/** The ids of the judges a selection runs, for the run's suite attributes. */
+export function selectedJudgeIds(selection: JudgeSelection): string[] {
+  if (selection === "none") return [];
+  if (selection === "all") return judgesFor("blueprint").map((entry) => entry.id);
+  return [...selection];
 }
 
 /** The judge binding a selection needs; null when it runs no judge. */
@@ -133,6 +141,14 @@ export const judgeBlueprintCommand: EvalCommand = {
       root: context.root,
       identity: runIdentity(common, context.root),
       bindings: binding ? [binding] : [],
+      attributes: {
+        options: {},
+        inputs: [{ id: blueprintSubjectId(inputs.blueprintFile), hash: contentHash(inputs.blueprint) }],
+        judges: selectedJudgeIds(selection),
+        models: { judge: binding ? [bindingLabel(binding)] : [] },
+        samples: null,
+        concurrency: null,
+      },
     });
     const id = blueprintSubjectId(inputs.blueprintFile);
     const folder = run.subject({ kind: "blueprint", id });

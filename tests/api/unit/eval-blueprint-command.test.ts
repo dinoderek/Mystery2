@@ -14,6 +14,7 @@ import { COMMANDS } from "../../../evaluation/commands.ts";
 import { runEval } from "../../../evaluation/core/dispatch.ts";
 import { readResult } from "../../../evaluation/core/result.ts";
 import type { Result } from "../../../evaluation/core/result.ts";
+import { contentHash } from "../../../evaluation/core/suite-attributes.ts";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const STUB = path.join(HERE, "eval-snapshot-stub.mjs");
@@ -223,6 +224,52 @@ describe("judge blueprint", () => {
     fs.rmSync(path.join(dir, "out"), { recursive: true });
     expect(await eval_(judgeArgv(["--no-judges", "--config", config]))).toBe(0);
     expect((await theResult()).run).toMatchObject({ suite: null, label: null, developer: "dino" });
+  });
+
+  it("records its suite attributes: the case's hash, the judges selected and the judge's model", async () => {
+    const config = stubConfig(passingAnswers(), { model: "judge-model" });
+    expect(await eval_(judgeArgv(["--config", config, "--quiet", "--suite", "blueprint-loop"]))).toBe(0);
+    const attributes = (await theResult()).run.attributes;
+    expect(attributes).toEqual({
+      command: "judge blueprint",
+      options: {},
+      inputs: [{ id: "case", hash: contentHash(CASE) }],
+      judges: [...JUDGES].sort(),
+      models: { generator: null, narrator: null, investigator: null, judge: ["blueprint-judge:judge-model"] },
+      samples: null,
+      concurrency: null,
+      suite: "blueprint-loop",
+    });
+
+    // What changes only the output, or names the run, leaves them equal; the case's content and a model override do not.
+    fs.rmSync(path.join(dir, "out"), { recursive: true });
+    expect(await eval_(judgeArgv(["--config", config, "--suite", "blueprint-loop", "--label", "again"]))).toBe(0);
+    expect((await theResult()).run.attributes).toEqual(attributes);
+
+    fs.rmSync(path.join(dir, "out"), { recursive: true });
+    write("case.json", JSON.stringify(CASE, null, 2));
+    expect(await eval_(judgeArgv(["--config", config, "--quiet", "--suite", "blueprint-loop"]))).toBe(0);
+    expect((await theResult()).run.attributes).toEqual(attributes);
+
+    fs.rmSync(path.join(dir, "out"), { recursive: true });
+    const edited = { ...CASE, metadata: { ...(CASE.metadata as object), title: "Another title" } };
+    write("case.json", edited);
+    expect(await eval_(judgeArgv(["--config", config, "--quiet", "--suite", "blueprint-loop", "--model-override", "blueprint-judge=other"]))).toBe(0);
+    expect((await theResult()).run.attributes).toEqual({
+      ...attributes,
+      inputs: [{ id: "case", hash: contentHash(edited) }],
+      models: { ...attributes?.models, judge: ["blueprint-judge:other"] },
+    });
+    expect(contentHash(edited)).not.toBe(contentHash(CASE));
+  });
+
+  it("records no judges and no judge model with --no-judges, and the judges --judges names", async () => {
+    expect(await eval_(judgeArgv(["--no-judges"]))).toBe(0);
+    expect((await theResult()).run.attributes).toMatchObject({ judges: [], models: { judge: null } });
+
+    fs.rmSync(path.join(dir, "out"), { recursive: true });
+    expect(await eval_(judgeArgv(["--judges", "cg_step_sense,cg_soundness", "--config", stubConfig(passingAnswers()), "--quiet"]))).toBe(0);
+    expect((await theResult()).run.attributes).toMatchObject({ judges: ["cg_soundness", "cg_step_sense"], models: { judge: ["blueprint-judge"] } });
   });
 
   it("runs only the judges --judges names, and skips the rest", async () => {

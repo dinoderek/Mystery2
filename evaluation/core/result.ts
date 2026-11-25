@@ -4,7 +4,7 @@
  *
  * | Part         | Holds |
  * | ------------ | ----- |
- * | `run`        | The run it belongs to: id, command, arguments, start and end, commit and whether the tree was clean, the bindings used, each judge's version, and who ran what: suite, label, developer, host, parent run, prompt versions |
+ * | `run`        | The run it belongs to: id, command, arguments, start and end, commit and whether the tree was clean, the bindings used, each judge's version, and who ran what: suite, label, developer, host, parent run, prompt versions, and the suite attributes |
  * | `subject`    | `blueprint`, `game` or `turn`, its id, and where the stored subject sits beside the result |
  * | `production` | When this run made the subject: each model call, with its attempts |
  * | `verdicts`   | One per check or judge; a judge's carries its model call and raw answer |
@@ -27,6 +27,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { z } from "zod";
+
+import { SuiteAttributesSchema } from "./suite-attributes.ts";
 
 export const RESULT_SCHEMA_VERSION = "mystery-eval-result/3";
 /** The versions a result may carry when read (see the file's header). */
@@ -136,6 +138,8 @@ export const RunInfoSchema = z
       .strict()
       .nullable()
       .default(null),
+    /** What the run held fixed, so runs can be compared (`suite-attributes.ts`); null for a command that is not a run command, and in results written before it was recorded. */
+    attributes: SuiteAttributesSchema.nullable().default(null),
   })
   .strict();
 export type RunInfo = z.infer<typeof RunInfoSchema>;

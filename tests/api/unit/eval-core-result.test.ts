@@ -84,6 +84,7 @@ function result(verdicts: Verdict[] = [verdict("schema", "pass")], overrides: Pa
       host: null,
       parent_run: null,
       prompt_versions: null,
+      attributes: null,
     },
     subject: { kind: "blueprint", id: "lighthouse", path: "blueprint.json" },
     production: { calls: [call] },

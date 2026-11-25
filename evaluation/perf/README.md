@@ -5,7 +5,7 @@ across machines. Design and the pipeline around it: `docs/evaluation-pipeline.md
 running the commands: `evaluation/README.md`.
 
 Run folders stay the source of truth. Whatever is shared, indexed or reported is
-derived from them. The data repository, index, report and baseline suites, and
+derived from them. The data repository, index, report and baseline suites,
 and the `./dev eval perf` commands are not built yet; this file grows with each.
 
 ## What a run records
@@ -49,5 +49,17 @@ tokens are the comparable measure.
   the paths `baseline status` treats as read. A hash needs no upkeep; the index
   orders versions by when each was first seen. Judges keep their numbered
   versions.
+
+**Suite attributes.** `run.attributes` holds what a run held fixed, in full,
+whether or not it ran a named suite (`evaluation/core/suite-attributes.ts`):
+`command`; `options` that change what runs (`generate`'s `repair`, `play`'s
+`persona` and `max_steps`); `inputs`, each brief, case, stored turn, trace or
+replay script with its id and a 12-digit hash of its content, keys sorted;
+`judges` selected; `models`, the labels per role (`generator`, `narrator`,
+`investigator`, `judge`), a binding as `<binding>:<model>` and a game server's
+narrator as `server:<backend>:<model>` (or `server:mock`, `server:default`);
+`samples` (`play`'s games); `concurrency`; `suite`. One that does not apply is
+null. Output-only options are left out. Nothing reduces them to a key: which
+must match is chosen when runs are compared, input by input.
 
 Fields absent from a version 3 result read back as null.

@@ -13,7 +13,7 @@ holds each model call's duration, cost and tokens, per attempt and call.
 `cache_write`: the Claude CLI's `usage` counts. Cost, its own estimate,
 differs by login; tokens are comparable.
 
-- Without them, null, as in versions 1 and 2; a call's sums its
+- Without them, `tokens` is null, as in versions 1 and 2; a call's sums its
   attempts'.
 
 **Who ran what.** The `run` block also holds `suite` and `label` (`--suite`,
@@ -51,12 +51,12 @@ under the output root, or the named runs' (a folder or id), to
 - Files are added, never edited.
 - Never sent: runs without `record.json`, or calling only stubs.
 - Its clone, `<output-root>/.perf/data`, is rewound to `main` each use; a
-  rejected push is redone, five times at most.
+  rejected push is redone, five attempts at most.
 
 ## The index
 
 `./dev eval perf sync` fetches that clone and rebuilds `<output-root>/perf.db`
-whole (`evaluation/perf/sync.ts`; schema `index-db.ts`): delete it and sync
+(`evaluation/perf/sync.ts`; schema `index-db.ts`): delete it and sync
 again for the same rows. Tables `runs`, `subjects`, `calls` and `verdicts` hold
 the record's fields; `attributes` as JSON. No migrations.
 

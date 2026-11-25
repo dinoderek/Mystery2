@@ -5,20 +5,15 @@
 Unit tests cover logic; integration, against the built server under the mock
 provider, covers endpoints, ownership, profiles, schema and content; E2E covers
 journeys, over HTTP (`tests/api/e2e`) and in the browser (`web/e2e`). Prefer
-integration for backend behaviour; Playwright is for browser journeys. A change updates every suite it affects. Helpers: `tests/testkit`.
-
-**Browser projects.** `chromium` is Desktop Chrome and runs everything except
-`web/e2e/touch/`. `phone` and `tablet` are Chromium with touch emulation
-(`hasTouch`, `isMobile`) and run only `web/e2e/touch/`: those journeys `tap`,
-never `click` or press a key.
+integration for backend behaviour; Playwright is for browser journeys. A change updates every suite it affects. Helpers live in `tests/testkit`.
 
 ## The gate
 
 `npm test` runs the steps in `scripts/lib/gate-steps.mjs`; `./dev test <step>...`
 runs only those named.
 
-**Every step runs everywhere.** The gate needs nothing beyond this repo. No
-suite may be reported skipped; one that cannot start is a bug.
+**Every step runs in every environment.** The gate needs nothing beyond this
+repo. No suite may be reported skipped; one that cannot start is a bug.
 
 Integration and API E2E run against a production build (each test server's own,
 in `web/.test-builds/`), so a bundling failure shows; the build fails if it opens a database.
@@ -30,13 +25,14 @@ name, on any test file no step collects, untracked ones included.
 
 **Baselines only shrink.** `quality-baseline.json` and `imports-baseline.json`
 hold today's offenders against the `quality` limits and
-`scripts/lib/import-rules.mjs`: a new or stale entry fails. After a fix, prune with `npm run check:quality -- --prune` or
+`scripts/lib/import-rules.mjs`: a new offender or a stale entry fails. After a
+fix, prune with `npm run check:quality -- --prune` or
 `npm run check:imports -- --prune`.
 
 **One case format.** `tests/api/unit/one-case-format.test.ts` fails when any
-file or path, untracked included, names a retired case format.
+file or path, untracked ones included, names a retired case format.
 
-**Doc checks** fail the gate:
+**Doc checks**, all failing the gate:
 
 - `check:doc-refs` fails when any `AGENTS.md`, `QUICKSTART.md`, `docs/` or
   README names a path, `npm run` script or relative link that does not exist.
@@ -50,7 +46,7 @@ file or path, untracked included, names a retired case format.
   doc, or ask.
 
 A documentation-only change needs the doc checks green and its commands checked
-by hand; the code suites are optional locally.
+by hand against the owning doc; the code suites are optional locally.
 
 ## Running
 
@@ -59,34 +55,39 @@ time per checkout ([`docs/local-infrastructure.md`](local-infrastructure.md)).
 
 Live AI runs (the `test:*:live` scripts) are opt-in, never a gate substitute,
 and call only an AI they are named, from `ai.json`
-([`docs/ai-configuration.md`](ai-configuration.md)); they tolerate retriable `503`s.
+([`docs/ai-configuration.md`](ai-configuration.md)). They tolerate retriable
+`503`s.
 
 ## Reading results
 
 Each `npm test` writes `test-results/<timestamp>/`: a log per step,
 `summary.log` and `coverage.log`. The `Total` line in `summary.log` is the
-verdict. For a failure, also read the server's stdout, `readStoredSession()`,
-`readStoredEvents()` (`tests/api/integration/helpers.ts`) and Playwright's report.
+verdict. For a failure, also read the server's stdout, `readStoredSession()` and
+`readStoredEvents()` (`tests/api/integration/helpers.ts`), and Playwright's
+report.
 
 ## Coverage
 
-`coverage-floors.json` holds the floors; the `coverage-floors` step fails
+`coverage-floors.json` holds the floors, and the `coverage-floors` step fails
 when a project falls short or reads `not measured`. Anyone may raise a floor.
-Lowering one, or excluding code, is the operator's decision: ask.
+Lowering one, or excluding code, is the operator's decision: if
+behaviour-proving tests cannot reach a floor, ask.
 
-Only unit suites feed the numbers, and only the `coverage.include` globs in
+Only the unit suites feed the numbers, and only the `coverage.include` globs in
 `vitest.config.ts` and `web/vite.config.ts` count: a new source directory is
 invisible until added. E2E drives an uninstrumented server, so endpoints and
-components read 0%; act on a low file only when its boundary is unit. Every `./dev eval` command's main path runs in the gate on stub bindings.
+components read 0%; act on a low file in `summary.log` only when its boundary is
+unit. Every `./dev eval` command's main path runs in the gate on stub bindings,
+never a model.
 
 ## Evaluation snapshots
 
 `eval-snapshots.test.ts` runs each evaluation harness with its model CLI
-swapped for a stub that keeps what it is sent, and compares every prompt and
-the verdicts on fixed stub answers with
+swapped for a stub that keeps what it is sent, and compares every prompt and the
+verdicts reached on fixed stub answers with
 `tests/api/unit/snapshots/evaluation/`. Moving code changes no snapshot.
-Re-record with `npm run test:snapshots:record` and read the diff; judge
-content is the operator's call.
+Re-record with `npm run test:snapshots:record` and read the diff; for judge
+content, that is the operator's call.
 
 ## Golden transcripts
 
@@ -94,8 +95,8 @@ content is the operator's call.
 the mock narrator and compares what the player would see with
 `tests/api/e2e/golden/transcripts/`. Only `tests/testkit/src/golden/driver.ts`
 knows how a line becomes requests. The mock narrates from the case and the
-context it is given, so changing either moves the transcripts. Re-record with
-`npm run test:golden:record` and review the diff.
+context it is given, so changing either moves the transcripts. Re-record on
+purpose with `npm run test:golden:record`; review the diff.
 
 ## Writing tests
 
@@ -124,8 +125,8 @@ context it is given, so changing either moves the transcripts. Re-record with
   - image bytes are served only for images the blueprint references;
   - a missing or wrong field answers `400` naming it; a name outside the registry
     answers `404`.
-- **No real model.** Integration and E2E run the mock provider, so assert
-  persisted side effects.
+- **No real model.** Integration and E2E never call one. The server runs the mock
+  provider, so assert persisted side effects.
 - **Mock by absence.** Mock narrates when the config root has no `ai.json`,
   the runners clear `AI_PROFILE`, and nothing is chosen. A live choice switches
   every test sharing the server, so make one only in the unit suites or on a

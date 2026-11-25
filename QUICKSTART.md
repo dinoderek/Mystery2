@@ -52,15 +52,14 @@ profiles and chosen AI.
 
 ## Local Development
 
-### Mock AI
+### Mock AI (default)
 
 ```bash
 npm run dev
 ```
 
 Starts the game at `http://127.0.0.1:51000` (a worktree gets its own port; the
-command prints it). Without an `ai.json`, mock narration: no network, no API
-key.
+command prints it). Mock narration, no network, no API key.
 
 Pick a profile name on the first screen — that is the whole of signing in.
 
@@ -71,18 +70,15 @@ your AIs by name:
 
 ```json
 { "ais": {
-    "haiku":  { "backend": "openrouter", "model": "anthropic/claude-haiku-5.5", "key": "<key>" },
-    "claude": { "backend": "claude-cli", "model": "sonnet" } },
-  "default": "haiku" }
+    "free":   { "backend": "openrouter", "model": "<model-id>", "key": "<key>" },
+    "claude": { "backend": "claude-cli", "model": "sonnet" } } }
 ```
 
 Add a `"key"`, or leave it out and put `OPENROUTER_API_KEY` in `.env.local`.
-`"default"` narrates wherever nothing is chosen, fresh databases included;
-the example's is `haiku`, Claude Haiku over OpenRouter, so a playtest needs
-only the key. `./dev doctor` checks the file and the default.
-To narrate with another AI, choose one on `/settings` (`[ AI SETTINGS ]` on
-the profile picker, reachable before you have picked a profile). The choice is
-stored per database and survives a restart; the picker names the narrator.
+`./dev doctor` checks the file. Start, then choose one on `/settings`
+(`[ AI SETTINGS ]` on the profile picker, reachable before you have picked a
+profile). The choice is stored per database and survives a restart; a fresh
+database is mock, and the picker names the narrator.
 
 ### Naming an AI for a run
 
@@ -103,6 +99,16 @@ new or edited `ai.json` entry needs a restart.
 Existing sessions keep the AI name they were started with, which is what the
 evaluation pipeline reads.
 See [`docs/ai-configuration.md`](docs/ai-configuration.md).
+
+### Playing on a phone or tablet
+
+```bash
+./dev run --lan
+```
+
+Prints the addresses to open over WiFi or Tailscale. On a Mac, allow incoming
+connections for `node` when the firewall asks on first run. Exposure rules:
+`docs/local-infrastructure.md`.
 
 ## Profiles
 
@@ -175,8 +181,7 @@ Which blueprint fields shape each image: `docs/blueprint-generation-flows.md`.
 
 ## Your data
 
-Each worktree runs on its own port and database; `npm run prod` uses the
-persistent one. `npm run db:list` shows them all, and each is a SQLite file you
+`npm run db:list` shows every database, each a SQLite file you
 can query while the game runs. `docs/local-infrastructure.md` has the runbook
 and troubleshooting.
 

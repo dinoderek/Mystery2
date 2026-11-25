@@ -17,7 +17,6 @@ function settings(overrides: Partial<AISettingsState> = {}): AISettingsState {
   return {
     ais: [MOCK, LUNA, CLAUDE, NO_KEY],
     chosen: null,
-    configured_default: null,
     override: null,
     narrator: { name: 'mock', backend: 'mock', model: 'mock/runtime-default' },
     narrator_error: null,
@@ -43,18 +42,6 @@ describe('the AI list', () => {
   it('marks mock while nothing has been chosen, because mock narrates then', () => {
     expect(selectedName(settings())).toBe('mock');
     expect(aiRows(settings()).find((row) => row.selected)?.name).toBe('mock');
-  });
-
-  it('marks the ai.json default while nothing has been chosen, and names it as the default', () => {
-    const state = settings({ configured_default: 'luna6' });
-    expect(selectedName(state)).toBe('luna6');
-    const rows = aiRows(state);
-    expect(rows.filter((row) => row.selected).map((row) => row.name)).toEqual(['luna6']);
-    expect(rows.find((row) => row.name === 'luna6')?.detail).toBe('openrouter / openai/gpt-6-luna, ai.json default');
-  });
-
-  it('marks the choice over the ai.json default', () => {
-    expect(selectedName(settings({ chosen: 'claude', configured_default: 'luna6' }))).toBe('claude');
   });
 
   it('marks nothing when the choice has gone from the file', () => {

@@ -20,7 +20,6 @@ function settings(overrides: Partial<AISettingsState> = {}): AISettingsState {
   return {
     ais: [MOCK, LUNA],
     chosen: null,
-    configured_default: null,
     override: null,
     narrator: { name: 'mock', backend: 'mock', model: 'mock/runtime-default' },
     narrator_error: null,

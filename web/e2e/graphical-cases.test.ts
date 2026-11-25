@@ -20,7 +20,7 @@ async function startCase(page: Page, blueprintId: string, graphicsAvailable = tr
   await page.goto('/');
   await expect(page.getByText('1. Start a new game')).toBeVisible();
   await page.keyboard.press('1');
-  await expect(page.getByText(blueprints[index].title, { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: blueprints[index].title, exact: true })).toBeVisible();
   const cover = page.locator(`[data-testid="case-artwork"][data-blueprint-id="${blueprintId}"]`);
   await cover.scrollIntoViewIfNeeded();
   await expect(cover.getByTestId('scene-renderer')).toHaveAttribute('data-state', graphicsAvailable ? 'ready' : 'fallback', { timeout: 30000 });

@@ -4,8 +4,7 @@
 // `ai.json` in the config root lists them by name:
 //
 //   { "ais": { "free": { "backend": "openrouter", "model": "<id>", "key": "..." },
-//              "claude": { "backend": "claude-cli", "model": "sonnet" } },
-//     "default": "free" }
+//              "claude": { "backend": "claude-cli", "model": "sonnet" } } }
 //
 // `mock` is built in and needs no entry. The file is read once, when the server
 // starts, and a malformed one stops the start with the AI and field named; a
@@ -16,12 +15,10 @@
 //
 //   1. the run override, `AI_PROFILE`, which `./dev run --ai <name>` sets
 //   2. the choice stored by the settings page
-//   3. the file's `default`, which covers every database, fresh ones included
-//   4. mock
+//   3. mock
 //
 // None of them falls back to mock when what it names is missing or broken: that
-// is an error naming the AI. A `default` that names no AI in the file is a
-// malformed file.
+// is an error naming the AI.
 
 import fs from "node:fs";
 
@@ -74,19 +71,8 @@ export const AIConfigSchema = z
         }
       }
     }),
-    /** The AI `default` resolves to while no run override is set and nothing is chosen. */
-    default: z.string().trim().min(1).optional(),
   })
-  .strict()
-  .superRefine((config, ctx) => {
-    const name = config.default;
-    if (name === undefined || name === MOCK_AI_PROFILE_ID || Object.hasOwn(config.ais, name)) return;
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["default"],
-      message: `names AI "${name}", which is not an entry. Name mock or one of the entries`,
-    });
-  });
+  .strict();
 
 export type AIConfig = z.infer<typeof AIConfigSchema>;
 export type AIEntry = AIConfig["ais"][string];
@@ -187,16 +173,6 @@ export function findOpenRouterKey(
 
 function mockProfile(id: string): EngineAIProfile {
   return { id, provider: "mock", model: MOCK_MODEL, openrouter_api_key: null };
-}
-
-/**
- * The name `default` resolves to right now: the run override, the stored
- * choice, the file's default, then mock.
- */
-export function defaultAIName(loaded: LoadedAIConfig, settings?: AISettingsStore): string {
-  return (
-    loaded.runOverride?.name ?? settings?.getChoice() ?? loaded.config.default ?? MOCK_AI_PROFILE_ID
-  );
 }
 
 /** The names a request may use: mock, then the file's. */
@@ -312,26 +288,11 @@ export function resolveChosenAI(name: string, loaded: LoadedAIConfig): EngineAIP
 }
 
 /**
- * Resolves the file's `default`, which parsing has checked names mock or an
- * entry.
- *
- * @throws AIConfigError for a default that cannot work, naming it
- */
-export function resolveConfiguredDefault(name: string, loaded: LoadedAIConfig): EngineAIProfile {
-  try {
-    return resolveNamedAI(name, loaded.config, loaded.sources)!;
-  } catch (error) {
-    if (!(error instanceof AIConfigError)) throw error;
-    throw new AIConfigError(`The default in ${loaded.file}, "${name}", cannot narrate. ${error.message}`);
-  }
-}
-
-/**
  * Resolves the profile a request or a stored game names. Returns null for a
  * name that is not configured here.
  *
  * @throws AIConfigError for a named OpenRouter AI with no key, and for a
- * `default` whose stored choice or configured default is missing or broken
+ * `default` whose stored choice is missing or broken
  */
 export function resolveAIProfile(
   profileId: string,
@@ -345,12 +306,8 @@ export function resolveAIProfile(
   if (loaded.runOverride) return { ...loaded.runOverride.profile, id: DEFAULT_AI_PROFILE_ID };
 
   const chosen = settings?.getChoice() ?? null;
-  if (chosen !== null) return { ...resolveChosenAI(chosen, loaded), id: DEFAULT_AI_PROFILE_ID };
-  const configured = loaded.config.default;
-  if (configured !== undefined) {
-    return { ...resolveConfiguredDefault(configured, loaded), id: DEFAULT_AI_PROFILE_ID };
-  }
-  return mockProfile(DEFAULT_AI_PROFILE_ID);
+  if (chosen === null) return mockProfile(DEFAULT_AI_PROFILE_ID);
+  return { ...resolveChosenAI(chosen, loaded), id: DEFAULT_AI_PROFILE_ID };
 }
 
 export function createLocalAIProfileStore(

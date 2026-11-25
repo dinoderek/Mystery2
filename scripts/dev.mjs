@@ -14,6 +14,9 @@
  * `--db <name>` picks the database. Without it this checkout gets its own,
  * named after the worktree; `npm run prod` passes `--db prod`, the persistent
  * one. The AI and the database are orthogonal.
+ *
+ * `--lan` serves a build to other devices, for a playtest, on the `prod`
+ * database unless `--db` names another (`scripts/lib/lan-server.mjs`).
  */
 
 import path from "node:path";
@@ -22,6 +25,7 @@ import { readEnvFile } from "../packages/game-engine/src/env-file.ts";
 import { getBaseEnvPath } from "./local-config.mjs";
 import { checkRunAI, parseRunArgs } from "./lib/dev-ai.mjs";
 import { npmBin, runCommand } from "./lib/process.mjs";
+import { runLanServer } from "./lib/lan-server.mjs";
 import { resolveWorktreePorts } from "../lib/worktree-ports.mjs";
 import {
   DATABASE_NAME_ENV,
@@ -49,6 +53,7 @@ if (env.AI_CALL_LOG?.trim()) env.AI_CALL_LOG = path.resolve(env.AI_CALL_LOG.trim
 // The flag just typed has to outrank an ambient MYSTERY_DATABASE, or an
 // exported one would silently win.
 if (args.database) env[DATABASE_NAME_ENV] = args.database;
+else if (args.lan) env[DATABASE_NAME_ENV] = "prod";
 
 if (override) {
   env.AI_PROFILE = override.name;
@@ -61,6 +66,8 @@ if (override) {
 
 const databaseName = resolveDatabaseName(rootDir, env);
 console.log(`Database: ${databaseName} (${resolveDatabaseFile(databaseName, rootDir, env)})`);
+
+if (args.lan) process.exit(await runLanServer({ root: rootDir, env }));
 
 const { ports } = resolveWorktreePorts(rootDir);
 runCommand(npmBin, ["-w", "web", "run", "dev", "--", "--port", String(ports.web)], env);

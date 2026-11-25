@@ -1,9 +1,8 @@
 // What the settings page shows, and the one rule for what it may choose.
 //
 // The page lists mock and the AIs in `ai.json`, marks the stored choice, names
-// the file's default and a run override while one is in force, and says which
-// AI narrates a game started now. It never carries a key: nothing here copies
-// one into a summary.
+// a run override while one is in force, and says which AI narrates a game
+// started now. It never carries a key: nothing here copies one into a summary.
 
 import {
   AISettingsUpdateSchema,
@@ -14,7 +13,7 @@ import {
 import {
   AIConfigError,
   availableAINames,
-  defaultAIName,
+  MOCK_AI_PROFILE_ID,
   resolveAIProfile,
   resolveNamedAI,
   type LoadedAIConfig,
@@ -55,7 +54,8 @@ function describeNarrator(
 ): Pick<AISettingsState, "narrator" | "narrator_error"> {
   try {
     const profile = resolveAIProfile(DEFAULT_AI_PROFILE_ID, loaded, settings)!;
-    return { narrator: summary(defaultAIName(loaded, settings), profile), narrator_error: null };
+    const name = loaded.runOverride?.name ?? settings.getChoice() ?? MOCK_AI_PROFILE_ID;
+    return { narrator: summary(name, profile), narrator_error: null };
   } catch (error) {
     if (!(error instanceof AIConfigError)) throw error;
     return { narrator: null, narrator_error: error.message };
@@ -68,7 +68,6 @@ export function describeAISettings(loaded: LoadedAIConfig, settings: AISettingsS
   return {
     ais: availableAINames(loaded.config).map((name) => describeAI(name, loaded)),
     chosen: settings.getChoice(),
-    configured_default: loaded.config.default ?? null,
     override: override ? summary(override.name, override.profile) : null,
     ...describeNarrator(loaded, settings),
   };

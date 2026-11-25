@@ -1,6 +1,6 @@
 # AI Configuration
 
-Which AI narrates and where its key lives; set-up is `QUICKSTART.md`.
+Which AI narrates and where its key lives. Set-up is `QUICKSTART.md`.
 
 ## The file
 
@@ -8,10 +8,7 @@ Which AI narrates and where its key lives; set-up is `QUICKSTART.md`.
 format is `ai.example.json` and `packages/game-engine/src/ai-config.ts`. It is
 gitignored, and `tracked-files` fails the gate if one is tracked. It is read
 once, at start: a malformed file stops the server, a missing one leaves only
-mock. An optional top-level `"default"` must name `mock` or an entry.
-`./dev doctor` lists each AI and its gaps, and fails when the default cannot
-narrate. The example's default is `haiku`, the family the runtime baselines
-used.
+mock. `./dev doctor` lists each AI and its gaps.
 
 ## Keys
 
@@ -28,12 +25,11 @@ the first that applies:
 1. **The run override**, `AI_PROFILE`, which `./dev run --ai <name>` sets for
    one process. The settings page then shows a banner naming it.
 2. **The stored choice** from `/settings`, one name per database.
-3. **The file's default**, fresh databases included.
-4. **Mock**.
+3. **Mock.** A fresh database has no choice.
 
-**Never a fall back to mock.** A choice or default that cannot narrate (an
-`openrouter` AI with no key, or a choice gone from the file) is an error naming
-it: `game-start` and turns answer `500` and write nothing, and a run override
+**Never a fall back to mock.** An AI that cannot narrate (an `openrouter` AI
+with no key, or a stored choice gone from the file) is an error naming it:
+`game-start` and turns answer `500` and write nothing, and a run override
 naming one stops the server. A name not `mock`, `default` or in the file is
 `400 Invalid ai_profile`.
 

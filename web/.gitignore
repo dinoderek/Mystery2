@@ -28,3 +28,6 @@ vite.config.ts.timestamp-*
 
 # A test server's own build (scripts/lib/test-server.mjs), removed when it stops.
 /.test-builds
+
+# `./dev run --lan`'s build (scripts/lib/lan-server.mjs), rebuilt at each start.
+/.lan-build

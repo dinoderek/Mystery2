@@ -22,7 +22,6 @@ async function showState(page: Page, state: Record<string, unknown>) {
 					json: {
 						ais: [MOCK],
 						chosen: null,
-						configured_default: null,
 						override: null,
 						narrator: { name: 'mock', backend: 'mock', model: 'mock/runtime-default' },
 						narrator_error: null,

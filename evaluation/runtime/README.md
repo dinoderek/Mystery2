@@ -88,11 +88,12 @@ withheld on a case expecting a use went **unseen** or was **refused**.
 right; `ungraded: true` keeps a case out of its group. A sample that did not run
 or be graded counts neither way: the run is INCOMPLETE.
 
-`./dev eval baseline save <run> <file>` retains a complete summary;
-`baseline compare <baseline> <run>` prints changes; `baseline status` marks
+`./dev eval baseline save <run> <file>` retains a complete run's summary
+(Haiku's: a `perf baseline narration-loop` run); `baseline compare <baseline>
+<run>` prints changes; `baseline status` marks
 each baseline current or stale against `HEAD`, listing commits since its
-run touching what runs read (`READ_PATHS` in `evaluation/core/baseline-status.ts`). It compares content, as squash merges leave a run's commit off
-`main`, exits 0, and prints in CI.
+run touching what runs read (`READ_PATHS` in `evaluation/core/baseline-status.ts`). It compares content (squash merges leave a run's commit off
+`main`), exits 0, prints in CI.
 
 ### Baseline policy
 
@@ -100,10 +101,9 @@ run touching what runs read (`READ_PATHS` in `evaluation/core/baseline-status.ts
 - Anyone may change a brief, prompt or engine code: the gate forces the version
   entry and snapshots, and `baseline status` shows the baselines stale.
 - Others need only `npm test`.
-- A stale baseline is refreshed on demand, before a comparison relies on it; a
-  live rebaseline explains each difference by the commits listed.
-- When several commits were batched, it replays at commit boundaries to
-  attribute them.
+- A stale baseline is refreshed on demand, before a comparison uses it; a
+  live rebaseline explains each difference by commits listed.
+- Batched commits are replayed at their boundaries to attribute them.
 
 ## Running
 

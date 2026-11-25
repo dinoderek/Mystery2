@@ -68,7 +68,7 @@ describe("the evaluation tree", () => {
 });
 
 describe("./dev eval", () => {
-  it("lists exactly the thirteen evaluation commands", () => {
+  it("lists exactly the fourteen evaluation commands", () => {
     expect(COMMANDS.map((command) => command.name)).toEqual([
       "judge blueprint",
       "validate",
@@ -81,12 +81,13 @@ describe("./dev eval", () => {
       "perf push",
       "perf sync",
       "perf report",
+      "perf baseline",
       "play",
       "report",
     ]);
     const listing = listCommands(COMMANDS).split("\n");
     const listed = listing.filter((line) => /^ {2}\S/.test(line));
-    expect(listed).toHaveLength(13);
+    expect(listed).toHaveLength(14);
   });
 
   it("has a test that runs each command's main path on stub bindings", () => {
@@ -104,6 +105,7 @@ describe("./dev eval", () => {
       "perf push": ["tests/api/unit/eval-perf-push.test.ts", '["perf", "push"'],
       "perf sync": ["tests/api/unit/eval-perf-sync.test.ts", '["perf", "sync"'],
       "perf report": ["tests/api/unit/eval-perf-report.test.ts", '["perf", "report"'],
+      "perf baseline": ["tests/api/unit/eval-perf-baseline.test.ts", '["perf", "baseline"'],
       play: ["tests/api/integration/playtest-command.test.ts", "['play', ...args"],
       report: ["tests/api/integration/playtest-command.test.ts", "['report', runDir]"],
     };

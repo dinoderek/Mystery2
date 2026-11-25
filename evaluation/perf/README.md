@@ -1,8 +1,8 @@
 # Evaluation performance
 
-What an evaluation run records about itself, so runs compare across machines.
+What an evaluation run records, so runs compare across machines.
 Design: `docs/evaluation-pipeline.md`; commands: `evaluation/README.md`. Run
-folders stay the source of truth. Suites are to come.
+folders stay the source of truth.
 
 ## What a run records
 
@@ -10,14 +10,14 @@ folders stay the source of truth. Suites are to come.
 holds each model call's duration, cost and tokens, per attempt and call.
 
 **Tokens.** An attempt's `tokens` holds `input`, `output`, `cache_read` and
-`cache_write`: the Claude CLI's `usage` counts. Cost is its own estimate and
-differs by login; tokens are the comparable measure.
+`cache_write`: the Claude CLI's `usage` counts. Cost, its own estimate,
+differs by login; tokens are comparable.
 
-- No usage, or another shape, records `tokens: null`; versions 1 and 2 read
-  back null. A call's `tokens` sums its attempts'.
+- Without them, `tokens` is null, as in versions 1 and 2; a call's sums its
+  attempts'.
 
 **Who ran what.** The `run` block also holds `suite` and `label` (`--suite`,
-`--label`; null when absent), `developer` (the config's top-level `developer`,
+`--label`; null when absent), `developer` (the config's `developer`,
 else the OS user name, never an email address), `host`, `parent_run` (the play
 run's id, for `judge game` started by `play --judge`), `prompt_versions`
 (`narrator`, `generator`: 12 hex digits of a SHA-256 over prompt files,
@@ -35,32 +35,30 @@ A finished run writes `record.json` beside `run.json`, never replaced
 `exit_code`, `comparable`, each subject, and flat call and verdict rows naming
 their subject's position and round.
 
-- A `play --judge` record repeats the judge rows of the `judge game` record
-  naming it `parent_run`.
-- `comparable` is false for a tree not known clean, or a verdict from a judge
-  with no recorded version. No prompt, answer, finding or log text.
+- A `play --judge` record repeats its `judge game` record's judge rows.
+- `comparable` is false for a tree not known clean, or a judge with no
+  recorded version. No prompt, answer, finding or log text.
 
 ## The data repository
 
-A private git repository: its URL (or path) is `remote` under a top-level
-`perf` key in `evaluation/config.json`.
+A private git repository, `perf.remote` (a URL or path) in
+`evaluation/config.json`.
 
-`./dev eval perf push [<run>...]` (`evaluation/perf/push.ts`) sends the records
-of every run under the output root, or of the runs named (a folder, or an id
-like `2026-11-25/10-00-00-generate`), to
+`./dev eval perf push [<run>...]` (`evaluation/perf/push.ts`) sends every record
+under the output root, or the named runs' (a folder or id), to
 `records/<yyyy>/<mm>/<developer>/<run>.json`.
 
 - Files are added, never edited.
-- Never sent: a run with no `record.json`, or whose calls all went to stubs.
-- It clones to `<output-root>/.perf/data`, rewound to `main` on each use. A
-  rejected push is redone on the remote's new tip, five attempts at most.
+- Never sent: runs without `record.json`, or calling only stubs.
+- Its clone, `<output-root>/.perf/data`, is rewound to `main` each use; a
+  rejected push is redone, five attempts at most.
 
 ## The index
 
 `./dev eval perf sync` fetches that clone and rebuilds `<output-root>/perf.db`
-whole (`evaluation/perf/sync.ts`; schema in `index-db.ts`): delete it and sync
+(`evaluation/perf/sync.ts`; schema `index-db.ts`): delete it and sync
 again for the same rows. Tables `runs`, `subjects`, `calls` and `verdicts` hold
-the record's fields; a run's `attributes` are JSON. No migrations.
+the record's fields; `attributes` as JSON. No migrations.
 
 - Indexed: every run folder (its `record.json`, else one built from its
   results, old fields null) and fetched record, once by developer and run id.
@@ -84,3 +82,13 @@ inline SVG.
   per run, and median duration, cost and tokens (four counts added) per call by
   role and model.
 - Runs not comparable, or without attributes, are shown apart.
+
+## Baseline suites
+
+`./dev eval perf baseline <name>` (`evaluation/perf/baseline.ts`) runs
+`suites/<name>.json` with `--suite <name>`, its `models` as overrides, clean
+trees only, then pushes; a failed push is said once, leaving the exit code.
+
+- `blueprint-loop`: `generate --judge --repair 2` on the committed briefs.
+- `narration-loop`: Haiku `judge turn` per case folder, each the run
+  `baselines/haiku.json` is saved from.

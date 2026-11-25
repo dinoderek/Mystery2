@@ -229,6 +229,7 @@ describe("evaluation", () => {
       "perf push",
       "perf sync",
       "perf report",
+      "perf baseline",
       "play",
       "report",
     ]);

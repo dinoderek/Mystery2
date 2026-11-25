@@ -131,7 +131,7 @@ and usage, reserves worst-case charges, and stops on unreconciled calls or limit
 ./dev eval judge turn evaluation/runtime/cases/clue-graph/mock-case/expect.ts \
   --narrator narrator-claude --model-override narrator-claude=haiku
 
-# The adherence judges:
+# Two gm judges:
 ./dev eval judge turn evaluation/runtime/cases/clue-graph/mock-case/readability.ts \
   --narrator narrator-claude --judges gm_roleplay,gm_spoiler
 ```

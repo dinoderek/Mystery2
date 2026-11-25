@@ -16,6 +16,7 @@ import { osUserName } from "../core/run-identity.ts";
 import { dataCloneDir, measuresNothing, publishRecords, recordPath } from "./data-repo.ts";
 import type { RecordFile } from "./data-repo.ts";
 import { RECORD_FILE, readRecord } from "./record.ts";
+import { relativeTo, runFolders } from "./run-folders.ts";
 
 const HELP = formatHelp({
   usage: "perf push [<run>...]",
@@ -28,21 +29,6 @@ const HELP = formatHelp({
   ].join("\n"),
 });
 
-/** The run folders under `outputRoot` (`<date>/<time>-<command>`), oldest first. */
-function runFolders(outputRoot: string): string[] {
-  if (!fs.existsSync(outputRoot)) return [];
-  const folders: string[] = [];
-  for (const day of fs.readdirSync(outputRoot).sort()) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) continue;
-    const dayDir = path.join(outputRoot, day);
-    if (!fs.statSync(dayDir).isDirectory()) continue;
-    for (const run of fs.readdirSync(dayDir).sort()) {
-      if (fs.statSync(path.join(dayDir, run)).isDirectory()) folders.push(path.join(dayDir, run));
-    }
-  }
-  return folders;
-}
-
 /** The folder a named run is: a folder as given, else its id under the output root. */
 function namedFolder(name: string, outputRoot: string): string {
   const asGiven = path.resolve(name);
@@ -51,11 +37,6 @@ function namedFolder(name: string, outputRoot: string): string {
     throw new InputError(`${name} has no ${RECORD_FILE}: runs from before records stay local, and a run still going has none yet`);
   }
   return folder;
-}
-
-function relativeTo(root: string, folder: string): string {
-  const relative = path.relative(root, folder);
-  return relative.startsWith("..") ? folder : relative;
 }
 
 export const perfPushCommand: EvalCommand = {

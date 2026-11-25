@@ -8,8 +8,9 @@
  * records as who ran it (`configuredDeveloper`), a name and never an email
  * address; null, as in the committed example, leaves it to the OS user name.
  * `perf.remote` is the git URL (or path) of the shared data repository
- * `perf push` sends run records to (`configuredPerfRemote`); null, as in the
- * committed example, means none, and `perf push` stops naming this setting.
+ * `perf push` sends run records to and `perf sync` fetches them from
+ * (`configuredPerfRemote`); null, as in the committed example, means none:
+ * `perf push` stops naming this setting, and `perf sync` indexes only this machine.
  * A binding says how to start the wrapper that makes one model call:
  *
  * - `cmd`, `args`: the wrapper and its arguments. A `cmd` containing a `/` is

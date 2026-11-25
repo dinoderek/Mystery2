@@ -3,7 +3,10 @@
  *
  * `evaluation/config.json` (gitignored) is read when it exists, else the
  * committed `evaluation/config.example.json`; `--config <file>` replaces both.
- * Each top-level key is a binding name; keys starting with `_` are comments.
+ * Each top-level key is a binding name; keys starting with `_` are comments,
+ * and `developer` is not a binding: the name a run records as who ran it
+ * (`configuredDeveloper`), a name and never an email address; null, as in the
+ * committed example, leaves it to the OS user name.
  * A binding says how to start the wrapper that makes one model call:
  *
  * - `cmd`, `args`: the wrapper and its arguments. A `cmd` containing a `/` is
@@ -29,6 +32,9 @@ import { ConfigError, UsageError } from "./errors.ts";
 
 export const CONFIG_FILE = path.join("evaluation", "config.json");
 export const EXAMPLE_CONFIG_FILE = path.join("evaluation", "config.example.json");
+
+/** The one top-level key that names no binding. */
+export const DEVELOPER_KEY = "developer";
 
 const BINDING_NAME = /^[a-z][a-z0-9-]*$/;
 
@@ -79,7 +85,7 @@ function parseBindings(file: string, raw: unknown): Record<string, Binding> {
   }
   const bindings: Record<string, Binding> = {};
   for (const [name, value] of Object.entries(raw)) {
-    if (name.startsWith("_")) continue;
+    if (name.startsWith("_") || name === DEVELOPER_KEY) continue;
     if (!BINDING_NAME.test(name)) {
       throw new ConfigError(`${file}: binding name "${name}" must be lower-case words joined by "-"`);
     }
@@ -95,8 +101,8 @@ function parseBindings(file: string, raw: unknown): Record<string, Binding> {
   return bindings;
 }
 
-/** Reads the config file and applies this run's model overrides. */
-export function loadConfig({ root, configPath, modelOverrides = {} }: LoadConfigOptions): EvalConfig {
+/** The config file a run reads, parsed as JSON. */
+function readConfigFile({ root, configPath }: Pick<LoadConfigOptions, "root" | "configPath">): { file: string; raw: unknown } {
   const file = chooseConfigFile(root, configPath);
   let text: string;
   try {
@@ -104,12 +110,16 @@ export function loadConfig({ root, configPath, modelOverrides = {} }: LoadConfig
   } catch (error) {
     throw new ConfigError(`cannot read config ${file}: ${(error as Error).message}`);
   }
-  let raw: unknown;
   try {
-    raw = JSON.parse(text);
+    return { file, raw: JSON.parse(text) };
   } catch (error) {
     throw new ConfigError(`config ${file} is not JSON: ${(error as Error).message}`);
   }
+}
+
+/** Reads the config file and applies this run's model overrides. */
+export function loadConfig({ root, configPath, modelOverrides = {} }: LoadConfigOptions): EvalConfig {
+  const { file, raw } = readConfigFile({ root, configPath });
   const bindings = parseBindings(file, raw);
   for (const [name, model] of Object.entries(modelOverrides)) {
     const binding = bindings[name];
@@ -117,6 +127,24 @@ export function loadConfig({ root, configPath, modelOverrides = {} }: LoadConfig
     bindings[name] = { ...binding, model };
   }
   return { file, bindings };
+}
+
+/**
+ * The config's top-level `developer`, or null when it has none, or when there
+ * is no config file at all (a command that calls no model needs none; one that
+ * does fails on its own bindings). A name, never an email address: the value is
+ * recorded in every run and shared.
+ */
+export function configuredDeveloper(options: Pick<LoadConfigOptions, "root" | "configPath">): string | null {
+  if (!fs.existsSync(chooseConfigFile(options.root, options.configPath))) return null;
+  const { file, raw } = readConfigFile(options);
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const developer = (raw as Record<string, unknown>)[DEVELOPER_KEY];
+  if (developer === undefined || developer === null) return null;
+  if (typeof developer !== "string" || developer.trim() === "" || developer.includes("@")) {
+    throw new ConfigError(`${file}: "${DEVELOPER_KEY}" must be a name (not blank, not an email address)`);
+  }
+  return developer.trim();
 }
 
 function unknownBinding(file: string, bindings: Record<string, Binding>, name: string): ConfigError {

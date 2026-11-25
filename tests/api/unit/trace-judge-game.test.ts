@@ -108,6 +108,23 @@ describe("judge game on a trace file", () => {
     expect(fs.existsSync(path.join(path.dirname(folder), "run.json"))).toBe(true);
   });
 
+  it("records the suite, label and parent run it was given, with who ran it and where", async () => {
+    const parent = "2026-11-25/10-00-00-play";
+    const { result } = await runForResult(
+      [writeTrace(), "--config", withJudge(), "--suite", "narration-loop", "--label", "graded", "--parent-run", parent],
+      "pass",
+    );
+    expect(result.run).toMatchObject({ suite: "narration-loop", label: "graded", parent_run: parent, host: os.hostname() });
+    expect(result.run.developer).toEqual(expect.any(String));
+  });
+
+  it("records no parent run when it was given none, and refuses a blank one", async () => {
+    const { result } = await runForResult([writeTrace(), "--config", withJudge()], "pass");
+    expect(result.run).toMatchObject({ suite: null, label: null, parent_run: null });
+    expect(await judgeGame([writeTrace(), "--config", withJudge(), "--parent-run", " "])).toBe(1);
+    expect(errors.join("\n")).toContain("--parent-run needs a run id");
+  });
+
   it("exits 2 when a judge reports a major finding", async () => {
     const { code, result } = await runForResult([writeTrace(), "--config", withJudge()], "fail");
 

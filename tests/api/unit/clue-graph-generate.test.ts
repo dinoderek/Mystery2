@@ -147,6 +147,14 @@ describe("generate, clue graph", () => {
     expect(JSON.parse(fs.readFileSync(installed(root), "utf8"))).toEqual(good);
   });
 
+  it("records the suite and label it was given, with who ran it and where", async () => {
+    expect(await generate(["--config", stubConfig([good]), "--suite", "blueprint-loop", "--label", "three briefs"])).toBe(0);
+    const { result } = await onlyResult();
+    expect(result.run).toMatchObject({ suite: "blueprint-loop", label: "three briefs", host: os.hostname(), parent_run: null });
+    expect(result.run.developer).toEqual(expect.any(String));
+    expect(result.run.prompt_versions).toEqual({ narrator: expect.stringMatching(/^[0-9a-f]{12}$/), generator: expect.stringMatching(/^[0-9a-f]{12}$/) });
+  });
+
   it("quotes the validator's faults to the agent in the next round, and installs the repaired case", async () => {
     const root = path.join(dir, "root");
     expect(await generate(["--config", stubConfig([thin, good]), "--install"], { MYSTERY_CONFIG_ROOT: root })).toBe(0);

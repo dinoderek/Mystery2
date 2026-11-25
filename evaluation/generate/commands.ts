@@ -33,6 +33,7 @@ import { InputError, UsageError } from "../core/errors.ts";
 import { mapPool } from "../core/pool.ts";
 import { formatDuration, startDigest } from "../core/progress.ts";
 import { createRunFolder, resolveOutputRoot, slugify } from "../core/run-folder.ts";
+import { runIdentity } from "../core/run-identity.ts";
 import type { RunFolder } from "../core/run-folder.ts";
 import type { Result } from "../core/result.ts";
 import { runModel } from "../core/runner.ts";
@@ -288,6 +289,7 @@ export const generateCommand: EvalCommand = {
       command: "generate",
       argv,
       root: context.root,
+      identity: runIdentity(common, context.root),
       bindings: bindingsUsed(jobs, judge),
     });
     context.out(`[eval] run=${run.dir}`);

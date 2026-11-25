@@ -326,6 +326,12 @@ const RUN: RunInfo = {
   tree_clean: true,
   bindings: {},
   judge_versions: {},
+  suite: null,
+  label: null,
+  developer: null,
+  host: null,
+  parent_run: null,
+  prompt_versions: null,
 };
 
 const pass: Verdict = { id: "expect", tier: "mechanical", status: "pass", details: { erred: [], use: null } };

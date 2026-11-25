@@ -130,6 +130,21 @@ describe('play on stub bindings', () => {
 		}
 	}, 240_000);
 
+	it('records its suite and label, and is the parent of the run that grades its games', async () => {
+		const played = await play(['--blueprint', 'mock-case', '--narrator', 'mock', '--judge', '--suite', 'narration-loop', '--label', 'graded by play']);
+		expect(played.code, played.output).toBe(0);
+		const [gameDir] = gameDirs(played.runDir as string);
+		const result = await readResult(path.join(gameDir, 'result.json'));
+		expect(result.run).toMatchObject({ suite: 'narration-loop', label: 'graded by play', parent_run: null });
+
+		// The grading is a `judge game` run of its own, which names this run as its parent.
+		const judged = fs.readdirSync(path.join(gameDir, 'judge'), { recursive: true, encoding: 'utf8' }).filter((file) => file.endsWith('result.json'));
+		expect(judged).toHaveLength(1);
+		const grading = await readResult(path.join(gameDir, 'judge', judged[0]));
+		expect(grading.run).toMatchObject({ command: 'judge game', parent_run: result.run.id, suite: 'narration-loop', label: 'graded by play' });
+		expect(result.run.id).not.toBe(grading.run.id);
+	}, 120_000);
+
 	it('plays a short game, writes a valid result, grades it, and replays the same lines', async () => {
 		const before = repoDatabases();
 		const played = await play(['--blueprint', 'mock-case', '--narrator', 'mock', '--judge']);

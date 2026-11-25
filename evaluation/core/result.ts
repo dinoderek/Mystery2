@@ -18,8 +18,8 @@
  * command can judge it again; only `result.json` carries this version.
  *
  * Versions: 1 lacks `rounds`; 2 lacks `tokens` on attempts and calls, which
- * read back as null. Versions 1 and 2 may hold `analyzer` verdicts, from
- * analyzers since deleted; version 3 refuses them. Version 3 is the one written. A field a later task adds
+ * read back as null. Versions 1 and 2 may hold `analyzer` verdicts; version 3
+ * refuses them. Version 3 is the one written. A field a later task adds
  * to version 3 defaults to null (or empty) when absent, so every version 3
  * result already written stays readable.
  */

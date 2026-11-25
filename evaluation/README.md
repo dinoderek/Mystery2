@@ -53,13 +53,14 @@ installed only if it passed everything.
 
 ## Output
 
-Every run writes under `--output-root`, else `$MYSTERYEVALS_DIR`, else
+Runs write under `--output-root`, else `$MYSTERYEVALS_DIR`, else
 `~/mysteryevals`, never overwriting. A run folder,
-`<root>/<date>/<time>-<command>/`, holds `run.json` (the index) and a folder per
-subject: its `result.json`, inputs, prompts, logs and agent workspaces.
+`<root>/<date>/<time>-<command>/`, holds `run.json` (the index), `record.json`
+(the run record) and a folder per subject: its `result.json`, inputs, prompts,
+logs and agent workspaces.
 
 `result.json` (`evaluation/core/result.ts`) is written even when the run
-aborts. `logs/<step>*.stream.jsonl` is for watching only.
+aborts. `logs/<step>*.stream.jsonl` is for watching.
 
 ## Exit codes
 

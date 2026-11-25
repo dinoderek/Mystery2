@@ -21,9 +21,9 @@ the top of the wrapper's JSON stdout, else the last `result` event of the
 attempt's stream file. Cost is the CLI's own estimate and differs by login;
 tokens are the comparable measure.
 
-- Any other shape, a wrapper that reports nothing, and plain-text output
-  record `tokens: null`. Wrappers other than the Claude CLI's stay null until
-  they report the same shape.
+- Any other shape, and a wrapper that reports nothing (stdout without usage and
+  no stream file result), record `tokens: null`. Wrappers other than the Claude
+  CLI's stay null until they report the same shape.
 - A failed attempt keeps what it reported, as it keeps its cost.
 - A call's `tokens` is its attempts' summed field by field, null only when no
   attempt reported any.

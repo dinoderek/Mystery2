@@ -75,12 +75,12 @@ as `clue_drift`. A script without checkpoints replays with a warning and no chec
 ## Grading
 
 Off by default. With `--judge`, each game is graded as soon as it ends, while the
-next ones play, by running the game command (`evaluation/trace/README.md`) on a
-trace extracted read-only from a copy of the database. That gives the
+next ones play, by the game command (`evaluation/trace/README.md`) on a trace
+extracted read-only from a database copy. That gives the
 mechanical checks and the four `gm_*` judges, one Opus call each. Games are graded
-one at a time, so at most four judge calls run at once. Every narration is then
-scored with the runtime's `flesch` check (`evaluation/runtime/lib/flesch.ts`, no
-model call) against the blueprint's `target_age`.
+one at a time, so at most four judge calls run at once. Each narrated event is then
+scored by `flesch` (no model call) at its own `reading_age`, refused without
+one; engine lines are not scored.
 
 The verdicts go into the game's `result.json`, `summary.json` and transcript. A
 game that cannot be graded says why there. Exit 2 means a judge failed a game:

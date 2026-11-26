@@ -1,6 +1,7 @@
 // One typed line, played. The steps, each written once:
 //
-// 1. Load the history, the session (scoped to the profile) and the blueprint.
+// 1. Load the history, the session (scoped to the profile), the blueprint and
+//    the profile's reading age.
 // 2. Parse the line against the session's mode, place and the people present.
 // 3. Answer a line that is not an action at once: a refusal, a view, or quit.
 //    A refusal and `help` are saved, as lines that cost no turn.
@@ -14,6 +15,7 @@
 import type { PlayableCase } from "../../../shared/src/playable-case.ts";
 import { markClues, notebookMarks } from "../clue-graph/notebook-view.ts";
 import { sessionCase } from "../session-case.ts";
+import { requestReadingAge } from "../reading-age.ts";
 import type { GameTurnResponse, TurnPlayedResponse } from "../../../shared/src/mystery-api-contracts.ts";
 import { AIConfigError } from "../ai-config.ts";
 import { createAIProviderFromProfile, type AIProvider } from "../ai-provider.ts";
@@ -108,6 +110,7 @@ async function loadGame(ctx: EngineContext, gameId: string, logger: LogWriter): 
     game_id: gameId,
     session,
     blueprint,
+    reading_age: await requestReadingAge(ctx.profile, blueprint),
     history: playedEvents(history),
     next_sequence: nextSequence,
   };
@@ -264,6 +267,7 @@ export async function playTurn(
     cost,
     forced,
     input,
+    reading_age: game.reading_age,
     expected_sequence: expectedSequence,
     now: new Date().toISOString(),
   });

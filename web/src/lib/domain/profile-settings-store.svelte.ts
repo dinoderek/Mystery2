@@ -1,5 +1,5 @@
 // The playing profile's settings, as the settings page shows them: today, the
-// reading age its new games start at.
+// reading age its games are written at.
 //
 // Like the AI settings, a change returns the whole state, so this never patches
 // its own copy. Only a signed-in page calls it: the endpoint runs as a profile.

@@ -99,6 +99,15 @@ export function played(graph: ClueGraphCase, steps: Step[]): Played {
   return { graph, play, history: history.map((row, index) => ({ sequence: index + 2, actor: "system", ...row })) };
 }
 
+/**
+ * The case file a story's cases play, by its repo-relative path, and the
+ * reader's age they are narrated and judged at: the case file has none.
+ */
+export interface Story {
+  file: string;
+  reading_age: number;
+}
+
 /** What a case is called, graded on and judged by; a case with no `expect` is only replayed. */
 interface Labels {
   id: string;
@@ -109,9 +118,10 @@ interface Labels {
   judgeConfig?: Record<string, JudgeOptions>;
 }
 
-function given(file: string, { graph, play, history }: Played, mode: "explore" | "talk" | "accuse") {
+function given(story: Story, { graph, play, history }: Played, mode: "explore" | "talk" | "accuse") {
   return {
-    blueprint: { path: file },
+    blueprint: { path: story.file },
+    reading_age: story.reading_age,
     given: {
       mode,
       location_id: play.at,
@@ -124,27 +134,27 @@ function given(file: string, { graph, play, history }: Played, mode: "explore" |
 }
 
 /** The opening narration: `start` makes its own session, so there is no prior state. */
-export function startCase(file: string, labels: Labels): TurnCase {
-  return { ...labels, blueprint: { path: file }, given: {}, action: { type: "start" } };
+export function startCase(story: Story, labels: Labels): TurnCase {
+  return { ...labels, blueprint: { path: story.file }, reading_age: story.reading_age, given: {}, action: { type: "start" } };
 }
 
 /** Any one action where the play stands, in the mode it is in: a move, a talk, a farewell, the scene `accuse` opens. */
-export function actionCase(file: string, steps: Step[], action: TurnAction, labels: Labels): TurnCase {
-  const before = played(readGraph(file), steps);
-  return { ...labels, ...given(file, before, before.play.talking ? "talk" : "explore"), action };
+export function actionCase(story: Story, steps: Step[], action: TurnAction, labels: Labels): TurnCase {
+  const before = played(readGraph(story.file), steps);
+  return { ...labels, ...given(story, before, before.play.talking ? "talk" : "explore"), action };
 }
 
 /** A line said to the character the play is talking to. */
-export function lineCase(file: string, steps: Step[], say: string, labels: Labels): TurnCase {
-  const before = played(readGraph(file), steps);
+export function lineCase(story: Story, steps: Step[], say: string, labels: Labels): TurnCase {
+  const before = played(readGraph(story.file), steps);
   if (!before.play.talking) throw new Error(`${labels.id}: the play ends outside a conversation`);
-  return { ...labels, ...given(file, before, "talk"), action: { type: "ask", player_input: say } };
+  return { ...labels, ...given(story, before, "talk"), action: { type: "ask", player_input: say } };
 }
 
 /** A search where the play stands: `query` null is a look around the room. */
-export function searchCase(file: string, steps: Step[], query: string | null, labels: Labels): TurnCase {
-  const before = played(readGraph(file), steps);
-  return { ...labels, ...given(file, before, "explore"), action: { type: "search", ...(query === null ? {} : { search_query: query }) } };
+export function searchCase(story: Story, steps: Step[], query: string | null, labels: Labels): TurnCase {
+  const before = played(readGraph(story.file), steps);
+  return { ...labels, ...given(story, before, "explore"), action: { type: "search", ...(query === null ? {} : { search_query: query }) } };
 }
 
 /** The scene `accuse` opens, as the game saves it: no clue-graph event, so the play is unchanged. */
@@ -163,9 +173,9 @@ function sceneOpened(sequence: number): HistoryEntry {
  * `reasoning` is the one line judged. Turns are left, so a failure returns to
  * exploring rather than asking again.
  */
-export function accusationCase(file: string, steps: Step[], reasoning: string, labels: Labels): TurnCase {
-  const before = played(readGraph(file), steps);
+export function accusationCase(story: Story, steps: Step[], reasoning: string, labels: Labels): TurnCase {
+  const before = played(readGraph(story.file), steps);
   if (before.play.turns >= before.graph.metadata.time_budget) throw new Error(`${labels.id}: the play leaves no turns, so the accusation is forced`);
   const history = [...before.history, sceneOpened(before.history.length + 2)];
-  return { ...labels, ...given(file, { ...before, history }, "accuse"), action: { type: "accuse", player_reasoning: reasoning } };
+  return { ...labels, ...given(story, { ...before, history }, "accuse"), action: { type: "accuse", player_reasoning: reasoning } };
 }

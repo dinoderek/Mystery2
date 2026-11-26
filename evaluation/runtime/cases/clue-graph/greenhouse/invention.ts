@@ -8,10 +8,10 @@
 // - a detail an earlier turn invented, asked about later in the same talk, or
 //   met again on a later visit to the place.
 
-import { lineCase, searchCase, type Step } from "../support/play.ts";
+import { lineCase, searchCase, type Step, type Story } from "../support/play.ts";
 import { SEARCHED } from "./talk.ts";
 
-const GREENHOUSE = "blueprints/clue-graph/greenhouse-prizewinner.json";
+const GREENHOUSE: Story = { file: "blueprints/clue-graph/greenhouse-prizewinner.json", reading_age: 10 };
 type Labels = Parameters<typeof lineCase>[3];
 const line = (steps: Step[], say: string, labels: Labels) => lineCase(GREENHOUSE, steps, say, labels);
 const search = (steps: Step[], query: string | null, labels: Labels) => searchCase(GREENHOUSE, steps, query, labels);

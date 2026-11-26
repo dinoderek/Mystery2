@@ -152,7 +152,7 @@ describe("ACTIONS registry", () => {
 describe("ACTIONS local-replay mapping", () => {
   const blueprint = {
     clue_graph,
-    metadata: { target_age: 9 },
+    metadata: { title: "Hall" },
     world: {
       characters: [{ id: "c1", first_name: "Ann" }],
       locations: [{ id: "l1", name: "Hall" }],
@@ -375,7 +375,7 @@ describe("narration parts of an answer", () => {
 });
 
 describe("the start action creates its own session", () => {
-  const blueprint = { clue_graph, id: "bp-1", metadata: { target_age: 9 }, world: { characters: [], locations: [] } };
+  const blueprint = { clue_graph, id: "bp-1", metadata: { title: "Hall" }, world: { characters: [], locations: [] } };
 
   it("is flagged as session-creating and has no prior mode", () => {
     // Every other action addresses a seeded session; start makes one, so the

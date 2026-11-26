@@ -7,10 +7,10 @@
 // touches a clue of their own still to come out.
 
 import type { Expect } from "../../../lib/case.ts";
-import { lineCase, type Step } from "../support/play.ts";
+import { lineCase, type Step, type Story } from "../support/play.ts";
 import { DOBBS_MET, HALE_GREETS, MIA_GREETS, SEARCHED, THORNE_MET } from "./talk.ts";
 
-const GREENHOUSE = "blueprints/clue-graph/greenhouse-prizewinner.json";
+const GREENHOUSE: Story = { file: "blueprints/clue-graph/greenhouse-prizewinner.json", reading_age: 10 };
 const line = (steps: Step[], say: string, labels: Parameters<typeof lineCase>[3]) => lineCase(GREENHOUSE, steps, say, labels);
 const UNKNOWN: Expect = { revealed_clue_ids: [], input_understood: true, judges: { gm_fabrication: "either" } };
 

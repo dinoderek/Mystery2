@@ -13,7 +13,9 @@ contract; prompts: `docs/ai-runtime.md`, screens: `docs/ui.md`.
   ([clue graph](clue-graph.md)).
 - **The turn budget** (`metadata.time_budget`) bounds the investigation.
 - **The reading age** narration is written for is the profile's (settings
-  page), else the case's `metadata.target_age`, saved when a game starts.
+  page), read on every request, so a change reaches the game's next line;
+  each narrated event records its age. A profile with none reads at the case's
+  `metadata.target_age`.
 
 ## Starting a case
 

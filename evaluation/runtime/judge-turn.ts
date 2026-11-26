@@ -48,7 +48,7 @@ import { bindingLabel, contentHash, serverNarratorLabel } from "../core/suite-at
 import type { CommandAttributes } from "../core/suite-attributes.ts";
 import { pickAIs } from "../../scripts/lib/ai-seed.mjs";
 import { assertCaseCharacters, loadCasesFrom, readBlueprint, validateCase } from "./lib/case.ts";
-import type { BlueprintLike, JudgeOptions, TurnCase } from "./lib/case.ts";
+import type { JudgeOptions, TurnCase } from "./lib/case.ts";
 import { EXPECT_VERDICT, expectJudges, gradeExpect, validateExpect, type ComesWith } from "./lib/expect.ts";
 import { EXPECT_FILE, formatSummary, summarizeSamples, writeSummary } from "./lib/expect-summary.ts";
 import type { Sample } from "./lib/expect-summary.ts";
@@ -58,7 +58,7 @@ import { modelLabel, NarratorReplayError, replayThroughNarrator } from "./lib/re
 import type { Collected } from "./lib/replay-cli.ts";
 import { ServerNarrator, startThrowawayServer } from "./lib/replay-server.ts";
 import type { StartServer } from "./lib/replay-server.ts";
-import { playedEvents } from "../lib/game-events.ts";
+import { isNarrated, playedEvents } from "../lib/game-events.ts";
 import { ridersOf } from "../../packages/game-engine/src/clue-graph/play.ts";
 import { TURN_FILE, buildTurn, isStoredTurn, readStoredTurn, turnFromEvent } from "./lib/turn.ts";
 import type { StoredEvent } from "./lib/turn.ts";
@@ -130,7 +130,7 @@ async function readJsonOrNull(file: string): Promise<unknown> {
 }
 
 interface StoredGame {
-  blueprint: { metadata?: { target_age?: number } };
+  blueprint: object;
   events: StoredEvent[];
 }
 
@@ -148,15 +148,15 @@ function isStoredGame(value: unknown): value is StoredGame {
 }
 
 /**
- * The turns a stored game is judged on: every played event with narration, in
- * sequence order, each on the narration it holds. `id` names the game, and so
- * each turn's `case_id`.
+ * The turns a stored game is judged on: every event the narrator wrote, in
+ * sequence order, each on the narration it holds and at the age its event
+ * records. Engine-written lines (a lead, a refusal) are fixed text, not the
+ * narrator's. `id` names the game, and so each turn's `case_id`.
  */
 export function storedGameTurns(game: { blueprint: object; events: StoredEvent[] }, id: string): StoredTurn[] {
-  const targetAge = (game.blueprint as StoredGame["blueprint"]).metadata?.target_age;
-  const owner = { id, targetAge: typeof targetAge === "number" ? targetAge : null, blueprintPath: "" };
+  const owner = { id, blueprintPath: "" };
   return playedEvents(game.events)
-    .filter((event) => typeof event.narration === "string" && event.narration.trim().length > 0)
+    .filter((event) => isNarrated(event) && typeof event.narration === "string" && event.narration.trim().length > 0)
     .sort((a, b) => a.sequence - b.sequence)
     .map((event) => turnFromEvent(event, owner));
 }
@@ -332,7 +332,7 @@ async function captureCase(
   const startedAt = new Date();
   const collected = await replayCase(narrator, testCase, runtime, folder.logDir);
   const endedAt = new Date();
-  const { blueprint, blueprintPath } = await readBlueprint(testCase.blueprint.path, runtime.context.root);
+  const { blueprintPath } = await readBlueprint(testCase.blueprint.path, runtime.context.root);
   const turn = buildTurn({
     runId: runtime.folder.info().id,
     startedAt: startedAt.toISOString(),
@@ -341,7 +341,7 @@ async function captureCase(
     narrator,
     model: collected.model,
     blueprintPath,
-    targetAge: (blueprint as BlueprintLike).metadata?.target_age ?? null,
+    readingAge: testCase.reading_age,
     given: testCase.given,
     action: testCase.action,
     response: collected.response,

@@ -54,6 +54,7 @@ function arrivalAt(sequence: number): string {
     role: "ambience",
     game_id: "stored",
     blueprint,
+    reading_age: 10,
     destination_id: String(event.payload?.destination),
     conversation_history: events.filter((entry) => entry.sequence < sequence),
   });

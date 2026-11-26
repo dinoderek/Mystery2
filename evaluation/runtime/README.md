@@ -30,12 +30,13 @@ the run folder), and removes the root; your play database is untouched. A case s
 
 ## Cases
 
-A case holds a blueprint, `given` state (mode, location, time, full `history`),
-one `action`, and judges. A case file (`.ts`, `.mjs`, `.json`)
+A case holds a blueprint, its `reading_age` (the reader's, which the action is
+narrated and judged at; a server run sets it on the profile), `given` state
+(mode, location, time, full `history`), one `action`, and judges. A case file (`.ts`, `.mjs`, `.json`)
 holds one case or a list; a folder runs each file in it
 (`evaluation/runtime/cases/clue-graph/mock-case/readability.ts` is annotated).
-A case fails before any call if its blueprint is no clue graph or
-names a character it lacks. `history` rows have the shape the runtime stores in
+A case fails before any call if it has no `reading_age`, or its blueprint is
+no clue graph or names a character it lacks. `history` rows have the shape the runtime stores in
 `game_events`; a clue-graph case's carry `payload.clue_graph`, which a server run seeds ([`docs/clue-graph.md`](../../docs/clue-graph.md)). Action types and modes: `ACTIONS` in
 `evaluation/runtime/lib/roles.ts`.
 
@@ -45,7 +46,7 @@ names a character it lacks. `history` rows have the shape the runtime stores in
 ## Judges
 
 - `flesch`, a check: the deterministic Flesch–Kincaid grade against the
-  blueprint's `target_age`.
+  turn's `reading_age`.
 - `age_appropriate_turn`, a judge for what the formula misses (vocabulary,
   figurative language), against the narrator prompt's age profile.
 - `gm_roleplay`, `gm_clue_discipline`, `gm_fabrication`, `gm_spoiler`: the
@@ -55,7 +56,7 @@ names a character it lacks. `history` rows have the shape the runtime stores in
 **Which judges run:** `--judges a,b`, else the case's `judges`, else none.
 
 **Options** go in the case's `judgeConfig.<judge>`: `tolerance` (`flesch`, grade
-levels above target, default 2), `targetAge` (`flesch`, `age_appropriate_turn`) and
+levels above target, default 2), `readingAge` (`flesch`, `age_appropriate_turn`) and
 `blueprintPath` (`gm_*`). Every model judge calls the `turn-judge` binding
 (`--judge-binding judge-stub` always passes); one that cannot run
 stops the run before any replay.
@@ -135,8 +136,10 @@ with default options: `judgeConfig` and `expect` are unstored.
 ### Cases from a played game
 
 `./dev eval cases <trace.json>` exports supported events with their pre-state
-(`evaluation/trace/README.md`). Given the trace itself, `judge turn` judges
-each narrated turn with `flesch` and `age_appropriate_turn`, calling no narrator.
+and the `reading_age` each event records (`evaluation/trace/README.md`). Given
+the trace itself, `judge turn` judges each narrated turn with `flesch` and
+`age_appropriate_turn` at its event's age, calling no narrator. An event
+without one is refused.
 
 ## Adding things
 

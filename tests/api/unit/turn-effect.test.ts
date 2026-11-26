@@ -23,7 +23,6 @@ function session(overrides: Partial<GameSessionRow> = {}): GameSessionRow {
     time_remaining: 5,
     discovered_clues: [],
     outcome: null,
-    reading_age: null,
     created_at: NOW,
     updated_at: NOW,
     ...overrides,
@@ -64,6 +63,7 @@ function effectOf(game: GameSessionRow, played: ActionOutcome, forced = false, h
     cost: spendTurn(game.time_remaining, played.costs_turn),
     forced: forced ? FORCED : null,
     input: "go to the hall",
+    reading_age: 9,
     expected_sequence: 7,
     now: NOW,
   });
@@ -99,6 +99,7 @@ describe("turnEffect", () => {
     expect(move.event.payload).toMatchObject({
       location_name: "Hall",
       input: "go to the hall",
+      reading_age: 9,
       diagnostics: { sequence: 7, time_before: 5, time_after: 4, time_consumed: true, forced_endgame: false },
     });
     expect(effect.state).toEqual({
@@ -151,11 +152,22 @@ describe("turnEffect", () => {
     expect(forced).toMatchObject({
       character_id: "char-alice",
       trigger: "timeout",
+      reading_age: 9,
       diagnostics: { related_sequence: 7, forced_endgame: true },
     });
     // The player typed only the action's line.
     expect(forced).not.toHaveProperty("input");
     expect(effect.state.current_talk_character).toBeNull();
+  });
+
+  it("records no age on an event the narrator did not write", () => {
+    const back = outcome({
+      event: { ...outcome().event, event_type: "accuse_back", action: "accuse_back", mode: "accuse", model: null },
+      costs_turn: false,
+      endgame: null,
+    });
+
+    expect(effectOf(session({ mode: "accuse" }), back).events[0].event.payload).not.toHaveProperty("reading_age");
   });
 
   it("ends the case with the accusation's result", () => {

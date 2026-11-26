@@ -21,6 +21,7 @@ export async function resolveMove(
     role: "ambience",
     game_id: game.game_id,
     blueprint: game.blueprint,
+    reading_age: game.reading_age,
     destination_id: place.id,
     conversation_history: game.history,
   });

@@ -130,7 +130,7 @@ describe("readers of a game's events, with lines that cost no turn saved", () =>
   });
 
   it("the reading-level score counts only the game master's narration", () => {
-    const score = (events: TraceEventRow[]) => scoreReadability(traceOf(events), 9);
+    const score = (events: TraceEventRow[]) => scoreReadability(traceOf(events));
 
     expect(score(withLines).narrations.length).toBe(score(without).narrations.length);
     expect(bySequenceAmongPlayed(score(withLines), withLines)).toEqual(score(without));

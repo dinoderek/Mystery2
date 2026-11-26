@@ -46,6 +46,12 @@ export interface InsertNarrationEventInput {
    * `resolvedModel`). Null/omitted for events with no associated AI call.
    */
   model?: string | null;
+  /**
+   * The age the model wrote this event's narration at, recorded in its
+   * payload when there is a `model`, and required then: every narrated event
+   * records its age, and an engine-written one records none.
+   */
+  reading_age?: number;
   diagnostics?: NarrationDiagnostics;
   logger?: LogWriter;
 }
@@ -242,6 +248,13 @@ export function buildNarrationEvent(
   sequence: number,
 ): SaveEvent {
   const payload = input.payload ? { ...input.payload } : {};
+
+  if (input.model) {
+    if (input.reading_age === undefined) {
+      throw new Error(`A narrated ${input.event_type} event needs the reading age it was written at`);
+    }
+    payload.reading_age = input.reading_age;
+  }
 
   if (input.diagnostics) {
     payload.diagnostics = {

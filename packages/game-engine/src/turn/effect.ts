@@ -58,6 +58,8 @@ export interface TurnEffectInput {
   forced: ForcedEndgame | null;
   /** The line as the player typed it. */
   input: string;
+  /** The age the turn's narration was written at, recorded on each narrated event. */
+  reading_age: number;
   /** The sequence the first event takes. */
   expected_sequence: number;
   now: string;
@@ -76,6 +78,7 @@ function actionRecord(input: TurnEffectInput, resultingMode: GameMode): InsertNa
     payload: { ...event.payload, input: input.input },
     narration_parts: event.narration_parts,
     model: event.model,
+    reading_age: input.reading_age,
     diagnostics: createNarrationDiagnostics({
       action: event.action,
       event_category: event.event_type,
@@ -101,6 +104,7 @@ function forcedRecord(input: TurnEffectInput, forced: ForcedEndgame): InsertNarr
     payload: input.outcome.endgame.payload,
     narration_parts: forced.narration_parts,
     model: forced.model,
+    reading_age: input.reading_age,
     time_after: input.cost.time_after,
   });
 }

@@ -100,7 +100,7 @@ describe("judge turn over a case set", () => {
       expect(result.production?.calls.map((call) => call.binding)).toEqual(["narrator-stub"]);
       expect(result.verdicts[1].call?.binding).toBe("judge-stub");
       const turn = JSON.parse(fs.readFileSync(path.join(dir, "turn.json"), "utf8"));
-      expect(turn).toMatchObject({ narrator: "narrator-stub", target_age: 10 });
+      expect(turn).toMatchObject({ narrator: "narrator-stub", reading_age: 10 });
       expect(turn.response.narration_text.length).toBeGreaterThan(0);
     }
   });
@@ -336,7 +336,7 @@ describe("judge turn refuses what it cannot run", () => {
     const config = path.join(scratch, `marking-${field}.json`);
     fs.writeFileSync(config, JSON.stringify({ "narrator-marking": { cmd: wrapper, args: [], timeout_ms: 30_000 } }));
     const caseFile = path.join(scratch, `unknown-character-${field}.json`);
-    fs.writeFileSync(caseFile, JSON.stringify({ id: "greet-nobody", blueprint: { path: MOCK_CASE_PATH }, given: { history: [] }, ...fields }));
+    fs.writeFileSync(caseFile, JSON.stringify({ id: "greet-nobody", blueprint: { path: MOCK_CASE_PATH }, reading_age: 10, given: { history: [] }, ...fields }));
     const startServer = vi.fn();
 
     const { code, output, runDir } = await run(

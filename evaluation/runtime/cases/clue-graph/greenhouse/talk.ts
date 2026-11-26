@@ -15,9 +15,9 @@
 // - hold-*: nothing is used, so nothing opens: pushing, a topic word only, small
 //   talk, a clue held but not used, gibberish.
 
-import { lineCase, type Step } from "../support/play.ts";
+import { lineCase, type Step, type Story } from "../support/play.ts";
 
-const GREENHOUSE = "blueprints/clue-graph/greenhouse-prizewinner.json";
+const GREENHOUSE: Story = { file: "blueprints/clue-graph/greenhouse-prizewinner.json", reading_age: 10 };
 const line = (steps: Step[], say: string, labels: Parameters<typeof lineCase>[3]) => lineCase(GREENHOUSE, steps, say, labels);
 const NOTHING = { revealed_clue_ids: [], input_understood: true };
 

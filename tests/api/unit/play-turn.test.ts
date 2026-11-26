@@ -70,7 +70,6 @@ async function startGame() {
       mode: "explore",
       current_location_id: "loc-kitchen",
       time_remaining: 10,
-      reading_age: 8,
       clue_graph_snapshot: readMockCaseGraph(),
     },
     events: [

@@ -42,7 +42,7 @@ describe("age_appropriate_turn judge (stub binding)", () => {
   it("maps a pass verdict onto the verdict contract", async () => {
     const result = await judge();
     expect(result).toMatchObject({ id: ID, tier: "judge", status: "pass", findings: [] });
-    expect(result.details).toMatchObject({ score: 8, target_age: 10, estimated_reading_age: 8 });
+    expect(result.details).toMatchObject({ score: 8, reading_age: 10, estimated_reading_age: 8 });
     expect(result.call).toMatchObject({ binding: "judge-stub", model: null });
     expect(result.answer).toMatchObject({ verdict: "pass" });
   });
@@ -87,10 +87,10 @@ describe("age_appropriate_turn judge (stub binding)", () => {
     expect(result.call?.attempts[0].outcome).toBe("invalid");
   });
 
-  it("errors without a target age", async () => {
-    const result = await judge(makeTurn({ target_age: null }));
+  it("errors without a reading age", async () => {
+    const result = await judge(makeTurn({ reading_age: null }));
     expect(result.status).toBe("error");
-    expect(result.reason).toContain("target_age");
+    expect(result.reason).toContain("reading_age");
   });
 
   it("errors on an empty narration", async () => {
@@ -99,10 +99,10 @@ describe("age_appropriate_turn judge (stub binding)", () => {
     expect(result.reason).toContain("no narration");
   });
 
-  it("honours the judge option targetAge over the turn's", async () => {
-    const result = await judge(makeTurn({ target_age: null }), { targetAge: 9 });
+  it("honours the judge option readingAge over the turn's", async () => {
+    const result = await judge(makeTurn({ reading_age: null }), { readingAge: 9 });
     expect(result.status).toBe("pass");
-    expect(result.details).toMatchObject({ target_age: 9 });
+    expect(result.details).toMatchObject({ reading_age: 9 });
   });
 
   it("runs alongside flesch, in the order named", async () => {

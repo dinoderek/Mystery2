@@ -10,7 +10,9 @@
  *   given  = that pre-event state and ALL prior events as fixed history
  *   action = the event itself (ask, talk, move, search)
  *
- * which is exactly the deterministic single-event shape `judge turn` replays.
+ * which is exactly the deterministic single-event shape `judge turn` replays,
+ * at the age the event records it was narrated at (an event without one is
+ * refused).
  * The cases and the trace's blueprint are written under `--out`, else under
  * `<output root>/cases/<trace>/`.
  */
@@ -23,7 +25,7 @@ import type { OptionValue } from "../core/args.ts";
 import type { EvalCommand } from "../core/dispatch.ts";
 import { UsageError } from "../core/errors.ts";
 import { resolveOutputRoot } from "../core/run-folder.ts";
-import { playedEvents } from "../lib/game-events.ts";
+import { playedEvents, readingAgeOf } from "../lib/game-events.ts";
 import type { TurnAction, TurnCase } from "./lib/case.ts";
 
 /** A persisted event, as a trace holds it. */
@@ -92,6 +94,7 @@ export function buildCase(event: TraceEvent, priorEvents: TraceEvent[], blueprin
   return {
     id: `s${event.sequence}-${event.event_type}`,
     blueprint: { path: blueprintPath },
+    reading_age: readingAgeOf(event),
     given,
     action: actionForEvent(event) as TurnAction,
     judges,
@@ -134,7 +137,7 @@ function positiveInteger(value: OptionValue, fallback: number, flag: string): nu
 }
 
 interface Trace {
-  blueprint: { id: string; clue_graph?: unknown; metadata?: { title?: string; target_age?: number } };
+  blueprint: { id: string; clue_graph?: unknown; metadata?: { title?: string } };
   events: TraceEvent[];
 }
 
@@ -172,7 +175,7 @@ function describeCase(c: TurnCase): string {
   const detail = a.type === "ask" ? JSON.stringify(a.player_input)
     : a.type === "talk" ? String(a.character_id)
     : a.type === "move" ? `-> ${a.destination}` : "";
-  return `  ${c.id.padEnd(14)} history=${String(c.given.history?.length ?? 0).padStart(2)}  ${detail}`;
+  return `  ${c.id.padEnd(14)} age=${c.reading_age} history=${String(c.given.history?.length ?? 0).padStart(2)}  ${detail}`;
 }
 
 export const casesCommand: EvalCommand = {
@@ -200,18 +203,15 @@ export const casesCommand: EvalCommand = {
     const blueprintsDir = path.join(outDir, "blueprints");
     await fs.mkdir(blueprintsDir, { recursive: true });
     const blueprintFile = path.join(blueprintsDir, `${trace.blueprint.id}.json`);
-    // The graph carries the case's own age; the game was played at the trace's, so the file says that.
-    const graph = trace.blueprint.clue_graph as { metadata?: Record<string, unknown> };
-    const played = trace.blueprint.metadata?.target_age;
-    const atPlayedAge = played === undefined ? graph : { ...graph, metadata: { ...graph.metadata, target_age: played } };
-    await fs.writeFile(blueprintFile, `${JSON.stringify(atPlayedAge, null, 2)}\n`);
+    // The case as the game played it; each case carries its own turn's age.
+    await fs.writeFile(blueprintFile, `${JSON.stringify(trace.blueprint.clue_graph, null, 2)}\n`);
 
     const cases = casesFromTrace(trace, types, max, blueprintFile, judges);
     const outFile = path.join(outDir, `${traceId}.cases.json`);
     await fs.writeFile(outFile, `${JSON.stringify(cases, null, 2)}\n`);
 
     context.out(`[cases] ${cases.length} case(s) -> ${outFile}`);
-    context.out(`[cases] blueprint -> ${blueprintFile} (target_age ${trace.blueprint.metadata?.target_age})`);
+    context.out(`[cases] blueprint -> ${blueprintFile}`);
     for (const c of cases) context.out(describeCase(c));
     return 0;
   },

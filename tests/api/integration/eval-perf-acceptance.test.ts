@@ -551,7 +551,7 @@ describe("the usage wrapper", () => {
       expect(answer("narrate", file), name).toBe(execFileSync("bash", [STUB_NARRATOR, file], { encoding: "utf8" }));
     }
     const judged = path.join(dir, "judge.json");
-    fs.writeFileSync(judged, JSON.stringify({ target_age: 9, narration: "You look around." }));
+    fs.writeFileSync(judged, JSON.stringify({ reading_age: 9, narration: "You look around." }));
     expect(JSON.parse(answer("pass", judged))).toEqual(JSON.parse(execFileSync("bash", [STUB_TURN_JUDGE, judged], { encoding: "utf8" })));
   });
 });

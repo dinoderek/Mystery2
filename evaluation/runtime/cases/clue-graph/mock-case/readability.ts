@@ -6,7 +6,7 @@
 // and across models. No turn accumulation, no divergence: swap the narrator or
 // ai_profile/model and you are comparing apples to apples on the same input.
 //
-// The mock case targets age 10 (about US grade 5). `history` rows mirror how the
+// These cases are narrated at age 10 (about US grade 5). `history` rows mirror how the
 // runtime stores game_events, so the same data drives both narrator sources:
 // the server seeds these as rows; a CLI narrator feeds them to the context
 // builder.
@@ -16,10 +16,10 @@
 // with --judges flesch,age_appropriate_turn; --judge-binding judge-stub answers
 // it offline.
 
-import { actionCase, lineCase } from "../support/play.ts";
+import { actionCase, lineCase, type Story } from "../support/play.ts";
 import { ALICE_GREETS } from "./all-interactions.ts";
 
-const MOCK = "blueprints/clue-graph/mock-case.json";
+const MOCK: Story = { file: "blueprints/clue-graph/mock-case.json", reading_age: 10 };
 const FLESCH = { judges: ["flesch"], judgeConfig: { flesch: { tolerance: 2 } } };
 
 export default [

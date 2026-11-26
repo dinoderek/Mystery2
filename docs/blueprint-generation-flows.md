@@ -60,7 +60,7 @@ executable fields and unknown references. Manifests live in
 
 ## Narration at play
 
-Every row also receives the game's reading age as `metadata.target_age`.
+Every row also receives the reader's age, `reading_age`, from the profile.
 
 | Output | Source (role) | Case input | Other input | Attached |
 |---|---|---|---|---|
@@ -72,9 +72,9 @@ Every row also receives the game's reading age as `metadata.target_age`.
 | Accusation start | the accuse action (`accusation_start`), or a forced endgame | Location and timing; the public roster | All history, or none | — |
 | Accusation | the accuse action (`graph_accusation`, then `graph_accusation_round` or `graph_ending`) | The people and the held clues; then the engine's reply material, or the timeline, culprit conclusion and motive | The accusation so far; the reasoning | — |
 
-A character's **public face** is their name, `sex` and `appearance`.
-Everything else about them reaches only their own conversation, through the
-graph; saved lines stand for found clues.
+A character's **public face** is their name, `sex` and `appearance`; the rest
+reaches only their own conversation, through the graph. Saved lines stand for
+found clues.
 
 `narrative.starting_knowledge.mystery_summary` is never narrated: `game-start`
 and `game-get` return it as the notebook's case facts. The engine chooses

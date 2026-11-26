@@ -175,18 +175,18 @@ async function runAdherenceJudge(entry: JudgeEntry, turn: StoredTurn, judging: T
 
 async function runAgeJudge(entry: JudgeEntry, turn: StoredTurn, judging: TurnJudging): Promise<Verdict> {
   const options = judging.options?.[entry.id] ?? {};
-  const targetAge = options.targetAge ?? turn.target_age;
-  if (typeof targetAge !== "number" || !Number.isFinite(targetAge)) {
-    return failed(entry, "no target_age available on the turn or in its judge options");
+  const readingAge = options.readingAge ?? turn.reading_age;
+  if (typeof readingAge !== "number" || !Number.isFinite(readingAge)) {
+    return failed(entry, "no reading_age on the turn or in its judge options");
   }
   const narration = narrationOf(turn);
   if (narration.trim().length === 0) {
-    return failed(entry, "response has no narration text to judge", { details: { target_age: targetAge } });
+    return failed(entry, "response has no narration text to judge", { details: { reading_age: readingAge } });
   }
   if (!judging.binding) throw new Error(`no judge binding for ${entry.id}`);
 
   const userMessage = JSON.stringify({
-    target_age: targetAge,
+    reading_age: readingAge,
     action: { type: turn.action?.type ?? null, player_input: turn.action?.player_input ?? null },
     narration,
     narration_parts: (turn.response.narration_parts ?? []).map((part) => ({
@@ -197,14 +197,14 @@ async function runAgeJudge(entry: JudgeEntry, turn: StoredTurn, judging: TurnJud
   const result = await runModel({
     binding: judging.binding,
     step: `judge-${entry.id}`,
-    systemPrompt: composeTurnAgeSystemPrompt(targetAge),
+    systemPrompt: composeTurnAgeSystemPrompt(readingAge),
     userMessage,
     logDir: judging.logDir,
     memo: judging.memo,
     answerSchema: TURN_AGE_ANSWER_SCHEMA,
     parse: (answer) => validateTurnAgeAnswer(parseFencedJson(answer)),
   });
-  if (!result.ok) return failed(entry, result.error, { call: result.call, details: { target_age: targetAge } });
+  if (!result.ok) return failed(entry, result.error, { call: result.call, details: { reading_age: readingAge } });
 
   const answer = result.value;
   return {
@@ -214,7 +214,7 @@ async function runAgeJudge(entry: JudgeEntry, turn: StoredTurn, judging: TurnJud
     findings: answer.findings as unknown[],
     details: {
       score: answer.estimated_reading_age,
-      target_age: targetAge,
+      reading_age: readingAge,
       estimated_reading_age: answer.estimated_reading_age,
       reasoning: answer.reasoning,
     },

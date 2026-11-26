@@ -46,16 +46,16 @@ const OUTCOME_LENGTH_BY_ROLE: Partial<
  */
 function renderRoleGuidance(
   role: AIPromptKey,
-  targetAge: number,
+  readingAge: number,
   interaction?: InteractionId,
 ): string {
   const branches = OUTCOME_LENGTH_BY_ROLE[role];
   if (!interaction && branches) {
-    return `${renderComplexityGuidance(targetAge)}\n${
-      renderOutcomeLengthGuidance(targetAge, branches)
+    return `${renderComplexityGuidance(readingAge)}\n${
+      renderOutcomeLengthGuidance(readingAge, branches)
     }`;
   }
-  return renderGuidance(interaction ?? INTERACTION_BY_ROLE[role], targetAge);
+  return renderGuidance(interaction ?? INTERACTION_BY_ROLE[role], readingAge);
 }
 
 /**
@@ -63,8 +63,8 @@ function renderRoleGuidance(
  * into a prompt via the `{{age_guidance}}` placeholder. Single source of truth
  * is `age-profile.ts`.
  */
-export function buildAgeGuidance(role: AIPromptKey, targetAge: number): string {
-  return renderRoleGuidance(role, targetAge);
+export function buildAgeGuidance(role: AIPromptKey, readingAge: number): string {
+  return renderRoleGuidance(role, readingAge);
 }
 
 // Narrating roles share the same voice and limits on what they can make up.
@@ -107,7 +107,7 @@ export function buildStyleGuidance(narratorVoice?: string): string {
 
 // Prompts are embedded intentionally so runtime does not depend on filesystem
 // behavior inside the edge bundler. The `{{age_guidance}}` placeholder is filled
-// per role + target age from `age-profile.ts` (see buildAgeGuidance), and
+// per role + reading age from `age-profile.ts` (see buildAgeGuidance), and
 // `{{style_guidance}}` with the shared layer above.
 const PROMPT_TEMPLATE_BY_ROLE: Record<AIPromptKey, string> = {
   talk_end: `You are the narrator for a children's mystery game.
@@ -162,20 +162,20 @@ export interface LoadPromptOptions {
 /**
  * Load a role template with its age-band and style guidance already injected.
  *
- * `targetAge` is REQUIRED: the guidance is filled here, not by the caller, so a
+ * `readingAge` is REQUIRED: the guidance is filled here, not by the caller, so a
  * handler cannot accidentally ship a prompt with blank `{{age_guidance}}` — a
  * missing age is a compile error, not a silent empty substitution. The
  * `{{style_guidance}}` slot is likewise always filled.
  */
 export async function loadPromptTemplate(
   role: AIPromptKey,
-  targetAge: number,
+  readingAge: number,
   options: LoadPromptOptions = {},
 ): Promise<string> {
   return PROMPT_TEMPLATE_BY_ROLE[role]
     .replace(
       "{{age_guidance}}",
-      renderRoleGuidance(role, targetAge, options.interaction),
+      renderRoleGuidance(role, readingAge, options.interaction),
     )
     .replace(
       "{{style_guidance}}",
@@ -221,11 +221,11 @@ function readFactLines(prompt: string, header: string): string[] | null {
 }
 
 /** The opening: the case's public facts, every one of which it words. */
-export function buildGameStartPrompt(input: { target_age: number; facts: string[] }): string {
+export function buildGameStartPrompt(input: { reading_age: number; facts: string[] }): string {
   return [
     "You are the narrator for a children's mystery game.",
-    renderComplexityGuidance(input.target_age),
-    renderLengthGuidance("intro", input.target_age),
+    renderComplexityGuidance(input.reading_age),
+    renderLengthGuidance("intro", input.reading_age),
     buildStyleGuidance(),
     "Open the case and invite investigation. Tell every fact below in your own words; leave none out.",
     ...factLines(OPENING_FACTS_HEADER, input.facts),
@@ -250,7 +250,7 @@ const ARRIVAL_HEADLINE = /^Describe the player arriving at (.+)\.$/m;
 const ARRIVAL_CHARACTERS_PREFIX = "Characters at destination: ";
 
 export function buildGameMovePrompt(input: {
-  target_age: number;
+  reading_age: number;
   destination_name: string;
   has_visited_before: boolean;
   last_arrival_narration?: string | null;
@@ -267,8 +267,8 @@ export function buildGameMovePrompt(input: {
   return [
     "You are the narrator for a children's mystery game.",
     `Describe the player arriving at ${input.destination_name}.`,
-    renderComplexityGuidance(input.target_age),
-    renderLengthGuidance("ambience", input.target_age),
+    renderComplexityGuidance(input.reading_age),
+    renderLengthGuidance("ambience", input.reading_age),
     buildStyleGuidance(),
     revisitInstruction,
     "Describe the place from its facts, every one, and who is visibly here from their names and appearances.",

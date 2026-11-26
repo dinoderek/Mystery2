@@ -43,8 +43,9 @@
     "run_error": null,
     "judge_cost_usd": 0.5,
     "readability": {
-      "target_age": 7,
-      "threshold": 4,
+      "reading_ages": [
+        7
+      ],
       "pass": 1,
       "total": 2,
       "mean_grade": 5,

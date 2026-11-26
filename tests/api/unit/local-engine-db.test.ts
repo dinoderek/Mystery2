@@ -54,7 +54,6 @@ function newSession(playerId: string): NewGameSession {
     mode: "explore",
     current_location_id: "loc_hall",
     time_remaining: 20,
-    reading_age: 8,
   };
 }
 
@@ -426,13 +425,13 @@ describe("profile store", () => {
 });
 
 describe("session store", () => {
-  it("keeps the age a game started with", async () => {
+  it("writes no age for a game: the age is the profile's", async () => {
     const player = createPlayerStore(db).create("Ada");
     const sessions = createSessionStore(db, player.id);
-    const gameId = await sessions.create({ ...newSession(player.id), reading_age: 11 });
+    const gameId = await sessions.create(newSession(player.id));
 
-    expect(await sessions.getById(gameId)).toMatchObject({ reading_age: 11 });
-    await expect(sessions.create({ ...newSession(player.id), reading_age: 3 })).rejects.toThrow();
+    expect(db.prepare("select reading_age from game_sessions where id = ?").get(gameId)).toEqual({ reading_age: null });
+    expect(await sessions.getById(gameId)).not.toHaveProperty("reading_age");
   });
 
   it("round-trips a session, including the JSON-encoded clue array", async () => {

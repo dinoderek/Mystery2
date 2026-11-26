@@ -3,6 +3,7 @@
 // the turns left after each step. Rendering it as text gives the golden file.
 
 import { INVESTIGATOR_SPEAKER, SYSTEM_SPEAKER } from "../../../../web/src/lib/domain/speaker.ts";
+import { ageUnchangedNote } from "@my2/shared";
 import { buildSessionPages } from "../../../../web/src/lib/domain/session-pages.ts";
 import type { NarrationEvent, NarrationPart, Speaker } from "../../../../web/src/lib/types/game.ts";
 import type { GameDriver, GameMode, LineOutcome, OutcomeEvent } from "./driver.ts";
@@ -70,8 +71,10 @@ export class Screen {
     let overlay: string | null = null;
     let clues: string[] = [];
     let result: "win" | "lose" | null = null;
-    // Opening the notebook leaves no trace in the transcript; everything else echoes the line.
-    const echoes = input !== null && !(outcome.kind === "view" && !outcome.echo);
+    // Opening the notebook leaves no trace in the transcript, and the line saying the
+    // age changed stands alone; everything else echoes the line.
+    const echoes =
+      input !== null && !(outcome.kind === "view" && !outcome.echo) && !(outcome.kind === "age" && outcome.event);
     const stepNumber = this.steps.length;
     if (echoes) this.append("input", [part(INVESTIGATOR_SPEAKER, input)], undefined, stepNumber);
 
@@ -82,6 +85,10 @@ export class Screen {
         break;
       case "refused":
         this.append("system_response", [part(SYSTEM_SPEAKER, outcome.hint)], undefined, stepNumber);
+        break;
+      case "age":
+        if (outcome.event) this.append(outcome.event.event_type, outcome.event.narration_parts, outcome.event.payload, stepNumber);
+        else this.append("system_response", [part(SYSTEM_SPEAKER, ageUnchangedNote(outcome.reading_age))], undefined, stepNumber);
         break;
       case "quit":
         this.mode = "ended";

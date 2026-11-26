@@ -9,11 +9,11 @@ import type { GameMode } from "../../../packages/game-engine/src/state-machine.t
 import { BASE_GAME_STATE } from "../../testkit/src/fixtures.ts";
 
 const EXPLORE_HINT =
-  "Commands: move to/go to <location>, talk to <character>, search, accuse [statement], locations, characters, notebook, help, quit. Type 'help' for details.";
-const TALK_HINT = "Commands: <question>, bye, notebook, help, quit. Type 'help' for details.";
-const ACCUSE_HINT = "Commands: <who did it and why>, back, notebook, help, quit. Type 'help' for details.";
-const FORCED_ACCUSE_HINT = "Commands: <who did it and why>, notebook, help, quit. Type 'help' for details.";
-const ENDED_HINT = "Commands: notebook, help, quit. Type 'help' for details.";
+  "Commands: move to/go to <location>, talk to <character>, search, accuse [statement], locations, characters, notebook, age <number>, help, quit. Type 'help' for details.";
+const TALK_HINT = "Commands: <question>, bye, notebook, age <number>, help, quit. Type 'help' for details.";
+const ACCUSE_HINT = "Commands: <who did it and why>, back, notebook, age <number>, help, quit. Type 'help' for details.";
+const FORCED_ACCUSE_HINT = "Commands: <who did it and why>, notebook, age <number>, help, quit. Type 'help' for details.";
+const ENDED_HINT = "Commands: notebook, age <number>, help, quit. Type 'help' for details.";
 
 const MODES: GameMode[] = ["explore", "talk", "accuse", "ended"];
 
@@ -348,5 +348,46 @@ describe("interpretLine - location resolution for the move command", () => {
     expect(interpretLine("talk to alice", state)).toEqual(
       action({ type: "talk", character_id: "char-alice" }),
     );
+  });
+});
+
+describe("interpretLine - age", () => {
+  it("sets the age in every mode, mid-conversation included", () => {
+    for (const mode of MODES) {
+      expect(interpret("age 8", mode)).toEqual({ kind: "set_age", age: 8 });
+      expect(interpret("  Age   11! ", mode)).toEqual({ kind: "set_age", age: 11 });
+    }
+  });
+
+  it("takes the whole range and nothing outside it", () => {
+    expect(interpret("age 6")).toEqual({ kind: "set_age", age: 6 });
+    for (const mode of MODES) {
+      for (const line of ["age 5", "age 12", "age 0"]) {
+        const answer = interpret(line, mode);
+        expect(answer).toMatchObject({ kind: "refused", reason: "invalid-target" });
+        expect((answer as { hint: string }).hint).toContain("a number from 6 to 11");
+      }
+    }
+    for (const mode of ["explore", "ended"] as const) {
+      for (const line of ["age x", "age 8.5", "age -7"]) {
+        expect(interpret(line, mode)).toMatchObject({ kind: "refused", reason: "invalid-target" });
+      }
+    }
+  });
+
+  it("names the range when no age is given, where the line is not said to someone", () => {
+    for (const mode of ["explore", "ended"] as const) {
+      expect(interpret("age", mode)).toMatchObject({ kind: "refused", reason: "missing-target" });
+      expect((interpret("age", mode) as { hint: string }).hint).toContain("from 6 to 11");
+      expect(interpret("age x", mode)).toMatchObject({ kind: "refused", reason: "invalid-target" });
+    }
+  });
+
+  it("leaves other lines to the mode: a question while talking, the reasoning in an accusation", () => {
+    for (const line of ["age of the victim", "age matters", "Age?"]) {
+      expect(interpret(line, "talk")).toEqual(action({ type: "ask", question: line }));
+      expect(interpret(line, "accuse")).toEqual(action({ type: "ask", question: line }));
+    }
+    expect(interpret("age of the victim")).toMatchObject({ kind: "refused", reason: "unrecognized" });
   });
 });

@@ -100,12 +100,12 @@ describe("listSessions", () => {
     expect(row).toMatchObject({ session_id: "session-under-test", profile: "Tester", outcome: null, reading_age: PLAYED_AT, turns: 2 });
   });
 
-  it("leaves no_turn_line out of the turns but not out of the duration", async () => {
+  it("leaves no_turn_line and age_change out of the turns but not out of the duration", async () => {
     seed({
       id: "s-refused",
       player: "Ada",
       startedAt: "2026-07-02T10:00:00.000Z",
-      events: [["start", "2026-07-02T10:00:00.000Z"], ["no_turn_line", "2026-07-02T10:01:00.000Z"], ["search", "2026-07-02T10:02:00.000Z"], ["no_turn_line", "2026-07-02T10:03:00.000Z"]],
+      events: [["start", "2026-07-02T10:00:00.000Z"], ["no_turn_line", "2026-07-02T10:01:00.000Z"], ["search", "2026-07-02T10:02:00.000Z"], ["age_change", "2026-07-02T10:03:00.000Z"]],
     });
 
     const row = (await listSessions(file)).find((candidate: Row) => candidate.session_id === "s-refused");

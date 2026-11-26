@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { SceneManifestSchema } from "./scene-schema.ts";
 import { ReadingAgeSchema } from "./reading-age.ts";
-export { READING_AGES, ReadingAgeSchema } from "./reading-age.ts";
+export { ageUnchangedNote, READING_AGES, ReadingAgeSchema } from "./reading-age.ts";
 export type { PlayableCase } from "./playable-case.ts";
 export { ClueGraphCaseSchema, type ClueGraphCase } from "./clue-graph-schema.ts";
 export { validateClueGraph } from "./clue-graph-validator.ts";
@@ -111,12 +111,15 @@ export const GameEnterResponseSchema = TurnResponseBaseSchema.extend({
       sex: CharacterSexSchema,
     }),
   ),
+  /** The line saved first when the profile's age changed since the game last recorded one. */
+  age_change: NarrationEventSchema.nullable().optional(),
 });
 
 // --- game-turn ---
 //
-// One typed line in, one of four answers out. Only `turn` played anything and
-// saved anything; the other three leave the game as it was.
+// One typed line in, one of five answers out. Only `turn` played anything;
+// `age` may have saved the line recording a change of age. The other three
+// leave the game as it was.
 
 export const GameTurnRequestSchema = GameSessionRequestSchema.extend({
   /** The line exactly as the player typed it. */
@@ -209,11 +212,23 @@ export const TurnQuitResponseSchema = z.object({
   kind: z.literal("quit"),
 });
 
+/**
+ * `age <n>` was typed: the profile's age is now `reading_age`. `event` is the
+ * `age_change` line the game saved, or null when the game already recorded
+ * that age and nothing was saved.
+ */
+export const TurnAgeResponseSchema = z.object({
+  kind: z.literal("age"),
+  reading_age: ReadingAgeSchema,
+  event: NarrationEventSchema.nullable(),
+});
+
 export const GameTurnResponseSchema = z.discriminatedUnion("kind", [
   TurnPlayedResponseSchema,
   TurnRefusedResponseSchema,
   TurnViewResponseSchema,
   TurnQuitResponseSchema,
+  TurnAgeResponseSchema,
 ]);
 
 // --- lines that cost no turn ---
@@ -233,6 +248,20 @@ export const NoTurnLinePayloadSchema = z.object({
   answered: z.enum(["refused", "help"]),
   /** Set when `answered` is `refused`. */
   reason: RefusalReasonSchema.optional(),
+});
+
+// --- the change of age ---
+//
+// When the profile's age differs from the last one the game recorded, the
+// engine saves one `age_change` before narrating anything: a fixed line, the
+// same for every age, that costs no turn and is no part of what the game
+// master did. Earlier events are never rewritten.
+
+export const AGE_CHANGE_EVENT_TYPE = "age_change";
+
+export const AgeChangePayloadSchema = z.object({
+  from: ReadingAgeSchema,
+  to: ReadingAgeSchema,
 });
 
 export const LocationSummarySchema = z.object({
@@ -419,6 +448,8 @@ export type NoTurnLinePayload = z.infer<typeof NoTurnLinePayloadSchema>;
 export type TurnRefusedResponse = z.infer<typeof TurnRefusedResponseSchema>;
 export type TurnViewResponse = z.infer<typeof TurnViewResponseSchema>;
 export type TurnQuitResponse = z.infer<typeof TurnQuitResponseSchema>;
+export type TurnAgeResponse = z.infer<typeof TurnAgeResponseSchema>;
+export type AgeChangePayload = z.infer<typeof AgeChangePayloadSchema>;
 export type GameTurnResponse = z.infer<typeof GameTurnResponseSchema>;
 export type GameState = z.infer<typeof GameStateSchema>;
 export type SessionTranscriptResponse = z.infer<typeof SessionTranscriptResponseSchema>;

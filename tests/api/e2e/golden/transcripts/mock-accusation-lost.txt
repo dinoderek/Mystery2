@@ -19,7 +19,7 @@ pages
     step 2 | You (investigator): "accuse Bob took the cookies"
     step 2 | Narrator (narrator): "[Mock] Not proven yet. Your case needs something you can see or touch that links someone to what happened. Think about this: You have not talked to Bob yet. What could you check next?"
     step 3 | You (investigator): "It was Bob"
-    step 3 | System (system): "Commands: move to/go to <location>, talk to <character>, search, accuse [statement], locations, characters, notebook, help, quit. Type 'help' for details."
+    step 3 | System (system): "Commands: move to/go to <location>, talk to <character>, search, accuse [statement], locations, characters, notebook, age <number>, help, quit. Type 'help' for details."
   page 3 accusation "The accusation"
     step 4 | You (investigator): "accuse It was definitely Bob"
     step 4 | Narrator (narrator): "[Mock] Not proven yet. Your case needs something you can see or touch that links someone to what happened. Think about this: You have not talked to Bob yet. What could you check next?"

@@ -11,15 +11,15 @@
 // harnesses.
 
 import { ACCUSE_FAILED, ACCUSE_RESOLVED } from "../../packages/game-engine/src/accusations.ts";
-import { NO_TURN_EVENT_TYPE } from "../../packages/shared/src/mystery-api-contracts.ts";
+import { AGE_CHANGE_EVENT_TYPE, NO_TURN_EVENT_TYPE } from "../../packages/shared/src/mystery-api-contracts.ts";
 
 /** A round inside the accusation, in games recorded before each accusation was one shot. */
 export const LEGACY_ACCUSE_ROUND = "accuse_round";
 
-// A refused line and `help` are saved as events of their own, so a resumed game
-// shows them. They are not something the game master did: every reader that
-// follows the game master's play takes its events through this, so its output is
-// the same with or without them.
+// A refused line, `help` and a change of age are saved as events of their own,
+// so a resumed game shows them. They are not something the game master did:
+// every reader that follows the game master's play takes its events through
+// this, so its output is the same with or without them.
 /** A game event as the trace stores it and a case writes it: the fields the readers below use. */
 export interface GameEventLike {
   event_type: string;
@@ -29,7 +29,7 @@ export interface GameEventLike {
 }
 
 export function playedEvents<T extends GameEventLike>(events: readonly T[]): T[] {
-  return events.filter((event) => event.event_type !== NO_TURN_EVENT_TYPE);
+  return events.filter((event) => event.event_type !== NO_TURN_EVENT_TYPE && event.event_type !== AGE_CHANGE_EVENT_TYPE);
 }
 
 // Maps a persisted event_type to the AI role whose context builder applies.

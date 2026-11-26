@@ -39,7 +39,9 @@ export type LineOutcome =
   /** An overlay opens. `note` is the transcript line that goes with it, if any. */
   | { kind: "view"; overlay: "help" | "notebook"; section: string | null; echo: boolean; note: string | null }
   /** The player left the case. */
-  | { kind: "quit" };
+  | { kind: "quit" }
+  /** `age <n>` was answered: the line the game saved, or null when it saved nothing. */
+  | { kind: "age"; reading_age: number; event: OutcomeEvent | null };
 
 export interface GameDriver {
   /** Step into the starting location, as the player does after reading the premise. */
@@ -133,6 +135,14 @@ export class TurnDriver implements GameDriver {
       case "quit":
         this.mode = "ended";
         return { kind: "quit" };
+      case "age":
+        return {
+          kind: "age",
+          reading_age: answer.reading_age,
+          event: answer.event
+            ? { event_type: answer.event.event_type, payload: answer.event.payload ?? undefined, narration_parts: answer.event.narration_parts as NarrationPart[] }
+            : null,
+        };
       case "turn": {
         const playedIn = this.mode;
         this.mode = answer.state.mode;

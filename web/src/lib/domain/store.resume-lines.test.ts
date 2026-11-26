@@ -20,6 +20,7 @@ import {
   createGameGetResponse,
   createGameState,
   createNarrationEvent,
+  createTurnAgeResponse,
   createTurnPlayedResponse,
   createTurnRefusedResponse,
   createTurnViewResponse,
@@ -129,6 +130,50 @@ describe('resuming a game that holds lines which cost no turn', () => {
       ['system', HINT],
       ['investigator', 'help'],
       ['system', HELP],
+    ]);
+  });
+
+  it('shows a change of age as its own line, live and when reopened, and answers a repeated age', async () => {
+    const line = 'From now on, the story is written for age 9.';
+    const live = new GameSessionStore();
+    opened([START, ARRIVAL]);
+    await live.resumeSession('game-1');
+    invokeMock.mockResolvedValueOnce({
+      data: createTurnAgeResponse({
+        reading_age: 9,
+        event: createNarrationEvent({
+          sequence: 3,
+          event_type: 'age_change',
+          payload: { from: 8, to: 9 },
+          narration_parts: [{ text: line, speaker: SYSTEM_SPEAKER }],
+        }),
+      }),
+      error: null,
+    });
+    await live.submitInput('age 9');
+
+    const resumed = new GameSessionStore();
+    opened([
+      START,
+      ARRIVAL,
+      createNarrationEvent({
+        sequence: 3,
+        event_type: 'age_change',
+        payload: { from: 8, to: 9 },
+        narration_parts: [{ text: line, speaker: SYSTEM_SPEAKER }],
+      }),
+    ]);
+    await resumed.resumeSession('game-1');
+
+    // The line stands alone, with no echo of the command: a game reopened has none either.
+    expect(shown(live)[1].lines.slice(-1)).toEqual([['system', line]]);
+    expect(shown(resumed)).toEqual(shown(live));
+
+    invokeMock.mockResolvedValueOnce({ data: createTurnAgeResponse({ reading_age: 9, event: null }), error: null });
+    await live.submitInput('age 9');
+    expect(shown(live)[1].lines.slice(-2)).toEqual([
+      ['investigator', 'age 9'],
+      ['system', 'The story is already written for age 9.'],
     ]);
   });
 

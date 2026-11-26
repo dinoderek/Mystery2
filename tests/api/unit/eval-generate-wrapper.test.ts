@@ -119,7 +119,7 @@ describe("claude-generate.sh wrapper", () => {
   });
 
   it("gives the agent the prompt the pipeline rendered, as a copy", async () => {
-    const chatInput = await buildClueGraphGenerationChatInput({ brief: "A missing cake at the school fair", targetAge: 6, size: "small" });
+    const chatInput = await buildClueGraphGenerationChatInput({ brief: "A missing cake at the school fair", size: "small" });
     const canonical = await fs.readFile(CANONICAL_PROMPT, "utf8");
 
     const { result, workspace } = await runWrapper({ renderedPrompt: chatInput.systemPrompt });

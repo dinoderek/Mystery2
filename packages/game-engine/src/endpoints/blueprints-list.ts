@@ -16,7 +16,6 @@ export async function handle(
       id: blueprint.id,
       title: blueprint.metadata.title,
       one_liner: blueprint.metadata.one_liner,
-      target_age: blueprint.metadata.target_age,
       blueprint_image_id: blueprint.metadata.image_id ?? null,
     }));
 

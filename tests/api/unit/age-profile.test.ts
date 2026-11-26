@@ -5,11 +5,11 @@ import {
   allAuthoredFields,
   allInteractions,
   authoredFieldBudget,
-  clampTargetAge,
+  clampReadingAge,
   getAgeProfile,
   getInteraction,
-  MAX_TARGET_AGE,
-  MIN_TARGET_AGE,
+  MAX_READING_AGE,
+  MIN_READING_AGE,
   renderGenerationGuidance,
   renderGuidance,
   renderLengthGuidance,
@@ -23,10 +23,10 @@ describe("age profile (complexity dial)", () => {
   });
 
   it("clamps out-of-range and non-finite ages into 6–11", () => {
-    expect(clampTargetAge(3)).toBe(MIN_TARGET_AGE);
-    expect(clampTargetAge(99)).toBe(MAX_TARGET_AGE);
-    expect(clampTargetAge(8.4)).toBe(8);
-    expect(clampTargetAge(Number.NaN)).toBe(MIN_TARGET_AGE);
+    expect(clampReadingAge(3)).toBe(MIN_READING_AGE);
+    expect(clampReadingAge(99)).toBe(MAX_READING_AGE);
+    expect(clampReadingAge(8.4)).toBe(8);
+    expect(clampReadingAge(Number.NaN)).toBe(MIN_READING_AGE);
   });
 
   it("increases complexity allowances monotonically with age", () => {
@@ -52,7 +52,7 @@ describe("interactions and explicit word budgets (length dial)", () => {
 
   it("has an explicit budget for every interaction at every age", () => {
     for (const i of allInteractions()) {
-      for (let age = MIN_TARGET_AGE; age <= MAX_TARGET_AGE; age++) {
+      for (let age = MIN_READING_AGE; age <= MAX_READING_AGE; age++) {
         expect(typeof wordBudget(i.id, age)).toBe("number");
         expect(wordBudget(i.id, age)).toBeGreaterThan(0);
       }
@@ -61,14 +61,14 @@ describe("interactions and explicit word budgets (length dial)", () => {
 
   it("budgets rise with age for every interaction (younger = shorter)", () => {
     for (const i of allInteractions()) {
-      for (let age = MIN_TARGET_AGE + 1; age <= MAX_TARGET_AGE; age++) {
+      for (let age = MIN_READING_AGE + 1; age <= MAX_READING_AGE; age++) {
         expect(wordBudget(i.id, age)).toBeGreaterThanOrEqual(wordBudget(i.id, age - 1));
       }
     }
   });
 
   it("the verdict and the arrival are the most generous interactions; the farewell the leanest", () => {
-    for (let age = MIN_TARGET_AGE; age <= MAX_TARGET_AGE; age++) {
+    for (let age = MIN_READING_AGE; age <= MAX_READING_AGE; age++) {
       const budgets = allInteractions().map((i) => wordBudget(i.id, age));
       expect(
         Math.max(wordBudget("accusation_verdict", age), wordBudget("ambience", age)),
@@ -84,8 +84,8 @@ describe("interactions and explicit word budgets (length dial)", () => {
   });
 
   it("clamps the age before reading a budget", () => {
-    expect(wordBudget("intro", 2)).toBe(wordBudget("intro", MIN_TARGET_AGE));
-    expect(wordBudget("intro", 50)).toBe(wordBudget("intro", MAX_TARGET_AGE));
+    expect(wordBudget("intro", 2)).toBe(wordBudget("intro", MIN_READING_AGE));
+    expect(wordBudget("intro", 50)).toBe(wordBudget("intro", MAX_READING_AGE));
   });
 
   it("getInteraction returns the role mapping", () => {
@@ -148,7 +148,7 @@ describe("guidance rendering", () => {
 describe("authored field budgets (generation length dial)", () => {
   it("covers every authored field at every age", () => {
     for (const id of allAuthoredFields()) {
-      for (let age = MIN_TARGET_AGE; age <= MAX_TARGET_AGE; age++) {
+      for (let age = MIN_READING_AGE; age <= MAX_READING_AGE; age++) {
         expect(authoredFieldBudget(id, age)).toBeGreaterThan(0);
       }
     }
@@ -156,7 +156,7 @@ describe("authored field budgets (generation length dial)", () => {
 
   it("budgets rise with age for every authored field", () => {
     for (const id of allAuthoredFields()) {
-      for (let age = MIN_TARGET_AGE + 1; age <= MAX_TARGET_AGE; age++) {
+      for (let age = MIN_READING_AGE + 1; age <= MAX_READING_AGE; age++) {
         expect(authoredFieldBudget(id, age)).toBeGreaterThanOrEqual(
           authoredFieldBudget(id, age - 1),
         );
@@ -166,10 +166,10 @@ describe("authored field budgets (generation length dial)", () => {
 
   it("clamps the age before reading a budget", () => {
     expect(authoredFieldBudget("premise", 2)).toBe(
-      authoredFieldBudget("premise", MIN_TARGET_AGE),
+      authoredFieldBudget("premise", MIN_READING_AGE),
     );
     expect(authoredFieldBudget("premise", 50)).toBe(
-      authoredFieldBudget("premise", MAX_TARGET_AGE),
+      authoredFieldBudget("premise", MAX_READING_AGE),
     );
   });
 

@@ -10,7 +10,7 @@
  * context, and render its prompt at the request's `reading_age`. That used to be inlined in every endpoint handler AND
  * re-implemented by the runtime eval harness, so there were two independent
  * assembly paths. They drifted: the harness called
- * `loadPromptTemplate(role)` with no age and no style, so `clampTargetAge`
+ * `loadPromptTemplate(role)` with no age and no style, so `clampReadingAge`
  * silently fell back to age 6 and every evaluated prompt was built for the
  * wrong reader while being graded against another age.
  *

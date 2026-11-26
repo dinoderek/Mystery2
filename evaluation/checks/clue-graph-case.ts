@@ -1,8 +1,8 @@
 /**
  * The mechanical check of a clue-graph case: `validateClueGraph`, the same
  * validator the loader and `npm run validate:clue-graph` run. With the brief a
- * case was generated from, it also holds the case to that brief's reading age,
- * size and size overrides, which the validator then checks the story against.
+ * case was generated from, it also holds the case to that brief's size
+ * and size overrides, which the validator then checks the story against.
  * It passes, or fails listing every issue by the path it names.
  */
 
@@ -34,7 +34,6 @@ export function briefIssues(brief: unknown, candidate: unknown): string[] {
   }
   const metadata = metadataOf(candidate);
   const asked: Array<[field: string, wanted: unknown, from: string]> = [
-    ["target_age", parsed.data.targetAge, "targetAge"],
     ["size", parsed.data.size, "size"],
     ["size_overrides", parsed.data.sizeOverrides, "sizeOverrides"],
   ];

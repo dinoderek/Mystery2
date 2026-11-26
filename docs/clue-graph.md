@@ -42,7 +42,6 @@ One JSON file, `"format": "clue-graph/2"`, maps keyed by ID; unknown fields
 and formats are rejected by name. It holds facts, not narration. Each states every name, time, place
 and object. Beyond the schema:
 
-- `metadata.target_age`: the default reading age, sizing the plot.
 - A spot with `revealed_by` is hidden until that clue, whose line names it,
   is held.
 - `personality` and `demeanor` (by stance) direct the narrator; `knows`:

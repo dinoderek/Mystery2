@@ -37,9 +37,9 @@ this workspace, and do not commit or run tests.
 
 - `"format": "clue-graph/2"`. `metadata.id` is kebab-case and names this
   story.
-- `metadata.target_age`, `metadata.size` and `metadata.size_overrides` are the
-  brief's `targetAge`, `size` and `sizeOverrides`; leave `size_overrides` out
-  when the brief has none.
+- `metadata.size` and `metadata.size_overrides` are the brief's `size` and
+  `sizeOverrides`; leave `size_overrides` out when the brief has none. A case
+  has no reading age: the reader's age is not yours to set.
 - Every `mustInclude` item appears meaningfully in the case.
 - No image IDs. `visual_direction` and `cover` are optional.
 

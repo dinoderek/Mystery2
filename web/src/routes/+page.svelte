@@ -191,7 +191,6 @@
                 >
                   <span class="block text-xl font-bold text-t-bright">{blueprint.title}</span>
                   <span class="block text-t-muted/80 mb-2">{blueprint.one_liner}</span>
-                  <span class="block text-xs text-t-dim">Target age: {blueprint.target_age}</span>
                 </button>
               </div>
             {/each}

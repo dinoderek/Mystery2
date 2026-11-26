@@ -81,7 +81,6 @@ export interface ClueGraphWorld {
   metadata: {
     title: string;
     one_liner: string;
-    target_age: number;
     image_id?: string;
     time_budget: number;
     visual_direction?: ClueGraphCase["visual_direction"];
@@ -158,7 +157,6 @@ export function buildClueGraphWorld(graph: ClueGraphCase): ClueGraphWorld {
     metadata: {
       title: `${graph.metadata.title}${CLUE_GRAPH_TITLE_SUFFIX}`,
       one_liner: graph.opening.facts[0],
-      target_age: graph.metadata.target_age,
       ...(graph.metadata.image_id ? { image_id: graph.metadata.image_id } : {}),
       time_budget: graph.metadata.time_budget,
       ...(graph.visual_direction ? { visual_direction: graph.visual_direction } : {}),

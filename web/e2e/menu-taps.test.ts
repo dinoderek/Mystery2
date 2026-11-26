@@ -35,6 +35,8 @@ for (const how of ['key', 'click'] as const) {
       if (how === 'key') await page.keyboard.press('1');
       else await page.getByTestId('menu-row-1').click();
       await expect(page.getByTestId('case-card-1')).toBeVisible();
+      // A fine pointer sees the key hint the touch projects do not.
+      await expect(page.getByText('[ PRESS A NUMBER · B GOES BACK ]')).toBeVisible();
 
       if (how === 'key') await page.keyboard.press('b');
       else await page.getByTestId('back-button').click();

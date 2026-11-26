@@ -83,7 +83,7 @@ export async function startOwnServer({ aiConfig, seed: callerSeed, env = {} }: O
 			const response = await fetch(`${apiUrl}/player`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ name }),
+				body: JSON.stringify({ name, reading_age: 8 }),
 			});
 			if (!response.ok) throw new Error(`Failed to create test profile ${name}: ${response.status}`);
 			const { player } = (await response.json()) as { player: { id: string; name: string } };

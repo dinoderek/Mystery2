@@ -7,6 +7,8 @@ import type { ClueGraphWorld } from "@my2/shared";
 import { READING_AGES } from "../../../packages/shared/src/reading-age.ts";
 import { authoredFieldBudget, MAX_TARGET_AGE, MIN_TARGET_AGE } from "../../../packages/shared/src/age-profile.ts";
 import { buildNarrationPrompt, buildRoleRequest } from "../../../packages/game-engine/src/role-request.ts";
+import { READING_AGE_REQUIRED } from "../../../packages/shared/src/mystery-api-contracts.ts";
+import { asRejectedResponse, RequestRejectedError } from "../../../packages/game-engine/src/errors.ts";
 import { requestReadingAge } from "../../../packages/game-engine/src/reading-age.ts";
 import { sessionCase } from "../../../packages/game-engine/src/session-case.ts";
 import type { ContentStore, GameSessionRow, ProfileStore } from "../../../packages/game-engine/src/context.ts";
@@ -54,15 +56,22 @@ describe("the reading ages", () => {
 });
 
 describe("requestReadingAge", () => {
-  it("is the profile's age, whatever the case names", async () => {
-    expect(await requestReadingAge(profileAt(7), atCaseAge(graph, 10))).toBe(7);
-    expect(await requestReadingAge(profileAt(11), atCaseAge(graph, 6))).toBe(11);
+  it("is the profile's age", async () => {
+    expect(await requestReadingAge(profileAt(7))).toBe(7);
+    expect(await requestReadingAge(profileAt(11))).toBe(11);
   });
 
-  it("reads a profile with no age at its case's, brought into range", async () => {
-    expect(await requestReadingAge(profileAt(null), atCaseAge(graph, 8))).toBe(8);
-    expect(await requestReadingAge(profileAt(null), atCaseAge(graph, 14))).toBe(MAX_TARGET_AGE);
-    expect(await requestReadingAge(profileAt(null), atCaseAge(graph, 3))).toBe(MIN_TARGET_AGE);
+  it("refuses a profile with no age, naming READING_AGE_REQUIRED, and never reads the case's", async () => {
+    const refused = await requestReadingAge(profileAt(null)).catch((error: unknown) => error);
+
+    expect(refused).toBeInstanceOf(RequestRejectedError);
+    expect(refused).toMatchObject({ status: 400, reason: "reading_age_missing", code: READING_AGE_REQUIRED });
+    const response = asRejectedResponse(refused)!;
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      error: "Choose a reading age before playing",
+      details: { code: "READING_AGE_REQUIRED" },
+    });
   });
 });
 

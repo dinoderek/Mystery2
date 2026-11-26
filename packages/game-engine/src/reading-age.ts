@@ -3,21 +3,24 @@
 // (`docs/game.md`). Every narrator prompt takes it as its own input; nothing
 // reads it from the case.
 
-import { clampTargetAge } from "../../shared/src/age-profile.ts";
-import type { PlayableCase } from "../../shared/src/playable-case.ts";
+import { READING_AGE_REQUIRED } from "../../shared/src/mystery-api-contracts.ts";
 import type { ProfileStore } from "./context.ts";
-
-/** The profile's reading age, else (for now) its case's. */
-export async function requestReadingAge(profile: ProfileStore, played: PlayableCase): Promise<number> {
-  return (await profile.getReadingAge()) ?? caseAgeFallback(played);
-}
+import { RequestRejectedError } from "./errors.ts";
 
 /**
- * Transitional: a profile with no age reads at its case's
- * `metadata.target_age`, brought into range (a case may name any positive
- * age). The only runtime reader of the case's age; it goes once every profile
- * has an age.
+ * The profile's reading age. A profile without one (a local database from
+ * before the age was required) is refused with `READING_AGE_REQUIRED`, which
+ * the browser answers with the age picker; nothing is narrated or saved.
  */
-function caseAgeFallback(played: PlayableCase): number {
-  return clampTargetAge(played.metadata.target_age);
+export async function requestReadingAge(profile: ProfileStore): Promise<number> {
+  const age = await profile.getReadingAge();
+  if (age === null) {
+    throw new RequestRejectedError(
+      400,
+      "Choose a reading age before playing",
+      "reading_age_missing",
+      READING_AGE_REQUIRED,
+    );
+  }
+  return age;
 }

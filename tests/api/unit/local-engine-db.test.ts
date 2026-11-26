@@ -104,7 +104,7 @@ describe("local database client", () => {
       user_version: SCHEMA_VERSION,
     });
 
-    createPlayerStore(db).create("Ada");
+    createPlayerStore(db).create("Ada", 8);
     db.close();
 
     db = openDatabase({ path: databasePath() });
@@ -128,7 +128,7 @@ describe("local database client", () => {
 
     expect(() =>
       db.transaction(() => {
-        players.create("Ada");
+        players.create("Ada", 8);
         throw new Error("boom");
       }),
     ).toThrow("boom");
@@ -336,7 +336,7 @@ describe("the step to schema version 8", () => {
 
 describe("event request ids", () => {
   it("are stored from the turn's save, and read as null for an event with none", async () => {
-    const player = createPlayerStore(db).create("Ada");
+    const player = createPlayerStore(db).create("Ada", 8);
     const sessions = createSessionStore(db, player.id);
     const gameId = await sessions.create(newSession(player.id));
     const { session_id, sequence, ...event } = newEvent(gameId, 1);
@@ -358,14 +358,14 @@ describe("event request ids", () => {
 describe("player store", () => {
   it("creates, finds and lists profiles", () => {
     const players = createPlayerStore(db);
-    const ada = players.create("Ada");
+    const ada = players.create("Ada", 8);
 
     expect(players.getById(ada.id)).toEqual(ada);
     expect(players.getByName("Ada")).toEqual(ada);
     expect(players.getById("nobody")).toBeNull();
     expect(players.getByName("Nobody")).toBeNull();
 
-    players.create("Grace");
+    players.create("Grace", 8);
     expect(players.list().map((p) => p.name)).toEqual(["Ada", "Grace"]);
   });
 
@@ -376,7 +376,7 @@ describe("player store", () => {
     // rather than raced, so the assertion means the same thing every run.
     const players = createPlayerStore(db);
     const names = ["Ada", "Grace", "Barbara", "Katherine"];
-    for (const name of names) players.create(name);
+    for (const name of names) players.create(name, 8);
 
     db.prepare("update players set created_at = ?").run("2026-06-01T10:00:00.000Z");
 
@@ -385,48 +385,68 @@ describe("player store", () => {
 
   it("rejects a duplicate name but ensures idempotently", () => {
     const players = createPlayerStore(db);
-    const ada = players.create("Ada");
+    const ada = players.create("Ada", 8);
 
-    expect(() => players.create("Ada")).toThrow();
-    expect(players.ensure("Ada")).toEqual(ada);
-    expect(players.ensure("  Ada  ")).toEqual(ada);
+    expect(() => players.create("Ada", 8)).toThrow();
+    expect(players.ensure("Ada", 8)).toEqual(ada);
+    expect(players.ensure("  Ada  ", 8)).toEqual(ada);
     expect(players.list()).toHaveLength(1);
   });
 
   it("rejects an empty name", () => {
-    expect(() => createPlayerStore(db).create("   ")).toThrow(/must not be empty/);
+    expect(() => createPlayerStore(db).create("   ", 8)).toThrow(/must not be empty/);
+  });
+
+  it("creates a profile only with a reading age the narrator can write for", () => {
+    const players = createPlayerStore(db);
+
+    expect(() => players.create("Ada", 5)).toThrow();
+    expect(() => players.create("Ada", 12)).toThrow();
+    expect(() => players.create("Ada", 7.5)).toThrow();
+    expect(() => players.ensure("Ada", 12)).toThrow();
+    expect(players.list()).toEqual([]);
+    expect(createProfileStore(db, players.create("Ada", 11).id).getReadingAge()).resolves.toBe(11);
   });
 });
 
 describe("profile store", () => {
-  it("sets, reads and clears the profile's reading age, touching no other profile", async () => {
+  it("sets and reads the profile's reading age, touching no other profile", async () => {
     const players = createPlayerStore(db);
-    const ada = createProfileStore(db, players.create("Ada").id);
-    const grace = createProfileStore(db, players.create("Grace").id);
+    const ada = createProfileStore(db, players.create("Ada", 8).id);
+    const grace = createProfileStore(db, players.create("Grace", 8).id);
 
-    expect(await ada.getReadingAge()).toBeNull();
+    expect(await ada.getReadingAge()).toBe(8);
     await ada.setReadingAge(9);
     expect(await ada.getReadingAge()).toBe(9);
-    expect(await grace.getReadingAge()).toBeNull();
+    expect(await grace.getReadingAge()).toBe(8);
+  });
 
-    await ada.setReadingAge(null);
+  it("reads null for a profile from before the age was required, and refuses to clear one", async () => {
+    const player = createPlayerStore(db).create("Ada", 8);
+    const ada = createProfileStore(db, player.id);
+    db.prepare("update players set reading_age = null where id = ?").run(player.id);
+
     expect(await ada.getReadingAge()).toBeNull();
+    await ada.setReadingAge(7);
+    expect(await ada.getReadingAge()).toBe(7);
+    await expect(ada.setReadingAge(null as unknown as number)).rejects.toThrow();
+    expect(await ada.getReadingAge()).toBe(7);
   });
 
   it("refuses an age the narrator cannot write for, and a profile that does not exist", async () => {
-    const ada = createProfileStore(db, createPlayerStore(db).create("Ada").id);
+    const ada = createProfileStore(db, createPlayerStore(db).create("Ada", 8).id);
 
     await expect(ada.setReadingAge(12)).rejects.toThrow();
     await expect(ada.setReadingAge(5)).rejects.toThrow();
     await expect(ada.setReadingAge(7.5)).rejects.toThrow();
-    expect(await ada.getReadingAge()).toBeNull();
+    expect(await ada.getReadingAge()).toBe(8);
     await expect(createProfileStore(db, "nobody").setReadingAge(8)).rejects.toThrow(/does not exist/);
   });
 });
 
 describe("session store", () => {
   it("writes no age for a game: the age is the profile's", async () => {
-    const player = createPlayerStore(db).create("Ada");
+    const player = createPlayerStore(db).create("Ada", 8);
     const sessions = createSessionStore(db, player.id);
     const gameId = await sessions.create(newSession(player.id));
 
@@ -435,7 +455,7 @@ describe("session store", () => {
   });
 
   it("round-trips a session, including the JSON-encoded clue array", async () => {
-    const player = createPlayerStore(db).create("Ada");
+    const player = createPlayerStore(db).create("Ada", 8);
     const sessions = createSessionStore(db, player.id);
 
     const gameId = await sessions.create(newSession(player.id));
@@ -481,7 +501,7 @@ describe("session store", () => {
   });
 
   it("ignores an empty patch", async () => {
-    const player = createPlayerStore(db).create("Ada");
+    const player = createPlayerStore(db).create("Ada", 8);
     const sessions = createSessionStore(db, player.id);
     const gameId = await sessions.create(newSession(player.id));
 
@@ -491,8 +511,8 @@ describe("session store", () => {
 
   it("lists only the player's own sessions", async () => {
     const players = createPlayerStore(db);
-    const ada = players.create("Ada");
-    const grace = players.create("Grace");
+    const ada = players.create("Ada", 8);
+    const grace = players.create("Grace", 8);
 
     const adaSessions = createSessionStore(db, ada.id);
     const graceSessions = createSessionStore(db, grace.id);
@@ -507,8 +527,8 @@ describe("session store", () => {
 
   it("hides another player's session and refuses to write to it", async () => {
     const players = createPlayerStore(db);
-    const ada = players.create("Ada");
-    const grace = players.create("Grace");
+    const ada = players.create("Ada", 8);
+    const grace = players.create("Grace", 8);
 
     const adaSessions = createSessionStore(db, ada.id);
     const graceSessions = createSessionStore(db, grace.id);
@@ -531,7 +551,7 @@ describe("session store", () => {
 
 describe("event store", () => {
   it("allocates sequences and rebuilds history in order", async () => {
-    const player = createPlayerStore(db).create("Ada");
+    const player = createPlayerStore(db).create("Ada", 8);
     const sessions = createSessionStore(db, player.id);
     const events = createEventStore(db, player.id);
     const gameId = await sessions.create(newSession(player.id));
@@ -562,7 +582,7 @@ describe("event store", () => {
   });
 
   it("rejects a duplicate sequence for the same session", async () => {
-    const player = createPlayerStore(db).create("Ada");
+    const player = createPlayerStore(db).create("Ada", 8);
     const sessions = createSessionStore(db, player.id);
     const events = createEventStore(db, player.id);
     const gameId = await sessions.create(newSession(player.id));
@@ -572,7 +592,7 @@ describe("event store", () => {
   });
 
   it("rejects an event with no narration parts", async () => {
-    const player = createPlayerStore(db).create("Ada");
+    const player = createPlayerStore(db).create("Ada", 8);
     const sessions = createSessionStore(db, player.id);
     const events = createEventStore(db, player.id);
     const gameId = await sessions.create(newSession(player.id));
@@ -584,8 +604,8 @@ describe("event store", () => {
 
   it("scopes every operation to the owning player", async () => {
     const players = createPlayerStore(db);
-    const ada = players.create("Ada");
-    const grace = players.create("Grace");
+    const ada = players.create("Ada", 8);
+    const grace = players.create("Grace", 8);
 
     const adaSessions = createSessionStore(db, ada.id);
     const adaEvents = createEventStore(db, ada.id);
@@ -602,7 +622,7 @@ describe("event store", () => {
   });
 
   it("deletes a session's events with the session", async () => {
-    const player = createPlayerStore(db).create("Ada");
+    const player = createPlayerStore(db).create("Ada", 8);
     const sessions = createSessionStore(db, player.id);
     const events = createEventStore(db, player.id);
     const gameId = await sessions.create(newSession(player.id));

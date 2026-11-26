@@ -54,7 +54,7 @@ afterEach(() => {
 describe('playtest loop', () => {
 	it('stops when the investigator quits, and the game is left as it was', async () => {
 		const game = await playGame({
-			api: await signIn(BASE_URL, 'playtest-quit'),
+			api: await signIn(BASE_URL, 'playtest-quit', 8),
 			blueprint: { id: MOCK_BLUEPRINT_ID, title: MOCK_TITLE },
 			investigator: scriptedInvestigator(['quit', 'search'])
 		});
@@ -67,7 +67,7 @@ describe('playtest loop', () => {
 	});
 
 	it('plays a scripted game to the end through game-turn', async () => {
-		const api = await signIn(BASE_URL, 'playtest-smoke');
+		const api = await signIn(BASE_URL, 'playtest-smoke', 8);
 
 		const game = await playGame({
 			api,
@@ -143,7 +143,7 @@ describe('playtest loop', () => {
 
 	it('writes a readable run folder', async () => {
 		scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'mystery-playtest-'));
-		const api = await signIn(BASE_URL, 'playtest-smoke-folder');
+		const api = await signIn(BASE_URL, 'playtest-smoke-folder', 8);
 		const game = await playGame({
 			api,
 			blueprint: { id: MOCK_BLUEPRINT_ID, title: MOCK_TITLE },
@@ -192,7 +192,7 @@ describe('playtest loop', () => {
 
 	it('replays a recorded game, and stops where the game no longer matches', async () => {
 		const original = await playGame({
-			api: await signIn(BASE_URL, 'playtest-replay-original'),
+			api: await signIn(BASE_URL, 'playtest-replay-original', 8),
 			blueprint: { id: MOCK_BLUEPRINT_ID, title: MOCK_TITLE },
 			investigator: scriptedInvestigator(INPUTS)
 		});
@@ -202,7 +202,7 @@ describe('playtest loop', () => {
 			end: original.endCheckpoint
 		});
 		const replay = await playGame({
-			api: await signIn(BASE_URL, 'playtest-replay-same'),
+			api: await signIn(BASE_URL, 'playtest-replay-same', 8),
 			blueprint: { id: MOCK_BLUEPRINT_ID, title: MOCK_TITLE },
 			investigator: replayer
 		});
@@ -218,7 +218,7 @@ describe('playtest loop', () => {
 			index === byeIndex ? { ...checkpoint, talk_character: 'char-bob' } : checkpoint
 		);
 		const diverged = await playGame({
-			api: await signIn(BASE_URL, 'playtest-replay-diverged'),
+			api: await signIn(BASE_URL, 'playtest-replay-diverged', 8),
 			blueprint: { id: MOCK_BLUEPRINT_ID, title: MOCK_TITLE },
 			investigator: scriptedInvestigator(original.script, { checkpoints: tampered })
 		});
@@ -232,7 +232,7 @@ describe('playtest loop', () => {
 
 		// The game is settled while the script has more to say...
 		const endedEarly = await playGame({
-			api: await signIn(BASE_URL, 'playtest-replay-ended-early'),
+			api: await signIn(BASE_URL, 'playtest-replay-ended-early', 8),
 			blueprint: { id: MOCK_BLUEPRINT_ID, title: MOCK_TITLE },
 			investigator: scriptedInvestigator([...original.script, 'Bob helped her.'], {
 				checkpoints: [...original.checkpoints, { ...original.endCheckpoint, mode: 'accuse' }]
@@ -248,7 +248,7 @@ describe('playtest loop', () => {
 		// ...or the script runs out before the game is settled: after a failed accusation, exploring again.
 		const accusing = original.script.length - 1;
 		const unsettled = await playGame({
-			api: await signIn(BASE_URL, 'playtest-replay-unsettled'),
+			api: await signIn(BASE_URL, 'playtest-replay-unsettled', 8),
 			blueprint: { id: MOCK_BLUEPRINT_ID, title: MOCK_TITLE },
 			investigator: scriptedInvestigator(original.script.slice(0, accusing), {
 				checkpoints: original.checkpoints.slice(0, accusing),

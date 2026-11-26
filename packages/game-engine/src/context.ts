@@ -144,10 +144,10 @@ export interface SessionStore {
  * handler can read and change only the profile it runs as.
  */
 export interface ProfileStore {
-  /** The age this profile's narration is written at, read on every request; null when it has none. */
+  /** The age this profile's narration is written at, read on every request; null only for a profile from before the age was required. */
   getReadingAge(): Promise<number | null>;
-  /** Sets the age, or clears it with null. Throws on an age outside the allowed range. */
-  setReadingAge(age: number | null): Promise<void>;
+  /** Sets the age. Throws on an age outside the allowed range. */
+  setReadingAge(age: number): Promise<void>;
 }
 
 export interface EventStore {

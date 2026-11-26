@@ -28,7 +28,7 @@ import {
   createAIProviderFromProfile,
 } from "../ai-provider.ts";
 import { buildNarrationPrompt } from "../role-request.ts";
-import { createRequestLogger, withLogContext } from "../logging.ts";
+import { createRequestLogger, withLogContext, type LogWriter } from "../logging.ts";
 import { readJsonRequest } from "../request.ts";
 import {
   createNarrationDiagnostics,
@@ -129,7 +129,7 @@ export async function handle(
     if (!blueprint) {
       return internalError("Blueprint missing");
     }
-    const readingAge = await requestReadingAge(ctx.profile, blueprint);
+    const readingAge = await requestReadingAge(ctx.profile);
 
     const location = blueprint.world.locations.find(
       (l) => l.id === session.current_location_id,
@@ -216,31 +216,41 @@ export async function handle(
       { headers: { "Content-Type": "application/json" } },
     );
   } catch (err) {
-    if (err instanceof RetriableAIError) {
-      log("request.ai_retriable", {
-        code: err.details.code ?? null,
-        status: err.details.status ?? null,
-        error: err.message,
-      });
-      return asRetriableAIResponse(err) ?? internalError("Internal Server Error");
-    }
-    const aiResponse = asRetriableAIResponse(err);
-    if (aiResponse) return aiResponse;
-    const conflictResponse = asConflictResponse(err);
-    if (conflictResponse) {
-      log("request.conflict", { error: String(err) });
-      return conflictResponse;
-    }
-    if (err instanceof Error && err.name === "BadRequestError") {
-      log("request.invalid", {
-        reason: "bad_request_error",
-        message: err.message,
-      });
-      return badRequest(err.message);
-    }
-    logError("request.unhandled_error", {
-      error: err instanceof Error ? err.message : String(err),
-    });
-    return internalError("Internal Server Error");
+    return errorResponse(err, logger);
   }
+}
+
+/** The answer for a failure the handler did not already answer itself. */
+function errorResponse(err: unknown, logger: LogWriter): Response {
+  const { log, logError } = logger;
+  if (err instanceof RequestRejectedError) {
+    log("request.invalid", { reason: err.reason, error: err.message });
+    return asRejectedResponse(err)!;
+  }
+  if (err instanceof RetriableAIError) {
+    log("request.ai_retriable", {
+      code: err.details.code ?? null,
+      status: err.details.status ?? null,
+      error: err.message,
+    });
+    return asRetriableAIResponse(err) ?? internalError("Internal Server Error");
+  }
+  const aiResponse = asRetriableAIResponse(err);
+  if (aiResponse) return aiResponse;
+  const conflictResponse = asConflictResponse(err);
+  if (conflictResponse) {
+    log("request.conflict", { error: String(err) });
+    return conflictResponse;
+  }
+  if (err instanceof Error && err.name === "BadRequestError") {
+    log("request.invalid", {
+      reason: "bad_request_error",
+      message: err.message,
+    });
+    return badRequest(err.message);
+  }
+  logError("request.unhandled_error", {
+    error: err instanceof Error ? err.message : String(err),
+  });
+  return internalError("Internal Server Error");
 }

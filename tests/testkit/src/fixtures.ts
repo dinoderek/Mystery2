@@ -323,9 +323,9 @@ export function createBlueprintSummary(
 
 export const MOCK_BLUEPRINT: BlueprintSummary = createBlueprintSummary();
 
-/** The answer to `profile-settings`: a profile that has set no reading age, unless overridden. */
+/** The answer to `profile-settings`: a profile reading at 8, unless overridden. */
 export function createProfileSettings(overrides?: Partial<ProfileSettings>): ProfileSettings {
-  return validate(ProfileSettingsSchema, { reading_age: null, ...overrides });
+  return validate(ProfileSettingsSchema, { reading_age: 8, ...overrides });
 }
 
 export function createBlueprintsListResponse(

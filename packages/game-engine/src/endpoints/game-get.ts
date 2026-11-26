@@ -105,11 +105,15 @@ export async function handle(
       state: gameState,
       narration_events: narrationEvents,
       // The age the next narrated line is written at: the profile's, now.
-      reading_age: await requestReadingAge(ctx.profile, blueprint),
+      reading_age: await requestReadingAge(ctx.profile),
     }), {
       headers: { "Content-Type": "application/json" },
     });
   } catch (err) {
+    if (err instanceof RequestRejectedError) {
+      log("request.invalid", { reason: err.reason, error: err.message });
+      return asRejectedResponse(err)!;
+    }
     logError("request.unhandled_error", {
       error: err instanceof Error ? err.message : String(err),
     });

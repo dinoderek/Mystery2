@@ -59,10 +59,10 @@ describe('signing in', () => {
 			response.end(JSON.stringify({ state: { mode: 'explore' } }));
 		};
 
-		const api = await signIn(baseUrl, 'playtest');
+		const api = await signIn(baseUrl, 'playtest', 8);
 		const answer = await api.get('game-get', { game_id: 'g 1' });
 
-		expect(JSON.parse(seen[0].body)).toEqual({ name: 'playtest' });
+		expect(JSON.parse(seen[0].body)).toEqual({ name: 'playtest', reading_age: 8 });
 		expect(answer).toEqual({ ok: true, status: 200, body: { state: { mode: 'explore' } } });
 		expect(seen[1]).toMatchObject({ method: 'GET', url: '/api/game-get?game_id=g+1', cookie: 'profile=abc; other=1' });
 	});
@@ -72,13 +72,13 @@ describe('signing in', () => {
 			response.statusCode = 403;
 			response.end('no');
 		};
-		await expect(signIn(baseUrl, 'playtest')).rejects.toThrow('Sign-in as "playtest" failed: 403 no');
+		await expect(signIn(baseUrl, 'playtest', 8)).rejects.toThrow('Sign-in as "playtest" failed: 403 no');
 	});
 });
 
 describe('calling the game', () => {
 	async function client() {
-		return signIn(baseUrl, 'playtest');
+		return signIn(baseUrl, 'playtest', 8);
 	}
 
 	it('posts a JSON body with the cookie', async () => {

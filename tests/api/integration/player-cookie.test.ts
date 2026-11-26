@@ -15,7 +15,7 @@ describe("the profile cookie", () => {
     return fetch(`${API_URL}/player`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: `cookie-${crypto.randomUUID().slice(0, 8)}` }),
+      body: JSON.stringify({ name: `cookie-${crypto.randomUUID().slice(0, 8)}`, reading_age: 8 }),
     });
   }
 

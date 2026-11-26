@@ -16,10 +16,9 @@ export function createProfileStore(db: Db, playerId: string): ProfileStore {
     },
 
     async setReadingAge(age) {
-      const stored = age === null ? null : ReadingAgeSchema.parse(age);
       const result = db
         .prepare("update players set reading_age = ?, updated_at = ? where id = ?")
-        .run(stored, new Date().toISOString(), playerId);
+        .run(ReadingAgeSchema.parse(age), new Date().toISOString(), playerId);
       if (result.changes === 0) throw new Error(`Profile ${playerId} does not exist`);
     },
   };

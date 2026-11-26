@@ -6,10 +6,12 @@ import {
   type EngineContext,
 } from "../context.ts";
 import {
+  asRejectedResponse,
   asRetriableAIResponse,
   badRequest,
   internalError,
   notFound,
+  RequestRejectedError,
   RetriableAIError,
 } from "../errors.ts";
 import { AIConfigError } from "../ai-config.ts";
@@ -244,12 +246,16 @@ export async function handle(
     // The opening is written at the profile's age as it is now; every later
     // request reads it again.
     const blueprint = loaded.blueprint;
-    const readingAge = await requestReadingAge(ctx.profile, blueprint);
+    const readingAge = await requestReadingAge(ctx.profile);
 
     const opened = await openCase(req, ctx, logger, { blueprint, profile: resolved.profile, readingAge });
     if (!opened) return internalError("Failed to start game");
     return startResponse(blueprint, readingAge, opened);
   } catch (err) {
+    if (err instanceof RequestRejectedError) {
+      log("request.invalid", { reason: err.reason, error: err.message });
+      return asRejectedResponse(err)!;
+    }
     if (err instanceof RetriableAIError) {
       log("request.ai_retriable", {
         code: err.details.code ?? null,

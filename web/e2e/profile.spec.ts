@@ -16,6 +16,36 @@ test.describe('Local profiles', () => {
 		await expect(page.getByRole('alert')).toHaveText('Enter a name');
 	});
 
+	test('asks a new profile for its reading age, and keeps it', async ({ page }) => {
+		await page.goto('/login');
+		await page.locator('#profile-name').fill('needs-an-age');
+		await page.getByRole('button', { name: '[ START ]' }).click();
+
+		await expect(page).toHaveURL(/\/login$/);
+		await expect(page.getByRole('alert')).toHaveText('Choose a reading age');
+
+		await page.locator('[data-testid="reading-age-option"][data-age="10"]').click();
+		await expect(page.locator('[data-testid="reading-age-option"][data-age="10"]')).toHaveAttribute('aria-pressed', 'true');
+		await page.getByRole('button', { name: '[ START ]' }).click();
+		await expect(page).toHaveURL(/\/$/);
+
+		const settings = await page.request.get('/api/profile-settings');
+		expect(await settings.json()).toEqual({ reading_age: 10 });
+	});
+
+	test('refuses a new profile without an age over the API, and signs a known one in without', async ({ page }) => {
+		const name = `api-age-${crypto.randomUUID().slice(0, 8)}`;
+
+		const missing = await page.request.post('/api/player', { data: { name } });
+		expect(missing.status()).toBe(400);
+		const outOfRange = await page.request.post('/api/player', { data: { name, reading_age: 12 } });
+		expect(outOfRange.status()).toBe(400);
+		expect((await outOfRange.json()).error).toMatch(/reading_age/);
+
+		expect((await page.request.post('/api/player', { data: { name, reading_age: 7 } })).ok()).toBe(true);
+		expect((await page.request.post('/api/player', { data: { name } })).ok()).toBe(true);
+	});
+
 	test('creating a profile signs in and redirects away from the picker', async ({ page }) => {
 		await signInThroughPicker(page);
 

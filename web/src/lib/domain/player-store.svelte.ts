@@ -50,8 +50,11 @@ export class PlayerStore {
 		}
 	}
 
-	/** Signs in as `name`, creating that profile if it is new. */
-	async signIn(name: string): Promise<boolean> {
+	/**
+	 * Signs in as `name`. A name no profile has yet creates one, and a new
+	 * profile needs the `readingAge` it reads at.
+	 */
+	async signIn(name: string, readingAge: number | null = null): Promise<boolean> {
 		this.error = null;
 
 		const trimmed = name.trim();
@@ -59,12 +62,17 @@ export class PlayerStore {
 			this.error = 'Enter a name';
 			return false;
 		}
+		const known = this.profiles.some((profile) => profile.name === trimmed);
+		if (!known && readingAge === null) {
+			this.error = 'Choose a reading age';
+			return false;
+		}
 
 		try {
 			const response = await fetch('/api/player', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ name: trimmed }),
+				body: JSON.stringify(known || readingAge === null ? { name: trimmed } : { name: trimmed, reading_age: readingAge }),
 			});
 			const payload = (await response.json().catch(() => null)) as
 				| (PlayerResponse & { error?: string })

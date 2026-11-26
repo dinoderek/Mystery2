@@ -99,7 +99,7 @@
     <!-- Fixed header -->
     <div class="mb-4">
       <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-        <h1 class="text-3xl font-bold">MYSTERY GAME TERMINAL</h1>
+        <h1 class="text-3xl font-bold">MYSTERY</h1>
         <div class="flex gap-2">
           <button
             type="button"

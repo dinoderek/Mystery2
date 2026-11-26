@@ -26,8 +26,8 @@ each visit; none on failure).
 `/settings`) to `/login` until a profile is chosen. A `PUBLIC_PATHS` route calls
 a profile endpoint only once one is chosen.
 
-A new name is asked its age (`AgePicker.svelte`, also on settings); a
-game refused with `READING_AGE_REQUIRED` opens it too.
+`/login` lists profiles; a new one picks a name and age.
+`AgePicker.svelte` asks the age on settings and on `READING_AGE_REQUIRED`.
 
 ## The session screen
 

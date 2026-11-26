@@ -1,15 +1,16 @@
 import { expect, test } from '@playwright/test';
-import { signInAsTestProfile, signInThroughPicker } from './test-profile';
+import { openNewProfileForm, signInAsTestProfile, signInThroughPicker } from './test-profile';
 
 test.describe('Local profiles', () => {
 	test('sends a visitor with no profile to the picker', async ({ page }) => {
 		await page.goto('/');
 		await expect(page).toHaveURL(/\/login$/);
-		await expect(page.getByText('Who is playing?')).toBeVisible();
+		await expect(page.getByTestId('new-profile').or(page.locator('#profile-name'))).toBeVisible();
 	});
 
 	test('refuses an empty name', async ({ page }) => {
 		await page.goto('/login');
+		await openNewProfileForm(page);
 		await page.getByRole('button', { name: '[ START ]' }).click();
 
 		await expect(page).toHaveURL(/\/login$/);
@@ -18,14 +19,14 @@ test.describe('Local profiles', () => {
 
 	test('asks a new profile for its reading age, and keeps it', async ({ page }) => {
 		await page.goto('/login');
+		await openNewProfileForm(page);
 		await page.locator('#profile-name').fill('needs-an-age');
 		await page.getByRole('button', { name: '[ START ]' }).click();
 
 		await expect(page).toHaveURL(/\/login$/);
 		await expect(page.getByRole('alert')).toHaveText('Choose a reading age');
 
-		await page.locator('[data-testid="reading-age-option"][data-age="10"]').click();
-		await expect(page.locator('[data-testid="reading-age-option"][data-age="10"]')).toHaveAttribute('aria-pressed', 'true');
+		await page.getByTestId('reading-age-select').selectOption('10');
 		await page.getByRole('button', { name: '[ START ]' }).click();
 		await expect(page).toHaveURL(/\/$/);
 
@@ -58,7 +59,7 @@ test.describe('Local profiles', () => {
 
 		await page.reload();
 		await expect(page).toHaveURL(/\/$/);
-		await expect(page.getByText('MYSTERY GAME TERMINAL').first()).toBeVisible();
+		await expect(page.getByTestId('menu-row-1')).toBeVisible();
 	});
 
 	test('offers an existing profile to pick again after signing out', async ({ page }) => {
@@ -69,6 +70,14 @@ test.describe('Local profiles', () => {
 
 		const existing = page.getByTestId('profile-option').filter({ hasText: name });
 		await expect(existing).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'MYSTERY', exact: true })).toBeVisible();
+		await expect(page.getByText(/Who is playing|local to this machine/i)).toHaveCount(0);
+
+		// With profiles to pick, the new-profile form waits behind its button.
+		await expect(page.locator('#profile-name')).toBeHidden();
+		await page.getByTestId('new-profile').click();
+		await expect(page.locator('#profile-name')).toBeVisible();
+		await expect(page.getByTestId('reading-age-select')).toBeVisible();
 
 		await existing.click();
 		await expect(page).toHaveURL(/\/$/);
@@ -86,7 +95,7 @@ test.describe('Local profiles', () => {
 
 		await page.goto('/');
 		await expect(page).toHaveURL(/\/login$/);
-		await expect(page.getByText('Who is playing?')).toBeVisible();
+		await expect(page.getByTestId('new-profile').or(page.locator('#profile-name'))).toBeVisible();
 
 		expect(unauthenticated).toEqual([]);
 	});
@@ -103,6 +112,6 @@ test.describe('Local profiles', () => {
 
 		await page.goto('/');
 		await expect(page).toHaveURL(/\/$/);
-		await expect(page.getByText('MYSTERY GAME TERMINAL').first()).toBeVisible();
+		await expect(page.getByTestId('menu-row-1')).toBeVisible();
 	});
 });

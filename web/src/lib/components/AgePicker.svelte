@@ -1,8 +1,7 @@
 <!--
 	The reading ages to choose among, one button each. The ages and their labels
-	come from `readingAgeRows`; the caller says what choosing one does. Used where
-	a profile is created, on the settings page, and where a game asks for an age
-	the profile lacks.
+	come from `readingAgeRows`; the caller says what choosing one does. Used on
+	the settings page, and where a game asks for an age the profile lacks.
 -->
 <script lang="ts">
 	import { readingAgeRows } from '$lib/domain/profile-settings-view';

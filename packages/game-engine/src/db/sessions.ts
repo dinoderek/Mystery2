@@ -21,7 +21,7 @@ import { clueGraphCaseId } from "../../../shared/src/clue-graph-case.ts";
 import type { ClueGraphCase } from "../../../shared/src/clue-graph-schema.ts";
 import { ReadingAgeSchema } from "../../../shared/src/reading-age.ts";
 
-const SUMMARY_COLUMNS =
+export const SUMMARY_COLUMNS =
   "id, blueprint_id, mode, time_remaining, outcome, updated_at, created_at, json_extract(clue_graph_snapshot, '$.metadata.title') as clue_graph_title";
 
 /**

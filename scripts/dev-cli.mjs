@@ -24,6 +24,8 @@ export const USAGE = `Usage: ./dev <verb> [args]
   doctor                           check this host; install what is missing
   run [--ai <name>] [--db <name>]  start the game (what \`npm run dev\` does), narrating with an AI from ai.json
   run --lan [--ai <n>] [--db <n>]  serve the game to other devices on WiFi and Tailscale (prod database by default)
+  sessions [--since <d>] [--profile <n>] [--database <name|file>] [--json]
+                                   list the games in a database
   test [step ...]                  run the gate (what \`npm test\` does), or only the named steps
   generate [args]                 generate a mystery blueprint (no images)
   gen-images [args]               generate artwork for a blueprint
@@ -76,6 +78,10 @@ export async function main(
         return exec(buildRunCommand(root, rest));
       case "test":
         return exec(buildTestCommand(root, rest));
+      case "sessions": {
+        const { runSessions } = await import("./lib/dev-sessions.mjs");
+        return await runSessions(rest, { root, out, err, env });
+      }
       case "generate": {
         const { runEval } = await import("../evaluation/core/dispatch.ts");
         const { generateCommand } = await import("../evaluation/generate/commands.ts");

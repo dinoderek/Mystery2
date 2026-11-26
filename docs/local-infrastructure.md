@@ -27,6 +27,9 @@ this checkout's database; `prod` needs `--force` to reset or overwrite.
 | `npm run prod` | `database/prod/game.db` |
 | `--db <name>` or `MYSTERY_DATABASE` | `database/<name>/game.db` |
 
+`./dev sessions` lists a database's games (`--since <date>`, `--profile <name>`,
+`--database <name or file>`, `--json`) read-only, with no server running.
+
 ## One port per worktree
 
 Each worktree's port is hashed from its name (`lib/worktree-ports.mjs`; main

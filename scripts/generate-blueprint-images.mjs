@@ -28,7 +28,8 @@ const MAX_ERROR_BODY_LENGTH = 16_000;
 // rejected by /chat/completions with a 404.
 export const OPENROUTER_IMAGES_URL = "https://openrouter.ai/api/v1/images";
 const DEFAULT_IMAGE_MODEL = "bytedance-seed/seedream-5-5";
-const DEFAULT_OPENROUTER_TIMEOUT_MS = 120_000;
+// A cover with half a dozen 2K references can take over two minutes.
+const DEFAULT_OPENROUTER_TIMEOUT_MS = 300_000;
 // The documented ratio union. Per-model support is a subset and is only
 // discoverable via GET /api/v1/images/models, so this is a syntax check only.
 const SUPPORTED_ASPECT_RATIOS = new Set([
@@ -154,7 +155,7 @@ Chat packets and --import-images exclude --dry-run and --dry-mode, and each
 other. The config root is $MYSTERY_CONFIG_ROOT, or the repo when unset.
 Environment is read from the shell, then .env.images.local, then
 .env.local in the config root. AI_OPENROUTER_TIMEOUT_MS sets the timeout
-(default 120000).
+(default 300000).
 `;
 
 export function parseGenerateImageArgs(argv, env = process.env) {
@@ -960,6 +961,30 @@ export async function runImageGeneration(rawOptions, dependencies = {}) {
   // Maps populated after each phase and read by subsequent phases' helpers.
   const portraitPaths = new Map();
   const locationPaths = new Map();
+
+  // An image this run does not make is referenced from disk when the case
+  // already has it, so a cover made on its own still sees the cast.
+  async function existingImage(namedId, targetType, targetKey) {
+    const candidates = [namedId, conventionalImageId(blueprint.id, targetType, targetKey)].filter(Boolean);
+    for (const imageId of candidates) {
+      const imagePath = path.join(options.outputDir, imageId);
+      try {
+        await fs.access(imagePath);
+        return imagePath;
+      } catch {
+        // Not filed under this name; try the next.
+      }
+    }
+    return null;
+  }
+  for (const [id, person] of Object.entries(parsed.characters)) {
+    const existing = await existingImage(person.portrait_image_id, "character", id);
+    if (existing) portraitPaths.set(id, existing);
+  }
+  for (const [id, place] of Object.entries(parsed.locations)) {
+    const existing = await existingImage(place.location_image_id, "location", id);
+    if (existing) locationPaths.set(id, existing);
+  }
 
   async function readPortraitRef(characterId) {
     const portraitPath = portraitPaths.get(characterId);

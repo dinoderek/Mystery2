@@ -1,4 +1,4 @@
-import { copyFile, mkdtemp, readdir, readFile } from "node:fs/promises";
+import { copyFile, mkdtemp, readdir, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
@@ -346,6 +346,21 @@ describe("runImageGeneration", () => {
     // The second run replaced the first image rather than writing a `-1` beside it.
     expect(await readdir(outputDir)).toEqual([`mock-case.character-${characterKey}.png`]);
     expect(await readFile(MOCK_CASE, "utf-8")).toBe(before);
+  });
+
+  it("references the portraits and locations already on disk when it makes only the cover", async () => {
+    const outputDir = await mkdtemp(path.join(os.tmpdir(), "mystery-images-"));
+    const cover = JSON.parse(await readFile(MOCK_CASE, "utf-8")).cover;
+    for (const id of [...cover.characters.map((c: string) => `character-${c}`), ...cover.locations.map((l: string) => `location-${l}`)]) {
+      await writeFile(path.join(outputDir, `mock-case.${id}.png`), PNG_BYTES);
+    }
+    const fetchMock = vi.fn().mockImplementation(async () => imagesApiResponse());
+    const options = parseGenerateImageArgs(["--blueprint-path", MOCK_CASE, "--output-dir", outputDir, "--blueprint"]);
+
+    await runImageGeneration(options, { fetchImpl: fetchMock, apiKey: "test-key", env: {} });
+
+    const sent = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(sent.input_references).toHaveLength(cover.characters.length + cover.locations.length);
   });
 
   it("tells a committed case from one outside the repo's blueprints", () => {

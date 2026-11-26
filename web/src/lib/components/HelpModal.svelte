@@ -91,6 +91,7 @@
           <ul class="list-disc list-inside pl-4 space-y-1">
             <li><span class="text-t-bright">Tab / notebook / n</span> - Open and close your case notebook: what you know, who you have met, and every clue you have found. Inside it, left/right arrows change section, up/down arrows scroll, 1-4 jump straight to a section</li>
             <li class="hidden pointer-fine:list-item"><span class="text-t-bright">PageUp / PageDown</span> - Turn back and forth through the pages of your case. Each place you visit and each conversation you have is its own page, with its own picture. Alt+left and Alt+right do the same</li>
+            <li><span class="text-t-bright">age [6-11]</span> - Change the age the story is written for, from now on, in every case you play</li>
             <li><span class="text-t-bright">help</span> - Open this list of commands</li>
             <li><span class="text-t-bright">quit / exit</span> - Stop playing this case</li>
           </ul>

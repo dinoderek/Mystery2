@@ -50,6 +50,44 @@ test.describe('Reading age', () => {
 		await expect(page).toHaveURL(/\/session/);
 	});
 
+	test('typing age mid-game shows one line, and the game carries on at the new age', async ({ page }) => {
+		await signInAsTestProfile(page, 'age-command');
+		await listOnlyMockCase(page);
+
+		await page.goto('/');
+		await expect(page.getByText('1. Start a new game')).toBeVisible();
+		await page.keyboard.press('1');
+		await expect(page.getByTestId('case-card-1')).toBeVisible();
+		await page.keyboard.press('1');
+		await expect(page).toHaveURL(/\/session/);
+		await expect(page.getByTestId('begin-investigation-prompt')).toBeVisible();
+		await page.keyboard.press('Enter');
+
+		const input = page.locator("input[type='text']");
+		const line = page.getByText('From now on, the story is written for age 9.');
+
+		await input.fill('age 9');
+		await input.press('Enter');
+		await expect(line).toBeVisible();
+
+		const played = page.waitForResponse('**/api/game-turn');
+		await input.fill('search');
+		await input.press('Enter');
+		const turn = await (await played).json();
+
+		expect(turn.events[0].payload.reading_age).toBe(9);
+		await expect(page.getByText(/\[Mock\]/).last()).toBeVisible();
+		await expect(line).toHaveCount(1);
+
+		// Reopened, the game says the same once.
+		await page.reload();
+		await expect(page.getByText('2. View in-progress games')).toBeVisible();
+		await page.keyboard.press('2');
+		await expect(page.getByText('Mock Case')).toBeVisible();
+		await page.keyboard.press('1');
+		await expect(line).toHaveCount(1);
+	});
+
 	test('a profile with no age is asked for one before its game starts, then plays', async ({ page }) => {
 		await signInAsTestProfile(page, 'ageless');
 		await refuseOnceForWantOfAge(page, 'game-start');

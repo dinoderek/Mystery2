@@ -214,6 +214,22 @@ describe('buildSessionPages', () => {
     ]);
   });
 
+  it('keeps a change of age on the page it falls in, an accusation page included', () => {
+    const pages = buildSessionPages([
+      ...opening(),
+      event('accuse_start', [{ text: 'Name your suspect.' }]),
+      event('age_change', [{ text: 'From now on, the story is written for age 9.' }]),
+      event('accuse_failed', [{ text: 'Not yet.' }]),
+      event('age_change', [{ text: 'From now on, the story is written for age 7.' }]),
+      event('search', [{ text: 'You find a crumb.' }]),
+    ]);
+
+    expect(pages.slice(2).map((page) => [page.kind, page.events.map((e) => e.event_type)])).toEqual([
+      ['accusation', ['accuse_start', 'age_change', 'accuse_failed', 'age_change']],
+      ['location', ['search']],
+    ]);
+  });
+
   it('adopts the first image an event contributes to an already-open page', () => {
     reset();
     const pages = buildSessionPages([

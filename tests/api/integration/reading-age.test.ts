@@ -122,6 +122,8 @@ describe("the reading age", () => {
       ["start", 8],
       ["move", 8],
       ["search", 8],
+      // Resuming at the new age recorded the change once (`age-command.test.ts`).
+      ["age_change", null],
       ["move", 6],
     ]);
   });
@@ -187,6 +189,7 @@ describe("the reading age", () => {
       await play(ada, gameId, "search");
       expect(eventAges(gameId)).toEqual([
         ["start", 8],
+        ["age_change", null], // the opening was written at 8, the arrival at 9
         ["move", 9],
         ["search", 9],
       ]);

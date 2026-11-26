@@ -3,7 +3,7 @@
   "game_id": "11111111-2222-4333-8444-555555555555",
   "blueprint": {
     "id": "0b4deb40-e0d1-8cbf-a4bc-9ae6af12fbd5",
-    "title": "Mock Case — clue graph"
+    "title": "Mock Case"
   },
   "persona": "detective",
   "narrator_model": "mock",

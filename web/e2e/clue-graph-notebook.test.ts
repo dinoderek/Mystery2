@@ -16,7 +16,7 @@ test('the notebook shows a new lead, then a statement taken back', async ({ page
   await expect(page.getByText('1. Start a new game', { exact: true })).toBeVisible();
   await page.keyboard.press('1');
   await expect(
-    page.getByText('The Smashed Prize Pumpkin — clue graph', { exact: true }),
+    page.getByText('The Smashed Prize Pumpkin', { exact: true }),
   ).toBeVisible();
   await page.keyboard.press(String(index + 1));
   await expect(page).toHaveURL(/\/session/);

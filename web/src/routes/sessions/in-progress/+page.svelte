@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
+  import ListFooter from '$lib/components/ListFooter.svelte';
   import { gameSessionStore } from '$lib/domain/store.svelte';
   import type { SessionSummary } from '$lib/types/game';
   import { formatLastPlayed, pickSessionByNumericKey } from '$lib/domain/session-list';
@@ -94,16 +95,5 @@
     {/if}
   </div>
 
-  <!-- Fixed footer -->
-  <div class="mt-4 flex items-center justify-center gap-4 text-t-muted/60">
-    <button
-      type="button"
-      data-testid="back-button"
-      class="min-h-11 border border-t-muted/40 px-3 hover:border-t-primary hover:text-t-primary"
-      onclick={() => goto('/')}
-    >
-      [ BACK ]
-    </button>
-    <span class="animate-pulse">[ TAP A ROW OR PRESS ITS NUMBER TO RESUME · B RETURNS ]</span>
-  </div>
+  <ListFooter hint="PRESS A NUMBER · B GOES BACK" onback={() => goto('/')} />
 </main>

@@ -161,7 +161,7 @@ describe("clue-graph sessions and turns", () => {
     const entries = await ctx.content.listBlueprints(silent);
     const index = entries.findIndex((entry) => entry.blueprint.id === clueGraphCaseId("greenhouse-prizewinner"));
     expect(index).toBeGreaterThanOrEqual(0);
-    expect(entries[index].blueprint.metadata.title).toBe("The Smashed Prize Pumpkin — clue graph");
+    expect(entries[index].blueprint.metadata.title).toBe("The Smashed Prize Pumpkin");
 
     const started = await start(clueGraphCaseId("greenhouse-prizewinner"));
     expect(started.narration_events[0].payload).toMatchObject({ case_format: "clue-graph/2" });
@@ -185,7 +185,7 @@ describe("clue-graph sessions and turns", () => {
     expect(resumed.state.locations.find((place) => place.id === "greenhouse")?.name).toBe("The Greenhouse");
     expect(resumed.state.discovered_clues?.map((clue) => clue.text)).toEqual([line]);
     const catalog = await (await listSessions(new Request("http://test/api/game-sessions-list"), ctx)).json();
-    expect(catalog.in_progress[0]).toMatchObject({ mystery_title: "The Smashed Prize Pumpkin — clue graph" });
+    expect(catalog.in_progress[0]).toMatchObject({ mystery_title: "The Smashed Prize Pumpkin" });
   });
 
   it("refuses a snapshot that does not match its session", async () => {

@@ -295,7 +295,7 @@ describe("self-play's case lookup", () => {
     ["a path", GREENHOUSE_FILE],
     ["its ID", GREENHOUSE_ID],
     ["its file name", "greenhouse-prizewinner"],
-    ["its title", "The Smashed Prize Pumpkin — clue graph"],
+    ["its title", "The Smashed Prize Pumpkin"],
   ])("finds the greenhouse case by %s", (_how, query) => {
     const found = findBlueprint(query, roots, "");
     expect(found.blueprint.id).toBe(GREENHOUSE_ID);

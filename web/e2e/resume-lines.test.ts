@@ -12,7 +12,7 @@ test.describe('Lines that cost no turn', () => {
     await page.goto('/');
     await expect(page.getByText('1. Start a new game')).toBeVisible();
     await page.keyboard.press('1');
-    await expect(page.getByText('Mock Case — clue graph')).toBeVisible();
+    await expect(page.getByText('Mock Case', { exact: true })).toBeVisible();
     await page.keyboard.press('1');
     await expect(page).toHaveURL(/.*\/session/);
 

@@ -20,7 +20,7 @@ steps
   15  "accuse Toby did it: his welly prints are in the pumpkin, and Mia was at the cake tent."  mode=ended turns=6 result=win
 
 pages
-  page 0 opening "The Smashed Prize Pumpkin — clue graph"
+  page 0 opening "The Smashed Prize Pumpkin"
     step 0 | Narrator (narrator): "[Mock] Big Bertha, the prize pumpkin, was smashed overnight. A greenhouse window is broken. The greenhouse key has been missing for days. Mr. Dobbs saw Bertha whole on his 8pm rounds. Ms. Hale found Bertha smashed at 7:30. Toby and Mia are the club's two pupils. Mr. Thorne is the rival grower next door, and he is being blamed."
     step 0 | Narrator (narrator): "Tip: type \"notebook\" (or \"n\") to open your case notebook. It holds what you know, who you have met, and every clue you have found. You have 3 accusations. Each one you try uses one up. Type \"accuse\" when you are ready, and \"back\" if you change your mind: that is free. Type \"help\" to see what else you can do."
   page 1 location "The Greenhouse"

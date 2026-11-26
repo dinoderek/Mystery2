@@ -161,6 +161,7 @@ shared design, then the per-pipeline runbooks:
 ```bash
 ./dev generate <brief> --judge             # generate and judge a case
 ./dev eval judge game <session-id|trace.json>   # judge a played game
+./dev eval judge game --bundle <folder>      # judge every game in a playtest bundle
 ./dev eval judge turn <case-or-dir>          # eval a runtime case
 ./dev eval judge turn <run>/<subject>/turn.json  # judge a stored turn again
 ./dev eval cases <trace.json>                # build runtime cases from a trace

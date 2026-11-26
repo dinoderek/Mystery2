@@ -14,7 +14,7 @@ import {
   resolveSessionsDatabase,
   runSessions,
 } from "../../../scripts/lib/dev-sessions.mjs";
-import { createGameDatabase } from "./trace-database-fixture.ts";
+import { createGameDatabase, PLAYED_AT } from "./trace-database-fixture.ts";
 
 const REPO_ROOT = path.resolve(__dirname, "../../..");
 const SNAPSHOT = JSON.stringify({ metadata: { title: "The Missing Jar" } });
@@ -37,26 +37,25 @@ interface SessionSeed {
   player: string;
   startedAt: string;
   outcome?: string | null;
-  readingAge?: number | null;
-  /** [event_type, created_at] in sequence order. */
-  events: Array<[string, string]>;
+  /** [event_type, created_at, the reading age it records] in sequence order. */
+  events: Array<[string, string, number?]>;
 }
 
 /** Adds a player (if new) and a session with events to the fixture database. */
-function seed({ id, player, startedAt, outcome = null, readingAge = null, events }: SessionSeed): void {
+function seed({ id, player, startedAt, outcome = null, events }: SessionSeed): void {
   const db = openDatabase({ path: file });
   try {
     db.prepare("insert or ignore into players (id, name, created_at, updated_at) values (?, ?, ?, ?)").run(player, player, startedAt, startedAt);
     db.prepare(
       `insert into game_sessions (id, player_id, blueprint_id, mode, current_location_id, time_remaining, outcome,
-                                   created_at, updated_at, clue_graph_snapshot, reading_age)
-       values (?, ?, 'case-b', 'explore', 'loc', 5, ?, ?, ?, ?, ?)`,
-    ).run(id, player, outcome, startedAt, startedAt, SNAPSHOT, readingAge);
-    events.forEach(([type, at], index) => {
+                                   created_at, updated_at, clue_graph_snapshot)
+       values (?, ?, 'case-b', 'explore', 'loc', 5, ?, ?, ?, ?)`,
+    ).run(id, player, outcome, startedAt, startedAt, SNAPSHOT);
+    events.forEach(([type, at, age], index) => {
       db.prepare(
-        `insert into game_events (id, session_id, sequence, event_type, actor, narration, narration_parts, created_at)
-         values (?, ?, ?, ?, 'player', 'n', ?, ?)`,
-      ).run(`${id}-e${index}`, id, index + 1, type, PARTS, at);
+        `insert into game_events (id, session_id, sequence, event_type, actor, payload, narration, narration_parts, created_at)
+         values (?, ?, ?, ?, 'player', ?, 'n', ?, ?)`,
+      ).run(`${id}-e${index}`, id, index + 1, type, age === undefined ? null : JSON.stringify({ reading_age: age }), PARTS, at);
     });
   } finally {
     db.close();
@@ -76,8 +75,8 @@ describe("listSessions", () => {
       player: "Ada",
       startedAt: "2026-07-01T10:00:00.000Z",
       outcome: "solved",
-      readingAge: 9,
-      events: [["start", "2026-07-01T10:00:00.000Z"], ["search", "2026-07-01T10:05:30.000Z"], ["talk", "2026-07-01T10:12:05.000Z"]],
+      // The age changed mid-game: the latest narrated event's is the game's now.
+      events: [["start", "2026-07-01T10:00:00.000Z", 7], ["search", "2026-07-01T10:05:30.000Z", 9], ["talk", "2026-07-01T10:12:05.000Z"]],
     });
 
     const rows = await listSessions(file);
@@ -95,10 +94,10 @@ describe("listSessions", () => {
     });
   });
 
-  it("lists the fixture game with a null outcome and reading age", async () => {
+  it("lists the fixture game with a null outcome, at the age its narrated event records", async () => {
     const [row] = await listSessions(file);
 
-    expect(row).toMatchObject({ session_id: "session-under-test", profile: "Tester", outcome: null, reading_age: null, turns: 2 });
+    expect(row).toMatchObject({ session_id: "session-under-test", profile: "Tester", outcome: null, reading_age: PLAYED_AT, turns: 2 });
   });
 
   it("leaves no_turn_line out of the turns but not out of the duration", async () => {
@@ -240,8 +239,7 @@ describe("the table and --json", () => {
       player: "Ada",
       startedAt: "2026-07-01T10:00:00.000Z",
       outcome: "solved",
-      readingAge: 8,
-      events: [["start", "2026-07-01T10:00:00.000Z"], ["search", "2026-07-01T10:03:05.000Z"]],
+      events: [["start", "2026-07-01T10:00:00.000Z", 8], ["search", "2026-07-01T10:03:05.000Z", 8]],
     });
     const out: string[] = [];
     const context = { root: REPO_ROOT, out: (text: string) => out.push(text), err: () => {}, env: {} };

@@ -38,7 +38,7 @@ export class SessionsError extends Error {}
  * @property {string} profile profile name
  * @property {string} blueprint_id
  * @property {string | null} case_title the title in the game's saved case
- * @property {number | null} reading_age
+ * @property {number | null} reading_age the age the game's latest narrated event was written at
  * @property {number} turns events other than `no_turn_line`
  * @property {string | null} outcome null while the game is unfinished
  * @property {string} started_at ISO timestamp
@@ -156,17 +156,21 @@ function readSessions(db, summaryColumns, { sinceInstant, profile }) {
   const tables = new Set(db.prepare("select name from sqlite_master where type = 'table'").all().map((row) => row.name));
   if (!tables.has("game_sessions") || !tables.has("players")) return [];
 
-  // A database from before reading ages has no column to read.
-  const hasReadingAge = db.prepare("select 1 from pragma_table_info('game_sessions') where name = 'reading_age'").get();
   const firstOrLast = (order) => `(select created_at from game_events e where e.session_id = s.id order by sequence ${order} limit 1)`;
+  // The age is the reader's and may change mid-game: each narrated event
+  // records the one it was written at, so the latest is the game's now.
+  const latestAge = `(select json_extract(e.payload, '$.reading_age') from game_events e
+                        where e.session_id = s.id and json_extract(e.payload, '$.reading_age') is not null
+                        order by sequence desc limit 1)`;
 
   const rows = db
     .prepare(
       `select s.*, p.name as profile_name,
               (select count(*) from game_events e where e.session_id = s.id and e.event_type <> 'no_turn_line') as turns,
               ${firstOrLast("asc")} as first_event_at,
-              ${firstOrLast("desc")} as last_event_at
-         from (select ${summaryColumns}, player_id${hasReadingAge ? ", reading_age" : ""} from game_sessions) s
+              ${firstOrLast("desc")} as last_event_at,
+              ${latestAge} as reading_age
+         from (select ${summaryColumns}, player_id from game_sessions) s
          join players p on p.id = s.player_id`,
     )
     .all();

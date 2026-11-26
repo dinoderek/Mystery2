@@ -65,6 +65,7 @@ const ACCUSATION_PAGE_EVENT_TYPES: ReadonlySet<string> = new Set([
   'accuse_back',
   'forced_endgame',
   'no_turn_line',
+  'age_change',
   'input',
   'system_response',
   'error',

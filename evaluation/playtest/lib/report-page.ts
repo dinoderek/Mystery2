@@ -208,7 +208,7 @@ function eventTurn(event: PlayedEvent, step: Step | null, clueText: Record<strin
 /** The row for a line that never reached the game: a parser hint, a view, or a failed call. */
 function noteTurn(step: Step): ReportTurn {
   const action = step.action as { kind: string; text?: string };
-  const note = action.kind === "refused" || action.kind === "view"
+  const note = action.kind === "refused" || action.kind === "view" || action.kind === "age"
     ? { kind: "feedback", text: action.text ?? "" }
     : action.kind === "quit"
     ? { kind: "feedback", text: "The investigator stopped playing." }

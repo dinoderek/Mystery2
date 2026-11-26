@@ -3,12 +3,15 @@
 // 1. Load the history, the session (scoped to the profile), the blueprint and
 //    the profile's reading age.
 // 2. Parse the line against the session's mode, place and the people present.
-// 3. Answer a line that is not an action at once: a refusal, a view, or quit.
-//    A refusal and `help` are saved, as lines that cost no turn.
+// 3. Answer a line that is not an action at once: a refusal, a view, quit, or
+//    a change of age. A refusal and `help` are saved, as lines that cost no
+//    turn; so is the `age_change` when the age differs from the last one the
+//    game recorded.
 // 4. Check the action is allowed in this mode.
 // 5. Resolve it: load the narrator and call the model.
 // 6. Work out the effect: the session change, the events, the turn spent and
-//    the accusation forced when the last turn runs out.
+//    the accusation forced when the last turn runs out. An age that changed
+//    since the game last recorded one is saved first, before the narration.
 // 7. Save once.
 // 8. Answer from what was saved.
 
@@ -16,11 +19,11 @@ import type { PlayableCase } from "../../../shared/src/playable-case.ts";
 import { markClues, notebookMarks } from "../clue-graph/notebook-view.ts";
 import { sessionCase } from "../session-case.ts";
 import { requestReadingAge } from "../reading-age.ts";
-import type { GameTurnResponse, TurnPlayedResponse } from "../../../shared/src/mystery-api-contracts.ts";
+import type { GameTurnResponse, TurnAgeResponse, TurnPlayedResponse } from "../../../shared/src/mystery-api-contracts.ts";
 import { AIConfigError } from "../ai-config.ts";
 import { createAIProviderFromProfile, type AIProvider } from "../ai-provider.ts";
 import { HELP_NOTE, interpretLine, type GrammarState, type Interpretation } from "../command-grammar.ts";
-import type { EngineAIProfile, EngineContext, GameSessionRow } from "../context.ts";
+import type { EngineAIProfile, EngineContext, GameSessionRow, SaveEvent } from "../context.ts";
 import { RequestRejectedError, SaveConflictError } from "../errors.ts";
 import { logTimeoutTransition } from "../forced-endgame.ts";
 import type { LogWriter } from "../logging.ts";
@@ -30,6 +33,7 @@ import { narrateForcedEndgame } from "./narrator.ts";
 import { nextSequenceAfter, noTurnEvent, playedEvents } from "./no-turn.ts";
 import { planAction } from "./plan.ts";
 import { accusationForced } from "../accusations.ts";
+import { ageChange, lastRecordedAge } from "./age-change.ts";
 import { resolveAccusation, resolveAccuseBack, resolveAccuseStart } from "./resolve-accuse.ts";
 import { resolveMove } from "./resolve-move.ts";
 import { resolveGraphLine, resolveGraphSearch, resolveGraphTalk } from "./resolve-clue-graph.ts";
@@ -85,6 +89,7 @@ export function answerWithoutPlaying(meaning: Interpretation): GameTurnResponse 
     case "quit":
       return { kind: "quit" };
     case "action":
+    case "set_age":
       return null;
   }
 }
@@ -111,6 +116,7 @@ async function loadGame(ctx: EngineContext, gameId: string, logger: LogWriter): 
     session,
     blueprint,
     reading_age: await requestReadingAge(ctx.profile),
+    recorded_age: lastRecordedAge(history),
     history: playedEvents(history),
     next_sequence: nextSequence,
   };
@@ -202,18 +208,74 @@ async function answerAndKeep(
   return answer;
 }
 
-function answerFromSave(game: TurnGame, outcome: ActionOutcome, effect: TurnEffect): TurnPlayedResponse {
+/** An event the turn saved, as the answer shows it. */
+interface SavedEvent {
+  sequence: number;
+  event: SaveEvent;
+}
+
+function savedEventView(sequence: number, event: SaveEvent) {
+  return {
+    sequence,
+    event_type: event.event_type,
+    payload: event.payload,
+    narration_parts: event.narration_parts,
+  };
+}
+
+function logAgeChangeSaved(game: TurnGame, saved: SavedEvent, options: TurnOptions): void {
+  logNarrationEventSaved(
+    {
+      session_id: game.game_id,
+      event_type: saved.event.event_type,
+      actor: saved.event.actor,
+      narration_parts: saved.event.narration_parts,
+      logger: options.logger,
+    },
+    saved.sequence,
+  );
+}
+
+/**
+ * `age <n>`: sets the profile's age, which every game of the profile reads on
+ * its next request, and saves the `age_change` when this game's last recorded
+ * age differs. A repeated age saves nothing.
+ */
+async function setReadingAge(
+  ctx: EngineContext,
+  game: TurnGame,
+  age: number,
+  options: TurnOptions,
+): Promise<TurnAgeResponse> {
+  // The profile first: a failed save leaves the next request to record the change.
+  await ctx.profile.setReadingAge(age);
+
+  const change = ageChange(game.recorded_age, age);
+  if (!change) return { kind: "age", reading_age: age, event: null };
+
+  const saved = { sequence: game.next_sequence, event: change };
+  await ctx.sessions.saveTurn({
+    game_id: game.game_id,
+    expected_sequence: saved.sequence,
+    request_id: options.request_id,
+    events: [change],
+  });
+  logAgeChangeSaved(game, saved, options);
+  return { kind: "age", reading_age: age, event: savedEventView(saved.sequence, change) };
+}
+
+function answerFromSave(
+  game: TurnGame,
+  outcome: ActionOutcome,
+  effect: TurnEffect,
+  ageLine: SavedEvent | null,
+): TurnPlayedResponse {
   // The leads and every clue taken back; the clues the turn found say what they are.
   const graph = game.blueprint.clue_graph;
   const marks = notebookMarks(graph, [...game.history, ...effect.events.map(({ event }) => ({ payload: event.payload }))]);
   return {
     kind: "turn",
-    events: effect.events.map(({ sequence, event }) => ({
-      sequence,
-      event_type: event.event_type,
-      payload: event.payload,
-      narration_parts: event.narration_parts,
-    })),
+    events: [...(ageLine ? [ageLine] : []), ...effect.events].map(({ sequence, event }) => savedEventView(sequence, event)),
     state: effect.state,
     revealed_clues: markClues(graph, outcome.revealed_clues, marks),
     leads: marks.leads,
@@ -240,6 +302,7 @@ export async function playTurn(
 
   const input = request.input.trim();
   const meaning = interpretLine(input, grammarStateOf(session, game.blueprint));
+  if (meaning.kind === "set_age") return setReadingAge(ctx, game, meaning.age, options);
   if (meaning.kind !== "action") return answerAndKeep(ctx, game, input, answerWithoutPlaying(meaning)!, options);
 
   const action = planAction(meaning.action, session);
@@ -258,7 +321,10 @@ export async function playTurn(
       ? await narrateForcedEndgame(runtime, game, outcome.endgame, cost.time_after)
       : null;
 
-  const expectedSequence = game.next_sequence;
+  // A change of age since the game last recorded one is saved before the narration.
+  const change = ageChange(game.recorded_age, game.reading_age);
+  const ageLine = change ? { sequence: game.next_sequence, event: change } : null;
+  const expectedSequence = game.next_sequence + (ageLine ? 1 : 0);
   const effect = turnEffect({
     game_id: request.game_id,
     session,
@@ -274,12 +340,13 @@ export async function playTurn(
 
   await ctx.sessions.saveTurn({
     game_id: request.game_id,
-    expected_sequence: expectedSequence,
+    expected_sequence: game.next_sequence,
     request_id: options.request_id,
     patch: effect.patch,
-    events: effect.events.map((planned) => planned.event),
+    events: [...(change ? [change] : []), ...effect.events.map((planned) => planned.event)],
   });
+  if (ageLine) logAgeChangeSaved(game, ageLine, options);
   logSaved(runtime, game, outcome, effect);
 
-  return answerFromSave(game, outcome, effect);
+  return answerFromSave(game, outcome, effect, ageLine);
 }

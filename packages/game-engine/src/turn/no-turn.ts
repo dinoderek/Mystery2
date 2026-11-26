@@ -1,10 +1,12 @@
-// Lines that cost no turn: a refused line, and `help`. Each is saved as one
+// Lines that cost no turn: a refused line, and `help` (a change of age is saved
+// beside them, `age-change.ts`). Each is saved as one
 // event holding the line as typed and the answer the player read, so a resumed
 // game shows what the live game showed. The save changes nothing in the
 // session, and the event is no part of what the game master did, so it never
 // reaches the narrator's history.
 
 import {
+  AGE_CHANGE_EVENT_TYPE,
   NO_TURN_EVENT_TYPE,
   type GameTurnResponse,
   type NoTurnLinePayload,
@@ -38,9 +40,12 @@ function noTurnPayload(input: string, answer: GameTurnResponse): NoTurnLinePaylo
   return null;
 }
 
-/** The events the game master took part in: everything but the lines that cost no turn. */
+/**
+ * The events the game master took part in: everything but the lines the engine
+ * wrote, a refused line, `help` and a change of age.
+ */
 export function playedEvents<T extends { event_type: string }>(events: T[]): T[] {
-  return events.filter((event) => event.event_type !== NO_TURN_EVENT_TYPE);
+  return events.filter((event) => event.event_type !== NO_TURN_EVENT_TYPE && event.event_type !== AGE_CHANGE_EVENT_TYPE);
 }
 
 /** The sequence the next event takes, counting every saved event. */

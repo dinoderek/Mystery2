@@ -3,6 +3,7 @@
 // Pure data in, data out. Nothing here reads a database, calls a model or
 // knows about HTTP, so every rule is testable without a server.
 
+import { READING_AGES } from "../../shared/src/reading-age.ts";
 import type { GameMode } from "./state-machine.ts";
 
 export type NotebookSection = "story" | "places" | "people" | "clues";
@@ -41,7 +42,8 @@ export type Interpretation =
   | { kind: "action"; action: GameAction }
   | { kind: "refused"; reason: RefusalKind; hint: string }
   | { kind: "view"; view: GrammarView; section: NotebookSection | null }
-  | { kind: "quit" };
+  | { kind: "quit" }
+  | { kind: "set_age"; age: number };
 
 const MOVE_ALIASES = ["head towards", "travel to", "move to", "go to", "move", "go"] as const;
 const TALK_ALIASES = ["speak with", "speak to", "talk to"] as const;
@@ -53,16 +55,17 @@ const HELP_ALIASES = ["help"] as const;
 const QUIT_ALIASES = ["quit", "exit"] as const;
 const END_TALK_ALIASES = ["goodbye", "see you", "leave", "bye", "end"] as const;
 const NOTEBOOK_ALIASES = ["notebook", "n"] as const;
+const AGE_ALIAS = "age";
 // Leaving the accusation. None is a word the grammar gives another meaning:
 // the end-talk words and `go` are taken.
 const BACK_ALIASES = ["back", "cancel", "never mind", "nevermind"] as const;
 
 const MODE_HINTS: Record<GameMode, string> = {
   explore:
-    "Commands: move to/go to <location>, talk to <character>, search, accuse [statement], locations, characters, notebook, help, quit. Type 'help' for details.",
-  talk: "Commands: <question>, bye, notebook, help, quit. Type 'help' for details.",
-  accuse: "Commands: <who did it and why>, back, notebook, help, quit. Type 'help' for details.",
-  ended: "Commands: notebook, help, quit. Type 'help' for details.",
+    "Commands: move to/go to <location>, talk to <character>, search, accuse [statement], locations, characters, notebook, age <number>, help, quit. Type 'help' for details.",
+  talk: "Commands: <question>, bye, notebook, age <number>, help, quit. Type 'help' for details.",
+  accuse: "Commands: <who did it and why>, back, notebook, age <number>, help, quit. Type 'help' for details.",
+  ended: "Commands: notebook, age <number>, help, quit. Type 'help' for details.",
 };
 
 /** What the transcript says when help opens. */
@@ -74,7 +77,7 @@ const WHITESPACE = /\s+/g;
 type Character = GrammarState["characters"][number];
 
 /** What a forced accusation offers: no way back. */
-const FORCED_ACCUSE_HINT = "Commands: <who did it and why>, notebook, help, quit. Type 'help' for details.";
+const FORCED_ACCUSE_HINT = "Commands: <who did it and why>, notebook, age <number>, help, quit. Type 'help' for details.";
 
 /** What `back` is told once the turns have run out. */
 export const NO_WAY_BACK_HINT = "Time is up, so there is no going back now. Who did it, and how do you know?";
@@ -282,6 +285,31 @@ function interpretAccuse(text: string, rawInput: string): Interpretation | null 
   return null;
 }
 
+const YOUNGEST_AGE = READING_AGES[0];
+const OLDEST_AGE = READING_AGES[READING_AGES.length - 1];
+const AGE_USAGE = `Type age and a number from ${YOUNGEST_AGE} to ${OLDEST_AGE}, like: age 8.`;
+
+/**
+ * `age <n>`: the reading age the story is written for. Exactly one word
+ * follows, so "age of the victim", said while talking, is still a question.
+ */
+function interpretAge(text: string): Interpretation | null {
+  if (text !== AGE_ALIAS && !text.startsWith(`${AGE_ALIAS} `)) {
+    return null;
+  }
+  const words = extractAliasTarget(text, AGE_ALIAS).split(" ").filter(Boolean);
+  if (words.length === 0) {
+    return refuse("missing-target", `Which age? ${AGE_USAGE}`);
+  }
+  if (words.length > 1) {
+    return null;
+  }
+  const age = /^\d+$/.test(words[0]) ? Number(words[0]) : NaN;
+  return READING_AGES.includes(age)
+    ? { kind: "set_age", age }
+    : refuse("invalid-target", `"${words[0]}" is not an age the story can be written for. ${AGE_USAGE}`);
+}
+
 function interpretExplore(text: string, rawInput: string, state: GrammarState): Interpretation {
   if (text === "") {
     return unrecognized("explore");
@@ -357,6 +385,11 @@ export function interpretLine(rawInput: string, state: GrammarState): Interpreta
 
   if (isAliasExact(text, NOTEBOOK_ALIASES)) {
     return { kind: "view", view: "notebook", section: null };
+  }
+
+  const age = interpretAge(text);
+  if (age) {
+    return age;
   }
 
   switch (state.mode) {

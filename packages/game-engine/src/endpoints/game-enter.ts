@@ -38,6 +38,7 @@ import {
 } from "../narration.ts";
 import { NARRATOR_SPEAKER } from "../speaker.ts";
 import { nextSequenceAfter, playedEvents } from "../turn/no-turn.ts";
+import { ageChange, lastRecordedAge } from "../turn/age-change.ts";
 import { sessionCase } from "../session-case.ts";
 import { requestReadingAge } from "../reading-age.ts";
 import type { PlayableCase } from "../../../shared/src/playable-case.ts";
@@ -195,12 +196,16 @@ export async function handle(
 
     // The arrival costs no turn, so the session patch is empty; the save still
     // refuses a second arrival that raced this one.
-    const sequence = nextSequenceAfter(events);
+    // If the profile's age changed since the opening was written, that is
+    // recorded first, so the arrival is narrated at an age the game has said.
+    const ageLine = ageChange(lastRecordedAge(events), readingAge);
+    const firstSequence = nextSequenceAfter(events);
+    const sequence = firstSequence + (ageLine ? 1 : 0);
     await ctx.sessions.saveTurn({
       game_id: gameId,
-      expected_sequence: sequence,
+      expected_sequence: firstSequence,
       request_id: requestId,
-      events: [buildNarrationEvent(enterEvent, sequence)],
+      events: [...(ageLine ? [ageLine] : []), buildNarrationEvent(enterEvent, sequence)],
     });
     logNarrationEventSaved(enterEvent, sequence);
 
@@ -212,6 +217,14 @@ export async function handle(
         time_remaining: session.time_remaining,
         mode: session.mode,
         current_talk_character: null,
+        age_change: ageLine
+          ? {
+              sequence: firstSequence,
+              event_type: ageLine.event_type,
+              payload: ageLine.payload,
+              narration_parts: ageLine.narration_parts,
+            }
+          : null,
       }),
       { headers: { "Content-Type": "application/json" } },
     );

@@ -15,6 +15,8 @@ export interface TurnGame {
   blueprint: PlayableCase;
   /** The age this turn is narrated at: the profile's, read for this request. */
   reading_age: number;
+  /** The age the game last recorded, or null when it has recorded none. */
+  recorded_age: number | null;
   /** The events the game master took part in so far, in sequence order. */
   history: GameEventRow[];
   /** The sequence the next saved event takes, counting every event saved. */

@@ -25,6 +25,7 @@ import {
   TurnPlayedResponseSchema,
   TurnRefusedResponseSchema,
   TurnViewResponseSchema,
+  TurnAgeResponseSchema,
   TurnQuitResponseSchema,
   BlueprintsListResponseSchema,
   GameEnterResponseSchema,
@@ -43,6 +44,7 @@ import {
   type TurnPlayedResponse,
   type TurnRefusedResponse,
   type TurnViewResponse,
+  type TurnAgeResponse,
   type TurnQuitResponse,
   type BlueprintsListResponse,
   type GameEnterResponse,
@@ -381,6 +383,11 @@ export function createTurnViewResponse(
     note: null,
     ...overrides,
   });
+}
+
+/** `age <n>` answered: the age, and the `age_change` line saved with it unless the game had that age already. */
+export function createTurnAgeResponse(overrides?: Partial<TurnAgeResponse>): TurnAgeResponse {
+  return validate(TurnAgeResponseSchema, { kind: "age" as const, reading_age: 9, event: null, ...overrides });
 }
 
 export function createTurnQuitResponse(): TurnQuitResponse {

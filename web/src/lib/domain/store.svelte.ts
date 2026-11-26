@@ -1,4 +1,5 @@
 import {
+  ageUnchangedNote,
   BlueprintsListResponseSchema,
   ErrorResponseSchema,
   GameEnterResponseSchema,
@@ -9,6 +10,7 @@ import {
   SessionCatalogResponseSchema,
   type GameEnterResponse,
   type GameTurnResponse,
+  type TurnAgeResponse,
   type TurnPlayedResponse,
   type TurnViewResponse,
 } from '@my2/shared';
@@ -465,7 +467,20 @@ export class GameSessionStore {
       case 'quit':
         this.showQuit();
         return;
+      case 'age':
+        this.showAge(answer, echo);
+        return;
     }
+  }
+
+  /** The line saying the age changed stands alone, as it does when the game is reopened; a repeated age is answered. */
+  private showAge(answer: TurnAgeResponse, echo: number | null) {
+    if (!answer.event) {
+      this.appendSystemFeedback(ageUnchangedNote(answer.reading_age));
+      return;
+    }
+    this.removeEvent(echo);
+    this.appendEvent(answer.event.event_type, answer.event.narration_parts, answer.event.payload);
   }
 
   private showView(answer: TurnViewResponse, echo: number | null) {
@@ -524,6 +539,9 @@ export class GameSessionStore {
 
     // The answer names the place by id; the page is labelled with its name.
     const place = this.state.locations.find((location) => location.id === answer.current_location);
+    if (answer.age_change) {
+      this.appendEvent(answer.age_change.event_type, answer.age_change.narration_parts, answer.age_change.payload);
+    }
     this.appendEvent('move', answer.narration_parts, {
       location_id: answer.current_location,
       location_name: place?.name ?? answer.current_location,

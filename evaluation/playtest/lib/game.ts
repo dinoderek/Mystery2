@@ -20,10 +20,12 @@ import type {
   GameState,
   GameTurnResponse,
   NarrationPart,
+  TurnAgeResponse,
   TurnPlayedResponse,
   TurnRefusedResponse,
   TurnViewResponse,
 } from "../../../packages/shared/src/mystery-api-contracts.ts";
+import { ageUnchangedNote } from "../../../packages/shared/src/mystery-api-contracts.ts";
 import type { ApiResponse, GameApi } from "./api.ts";
 import type { Decision, Divergence, Investigator } from "./investigator.ts";
 import { checkpointOf } from "./replay.ts";
@@ -41,6 +43,7 @@ export type StepAction =
   | { kind: "turn"; event_type: string | null }
   | { kind: "refused"; reason: string; text: string }
   | { kind: "view"; view: string; section: string | null; text?: string }
+  | { kind: "age"; reading_age: number }
   | { kind: "quit" };
 
 /** One typed line: what the investigator saw, what it typed, and what came of it. */
@@ -106,8 +109,11 @@ function turnEntries(body: TurnPlayedResponse): TranscriptEntry[] {
  * `echo` is true only for `help`: the browser opens the notebook for `notebook`
  * and the list commands before it echoes anything into the transcript.
  */
-function feedbackFor(body: TurnRefusedResponse | TurnViewResponse): { echo: boolean; text: string } {
+function feedbackFor(body: TurnRefusedResponse | TurnViewResponse | TurnAgeResponse): { echo: boolean; text: string } {
   if (body.kind === "refused") return { echo: true, text: body.hint };
+  if (body.kind === "age") {
+    return { echo: true, text: body.event?.narration_parts[0]?.text ?? ageUnchangedNote(body.reading_age) };
+  }
   if (body.view === "help") return { echo: true, text: body.note ?? "" };
   return {
     echo: false,
@@ -128,6 +134,8 @@ function actionOf(response: ApiResponse<GameTurnResponse>): StepAction {
       return { kind: "refused", reason: body.reason, text: body.hint };
     case "view":
       return { kind: "view", view: body.view, section: body.section };
+    case "age":
+      return { kind: "age", reading_age: body.reading_age };
     default:
       return { kind: "quit" };
   }
@@ -214,7 +222,7 @@ async function playLine(run: Run, step: Step): Promise<void> {
   step.action = actionOf(response);
   const body = response.ok ? response.body : null;
   const played = body?.kind === "turn";
-  const feedback = body && (body.kind === "refused" || body.kind === "view") ? feedbackFor(body) : null;
+  const feedback = body && (body.kind === "refused" || body.kind === "view" || body.kind === "age") ? feedbackFor(body) : null;
 
   // The store echoes what was typed, except the lines that open the notebook.
   if (feedback?.echo ?? true) run.transcript.push({ kind: "input", text: step.input, plan: step.plan });

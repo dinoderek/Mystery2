@@ -1,6 +1,6 @@
 // What a `game-turn` answer puts on the screen.
 
-import type { TurnPlayedResponse } from '@my2/shared';
+import { AGE_CHANGE_EVENT_TYPE, type TurnPlayedResponse } from '@my2/shared';
 import type { GameState, NarrationEvent } from '../types/game';
 
 /** A turn's events as the transcript shows them; the store numbers them. */
@@ -16,10 +16,15 @@ function presentedType(eventType: string, playedIn: GameState['mode']): string {
   return isJudged && playedIn === 'explore' ? 'accuse_start' : eventType;
 }
 
-/** The events the turn saved, as transcript lines. `playedIn` is the mode the line was typed in. */
+/**
+ * The events the turn saved, as transcript lines. `playedIn` is the mode the
+ * line was typed in. A change of age is saved ahead of the action, which is
+ * the first event that is not one.
+ */
 export function linesOfTurn(answer: TurnPlayedResponse, playedIn: GameState['mode']): TurnLine[] {
+  const action = answer.events.findIndex((event) => event.event_type !== AGE_CHANGE_EVENT_TYPE);
   return answer.events.map((event, index) => ({
-    event_type: index === 0 ? presentedType(event.event_type, playedIn) : event.event_type,
+    event_type: index === action ? presentedType(event.event_type, playedIn) : event.event_type,
     narration_parts: event.narration_parts,
     payload: event.payload,
   }));

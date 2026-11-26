@@ -29,7 +29,7 @@ test.describe('US2/US3 - Narration Rendering', () => {
 
     await page.route('**/api/blueprints-list*', async (route) => {
       await route.fulfill({
-        json: { blueprints: [createBlueprintSummary({ title: 'B1', one_liner: '1', target_age: 6 })] },
+        json: { blueprints: [createBlueprintSummary({ title: 'B1', one_liner: '1' })] },
       });
     });
 

@@ -8,5 +8,5 @@
   "cg_soundness": ["8b441b77dffd6f1f"],
   "cg_truth_agreement": ["244ffaec9ce2265e"],
   "cg_character_grounding": ["63cefe300f5a9511"],
-  "cg_step_sense": ["064abd234b64ebd4"]
+  "cg_step_sense": ["064abd234b64ebd4", "2aa9892cbfb095ab"]
 }

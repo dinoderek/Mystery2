@@ -39,7 +39,7 @@ function createStore(history: NarrationEvent[]) {
   store.game_id = 'game-1';
   store.blueprint_id = 'bp-1';
   store.blueprints = [
-    { id: 'bp-1', title: 'The Missing Cake', one_liner: '', target_age: 10 },
+    { id: 'bp-1', title: 'The Missing Cake', one_liner: '' },
   ];
   store.state = {
     mystery_summary: null,

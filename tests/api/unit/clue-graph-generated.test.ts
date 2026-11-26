@@ -52,10 +52,10 @@ describe.each(STORIES)("the generated story $file", ({ file, brief }) => {
     fs.rmSync(scratch, { recursive: true, force: true });
   });
 
-  it("has its brief's size and reading age, and passes the validator at that size", () => {
+  it("has its brief's size, and passes the validator at that size", () => {
     const asked = ClueGraphBriefSchema.parse(JSON.parse(fs.readFileSync(path.join(ROOT, brief), "utf8")));
     // The size's own counts, none set apart: `validateClueGraph` (in `load`) has already held the case to them.
-    expect(graph.metadata).toMatchObject({ size: asked.size, target_age: asked.targetAge });
+    expect(graph.metadata).toMatchObject({ size: asked.size });
     expect(asked.sizeOverrides).toBeUndefined();
     expect(graph.metadata.size_overrides).toBeUndefined();
   });

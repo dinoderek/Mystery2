@@ -126,10 +126,10 @@ out.
 
 ## Blueprint Generation
 
-A brief names the story, reading age and size (`small`, `medium` or `large`):
+A brief names the story and size (`small`, `medium` or `large`):
 
 ```json
-{ "brief": "A missing cake at a village fete.", "targetAge": 8, "size": "small" }
+{ "brief": "A missing cake at a village fete.", "size": "small" }
 ```
 
 ```bash

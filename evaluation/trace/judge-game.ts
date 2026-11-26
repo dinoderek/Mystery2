@@ -234,9 +234,9 @@ export function prepareGameJudging(trace: unknown): Pick<JudgeRun, "trace" | "ju
 }
 
 /**
- * A game judge's user message: the case itself, without a case age, and the
- * subject, whose every turn carries the age it was narrated at. Exported for tests and for anyone wanting to
- * see exactly what a judge is handed.
+ * A game judge's user message: the case itself, and the subject, whose
+ * every turn carries the age it was narrated at. Exported for tests and for
+ * anyone wanting to see exactly what a judge is handed.
  */
 export function buildGameJudgeUserMessage(
   id: string,

@@ -20,13 +20,8 @@ import {
   type GraphTalkContext,
 } from "./clue-graph/narrator-context.ts";
 
-/**
- * The world view a narrator context is built from: the clue graph's, without
- * the case's own age. The reader's age is every request's own `reading_age`.
- */
-export type BlueprintContext = Omit<ClueGraphWorld, "metadata"> & {
-  metadata: Omit<ClueGraphWorld["metadata"], "target_age">;
-};
+/** The world view a narrator context is built from. The reader's age is every request's own `reading_age`. */
+export type BlueprintContext = ClueGraphWorld;
 
 export interface SessionSnapshot {
   mode: "explore" | "talk" | "accuse" | "ended";

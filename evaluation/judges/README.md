@@ -4,7 +4,7 @@ These judges ask whether the AI **game master** honored the case. That
 question does not depend on how the narration was produced, so the briefs and
 output schemas live here, outside both harnesses. Each harness projects its own
 data into one shared subject, and sends the clue-graph case itself as
-`blueprint` (`judgedCase` in `index.ts`), without a case age:
+`blueprint` (`judgedCase` in `index.ts`):
 
 | Harness | Subject | Judged turns | Bound as |
 |---|---|---|---|

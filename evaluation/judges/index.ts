@@ -11,17 +11,11 @@ import type { ClueGraphCase } from "../../packages/shared/src/clue-graph-schema.
 
 /**
  * The case a game-master judge reads as its `blueprint`: the clue-graph case
- * itself, not the world view built from it, without a case age. Each judged
- * turn carries the age it was narrated at (`reading_age` in `subject.ts`), so
- * the judge never reads an age from the case.
+ * itself, not the world view built from it. Each judged turn carries the age
+ * it was narrated at (`reading_age` in `subject.ts`).
  */
-export function judgedCase(world: { clue_graph: ClueGraphCase }): Omit<ClueGraphCase, "metadata"> & {
-  metadata: Omit<ClueGraphCase["metadata"], "target_age">;
-} {
-  const graph = world.clue_graph;
-  const metadata: Partial<ClueGraphCase["metadata"]> = { ...graph.metadata };
-  delete metadata.target_age;
-  return { ...graph, metadata: metadata as Omit<ClueGraphCase["metadata"], "target_age"> };
+export function judgedCase(world: { clue_graph: ClueGraphCase }): ClueGraphCase {
+  return world.clue_graph;
 }
 
 /**

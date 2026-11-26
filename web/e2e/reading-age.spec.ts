@@ -36,7 +36,9 @@ test.describe('Reading age', () => {
 		await expect(page).toHaveURL(/\/$/);
 		await expect(page.getByText('1. Start a new game')).toBeVisible();
 		await page.keyboard.press('1');
-		await expect(page.getByText('Target age: 10')).toBeVisible();
+		await expect(page.getByTestId('case-card-1')).toBeVisible();
+		// A case has no age of its own, so the menu shows none.
+		await expect(page.getByText(/Target age/)).toHaveCount(0);
 
 		const started = page.waitForResponse('**/api/game-start');
 		await page.keyboard.press('1');

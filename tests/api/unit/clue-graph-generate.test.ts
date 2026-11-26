@@ -12,8 +12,9 @@ import { fileURLToPath } from "node:url";
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { buildClueGraphGenerationChatInput } from "../../../packages/blueprint-generator/src/index.ts";
-import { MAX_TARGET_AGE, MIN_TARGET_AGE, renderGenerationGuidance } from "../../../packages/shared/src/age-profile.ts";
+import { buildClueGraphGenerationChatInput, ClueGraphBriefSchema } from "../../../packages/blueprint-generator/src/index.ts";
+import { validateClueGraph } from "../../../packages/shared/src/clue-graph-validator.ts";
+import { MAX_READING_AGE, MIN_READING_AGE, renderGenerationGuidance } from "../../../packages/shared/src/age-profile.ts";
 import { readResult } from "../../../evaluation/core/result.ts";
 import type { Result } from "../../../evaluation/core/result.ts";
 import { judgesFor } from "../../../evaluation/core/registry.ts";
@@ -30,7 +31,7 @@ const SETUP = path.join(REPO_ROOT, "evaluation/generator-harness/setup-workspace
 const good = sizedCase(floors("small"), "small");
 /** The same case one gated clue short of its size. */
 const thin = sizedCase({ ...floors("small"), gated_clues: 2 }, "small");
-const brief = { brief: "A missing cake at a village fete.", targetAge: good.metadata.target_age, size: "small" };
+const brief = { brief: "A missing cake at a village fete.", size: "small" };
 
 let dir = "";
 let out: string[] = [];
@@ -173,13 +174,12 @@ describe("generate, clue graph", () => {
     expect(JSON.parse(fs.readFileSync(installed(root), "utf8"))).toEqual(good);
   });
 
-  it("holds the case to its brief's size and age", async () => {
-    const elsewhere = { ...good, metadata: { ...good.metadata, size: "medium" as const, target_age: 9 } };
+  it("holds the case to its brief's size", async () => {
+    const elsewhere = { ...good, metadata: { ...good.metadata, size: "medium" as const } };
     expect(await generate(["--config", stubConfig([elsewhere]), "--repair", "0"])).toBe(2);
     const issues = (await onlyResult()).result.verdicts[0].details as { issues: string[] };
     expect(issues.issues).toEqual(
       expect.arrayContaining([
-        expect.stringMatching(/^metadata\.target_age: the brief's targetAge is 8, the case has 9/),
         expect.stringMatching(/^metadata\.size: the brief's size is "small", the case has "medium"/),
       ]),
     );
@@ -223,7 +223,7 @@ describe("generate, clue graph", () => {
   });
 
   it("refuses a brief that is not a clue-graph brief, and options that no longer exist, before it starts", async () => {
-    write("brief.json", { brief: "A missing cookie.", targetAge: 8, timeBudget: 12, culprits: 1, suspects: 1, witnesses: 1, locations: 2, redHerringTrails: 1 });
+    write("brief.json", { brief: "A missing cookie.", timeBudget: 12, culprits: 1, suspects: 1, witnesses: 1, locations: 2, redHerringTrails: 1 });
     expect(await generate([])).toBe(1);
     expect(err.join("\n")).toMatch(/is not a clue-graph brief: size: Required/);
 
@@ -423,11 +423,27 @@ describe("generate, the rest of the run", () => {
   });
 });
 
+describe("the brief and the generated case carry no reading age", () => {
+  it("refuses a brief with a targetAge, naming it", async () => {
+    expect(ClueGraphBriefSchema.safeParse({ ...brief, targetAge: 8 }).error?.issues.map((issue) => issue.message)).toEqual([
+      expect.stringContaining("'targetAge'"),
+    ]);
+    await expect(buildClueGraphGenerationChatInput({ ...brief, targetAge: 8 } as never)).rejects.toMatchObject({ code: "INVALID_STORY_BRIEF" });
+  });
+
+  it("is not told to set one, and passes the validator without one", async () => {
+    const { userMessageContent } = await buildClueGraphGenerationChatInput(brief as never);
+    expect(userMessageContent).not.toMatch(/target_?age/i);
+    expect(good.metadata).not.toHaveProperty("target_age");
+    expect(validateClueGraph(good)).toEqual(good);
+  });
+});
+
 describe("the clue-graph generator prompt", () => {
   it("is at most 1,500 words and carries no age guidance", async () => {
     const { systemPrompt } = await buildClueGraphGenerationChatInput(brief as never);
     expect(countWords(systemPrompt)).toBeLessThanOrEqual(1500);
-    for (let age = MIN_TARGET_AGE; age <= MAX_TARGET_AGE; age += 1) {
+    for (let age = MIN_READING_AGE; age <= MAX_READING_AGE; age += 1) {
       for (const line of renderGenerationGuidance(age).split("\n").filter((each) => each.trim().length > 20)) {
         expect(systemPrompt).not.toContain(line.trim());
       }

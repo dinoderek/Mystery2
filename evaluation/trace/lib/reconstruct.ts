@@ -88,8 +88,9 @@ function reconstructContext(roleName: string, ctx: ReconstructInput): AIContext 
     ctx;
   const common = { game_id: ctx.gameId, session, blueprint, reading_age: ctx.readingAge, conversation_history: history };
   // The runtime always builds accusation contexts with the session forced into
-  // "accuse" mode (forced-endgame.ts, and the accuse action's immediate-judge-on-entry
-  // path where the prior mode is still "explore"). Mirror that so context.mode
+  // "accuse" mode (`narrateForcedEndgame` in turn/narrator.ts, and the accuse
+  // action's immediate-judge-on-entry path where the prior mode is still
+  // "explore"). Mirror that so context.mode
   // matches what the builder saw, regardless of the folded pre-state.
   const accuseCommon = { ...common, session: { ...session, mode: "accuse" as const } };
 

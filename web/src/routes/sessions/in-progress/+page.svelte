@@ -26,7 +26,7 @@
       return;
     }
 
-    message = gameSessionStore.error ?? 'Unable to reopen this session.';
+    message = gameSessionStore.needsReadingAge ? null : (gameSessionStore.error ?? 'Unable to reopen this session.');
   }
 
   // A tap on a row calls `openSession`, as its number key does.

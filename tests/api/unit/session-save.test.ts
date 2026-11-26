@@ -65,8 +65,8 @@ beforeEach(() => {
     env: {},
     databasePath: path.join(dir, "database", "test", "game.db"),
   });
-  ada = local.contextFor({ id: local.players.ensure("Ada").id });
-  grace = local.contextFor({ id: local.players.ensure("Grace").id });
+  ada = local.contextFor({ id: local.players.ensure("Ada", 8).id });
+  grace = local.contextFor({ id: local.players.ensure("Grace", 8).id });
 });
 
 afterEach(() => {

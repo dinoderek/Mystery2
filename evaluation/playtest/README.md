@@ -3,7 +3,7 @@
 An **AI investigator** plays against the real server, saving transcripts and
 [replay](#replay) scripts. Options: `./dev eval play --help`; output layout:
 `evaluation/README.md`.
-Only a clue-graph case ([`docs/clue-graph.md`](../../docs/clue-graph.md)) plays, by path, ID or title; others are refused.
+Only a clue-graph case ([`docs/clue-graph.md`](../../docs/clue-graph.md)) plays, by path, ID or title.
 
 ## Quick start
 
@@ -16,9 +16,8 @@ Only a clue-graph case ([`docs/clue-graph.md`](../../docs/clue-graph.md)) plays,
 ```
 
 By default narrator and investigator use a logged-in `claude` CLI.
-`--ai-profile <name>` instead seeds a named AI from `ai.json`, including
-OpenRouter; investigator and judge bindings remain independently configured.
-It builds on a free port against a throwaway database. `--narrator mock` checks plumbing. Open `<run>/report.html`, or read a game's `transcript.md`.
+`--ai-profile <name>` instead seeds a named `ai.json` AI, including OpenRouter; investigator and judge bindings remain independently configured.
+It builds on a free port against a throwaway database. `--narrator mock` checks plumbing. Open `<run>/report.html`, or read `transcript.md`.
 
 The investigator is the `investigator` binding. Its wrapper,
 `evaluation/playtest/wrappers/claude-investigator.sh`, runs the CLI isolated from
@@ -39,12 +38,12 @@ played, 2 when a judge failed a game.
   which answers `turn` (played), `refused` (its hint, no turn), `view` (help or
   the notebook, no turn) or `quit`. Failed calls are retried by the web store's
   own rule (`web/src/lib/domain/store.retry.ts`).
-- **No hidden memory.** Each call gets the whole view and history, so any step can
-  be read back from `steps.jsonl`.
+- **No hidden memory.** Each call gets the whole view and history, so any step
+  reads back from `steps.jsonl`.
 
 A game stops when the case ends, the investigator quits or fails, three calls
-fail consecutively, `--max-steps` runs out, or a replay runs out of script or diverges. Its folder is written
-either way, with `stop_reason` in `summary.json`. Narrator calls are capped at 90s: a slow turn fails as a turn.
+fail in a row, `--max-steps` runs out, or a replay runs out of script or diverges. Its folder is written
+either way, with `stop_reason` in `summary.json`. Narrator calls are capped at 90s; a slow turn fails as a turn.
 
 ## A run folder
 
@@ -80,7 +79,7 @@ extracted read-only from a database copy. That gives the
 mechanical checks and the four `gm_*` judges, one Opus call each. Games are graded
 one at a time, so at most four judge calls run at once. Each narrated event is then
 scored by `flesch` (no model call) at its own `reading_age`, refused without
-one; engine lines are not scored.
+one; engine lines are not scored. Every game's profile reads at 8.
 
 The verdicts go into the game's `result.json`, `summary.json` and transcript. A
 game that cannot be graded says why there. Exit 2 means a judge failed a game:

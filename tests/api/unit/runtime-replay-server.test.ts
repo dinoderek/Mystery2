@@ -32,7 +32,7 @@ afterAll(() => fs.rmSync(scratch, { recursive: true, force: true }));
 
 interface Seen {
   calls: Array<{ endpoint: string; body: Record<string, unknown> }>;
-  /** The reading ages the harness set on its profiles, in order. */
+  /** The reading ages the harness created its profiles at, in order. */
   ages: unknown[];
   started: number;
   stopped: number;
@@ -80,16 +80,11 @@ function fakeServer(
         if (endpoint === "player") {
           const db = openDatabase({ path: databaseFile });
           const now = new Date().toISOString();
-          db.prepare("insert into players (id, name, created_at, updated_at) values (?, ?, ?, ?)").run(`id-${body.name}`, body.name, now, now);
+          db.prepare("insert into players (id, name, reading_age, created_at, updated_at) values (?, ?, ?, ?, ?)").run(`id-${body.name}`, body.name, body.reading_age, now, now);
+          seen.ages.push(body.reading_age);
           db.close();
           response.writeHead(200, { "content-type": "application/json", "set-cookie": "mystery-player-id-x=1; Path=/" });
           response.end(JSON.stringify({ player: { id: `id-${body.name}`, name: body.name } }));
-          return;
-        }
-        if (endpoint === "profile-settings") {
-          seen.ages.push(body.reading_age);
-          response.writeHead(200, { "content-type": "application/json" });
-          response.end(JSON.stringify({ reading_age: body.reading_age }));
           return;
         }
         seen.calls.push({ endpoint, body });
@@ -170,7 +165,7 @@ describe("replaying through a throwaway server", () => {
     expect(seen.calls).toHaveLength(1);
     expect(seen.calls[0].endpoint).toBe("game-turn");
     expect(seen.calls[0].body.input).toBe("Then why are your hands shaking?");
-    // The game narrates at its profile's age, which the case sets first.
+    // The game narrates at its profile's age, which the case sets when the profile is created.
     expect(seen.ages).toEqual([8]);
 
     const db = openDatabase({ path: seen.servers[0].databaseFile, readonly: true });

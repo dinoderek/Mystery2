@@ -15,7 +15,7 @@
 	import { aiRows, narratorLine, overrideBanner } from '$lib/domain/ai-settings-view';
 	import { playerStore } from '$lib/domain/player-store.svelte';
 	import { profileSettingsStore } from '$lib/domain/profile-settings-store.svelte';
-	import { readingAgeRows } from '$lib/domain/profile-settings-view';
+	import AgePicker from '$lib/components/AgePicker.svelte';
 	import TerminalSpinner from '$lib/components/TerminalSpinner.svelte';
 
 	const settings = $derived(aiSettingsStore.state);
@@ -107,7 +107,9 @@
 		<section class="mt-8" data-testid="reading-age">
 			<p class="text-t-muted text-sm mb-1">&gt; READING AGE FOR {profile.name.toUpperCase()}</p>
 			<p class="text-t-dim text-xs mb-2">
-				Every game is written for this age, from the next line on.
+				{profileSettingsStore.missing
+					? 'This profile has no reading age yet. Choose one to play.'
+					: 'Every game is written for this age, from the next line on.'}
 			</p>
 			{#if profileSettingsStore.loading}
 				<TerminalSpinner text="Loading reading age..." />
@@ -115,27 +117,12 @@
 				{#if profileSettingsStore.error}
 					<p class="text-t-error mb-2 text-sm" role="alert">{profileSettingsStore.error}</p>
 				{/if}
-				{#if profileSettingsStore.state}
-					<ul class="flex flex-wrap gap-2">
-						{#each readingAgeRows(profileSettingsStore.state) as row (row.label)}
-							<li>
-								<button
-									type="button"
-									data-testid="reading-age-option"
-									data-age={row.age ?? 'case'}
-									disabled={profileSettingsStore.saving}
-									aria-pressed={row.selected}
-									onclick={() => profileSettingsStore.setReadingAge(row.age)}
-									class="border px-3 py-2 text-left font-mono focus:outline-none
-										disabled:opacity-50 {row.selected
-										? 'border-t-primary text-t-bright bg-t-primary/10'
-										: 'border-t-muted/30 text-t-primary hover:border-t-primary'}"
-								>
-									[ {row.label} ]
-								</button>
-							</li>
-						{/each}
-					</ul>
+				{#if profileSettingsStore.state || profileSettingsStore.missing}
+					<AgePicker
+						selected={profileSettingsStore.state?.reading_age ?? null}
+						disabled={profileSettingsStore.saving}
+						onchoose={(age) => profileSettingsStore.setReadingAge(age)}
+					/>
 				{/if}
 			{/if}
 		</section>

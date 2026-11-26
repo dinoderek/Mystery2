@@ -69,6 +69,8 @@ const GAME_JUDGE_BINDING = "game-judge";
 
 const TAG = "[play]";
 const DEFAULT_GAMES = 1;
+/** The reading age of the profile each playtest game signs in as. */
+const PLAYTEST_READING_AGE = 8;
 const DEFAULT_CONCURRENCY = 2;
 
 const OPTIONS = {
@@ -399,7 +401,7 @@ async function playOne(play: Play, number: number): Promise<GameRecord> {
   let game: PlayedGame;
   let investigator: Investigator | ScriptedInvestigator;
   try {
-    const api = await signIn(play.server.url, `playtest-${slugify(play.persona)}-${number}`);
+    const api = await signIn(play.server.url, `playtest-${slugify(play.persona)}-${number}`, PLAYTEST_READING_AGE);
     investigator = makeInvestigator(play, logDir);
     game = await playGame({
       api,

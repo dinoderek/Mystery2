@@ -62,7 +62,7 @@ Starts the game at `http://127.0.0.1:51000` (a worktree gets its own port; the
 command prints it). Without an `ai.json`, mock narration: no network, no API
 key.
 
-Pick a profile name on the first screen — that is the whole of signing in.
+Pick a profile name (and a reading age, for a new one) on the first screen: that is signing in.
 
 ### Live AI
 
@@ -118,8 +118,9 @@ Playing on `prod` records each day's games, model calls and server output in
 
 ## Profiles
 
-Type a name on the first screen and that profile exists; type a different one
-and you get a separate set of cases. Profiles are local to the machine and have
+Type a name and choose a reading age (6 to 11) on the first screen and that
+profile exists; the age can change on the settings page. A different name is a
+separate set of cases. Profiles are local to the machine and have
 no passwords — they keep one person's cases apart from another's, not anyone
 out.
 

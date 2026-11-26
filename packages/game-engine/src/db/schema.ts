@@ -38,7 +38,9 @@ create table players (
     created_at  text not null,
     updated_at  text not null,
     -- The reading age this profile's narration is written at, read on every
-    -- request. Written only through the profile's own store.
+    -- request. Written only through the profile's own store. A new profile
+    -- always has one; null is a profile from before the age was required,
+    -- which the engine will not play until one is chosen.
     reading_age integer
 );
 

@@ -14,7 +14,7 @@ import { ProfileSettingsStore } from './profile-settings-store.svelte';
 import { createProfileSettings } from '../../../../tests/testkit/src/fixtures';
 
 const ok = (data: unknown) => ({ data, error: null });
-const failed = (message: string) => ({ data: null, error: { message } });
+const failed = (message: string, code?: string) => ({ data: null, error: { message, ...(code ? { code } : {}) } });
 
 beforeEach(() => {
 	postMock.mockReset();
@@ -35,19 +35,30 @@ describe('ProfileSettingsStore', () => {
 		expect(store.error).toBeNull();
 	});
 
-	it('sets and clears the age, adopting what the server answers', async () => {
+	it('sets the age, adopting what the server answers', async () => {
 		const store = new ProfileSettingsStore();
 		postMock.mockResolvedValueOnce(ok(createProfileSettings({ reading_age: 10 })));
-		postMock.mockResolvedValueOnce(ok(createProfileSettings()));
 
 		expect(await store.setReadingAge(10)).toBe(true);
 		expect(postMock).toHaveBeenLastCalledWith('profile-settings', { reading_age: 10 });
 		expect(store.state).toEqual({ reading_age: 10 });
-
-		expect(await store.setReadingAge(null)).toBe(true);
-		expect(postMock).toHaveBeenLastCalledWith('profile-settings', { reading_age: null });
-		expect(store.state).toEqual({ reading_age: null });
 		expect(store.saving).toBe(false);
+	});
+
+	it('notes a profile with no age yet, and clears the note once one is set', async () => {
+		const store = new ProfileSettingsStore();
+		getMock.mockResolvedValue(failed('Choose a reading age before playing', 'READING_AGE_REQUIRED'));
+
+		await store.load();
+
+		expect(store.missing).toBe(true);
+		expect(store.state).toBeNull();
+		expect(store.error).toBeNull();
+
+		postMock.mockResolvedValue(ok(createProfileSettings({ reading_age: 7 })));
+		expect(await store.setReadingAge(7)).toBe(true);
+		expect(store.missing).toBe(false);
+		expect(store.state).toEqual({ reading_age: 7 });
 	});
 
 	it('keeps the last state beside the error when a change is refused', async () => {

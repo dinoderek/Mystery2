@@ -50,6 +50,9 @@ export function playerCookie(): string {
 	return playerCookieName(testDatabaseFile());
 }
 
+/** The age a test profile reads at unless the test says otherwise. */
+export const DEFAULT_TEST_READING_AGE = 8;
+
 export interface TestPlayer {
 	id: string;
 	name: string;
@@ -63,12 +66,12 @@ export interface TestPlayer {
  * There is nothing to clean up afterwards: the whole database is deleted with
  * the config root when the run ends.
  */
-export async function createTestPlayer(tag: string): Promise<TestPlayer> {
+export async function createTestPlayer(tag: string, readingAge = DEFAULT_TEST_READING_AGE): Promise<TestPlayer> {
 	const name = `${tag}-${crypto.randomUUID().slice(0, 8)}`;
 	const response = await fetch(`${API_URL}/player`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ name }),
+		body: JSON.stringify({ name, reading_age: readingAge }),
 	});
 
 	if (!response.ok) {

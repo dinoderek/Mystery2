@@ -48,7 +48,7 @@ describe('playtest grading', () => {
 	it('grades a played game with the trace judges and a reading level', async () => {
 		scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'mystery-playtest-judge-'));
 		const game = await playGame({
-			api: await signIn(BASE_URL, 'playtest-judge'),
+			api: await signIn(BASE_URL, 'playtest-judge', 8),
 			blueprint: { id: MOCK_BLUEPRINT_ID, title: MOCK_BLUEPRINT.metadata.title },
 			investigator: scriptedInvestigator(INPUTS)
 		});

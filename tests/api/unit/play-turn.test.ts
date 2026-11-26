@@ -53,7 +53,7 @@ beforeEach(async () => {
     env: { MYSTERY_CONFIG_ROOT: dir },
     databasePath: path.join(dir, "database", "test", "game.db"),
   });
-  ctx = local.contextFor({ id: local.players.ensure("Ada").id });
+  ctx = local.contextFor({ id: local.players.ensure("Ada", 8).id });
   await startGame();
 });
 
@@ -394,7 +394,7 @@ describe("playTurn, when it cannot finish", () => {
   });
 
   it("refuses a game the player cannot see", async () => {
-    const grace = local.contextFor({ id: local.players.ensure("Grace").id });
+    const grace = local.contextFor({ id: local.players.ensure("Grace", 8).id });
     await expect(playTurn(grace, { game_id: gameId, input: "search" }, options())).rejects.toMatchObject({
       name: "RequestRejectedError",
       status: 404,

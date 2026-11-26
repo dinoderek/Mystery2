@@ -313,15 +313,28 @@ export const SessionCatalogResponseSchema = z.object({
 
 /**
  * What the playing profile has set. Its `reading_age` is the age every game of
- * the profile is written at, read on each request; while it is null, a game
- * reads at its case's own age.
+ * the profile is written at, read on each request. A profile always has one;
+ * an older local database may hold a profile without, which the engine refuses
+ * to play with (`READING_AGE_REQUIRED`) until one is chosen.
  */
 export const ProfileSettingsSchema = z.object({
-  reading_age: ReadingAgeSchema.nullable(),
+  reading_age: ReadingAgeSchema,
 });
 
-/** Setting or clearing the profile's reading age: the whole settings state. */
+/** Setting the profile's reading age: the whole settings state. */
 export const ProfileSettingsUpdateSchema = ProfileSettingsSchema;
+
+/** The `details.code` of a 400 for a profile that has no reading age yet. */
+export const READING_AGE_REQUIRED = "READING_AGE_REQUIRED";
+
+/**
+ * Signing in. A name no profile has yet creates one, and then needs its
+ * `reading_age`; a known name signs in with the name alone.
+ */
+export const PlayerSignInSchema = z.object({
+  name: z.string().trim().min(1, "Missing profile name").max(60, "Profile name is too long"),
+  reading_age: ReadingAgeSchema.optional(),
+});
 
 // --- AI settings ---
 //

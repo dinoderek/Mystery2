@@ -72,7 +72,6 @@ export interface Blueprint {
   id: string;
   title: string;
   one_liner: string;
-  target_age: number;
   blueprint_image_id?: string | null;
 }
 

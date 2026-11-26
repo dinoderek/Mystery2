@@ -144,9 +144,8 @@ describe("buildJudgeUserMessage", () => {
     const blueprint = mockBlueprint();
     const message = JSON.parse(buildJudgeUserMessage("gm_clue_discipline", makeTurn(), blueprint));
     expect(message.dimension_id).toBe("gm_clue_discipline");
-    // The case without an age of its own: each judged turn carries the one it was narrated at.
-    const { metadata, ...rest } = blueprint.clue_graph;
-    expect(message.blueprint).toEqual({ ...rest, metadata: Object.fromEntries(Object.entries(metadata).filter(([key]) => key !== "target_age")) });
+    // The case itself: each judged turn carries the age it was narrated at.
+    expect(message.blueprint).toEqual(blueprint.clue_graph);
     expect(message.subject.subject_kind).toBe("interaction");
     expect(message.subject.judged_sequences).toEqual([2]);
     expect(message.subject.turns.at(-1)).toMatchObject({ judged: true, reading_age: 10 });

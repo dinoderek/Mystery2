@@ -586,9 +586,8 @@ describe("what the game-master judges are sent", () => {
     expect(Object.keys(message)).toEqual(["dimension_id", "context", "blueprint", "subject"]);
     expect(message.dimension_id).toBe(id);
     // The case itself, as the game validates it, not the world view built from
-    // it, and without an age: each turn carries the one it was narrated at.
-    const { metadata, ...rest } = GREENHOUSE_CASE;
-    expect(message.blueprint).toEqual({ ...rest, metadata: Object.fromEntries(Object.entries(metadata).filter(([key]) => key !== "target_age")) });
+    // it: each turn carries the age it was narrated at.
+    expect(message.blueprint).toEqual(GREENHOUSE_CASE);
     expect(message.subject.turns.length).toBeGreaterThan(0);
     expect(message.subject.turns.filter((turn: { judged: boolean }) => turn.judged).every((turn: { reading_age: unknown }) => turn.reading_age === 10)).toBe(true);
     for (const turn of message.subject.turns) {

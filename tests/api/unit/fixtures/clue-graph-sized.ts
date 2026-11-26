@@ -150,7 +150,6 @@ export function sizedCase(shape: Shape, size: ClueGraphSize | null = null): Clue
     metadata: {
       id: "sized-fixture",
       title: "A Sized Case",
-      target_age: 8,
       time_budget: shape.time_budget,
       ...(size ? { size } : {}),
     },

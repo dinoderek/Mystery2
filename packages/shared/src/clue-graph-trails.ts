@@ -96,7 +96,7 @@ export function clueGraphTrails(graph: ClueGraphCase): string {
   const out = [
     `# ${graph.metadata.title}: trails`,
     "",
-    `Opening at ${graph.locations[graph.opening.location].name} (reading age ${graph.metadata.target_age}, ${graph.metadata.time_budget} turns): ${graph.opening.facts.join(" ")}`,
+    `Opening at ${graph.locations[graph.opening.location].name} (${graph.metadata.time_budget} turns): ${graph.opening.facts.join(" ")}`,
   ];
   for (const [id, conclusion] of Object.entries(graph.conclusions)) {
     const routes = routesOf(graph, conclusion.rule);

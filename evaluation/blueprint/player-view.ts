@@ -15,6 +15,7 @@
  * spot and searches of a visible spot are free, and are not steps.
  */
 
+import { MIN_READING_AGE } from "../../packages/shared/src/age-profile.ts";
 import { has, reachReason } from "../../packages/shared/src/clue-graph-reach.ts";
 import { ClueGraphCaseSchema, OPENING_PROMPT, type ClueGraphCase } from "../../packages/shared/src/clue-graph-schema.ts";
 
@@ -45,7 +46,8 @@ export interface Step {
 }
 
 export interface PlayerView {
-  target_age: number;
+  /** The youngest reader the game supports: a case has no age of its own, so every case is judged for them. */
+  reading_age: number;
   /** Clue ids by wave: what the player can hold, in order. */
   waves: string[][];
   steps: Step[];
@@ -138,7 +140,7 @@ export function playerView(graph: ClueGraphCase): PlayerView {
     }
     for (const id of wave) held.add(id);
   });
-  return { target_age: graph.metadata.target_age, waves, steps };
+  return { reading_age: MIN_READING_AGE, waves, steps };
 }
 
 /** The step ids of a case as read from its file: none for a file that is not a case. */

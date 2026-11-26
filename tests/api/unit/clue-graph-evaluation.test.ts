@@ -40,11 +40,6 @@ const GM = ["gm_roleplay", "gm_clue_discipline", "gm_fabrication", "gm_spoiler",
 const MESSAGE_KEYS = ["dimension_id", "context", "blueprint", "subject"];
 
 /** The greenhouse case as the game validates it. */
-/** A case as a game-master judge reads it: no `metadata.target_age`. */
-function withoutCaseAge<T extends { metadata: Record<string, unknown> }>(graph: T): T {
-  return { ...graph, metadata: Object.fromEntries(Object.entries(graph.metadata).filter(([key]) => key !== "target_age")) };
-}
-
 function greenhouseCase() {
   return validateClueGraph(JSON.parse(fs.readFileSync(path.join(ROOT, GREENHOUSE_FILE), "utf8")));
 }
@@ -121,7 +116,7 @@ describe("a clue-graph game, extracted and judged", () => {
     expect(trace.blueprint.clue_graph?.locations.greenhouse.name).toBe("The Old Greenhouse");
   });
 
-  it.each(GM)("sends %s the played case itself, with no case age, and each turn at the age it was narrated at", async (id) => {
+  it.each(GM)("sends %s the played case itself, and each turn at the age it was narrated at", async (id) => {
     await ctx.profile.setReadingAge(7);
     const gameId = await playOnMock(WIN.slice(0, 1));
     await ctx.profile.setReadingAge(9);
@@ -129,7 +124,7 @@ describe("a clue-graph game, extracted and judged", () => {
     const sent = buildGameJudgeUserMessage(id, null, run);
     const message = JSON.parse(sent);
     expect(Object.keys(message)).toEqual(MESSAGE_KEYS);
-    expect(message.blueprint).toEqual(withoutCaseAge(greenhouseCase()));
+    expect(message.blueprint).toEqual(greenhouseCase());
     expect(message.subject.turns.length).toBeGreaterThan(0);
     expect(message.subject.turns.every((turn: { reading_age: number }) => turn.reading_age === 7)).toBe(true);
     expect(message.blueprint).not.toHaveProperty("world");
@@ -197,8 +192,8 @@ describe("what the game-master judges are sent on a replayed turn", () => {
     const sent = buildJudgeUserMessage(id, makeTurn({ blueprint_path: GREENHOUSE_FILE }), blueprint);
     const message = JSON.parse(sent);
     expect(Object.keys(message)).toEqual(MESSAGE_KEYS);
-    // The case, not the world view built from it, and no age of its own: the turn carries its own.
-    expect(message.blueprint).toEqual(withoutCaseAge(greenhouseCase()));
+    // The case, not the world view built from it: the turn carries its own age.
+    expect(message.blueprint).toEqual(greenhouseCase());
     expect(message.blueprint.clues).toBeDefined();
     expect(message.blueprint).not.toHaveProperty("world");
     expect(message.subject.turns.at(-1).reading_age).toBe(10);

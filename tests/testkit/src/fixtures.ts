@@ -317,7 +317,6 @@ export function createBlueprintSummary(
     id: "00000000-0000-0000-0000-000000000002",
     title: "The Stolen Cake",
     one_liner: "Find the cake",
-    target_age: 6,
     ...overrides,
   };
   return validate(BlueprintSummarySchema, blueprint);

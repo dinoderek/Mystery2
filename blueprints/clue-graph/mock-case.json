@@ -4,7 +4,6 @@
     "id": "mock-case",
     "title": "Mock Case",
     "image_id": "mock-case.blueprint.png",
-    "target_age": 10,
     "time_budget": 10
   },
   "opening": {

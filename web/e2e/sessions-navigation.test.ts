@@ -51,7 +51,7 @@ test.describe('Sessions navigation', () => {
 
     await page.route('**/api/blueprints-list*', async (route) => {
       await route.fulfill({
-        json: { blueprints: [createBlueprintSummary({ id: '00000000-0000-0000-0000-000000000002', title: 'The Missing Honey Cakes', one_liner: 'Track the crumbs', target_age: 8 })] },
+        json: { blueprints: [createBlueprintSummary({ id: '00000000-0000-0000-0000-000000000002', title: 'The Missing Honey Cakes', one_liner: 'Track the crumbs' })] },
       });
     });
 
@@ -127,7 +127,7 @@ test.describe('Sessions navigation', () => {
 
     await page.route('**/api/blueprints-list*', async (route) => {
       await route.fulfill({
-        json: { blueprints: [createBlueprintSummary({ id: '00000000-0000-0000-0000-000000000003', title: 'The Locked Library', one_liner: 'Solve the archive mystery', target_age: 9 })] },
+        json: { blueprints: [createBlueprintSummary({ id: '00000000-0000-0000-0000-000000000003', title: 'The Locked Library', one_liner: 'Solve the archive mystery' })] },
       });
     });
 

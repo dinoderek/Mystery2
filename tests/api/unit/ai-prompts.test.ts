@@ -119,7 +119,7 @@ describe("ai-prompts", () => {
     expect(talkEnd).not.toContain("returns to exploration");
   });
 
-  it("builds a game-start prompt with target age and every opening fact", () => {
+  it("builds a game-start prompt with reading age and every opening fact", () => {
     const prompt = buildGameStartPrompt({
       reading_age: 8,
       facts: ["Someone stole the cake.", "The baker was out at noon."],

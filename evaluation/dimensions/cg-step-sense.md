@@ -8,8 +8,8 @@ tier: 1
 
 ## What this dimension asks
 
-Would each step lead a child of the case's age (`player_view.target_age`) to
-take it, reading only what they hold at that point?
+Would each step lead the youngest reader (`player_view.reading_age`, 6) to take
+it, reading only what they hold at that point?
 
 `player_view` is derived from the case by code. `waves` lists the clues by the
 earliest point they can be held. `steps` lists each clue the player must do
@@ -28,7 +28,7 @@ A step's leads are the clues held before its wave, with their facts.
 
 ## How to judge
 
-For each step, picture a child of `target_age` who holds the opening and the
+For each step, picture a child of `reading_age` who holds the opening and the
 step's leads, and nothing else: no timeline, no conclusion, no `why`, no later
 clue. A narrator words each fact in play, so judge whether the facts carry the
 lead, not their wording. Ask:

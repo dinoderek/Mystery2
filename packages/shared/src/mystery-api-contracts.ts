@@ -307,7 +307,6 @@ export const BlueprintSummarySchema = z.object({
   id: z.string().uuid(),
   title: z.string(),
   one_liner: z.string(),
-  target_age: z.number().int().positive(),
   blueprint_image_id: z.string().nullable().optional(),
 });
 

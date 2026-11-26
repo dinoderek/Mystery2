@@ -3,10 +3,10 @@
   "gm_clue_discipline": ["dd8a5009def3f24f", "40b3298a40e1f424", "cf3b55c45f0972d7", "1f47735c2a9ab2ae", "7940e18f2db91726"],
   "gm_fabrication": ["143c182538a680b2", "a2c1d7984353cccf", "f830b1bdf4f3bd6e", "b7482415b6e560c7", "f26ad992f21edacd"],
   "gm_spoiler": ["70f8de7faf9a8cb0", "d5fee8256669e213", "795288173453f335", "75b91848d82c509f"],
-  "age_appropriate_turn": ["59e60fa22e26563a"],
-  "gm_broad": ["14bfc937a21b1536", "d87760d00b744fa2", "39cf0b3c00520aa8", "b9011c3e4fe04975", "a196cc3d0ba88a34", "84beb0ac6f9b5d03", "7a56229a20edae11"],
+  "age_appropriate_turn": ["59e60fa22e26563a", "e3943a638bf01eb7"],
+  "gm_broad": ["14bfc937a21b1536", "d87760d00b744fa2", "39cf0b3c00520aa8", "b9011c3e4fe04975", "a196cc3d0ba88a34", "84beb0ac6f9b5d03", "7a56229a20edae11", "a5b68eb41716afc4"],
   "cg_soundness": ["8b441b77dffd6f1f"],
   "cg_truth_agreement": ["244ffaec9ce2265e"],
   "cg_character_grounding": ["63cefe300f5a9511"],
-  "cg_step_sense": ["064abd234b64ebd4"]
+  "cg_step_sense": ["064abd234b64ebd4", "2aa9892cbfb095ab"]
 }

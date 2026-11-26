@@ -28,7 +28,7 @@ import {
   createAIProviderFromProfile,
 } from "../ai-provider.ts";
 import { buildNarrationPrompt } from "../role-request.ts";
-import { createRequestLogger, withLogContext } from "../logging.ts";
+import { createRequestLogger, withLogContext, type LogWriter } from "../logging.ts";
 import { readJsonRequest } from "../request.ts";
 import {
   createNarrationDiagnostics,
@@ -39,6 +39,21 @@ import {
 import { NARRATOR_SPEAKER } from "../speaker.ts";
 import { nextSequenceAfter, playedEvents } from "../turn/no-turn.ts";
 import { sessionCase } from "../session-case.ts";
+import { requestReadingAge } from "../reading-age.ts";
+import type { PlayableCase } from "../../../shared/src/playable-case.ts";
+
+/** Who the arrival shows standing at a place. */
+function visibleCharacters(blueprint: PlayableCase, locationId: string) {
+  return blueprint.world.characters
+    .filter((c) => c.location_id === locationId)
+    .map((c) => ({
+      id: c.id,
+      first_name: c.first_name,
+      // A clue-graph character goes by one name.
+      last_name: "",
+      sex: c.sex,
+    }));
+}
 
 export async function handle(
   req: Request,
@@ -114,6 +129,7 @@ export async function handle(
     if (!blueprint) {
       return internalError("Blueprint missing");
     }
+    const readingAge = await requestReadingAge(ctx.profile);
 
     const location = blueprint.world.locations.find(
       (l) => l.id === session.current_location_id,
@@ -133,6 +149,7 @@ export async function handle(
       role: "ambience",
       game_id: gameId,
       blueprint,
+      reading_age: readingAge,
       destination_id: location.id,
       conversation_history: [],
     });
@@ -161,6 +178,7 @@ export async function handle(
       },
       narration_parts: narrationParts,
       model: aiProvider.resolvedModel,
+      reading_age: readingAge,
       diagnostics: createNarrationDiagnostics({
         action: "enter",
         event_category: "move",
@@ -186,21 +204,11 @@ export async function handle(
     });
     logNarrationEventSaved(enterEvent, sequence);
 
-    const visible_characters = blueprint.world.characters
-      .filter((c) => c.location_id === location.id)
-      .map((c) => ({
-        id: c.id,
-        first_name: c.first_name,
-        // A clue-graph character goes by one name.
-        last_name: "",
-        sex: c.sex,
-      }));
-
     return new Response(
       JSON.stringify({
         narration_parts: narrationParts,
         current_location: location.id,
-        visible_characters,
+        visible_characters: visibleCharacters(blueprint, location.id),
         time_remaining: session.time_remaining,
         mode: session.mode,
         current_talk_character: null,
@@ -208,31 +216,41 @@ export async function handle(
       { headers: { "Content-Type": "application/json" } },
     );
   } catch (err) {
-    if (err instanceof RetriableAIError) {
-      log("request.ai_retriable", {
-        code: err.details.code ?? null,
-        status: err.details.status ?? null,
-        error: err.message,
-      });
-      return asRetriableAIResponse(err) ?? internalError("Internal Server Error");
-    }
-    const aiResponse = asRetriableAIResponse(err);
-    if (aiResponse) return aiResponse;
-    const conflictResponse = asConflictResponse(err);
-    if (conflictResponse) {
-      log("request.conflict", { error: String(err) });
-      return conflictResponse;
-    }
-    if (err instanceof Error && err.name === "BadRequestError") {
-      log("request.invalid", {
-        reason: "bad_request_error",
-        message: err.message,
-      });
-      return badRequest(err.message);
-    }
-    logError("request.unhandled_error", {
-      error: err instanceof Error ? err.message : String(err),
-    });
-    return internalError("Internal Server Error");
+    return errorResponse(err, logger);
   }
+}
+
+/** The answer for a failure the handler did not already answer itself. */
+function errorResponse(err: unknown, logger: LogWriter): Response {
+  const { log, logError } = logger;
+  if (err instanceof RequestRejectedError) {
+    log("request.invalid", { reason: err.reason, error: err.message });
+    return asRejectedResponse(err)!;
+  }
+  if (err instanceof RetriableAIError) {
+    log("request.ai_retriable", {
+      code: err.details.code ?? null,
+      status: err.details.status ?? null,
+      error: err.message,
+    });
+    return asRetriableAIResponse(err) ?? internalError("Internal Server Error");
+  }
+  const aiResponse = asRetriableAIResponse(err);
+  if (aiResponse) return aiResponse;
+  const conflictResponse = asConflictResponse(err);
+  if (conflictResponse) {
+    log("request.conflict", { error: String(err) });
+    return conflictResponse;
+  }
+  if (err instanceof Error && err.name === "BadRequestError") {
+    log("request.invalid", {
+      reason: "bad_request_error",
+      message: err.message,
+    });
+    return badRequest(err.message);
+  }
+  logError("request.unhandled_error", {
+    error: err instanceof Error ? err.message : String(err),
+  });
+  return internalError("Internal Server Error");
 }

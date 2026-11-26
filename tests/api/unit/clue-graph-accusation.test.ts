@@ -136,6 +136,7 @@ describe("what the clue-graph accusation narrator is given", () => {
     return buildRoleRequest({
       game_id: "case",
       blueprint,
+      reading_age: 10,
       session: { ...session, time_remaining: turnsLeft },
       role,
       player_input: "It was Toby.",

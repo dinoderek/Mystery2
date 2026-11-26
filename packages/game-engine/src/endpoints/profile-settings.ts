@@ -1,20 +1,22 @@
-// The playing profile's settings: today, the reading age its new games start at.
+// The playing profile's settings: today, the reading age its games are written at.
 //
-// `GET` reads them; `POST` replaces them, a null age clearing the setting so
-// each new game reads at its case's own age. A game already started keeps the
-// age it saved (`docs/game.md`).
+// `GET` reads them; `POST` replaces them. The age is read on every request, so
+// a change reaches a game's next line. A profile with no age yet (an older
+// local database) answers `GET` with `READING_AGE_REQUIRED`, like a game does
+// (`docs/game.md`).
 
 import {
   ProfileSettingsUpdateSchema,
   type ProfileSettings,
 } from "../../../shared/src/mystery-api-contracts.ts";
 import type { EngineContext } from "../context.ts";
-import { internalError } from "../errors.ts";
+import { asRejectedResponse, internalError, RequestRejectedError } from "../errors.ts";
 import { createRequestLogger } from "../logging.ts";
+import { requestReadingAge } from "../reading-age.ts";
 import { readJsonRequest } from "../request.ts";
 
 async function settingsResponse(ctx: EngineContext): Promise<Response> {
-  const settings: ProfileSettings = { reading_age: await ctx.profile.getReadingAge() };
+  const settings: ProfileSettings = { reading_age: await requestReadingAge(ctx.profile) };
   return new Response(JSON.stringify(settings), { headers: { "Content-Type": "application/json" } });
 }
 
@@ -29,6 +31,10 @@ export async function handle(req: Request, ctx: EngineContext): Promise<Response
     }
     return await settingsResponse(ctx);
   } catch (err) {
+    if (err instanceof RequestRejectedError) {
+      logger.log("request.invalid", { reason: err.reason, error: err.message });
+      return asRejectedResponse(err)!;
+    }
     logger.logError("request.unhandled_error", {
       error: err instanceof Error ? err.message : String(err),
     });

@@ -44,8 +44,8 @@ describe("responses the browser reads", () => {
   });
 
   it("profile-settings, read and changed", async () => {
-    expect(ProfileSettingsSchema.parse(await get("profile-settings"))).toEqual({ reading_age: null });
-    expect(ProfileSettingsSchema.parse(await post("profile-settings", { reading_age: 8 }))).toEqual({ reading_age: 8 });
+    expect(ProfileSettingsSchema.parse(await get("profile-settings"))).toEqual({ reading_age: 8 });
+    expect(ProfileSettingsSchema.parse(await post("profile-settings", { reading_age: 9 }))).toEqual({ reading_age: 9 });
   });
 
   it("game-start, game-enter, game-turn, game-get and game-sessions-list", async () => {

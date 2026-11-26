@@ -139,7 +139,8 @@ export class ServerNarrator {
     this.prepare(server, request);
 
     const playerName = `runtime-eval-${randomUUID().slice(0, 8)}`;
-    const api = await signIn(server.url, playerName);
+    // The game narrates at its profile's age, read on every request: the case's.
+    const api = await signIn(server.url, playerName, testCase.reading_age);
     // `start` creates its own session, so there is nothing to seed and no game
     // id to address; every other action acts on a fully specified seeded one.
     const gameId = action.createsSession

@@ -17,6 +17,13 @@
  *
  * `--lan` serves a build to other devices, for a playtest, on the `prod`
  * database unless `--db` names another (`scripts/lib/lan-server.mjs`).
+ *
+ * A run on `prod`, either way, records a playtest bundle with no flag
+ * (`scripts/lib/playtest-recording.mjs`): in `<config root>/playtests/<date>/`,
+ * the model-call log (unless `AI_CALL_LOG` is already set) and the server's
+ * output, still shown here; when the server stops, Ctrl-C and SIGTERM
+ * included, a snapshot of `prod` and a `notes.md` heading per new game. The
+ * exit status stays the server's. No other database records anything.
  */
 
 import path from "node:path";
@@ -24,8 +31,9 @@ import path from "node:path";
 import { readEnvFile } from "../packages/game-engine/src/env-file.ts";
 import { getBaseEnvPath } from "./local-config.mjs";
 import { checkRunAI, parseRunArgs } from "./lib/dev-ai.mjs";
-import { npmBin, runCommand } from "./lib/process.mjs";
+import { npmBin, runCommand, startServer } from "./lib/process.mjs";
 import { runLanServer } from "./lib/lan-server.mjs";
+import { beginRecording, localDate, planRecording, runRecorded } from "./lib/playtest-recording.mjs";
 import { resolveWorktreePorts } from "../lib/worktree-ports.mjs";
 import {
   DATABASE_NAME_ENV,
@@ -67,7 +75,22 @@ if (override) {
 const databaseName = resolveDatabaseName(rootDir, env);
 console.log(`Database: ${databaseName} (${resolveDatabaseFile(databaseName, rootDir, env)})`);
 
-if (args.lan) process.exit(await runLanServer({ root: rootDir, env }));
-
+const recording = planRecording({ root: rootDir, env, databaseName, date: localDate() });
 const { ports } = resolveWorktreePorts(rootDir);
-runCommand(npmBin, ["-w", "web", "run", "dev", "--", "--port", String(ports.web)], env);
+const viteArgs = ["-w", "web", "run", "dev", "--", "--port", String(ports.web)];
+
+/** @param {Record<string, string | undefined>} serverEnv @param {string | null} serverLog */
+const serve = (serverEnv, serverLog = null) =>
+  args.lan
+    ? runLanServer({ root: rootDir, env: serverEnv, serverLog })
+    : startServer({ command: npmBin, args: viteArgs, env: serverEnv, serverLog }).exit;
+
+if (recording) {
+  beginRecording(recording, { root: rootDir, env });
+  // Not `process.exit`: that can cut off output still on its way to a pipe.
+  process.exitCode = await runRecorded(recording, serve);
+} else if (args.lan) {
+  process.exit(await serve(env));
+} else {
+  runCommand(npmBin, viteArgs, env);
+}

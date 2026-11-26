@@ -46,7 +46,6 @@ async function startGame(ctx: EngineContext, gameId: string): Promise<void> {
       mode: "explore",
       current_location_id: "loc_a",
       time_remaining: 10,
-      reading_age: 8,
     },
     events: [event("opening", { event_type: "start" })],
   });
@@ -66,8 +65,8 @@ beforeEach(() => {
     env: {},
     databasePath: path.join(dir, "database", "test", "game.db"),
   });
-  ada = local.contextFor({ id: local.players.ensure("Ada").id });
-  grace = local.contextFor({ id: local.players.ensure("Grace").id });
+  ada = local.contextFor({ id: local.players.ensure("Ada", 8).id });
+  grace = local.contextFor({ id: local.players.ensure("Grace", 8).id });
 });
 
 afterEach(() => {
@@ -188,7 +187,6 @@ describe("sessions.saveTurn", () => {
           mode: "explore",
           current_location_id: "loc_a",
           time_remaining: 10,
-          reading_age: 8,
         },
         events: [event("broken", { narration: null as unknown as string })],
       }),
@@ -210,7 +208,6 @@ describe("sessions.saveTurn", () => {
           mode: "explore",
           current_location_id: "loc_a",
           time_remaining: 10,
-          reading_age: 8,
         },
         events: [event("opening")],
       }),
@@ -247,7 +244,6 @@ describe("sessions.saveTurn", () => {
           mode: "explore",
           current_location_id: "loc_a",
           time_remaining: 10,
-          reading_age: 8,
         },
         events: [event("opening")],
       }),

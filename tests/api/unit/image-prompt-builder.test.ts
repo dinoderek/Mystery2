@@ -23,7 +23,6 @@ const blueprint = {
   metadata: {
     title: "Mock Blueprint",
     one_liner: "A simple test mystery.",
-    target_age: 8,
     art_style: "storybook watercolor",
     visual_direction: visualDirection,
   },
@@ -73,7 +72,7 @@ describe("image prompt builder", () => {
     expect(coverPrompt).toContain("Mood: cozy and inviting");
     expect(coverPrompt).toContain("Lighting: warm morning sunlight");
     expect(coverPrompt).toContain("Texture: matte paper");
-    expect(coverPrompt).toContain("aged 8");
+    expect(coverPrompt).toContain("children aged 6 to 11");
     expect(coverPrompt).toContain("Creative direction:");
     expect(coverPrompt).toContain("mysterious kitchen with cookie crumbs");
     expect(coverPrompt).toContain("Featured location(s): Kitchen");

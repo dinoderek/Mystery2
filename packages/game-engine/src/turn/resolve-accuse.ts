@@ -42,6 +42,7 @@ export async function resolveAccuseStart(game: TurnGame, runtime: TurnRuntime): 
     game_id: game.game_id,
     session: accusing(game),
     blueprint: game.blueprint,
+    reading_age: game.reading_age,
     conversation_history: game.history,
     history_mode: "all",
   });
@@ -149,6 +150,7 @@ export async function resolveAccusation(game: TurnGame, runtime: TurnRuntime, re
     game_id: game.game_id,
     session,
     blueprint: game.blueprint,
+    reading_age: game.reading_age,
     player_input: reasoning,
     conversation_history: game.history,
   });
@@ -175,6 +177,7 @@ export async function resolveAccusation(game: TurnGame, runtime: TurnRuntime, re
     game_id: game.game_id,
     session,
     blueprint: game.blueprint,
+    reading_age: game.reading_age,
     player_input: reasoning,
     verdict: saved.verdict,
     accused,

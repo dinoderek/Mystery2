@@ -89,17 +89,37 @@ describe('PlayerStore.signIn', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('sends the trimmed name, signs in and adds a new profile to the list', async () => {
+  it('sends the trimmed name and reading age, signs in and adds a new profile to the list', async () => {
     const store = newStore();
     store.profiles = [ANN];
     fetchMock.mockResolvedValue(reply({ player: BOB }));
 
-    expect(await store.signIn('  Bob ')).toBe(true);
+    expect(await store.signIn('  Bob ', 9)).toBe(true);
 
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ name: 'Bob' });
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ name: 'Bob', reading_age: 9 });
     expect(store.player).toEqual(BOB);
     expect(store.profiles).toEqual([ANN, BOB]);
     expect(store.error).toBeNull();
+  });
+
+  it('asks a new name for a reading age before calling the server', async () => {
+    const store = newStore();
+    store.profiles = [ANN];
+
+    expect(await store.signIn('Bob')).toBe(false);
+
+    expect(store.error).toBe('Choose a reading age');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('signs a known profile in by name alone', async () => {
+    const store = newStore();
+    store.profiles = [ANN];
+    fetchMock.mockResolvedValue(reply({ player: ANN }));
+
+    expect(await store.signIn('Ann', 11)).toBe(true);
+
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ name: 'Ann' });
   });
 
   it('does not list a profile twice when it already exists', async () => {
@@ -116,7 +136,7 @@ describe('PlayerStore.signIn', () => {
     const store = newStore();
     fetchMock.mockResolvedValue(reply({ error: 'Name too long' }, 400));
 
-    expect(await store.signIn('x')).toBe(false);
+    expect(await store.signIn('x', 8)).toBe(false);
 
     expect(store.error).toBe('Name too long');
     expect(store.player).toBeNull();
@@ -126,7 +146,7 @@ describe('PlayerStore.signIn', () => {
     const store = newStore();
     fetchMock.mockResolvedValue(reply('not json', 500));
 
-    expect(await store.signIn('x')).toBe(false);
+    expect(await store.signIn('x', 8)).toBe(false);
 
     expect(store.error).toBe('Could not sign in (500)');
   });
@@ -135,7 +155,7 @@ describe('PlayerStore.signIn', () => {
     const store = newStore();
     fetchMock.mockResolvedValue(reply({ player: null }));
 
-    expect(await store.signIn('x')).toBe(false);
+    expect(await store.signIn('x', 8)).toBe(false);
 
     expect(store.player).toBeNull();
     expect(store.error).toBe('Could not sign in (200)');
@@ -145,7 +165,7 @@ describe('PlayerStore.signIn', () => {
     const store = newStore();
     fetchMock.mockRejectedValue(new Error('offline'));
 
-    expect(await store.signIn('x')).toBe(false);
+    expect(await store.signIn('x', 8)).toBe(false);
 
     expect(store.error).toBe('offline');
   });
@@ -154,7 +174,7 @@ describe('PlayerStore.signIn', () => {
     const store = newStore();
     fetchMock.mockRejectedValue('boom');
 
-    await store.signIn('x');
+    await store.signIn('x', 8);
 
     expect(store.error).toBe('boom');
   });

@@ -38,7 +38,7 @@ beforeEach(async () => {
     env: { MYSTERY_CONFIG_ROOT: dir },
     databasePath: path.join(dir, "database", "test", "game.db"),
   });
-  ctx = local.contextFor({ id: local.players.ensure("Ada").id });
+  ctx = local.contextFor({ id: local.players.ensure("Ada", 8).id });
   gameId = crypto.randomUUID();
   await ctx.sessions.saveTurn({
     game_id: gameId,
@@ -50,7 +50,6 @@ beforeEach(async () => {
       mode: "explore",
       current_location_id: "loc-kitchen",
       time_remaining: 10,
-      reading_age: 8,
       clue_graph_snapshot: readMockCaseGraph(),
     },
     events: [

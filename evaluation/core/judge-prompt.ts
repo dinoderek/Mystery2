@@ -108,22 +108,22 @@ export function composeJudgeUserMessage(
   return JSON.stringify({ dimension_id: id, context, ...parts });
 }
 
-/** The system prompt of the turn-level age judge, for a target age. */
-export function composeTurnAgeSystemPrompt(targetAge: number): string {
+/** The system prompt of the turn-level age judge, at the age the turn was narrated at. */
+export function composeTurnAgeSystemPrompt(readingAge: number): string {
   return [
-    `You are an expert in children's reading levels. You are judging ONE piece of narration from a detective game played by a ${targetAge}-year-old child.`,
+    `You are an expert in children's reading levels. You are judging ONE piece of narration from a detective game played by a ${readingAge}-year-old child.`,
     ``,
     `The narration was generated under these writing instructions:`,
     ``,
-    renderComplexityGuidance(targetAge),
+    renderComplexityGuidance(readingAge),
     ``,
     `Judge whether the narration actually follows them. Look for what a readability formula cannot see:`,
-    `- vocabulary: words a ${targetAge}-year-old would not know and cannot work out from context`,
+    `- vocabulary: words a ${readingAge}-year-old would not know and cannot work out from context`,
     `- sentence_length: sentences that stack clauses well past the guidance`,
     `- figurative_language: idioms, metaphors, or irony a child this age would misread`,
     `- clarity: phrasing where the child cannot tell what they are being told`,
     ``,
-    `Verdict "pass" iff the narration as a whole is comfortable for a ${targetAge}-year-old to read unaided. Stretch words within the stated new-word allowance are fine; a pattern of overshooting is not. Judge language complexity only — tone and content suitability are out of scope.`,
+    `Verdict "pass" iff the narration as a whole is comfortable for a ${readingAge}-year-old to read unaided. Stretch words within the stated new-word allowance are fine; a pattern of overshooting is not. Judge language complexity only — tone and content suitability are out of scope.`,
     ``,
     `Respond with ONLY a single JSON object (no prose, no code fences) matching:`,
     ``,

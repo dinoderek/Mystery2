@@ -37,8 +37,10 @@ create table players (
     name        text not null unique,
     created_at  text not null,
     updated_at  text not null,
-    -- The reading age this profile's new games start at; null reads each case
-    -- at its own. Written only through the profile's own store.
+    -- The reading age this profile's narration is written at, read on every
+    -- request. Written only through the profile's own store. A new profile
+    -- always has one; null is a profile from before the age was required,
+    -- which the engine will not play until one is chosen.
     reading_age integer
 );
 
@@ -59,7 +61,8 @@ create table game_sessions (
     created_at                text not null,
     updated_at                text not null,
     clue_graph_snapshot       text,
-    -- The age the game is narrated for, saved at its start.
+    -- No longer read or written: the age is the profile's, and each narrated
+    -- event records the one it was written at.
     reading_age               integer
 );
 

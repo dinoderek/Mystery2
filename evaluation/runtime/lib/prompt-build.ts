@@ -8,8 +8,8 @@
 // preserving.
 //
 // Sharing the assembly means there is no second implementation to drift: a
-// replayed prompt is built for the blueprint's real target age and narration
-// style, the same as the server's.
+// replayed prompt is built at the case's `reading_age`, passed as the
+// request's own input, and in the same narration style as the server's.
 //
 // The produced { system, user } pair is what the OpenRouter provider sends for
 // a role output (see OpenRouterProvider.generateRoleOutput in ai-provider.ts):

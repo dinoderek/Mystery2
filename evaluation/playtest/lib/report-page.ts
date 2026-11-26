@@ -34,7 +34,7 @@ const TEMPLATE = path.join(path.dirname(url.fileURLToPath(import.meta.url)), "re
 
 type Json = Record<string, unknown>;
 
-/** A blueprint as far as the report reads it: a title, an age and the clues' words. */
+/** A blueprint as far as the report reads it: a title and the clues' words. */
 type ReportBlueprint = Partial<PlaytestBlueprint> & {
   world?: {
     locations?: Array<{ clues?: ClueText[]; sub_locations?: Array<{ clues?: ClueText[] }> }>;
@@ -287,7 +287,8 @@ export interface ReportData {
   persona: string | null;
   narratorModel: string | null;
   investigatorModel: string | null;
-  targetAge: number | null;
+  /** Every age the run's graded narration was written at. */
+  readingAges: number[];
   games: ReportGame[];
   failed: Array<{ number: number; error: string }>;
 }
@@ -384,7 +385,7 @@ export async function buildReportData(runDir: string, { repoRoot = process.cwd()
     persona: first?.persona ?? null,
     narratorModel: first?.narrator_model ?? null,
     investigatorModel: first?.investigator_model ?? null,
-    targetAge: blueprint?.metadata?.target_age ?? null,
+    readingAges: [...new Set(games.flatMap((game) => (game.readability as { reading_ages?: number[] } | null)?.reading_ages ?? []))],
     games,
     failed,
   };

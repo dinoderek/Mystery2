@@ -8,6 +8,8 @@ export interface ApiFailure {
 	message: string;
 	/** HTTP status, when the request reached the server. */
 	status?: number;
+	/** The server's `details.code`, for a refusal the page acts on. */
+	code?: string;
 }
 
 export interface ApiResult<T = unknown> {
@@ -27,7 +29,11 @@ async function readResult<T>(response: Response): Promise<ApiResult<T>> {
 				? (payload as { error: string }).error
 				: `Request failed (${response.status})`;
 
-		return { data: payload as T | null, error: { message, status: response.status } };
+		const code = (payload as { details?: { code?: unknown } } | null)?.details?.code;
+		return {
+			data: payload as T | null,
+			error: { message, status: response.status, ...(typeof code === 'string' ? { code } : {}) },
+		};
 	}
 
 	return { data: payload as T, error: null };

@@ -17,7 +17,7 @@ test.describe('US2 - Status Bar', () => {
             await route.fulfill({ json: EMPTY_CATALOG });
         });
         await page.route('**/api/blueprints-list*', async route => {
-            await route.fulfill({ json: { blueprints: [createBlueprintSummary({ title: 'B1', one_liner: '1', target_age: 6 })] } });
+            await route.fulfill({ json: { blueprints: [createBlueprintSummary({ title: 'B1', one_liner: '1' })] } });
         });
 
         await page.route('**/api/game-start', async route => {
@@ -65,7 +65,7 @@ test.describe('US2 - Status Bar', () => {
             await route.fulfill({ json: EMPTY_CATALOG });
         });
         await page.route('**/api/blueprints-list*', async route => {
-            await route.fulfill({ json: { blueprints: [createBlueprintSummary({ title: 'B1', one_liner: '1', target_age: 6 })] } });
+            await route.fulfill({ json: { blueprints: [createBlueprintSummary({ title: 'B1', one_liner: '1' })] } });
         });
         await page.route('**/api/game-start', async route => {
             await route.fulfill({

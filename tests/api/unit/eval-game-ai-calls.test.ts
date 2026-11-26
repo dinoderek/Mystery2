@@ -9,7 +9,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { ModelCallSchema, sumTokens } from "../../../evaluation/core/result.ts";
 import { promptSha256 } from "../../../evaluation/core/runner.ts";
-import { modelCallFromLine, readAICallLog, readModelCalls, SERVER_BINDING } from "../../../evaluation/lib/game-ai-calls.ts";
+import { joinedTo, modelCallFromLine, readAICallLog, readModelCalls, SERVER_BINDING } from "../../../evaluation/lib/game-ai-calls.ts";
 import type { AICallLine } from "../../../evaluation/lib/game-ai-calls.ts";
 
 let scratch = "";
@@ -105,6 +105,19 @@ describe("reading the log", () => {
   it("gives the calls the filter keeps, in the order they were logged", () => {
     const file = writeLog("filtered.jsonl", [line({ request_id: "a", latency_ms: 1 }), line({ request_id: "b" }), line({ request_id: "a", latency_ms: 3 })]);
     expect(readModelCalls(file, (each) => each.request_id === "a").map((call) => call.duration_ms)).toEqual([1, 3]);
+  });
+
+  it("joins lines to events by request_id, ignoring lines with none and events with none", () => {
+    const file = writeLog("joined.jsonl", [
+      line({ request_id: "a", latency_ms: 1 }),
+      line({ request_id: null, latency_ms: 2 }),
+      line({ request_id: "b", latency_ms: 3 }),
+      line({ request_id: "other-game", latency_ms: 4, game_id: "game-2" }),
+      line({ request_id: "a", latency_ms: 5 }),
+    ]);
+    const events = [{ request_id: "a" }, { request_id: "b" }, {}, { request_id: null }];
+    expect(readModelCalls(file, joinedTo(events)).map((call) => call.duration_ms)).toEqual([1, 3, 5]);
+    expect(readModelCalls(file, joinedTo([{}, { request_id: null }]))).toEqual([]);
   });
 
   it("gives none for a log that was never written, or no log", () => {

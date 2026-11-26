@@ -68,7 +68,7 @@ describe("a clue-graph game, extracted and judged", () => {
     scratch = fs.mkdtempSync(path.join(os.tmpdir(), "clue-graph-eval-"));
     databasePath = path.join(scratch, "test.db");
     local = createLocalEngine({ repoRoot: ROOT, env: { MYSTERY_CONFIG_ROOT: scratch }, databasePath });
-    ctx = local.contextFor({ id: local.players.ensure("Graph evaluator").id });
+    ctx = local.contextFor({ id: local.players.ensure("Graph evaluator", 8).id });
   });
   afterEach(() => {
     local.close();
@@ -116,16 +116,17 @@ describe("a clue-graph game, extracted and judged", () => {
     expect(trace.blueprint.clue_graph?.locations.greenhouse.name).toBe("The Old Greenhouse");
   });
 
-  it.each(GM)("sends %s the played case itself, at the age the game was narrated for", async (id) => {
+  it.each(GM)("sends %s the played case itself, and each turn at the age it was narrated at", async (id) => {
+    await ctx.profile.setReadingAge(7);
     const gameId = await playOnMock(WIN.slice(0, 1));
-    local.db.prepare("update game_sessions set reading_age = 7 where id = ?").run(gameId);
+    await ctx.profile.setReadingAge(9);
     const run = prepareGameJudging(await extract(gameId));
     const sent = buildGameJudgeUserMessage(id, null, run);
     const message = JSON.parse(sent);
     expect(Object.keys(message)).toEqual(MESSAGE_KEYS);
-    const graph = greenhouseCase();
-    expect(graph.metadata.target_age).toBe(10);
-    expect(message.blueprint).toEqual({ ...graph, metadata: { ...graph.metadata, target_age: 7 } });
+    expect(message.blueprint).toEqual(greenhouseCase());
+    expect(message.subject.turns.length).toBeGreaterThan(0);
+    expect(message.subject.turns.every((turn: { reading_age: number }) => turn.reading_age === 7)).toBe(true);
     expect(message.blueprint).not.toHaveProperty("world");
     expect(sent).toBe(composeJudgeUserMessage(id, null, { blueprint: message.blueprint, subject: run.judgeSubject }));
   });
@@ -168,7 +169,8 @@ describe("a clue-graph game, extracted and judged", () => {
       const recorded = (turnCase.given.history ?? []).filter((row) => row.payload?.clue_graph !== undefined);
       expect(recorded.length, turnCase.id).toBeGreaterThan(0);
       const action = getAction(turnCase.action.type);
-      const input = action.roleInput(turnCase.given, turnCase.action, trace.blueprint as never, normalizeHistory(turnCase.given.history));
+      expect(turnCase.reading_age, turnCase.id).toBe(8);
+      const input = { ...action.roleInput(turnCase.given, turnCase.action, trace.blueprint as never, normalizeHistory(turnCase.given.history)), reading_age: turnCase.reading_age };
       expect(input.role).toBe("graph_talk");
       await expect(buildRoleRequest(input as never)).resolves.toMatchObject({ context: { role_name: "graph_talk" } });
     }
@@ -190,12 +192,12 @@ describe("what the game-master judges are sent on a replayed turn", () => {
     const sent = buildJudgeUserMessage(id, makeTurn({ blueprint_path: GREENHOUSE_FILE }), blueprint);
     const message = JSON.parse(sent);
     expect(Object.keys(message)).toEqual(MESSAGE_KEYS);
-    // The case, not the world view built from it.
+    // The case, not the world view built from it: the turn carries its own age.
     expect(message.blueprint).toEqual(greenhouseCase());
     expect(message.blueprint.clues).toBeDefined();
-    expect(message.blueprint.metadata.target_age).toBe(10);
     expect(message.blueprint).not.toHaveProperty("world");
-    expect(sent).toBe(composeJudgeUserMessage(id, null, { blueprint: blueprint.clue_graph, subject: message.subject }));
+    expect(message.subject.turns.at(-1).reading_age).toBe(10);
+    expect(sent).toBe(composeJudgeUserMessage(id, null, { blueprint: message.blueprint, subject: message.subject }));
   });
 });
 

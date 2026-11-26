@@ -12,13 +12,13 @@
  * `npm run dev` and the suites stay on loopback.
  */
 
-import { spawn } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
 import { ALLOWED_HOSTS_ENV, parseAllowedHosts } from "../../packages/game-engine/src/allowed-hosts.ts";
 import { LAN_PORT, describeAddresses, discoverNetwork, isPortAnswering, networkHostNames } from "./lan-network.mjs";
+import { startServer } from "./process.mjs";
 import { buildEntry, buildWebApp, waitForReady } from "./test-server.mjs";
 
 /** Every IPv4 interface. */
@@ -78,12 +78,13 @@ function buildForLan(root) {
 
 /**
  * Builds, starts and announces the server, then waits for it to stop.
- * Resolves to its exit status.
+ * Resolves to its exit status. With `serverLog`, the server's output is also
+ * appended there (`startServer`).
  *
- * @param {{ root: string, env: Record<string, string | undefined>, log?: (line: string) => void }} options
+ * @param {{ root: string, env: Record<string, string | undefined>, log?: (line: string) => void, serverLog?: string | null }} options
  * @returns {Promise<number>}
  */
-export async function runLanServer({ root, env, log = console.log }) {
+export async function runLanServer({ root, env, log = console.log, serverLog = null }) {
   const port = LAN_PORT;
   if (await isPortAnswering(port)) {
     log(`Port ${port} is in use: a LAN game is probably already running. Stop it and try again.`);
@@ -94,27 +95,22 @@ export async function runLanServer({ root, env, log = console.log }) {
   const network = discoverNetwork();
   const allowedHosts = lanAllowedHosts(networkHostNames(network), env[ALLOWED_HOSTS_ENV]);
 
-  const child = spawn(process.execPath, [buildEntry(buildDir)], {
-    cwd: path.join(root, "web"),
-    stdio: ["ignore", "inherit", "inherit"],
-    env: lanServerEnv(env, { root, port, allowedHosts }),
-  });
-  let exited = false;
-  const exit = new Promise((resolve) => {
-    child.on("exit", (code, signal) => {
-      exited = true;
-      resolve(code ?? 128 + (os.constants.signals[signal] ?? 0));
-    });
-  });
   // Ctrl-C reaches the server too, as one process group; this process waits
   // for it to stop rather than leaving it behind.
-  for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => child.kill(signal));
+  const { child, exited, exit } = startServer({
+    command: process.execPath,
+    args: [buildEntry(buildDir)],
+    cwd: path.join(root, "web"),
+    stdin: "ignore",
+    env: lanServerEnv(env, { root, port, allowedHosts }),
+    serverLog,
+  });
 
   try {
-    await waitForReady(`http://127.0.0.1:${port}`, () => exited);
+    await waitForReady(`http://127.0.0.1:${port}`, exited);
   } catch (error) {
     log(error.message);
-    if (!exited) child.kill("SIGTERM");
+    if (!exited()) child.kill("SIGTERM");
     await exit;
     return 1;
   }

@@ -27,7 +27,7 @@
 
 /** Complexity profile for a single age. */
 export interface AgeProfile {
-  /** Target age of the investigator (6–11). */
+  /** Reading age of the investigator (6–11). */
   age: number;
   /** Approximate UK school year for context, e.g. "Year 3". */
   ukYear: string;
@@ -42,8 +42,8 @@ export interface AgeProfile {
   vocabGuidance: string;
 }
 
-export const MIN_TARGET_AGE = 6;
-export const MAX_TARGET_AGE = 11;
+export const MIN_READING_AGE = 6;
+export const MAX_READING_AGE = 11;
 
 const PROFILES: Record<number, AgeProfile> = {
   6: {
@@ -147,17 +147,17 @@ const WORD_BUDGET: Record<InteractionId, Record<number, number>> = {
 };
 
 /** Clamp an arbitrary number into the supported 6–11 age range. */
-export function clampTargetAge(age: number): number {
-  if (!Number.isFinite(age)) return MIN_TARGET_AGE;
+export function clampReadingAge(age: number): number {
+  if (!Number.isFinite(age)) return MIN_READING_AGE;
   const rounded = Math.round(age);
-  if (rounded < MIN_TARGET_AGE) return MIN_TARGET_AGE;
-  if (rounded > MAX_TARGET_AGE) return MAX_TARGET_AGE;
+  if (rounded < MIN_READING_AGE) return MIN_READING_AGE;
+  if (rounded > MAX_READING_AGE) return MAX_READING_AGE;
   return rounded;
 }
 
-/** Get the age profile for a target age, clamped to the supported range. */
+/** Get the age profile for a reading age, clamped to the supported range. */
 export function getAgeProfile(age: number): AgeProfile {
-  return PROFILES[clampTargetAge(age)];
+  return PROFILES[clampReadingAge(age)];
 }
 
 /** All profiles, youngest to oldest. */
@@ -177,7 +177,7 @@ export function allInteractions(): Interaction[] {
 
 /** The explicit target word budget for an interaction at a given age. */
 export function wordBudget(id: InteractionId, age: number): number {
-  return WORD_BUDGET[id][clampTargetAge(age)];
+  return WORD_BUDGET[id][clampReadingAge(age)];
 }
 
 /**
@@ -273,7 +273,7 @@ const AUTHORED_FIELD_LABEL: Record<AuthoredFieldId, string> = {
 
 /** The explicit target word budget for an authored field at a given age. */
 export function authoredFieldBudget(id: AuthoredFieldId, age: number): number {
-  return AUTHORED_FIELD_BUDGET[id][clampTargetAge(age)];
+  return AUTHORED_FIELD_BUDGET[id][clampReadingAge(age)];
 }
 
 /** All authored player-facing prose fields. */

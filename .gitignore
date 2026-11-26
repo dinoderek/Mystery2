@@ -29,3 +29,8 @@ database/
 
 # SvelteKit sync output, wherever a sync runs.
 .svelte-kit/
+
+# Playtest bundles (scripts/lib/playtest-recording.mjs): the case's solution and
+# everything a child typed. Live in the config root when MYSTERY_CONFIG_ROOT is
+# set; otherwise here.
+playtests/

@@ -15,6 +15,7 @@ import { UsageError } from "../../core/errors.ts";
 import { buildClueGraphWorld, type ClueGraphWorld } from "../../../packages/shared/src/clue-graph-case.ts";
 import { isClueGraphFile, type ClueGraphCase } from "../../../packages/shared/src/clue-graph-schema.ts";
 import { validateClueGraph } from "../../../packages/shared/src/clue-graph-validator.ts";
+import { READING_AGES, ReadingAgeSchema } from "../../../packages/shared/src/reading-age.ts";
 
 export interface Speaker {
   kind: string;
@@ -56,10 +57,10 @@ export interface TurnAction {
 
 /** Per-judge options a case may carry. */
 export interface JudgeOptions {
-  /** `flesch`: grade levels of slack above the target age. */
+  /** `flesch`: grade levels of slack above the reading age. */
   tolerance?: number;
-  /** `flesch`, `age_appropriate_turn`: overrides the blueprint's target age. */
-  targetAge?: number;
+  /** `flesch`, `age_appropriate_turn`: overrides the age the turn was narrated at. */
+  readingAge?: number;
   /** The `gm_*` judges: overrides the blueprint the stored turn names. */
   blueprintPath?: string;
 }
@@ -98,6 +99,11 @@ export interface Expect {
 export interface TurnCase {
   id: string;
   blueprint: { path: string };
+  /**
+   * The age the action under test is narrated at, and judged at: the reader's,
+   * as a profile sets it. One per case, since a case judges one turn.
+   */
+  reading_age: number;
   given: Given;
   action: TurnAction;
   /** The registry ids to judge with, unless `--judges` says otherwise. */
@@ -123,7 +129,7 @@ interface Named {
 export interface BlueprintLike {
   clue_graph: ClueGraphCase;
   id?: string;
-  metadata?: { target_age?: number; title?: string };
+  metadata?: { title?: string };
   world: {
     characters: Array<Named & { first_name: string }>;
     locations: Array<Named & { name: string }>;
@@ -133,7 +139,12 @@ export interface BlueprintLike {
 export function validateCase(testCase: unknown, source: string): TurnCase {
   const candidate = testCase as Partial<TurnCase> | null;
   if (!candidate?.id || !candidate.action?.type || !candidate.given || !candidate.blueprint?.path) {
-    throw new UsageError(`Case in ${source} must have { id, blueprint: { path }, given, action: { type, ... } }`);
+    throw new UsageError(`Case in ${source} must have { id, blueprint: { path }, reading_age, given, action: { type, ... } }`);
+  }
+  if (!ReadingAgeSchema.safeParse(candidate.reading_age).success) {
+    throw new UsageError(
+      `Case ${candidate.id} in ${source} has no reading_age from ${READING_AGES[0]} to ${READING_AGES.at(-1)}: the age its turn is narrated and judged at`,
+    );
   }
   return candidate as TurnCase;
 }

@@ -174,6 +174,7 @@ function graphTurnCase(blueprintFile: string, judges: string[]) {
   return {
     id: "ask-toby",
     blueprint: { path: blueprintFile },
+    reading_age: 10,
     given: {
       mode: "talk",
       location_id: "potting_shed",
@@ -424,7 +425,6 @@ async function runPlaytestJudging(answersFile: string) {
   const { grades } = await gradeGame({
     root: REPO_ROOT,
     gameDir,
-    targetAge: 9,
     judgeArgs: ["--config", config],
   });
   verdicts.set("playtest-judging", grades);
@@ -585,10 +585,11 @@ describe("what the game-master judges are sent", () => {
     const message = JSON.parse(user);
     expect(Object.keys(message)).toEqual(["dimension_id", "context", "blueprint", "subject"]);
     expect(message.dimension_id).toBe(id);
-    // The case itself, as the game validates it, not the world view built from it.
+    // The case itself, as the game validates it, not the world view built from
+    // it: each turn carries the age it was narrated at.
     expect(message.blueprint).toEqual(GREENHOUSE_CASE);
-    expect(message.blueprint.metadata.target_age).toBe(10);
     expect(message.subject.turns.length).toBeGreaterThan(0);
+    expect(message.subject.turns.filter((turn: { judged: boolean }) => turn.judged).every((turn: { reading_age: unknown }) => turn.reading_age === 10)).toBe(true);
     for (const turn of message.subject.turns) {
       expect(RETIRED_SUBJECT_FIELDS.filter((field) => field in turn), `turn ${turn.sequence}`).toEqual([]);
     }

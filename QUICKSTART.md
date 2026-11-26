@@ -28,6 +28,7 @@ $MYSTERY_CONFIG_ROOT/
   blueprints/
   blueprint-images/
   blueprint-scenes/
+  playtests/<date>/
 ```
 
 Blueprints and images are shared across worktrees; databases are not (see
@@ -61,7 +62,7 @@ Starts the game at `http://127.0.0.1:51000` (a worktree gets its own port; the
 command prints it). Without an `ai.json`, mock narration: no network, no API
 key.
 
-Pick a profile name on the first screen — that is the whole of signing in.
+Pick a profile name (and a reading age, for a new one) on the first screen: that is signing in.
 
 ### Live AI
 
@@ -112,19 +113,23 @@ Serves WiFi and Tailscale, printing the addresses. Play by tap and the on-screen
 keyboard, dictation included. On a Mac, allow `node` incoming connections when
 the firewall asks. Rules: `docs/local-infrastructure.md`.
 
+Playing on `prod` records each day's games, model calls and server output in
+`$MYSTERY_CONFIG_ROOT/playtests/<date>/`, with a `notes.md` to fill in.
+
 ## Profiles
 
-Type a name on the first screen and that profile exists; type a different one
-and you get a separate set of cases. Profiles are local to the machine and have
+Type a name and choose a reading age (6 to 11) on the first screen and that
+profile exists; the age can change on the settings page. A different name is a
+separate set of cases. Profiles are local to the machine and have
 no passwords — they keep one person's cases apart from another's, not anyone
 out.
 
 ## Blueprint Generation
 
-A brief names the story, reading age and size (`small`, `medium` or `large`):
+A brief names the story and size (`small`, `medium` or `large`):
 
 ```json
-{ "brief": "A missing cake at a village fete.", "targetAge": 8, "size": "small" }
+{ "brief": "A missing cake at a village fete.", "size": "small" }
 ```
 
 ```bash
@@ -156,7 +161,7 @@ shared design, then the per-pipeline runbooks:
 
 ```bash
 ./dev generate <brief> --judge             # generate and judge a case
-./dev eval judge game <session-id|trace.json>   # judge a played game
+./dev eval judge game <id|trace.json>... | --bundle <dir>   # judge played games
 ./dev eval judge turn <case-or-dir>          # eval a runtime case
 ./dev eval judge turn <run>/<subject>/turn.json  # judge a stored turn again
 ./dev eval cases <trace.json>                # build runtime cases from a trace

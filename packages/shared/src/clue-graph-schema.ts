@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { MAX_TARGET_AGE, MIN_TARGET_AGE } from "./age-profile.ts";
 import { CLUE_GRAPH_SIZES, SizeOverridesSchema } from "./clue-graph-sizes.ts";
 
 /**
@@ -300,7 +299,6 @@ export const ClueGraphCaseSchema = z
         id: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Must be kebab-case"),
         title: text,
         image_id: text.optional(),
-        target_age: z.number().int().min(MIN_TARGET_AGE).max(MAX_TARGET_AGE),
         time_budget: z.number().int().positive().safe(),
         /** The story size the case is held to; none, no size checks. */
         size: z.enum(CLUE_GRAPH_SIZES).optional(),

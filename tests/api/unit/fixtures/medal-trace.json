@@ -29,7 +29,6 @@
     "metadata": {
       "title": "The Missing Medal",
       "one_liner": "A medal vanishes.",
-      "target_age": 9,
       "time_budget": 20
     },
     "narrative": {
@@ -176,12 +175,13 @@
       "event_type": "start",
       "actor": "narrator",
       "payload": {
-        "location_id": "loc_hall"
+        "location_id": "loc_hall",
+        "reading_age": 9
       },
       "narration": "You arrive at the grand hall as the dinner party winds down.",
       "narration_parts": [],
       "clues_revealed": [],
-      "model": null,
+      "model": "mock",
       "created_at": "2026-06-01T10:00:00Z"
     },
     {
@@ -198,7 +198,8 @@
         ],
         "diagnostics": {
           "time_after": 19
-        }
+        },
+        "reading_age": 9
       },
       "narration": "You spot a muddy footprint near the trophy case.",
       "narration_parts": [],
@@ -214,12 +215,13 @@
       "payload": {
         "character_id": "char_mara",
         "character_name": "Mara",
-        "location_id": "loc_hall"
+        "location_id": "loc_hall",
+        "reading_age": 9
       },
       "narration": "Mara wipes her hands and looks up.",
       "narration_parts": [],
       "clues_revealed": [],
-      "model": null,
+      "model": "mock",
       "created_at": "2026-06-01T10:02:00Z"
     },
     {
@@ -235,12 +237,13 @@
         ],
         "diagnostics": {
           "time_after": 18
-        }
+        },
+        "reading_age": 9
       },
       "narration": "\"I saw a shadow slip toward the garden,\" Mara says.",
       "narration_parts": [],
       "clues_revealed": [],
-      "model": null,
+      "model": "mock",
       "created_at": "2026-06-01T10:03:00Z"
     },
     {
@@ -249,12 +252,13 @@
       "event_type": "end_talk",
       "actor": "system",
       "payload": {
-        "character_id": "char_mara"
+        "character_id": "char_mara",
+        "reading_age": 9
       },
       "narration": "You thank Mara.",
       "narration_parts": [],
       "clues_revealed": [],
-      "model": null,
+      "model": "mock",
       "created_at": "2026-06-01T10:04:00Z"
     },
     {
@@ -266,12 +270,13 @@
         "location_id": "loc_garden",
         "diagnostics": {
           "time_after": 17
-        }
+        },
+        "reading_age": 9
       },
       "narration": "You step out into the walled garden.",
       "narration_parts": [],
       "clues_revealed": [],
-      "model": null,
+      "model": "mock",
       "created_at": "2026-06-01T10:05:00Z"
     },
     {
@@ -288,12 +293,13 @@
         ],
         "diagnostics": {
           "time_after": 16
-        }
+        },
+        "reading_age": 9
       },
       "narration": "By the wall, the roses are trampled.",
       "narration_parts": [],
       "clues_revealed": [],
-      "model": null,
+      "model": "mock",
       "created_at": "2026-06-01T10:06:00Z"
     },
     {
@@ -302,12 +308,13 @@
       "event_type": "accuse_start",
       "actor": "player",
       "payload": {
-        "role": "accusation_start"
+        "role": "accusation_start",
+        "reading_age": 9
       },
       "narration": "It is time to name the culprit.",
       "narration_parts": [],
       "clues_revealed": [],
-      "model": null,
+      "model": "mock",
       "created_at": "2026-06-01T10:07:00Z"
     },
     {
@@ -318,12 +325,13 @@
       "payload": {
         "role": "accusation_judge",
         "player_reasoning": "Dorn did it.",
-        "judge_result": "win"
+        "judge_result": "win",
+        "reading_age": 9
       },
       "narration": "Dorn slipped into the hall and took the medal while everyone was at dinner. You were right!",
       "narration_parts": [],
       "clues_revealed": [],
-      "model": null,
+      "model": "mock",
       "created_at": "2026-06-01T10:08:00Z"
     }
   ]

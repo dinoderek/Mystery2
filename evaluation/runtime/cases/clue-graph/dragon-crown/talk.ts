@@ -12,9 +12,9 @@
 //   what points the player at the hidden spot (asked);
 // - Leo gives up his two lies one at a time, then the truth (confession).
 
-import { lineCase, type Step } from "../support/play.ts";
+import { lineCase, type Step, type Story } from "../support/play.ts";
 
-const CROWN = "blueprints/clue-graph/dragon-crown.json";
+const CROWN: Story = { file: "blueprints/clue-graph/dragon-crown.json", reading_age: 8 };
 const line = (steps: Step[], say: string, labels: Parameters<typeof lineCase>[3]) => lineCase(CROWN, steps, say, labels);
 const NOTHING = { revealed_clue_ids: [], input_understood: true };
 

@@ -10,17 +10,15 @@ import {
 } from "../../../packages/game-engine/src/role-request.ts";
 import { buildClueGraphWorld, validateClueGraph, type ClueGraphWorld } from "@my2/shared";
 import { readMockCase } from "../../testkit/src/mock-case.ts";
+import { renderComplexityGuidance } from "../../../packages/shared/src/age-profile.ts";
 
 // role-request.ts is the single assembly path for narrator prompts. These tests
 // exist because an earlier arrangement had two: the endpoint handlers,
 // and a parallel implementation in the eval harness that called
-// loadPromptTemplate WITHOUT a target age. clampTargetAge silently fell back to
-// age 6, so every evaluated prompt was built for the wrong reader while being
-// graded against the blueprint's real age. Nothing failed. Hence the
-// assertions below: for EVERY role, the blueprint's age must actually appear in
-// the assembled prompt.
-
-const TARGET_AGE = 10; // the target_age of the greenhouse and the mock case
+// loadPromptTemplate WITHOUT an age. clampReadingAge silently fell back to
+// age 6, so every evaluated prompt was built for the wrong reader. Nothing
+// failed. Hence the assertions below: for EVERY role, the request's own
+// `reading_age` must actually appear in the assembled prompt.
 
 // The talk, search and accusation roles play the greenhouse.
 let graphBlueprint: ClueGraphWorld;
@@ -46,8 +44,8 @@ function session(overrides: Record<string, unknown> = {}) {
 
 /** One representative input per role, so every role is actually assembled. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function inputFor(role: RoleRequestName): any {
-  const common = { game_id: "case", blueprint: mockCase, conversation_history: [] };
+function inputFor(role: RoleRequestName, readingAge = 8): any {
+  const common = { game_id: "case", blueprint: mockCase, reading_age: readingAge, conversation_history: [] };
 
   switch (role) {
     case "intro":
@@ -104,8 +102,8 @@ function inputFor(role: RoleRequestName): any {
 
 const NARRATION_ROLES: RoleRequestName[] = ["intro", "ambience"];
 
-async function promptFor(role: RoleRequestName): Promise<string> {
-  const input = inputFor(role);
+async function promptFor(role: RoleRequestName, readingAge?: number): Promise<string> {
+  const input = inputFor(role, readingAge);
   return NARRATION_ROLES.includes(role)
     ? buildNarrationPrompt(input)
     : (await buildRoleRequest(input)).prompt;
@@ -145,14 +143,21 @@ const NARRATING: RoleRequestName[] = [
   "graph_accusation_round", "graph_ending",
 ];
 
-describe("every assembled prompt carries the blueprint's age", () => {
-  it.each(NARRATING)("%s renders the blueprint target_age, not a fallback", async (role) => {
-    const prompt = await promptFor(role);
+describe("every assembled prompt carries the request's reading age", () => {
+  it.each(NARRATING)("%s renders the reading age it is given, not a fallback", async (role) => {
+    const prompt = await promptFor(role, 8);
 
-    // The exact failure that went unnoticed: age 6 (MIN_TARGET_AGE) instead of
-    // the blueprint's 10.
-    expect(prompt).toContain(`is ${TARGET_AGE} years old`);
+    // The exact failure that once went unnoticed: age 6 (MIN_READING_AGE).
+    expect(prompt).toContain("is 8 years old");
     expect(prompt).not.toContain("is 6 years old");
+  });
+
+  it.each(NARRATING)("%s written at 6 gets the age-6 complexity and length, not the age-11", async (role) => {
+    const at6 = await promptFor(role, 6);
+
+    expect(at6).toContain(renderComplexityGuidance(6));
+    expect(at6).not.toContain(renderComplexityGuidance(11));
+    expect(at6).not.toEqual(await promptFor(role, 11));
   });
 
   // A case sets no voice of its own: every role uses the standard style alone.
@@ -228,6 +233,7 @@ describe("arrival (ambience) derives its inputs from the session history", () =>
       role: "ambience",
       game_id: "case",
       blueprint,
+      reading_age: 8,
       destination_id: "loc-kitchen",
       conversation_history: [],
     });
@@ -250,6 +256,7 @@ describe("arrival (ambience) derives its inputs from the session history", () =>
       role: "ambience",
       game_id: "case",
       blueprint: { ...mockCase, world: { ...mockCase.world, characters: [] } },
+      reading_age: 8,
       destination_id: "loc-kitchen",
       conversation_history: [],
     });
@@ -264,6 +271,7 @@ describe("arrival (ambience) derives its inputs from the session history", () =>
       role: "ambience",
       game_id: "case",
       blueprint,
+      reading_age: 8,
       destination_id: "loc-kitchen",
       conversation_history: [],
     });
@@ -275,6 +283,7 @@ describe("arrival (ambience) derives its inputs from the session history", () =>
       role: "ambience",
       game_id: "case",
       blueprint,
+      reading_age: 8,
       destination_id: "loc-kitchen",
       conversation_history: [
         {

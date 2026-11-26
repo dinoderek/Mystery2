@@ -458,7 +458,7 @@ describe('mystery title from blueprint lookup', () => {
     const store = new GameSessionStore();
     store.blueprint_id = 'bp-1';
     store.blueprints = [
-      { id: 'bp-1', title: 'The Haunted Manor', one_liner: '', target_age: 12, blueprint_image_id: null },
+      { id: 'bp-1', title: 'The Haunted Manor', one_liner: '', blueprint_image_id: null },
     ];
     // Session catalog has no rows — this was the original bug scenario
     expect(store.sessionCatalog.in_progress).toHaveLength(0);
@@ -471,8 +471,8 @@ describe('mystery title from blueprint lookup', () => {
     store.game_id = 'game-new';
     store.blueprint_id = 'bp-2';
     store.blueprints = [
-      { id: 'bp-1', title: 'The Haunted Manor', one_liner: '', target_age: 12, blueprint_image_id: null },
-      { id: 'bp-2', title: 'Murder at Midnight', one_liner: '', target_age: 14, blueprint_image_id: null },
+      { id: 'bp-1', title: 'The Haunted Manor', one_liner: '', blueprint_image_id: null },
+      { id: 'bp-2', title: 'Murder at Midnight', one_liner: '', blueprint_image_id: null },
     ];
     // game-new doesn't exist in the catalog yet (startGame doesn't refresh it)
     expect(getMysteryTitle(store)).toBe('Murder at Midnight');
@@ -487,7 +487,7 @@ describe('mystery title from blueprint lookup', () => {
     const store = new GameSessionStore();
     store.blueprint_id = 'bp-missing';
     store.blueprints = [
-      { id: 'bp-1', title: 'The Haunted Manor', one_liner: '', target_age: 12, blueprint_image_id: null },
+      { id: 'bp-1', title: 'The Haunted Manor', one_liner: '', blueprint_image_id: null },
     ];
     expect(getMysteryTitle(store)).toBe('Unknown Mystery');
   });
@@ -496,7 +496,7 @@ describe('mystery title from blueprint lookup', () => {
     const store = new GameSessionStore();
     store.blueprint_id = 'bp-1';
     store.blueprints = [
-      { id: 'bp-1', title: '', one_liner: '', target_age: 12, blueprint_image_id: null },
+      { id: 'bp-1', title: '', one_liner: '', blueprint_image_id: null },
     ];
     expect(getMysteryTitle(store)).toBe('Unknown Mystery');
   });

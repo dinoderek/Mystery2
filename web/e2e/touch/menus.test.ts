@@ -22,6 +22,7 @@ test('a player starts, resumes and reviews a game by tapping only', async ({ pag
   // Sign in through the picker: `fill` sends no key events.
   await page.goto('/login');
   await page.locator('#profile-name').fill(`touch-${crypto.randomUUID().slice(0, 8)}`);
+  await page.locator('[data-testid="reading-age-option"][data-age="8"]').tap();
   await page.getByRole('button', { name: '[ START ]' }).tap();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByTestId('menu-row-2')).toBeDisabled();

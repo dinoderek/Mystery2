@@ -48,7 +48,7 @@ describe('playtest grading', () => {
 	it('grades a played game with the trace judges and a reading level', async () => {
 		scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'mystery-playtest-judge-'));
 		const game = await playGame({
-			api: await signIn(BASE_URL, 'playtest-judge'),
+			api: await signIn(BASE_URL, 'playtest-judge', 8),
 			blueprint: { id: MOCK_BLUEPRINT_ID, title: MOCK_BLUEPRINT.metadata.title },
 			investigator: scriptedInvestigator(INPUTS)
 		});
@@ -88,7 +88,6 @@ describe('playtest grading', () => {
 		const { grades, result } = await gradeGame({
 			root: REPO_ROOT,
 			gameDir,
-			targetAge: MOCK_BLUEPRINT.metadata.target_age,
 			judgeArgs: ['--config', config]
 		});
 
@@ -102,7 +101,7 @@ describe('playtest grading', () => {
 			},
 			run_error: null,
 			judge_cost_usd: null,
-			readability: { target_age: MOCK_BLUEPRINT.metadata.target_age }
+			readability: { reading_ages: [expect.any(Number)] }
 		});
 		// The opening (premise, arrival) and every turn's narration are scored.
 		const readability = JSON.parse(fs.readFileSync(path.join(gameDir, 'readability.json'), 'utf8'));
@@ -112,6 +111,11 @@ describe('playtest grading', () => {
 
 		const trace = JSON.parse(fs.readFileSync(path.join(gameDir, 'trace.json'), 'utf8'));
 		expect(trace.session.id).toBe(game.gameId);
+		// Each narration is scored at the age its own event records.
+		const ageOf = new Map(
+			trace.events.map((event: { sequence: number; payload: { reading_age?: number } | null }) => [event.sequence, event.payload?.reading_age])
+		);
+		for (const narration of readability.narrations) expect(narration.reading_age).toBe(ageOf.get(narration.sequence));
 		expect(result.subject).toMatchObject({ kind: 'game', id: game.gameId });
 		expect(result.verdicts.map((verdict) => verdict.id)).toEqual(
 			expect.arrayContaining(['clue_accounting', 'gm_roleplay', 'gm_spoiler'])
@@ -125,8 +129,7 @@ describe('playtest grading', () => {
 			const { grades: crashed } = await gradeGame({
 				root: REPO_ROOT,
 				gameDir,
-				targetAge: MOCK_BLUEPRINT.metadata.target_age,
-				judgeArgs: ['--config', config]
+					judgeArgs: ['--config', config]
 			});
 			expect(crashed.judges.gm_spoiler).toEqual({ status: 'error', major: null, minor: null });
 			expect(crashed.mechanical).toEqual(grades.mechanical);

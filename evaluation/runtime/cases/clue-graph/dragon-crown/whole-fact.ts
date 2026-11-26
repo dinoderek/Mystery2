@@ -4,11 +4,11 @@
 // cases: Mr. Pike's sighting, whose line also names the hidden spot it points
 // at, and the crown found there.
 
-import { lineCase, searchCase, type Step } from "../support/play.ts";
+import { lineCase, searchCase, type Step, type Story } from "../support/play.ts";
 import { GOLD_STEPS, CARDS, LEO_GREETS, PIKE_AFTER_SAM, PIKE_MET, SAM_WITH_SHEET, SHEET } from "./talk.ts";
 import { POINTED } from "./search.ts";
 
-const CROWN = "blueprints/clue-graph/dragon-crown.json";
+const CROWN: Story = { file: "blueprints/clue-graph/dragon-crown.json", reading_age: 8 };
 type Labels = Parameters<typeof lineCase>[3];
 const line = (steps: Step[], say: string, labels: Labels) => lineCase(CROWN, steps, say, labels);
 const search = (steps: Step[], query: string | null, labels: Labels) => searchCase(CROWN, steps, query, labels);

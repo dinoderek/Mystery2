@@ -17,6 +17,10 @@ export function createImageId(blueprintName, targetType, targetKey = null) {
   return `${prefix}.${target}`;
 }
 
+// A case has no age of its own: any case may be played by any reader the game
+// supports (6 to 11, `MIN_READING_AGE` to `MAX_READING_AGE` in age-profile.ts).
+const AUDIENCE_CUE = "Audience: children aged 6 to 11. Visual complexity should be age-appropriate.";
+
 function styleBlock(blueprint) {
   const vd = blueprint?.metadata?.visual_direction;
   if (vd) {
@@ -27,12 +31,7 @@ function styleBlock(blueprint) {
       `Lighting: ${vd.lighting}`,
     ];
     if (vd.texture) lines.push(`Texture: ${vd.texture}`);
-    const age = blueprint?.metadata?.target_age;
-    if (age) {
-      lines.push(
-        `Audience: children aged ${age}. Visual complexity should be age-appropriate.`,
-      );
-    }
+    lines.push(AUDIENCE_CUE);
     return lines.join("\n");
   }
 
@@ -40,11 +39,7 @@ function styleBlock(blueprint) {
   const artStyle =
     blueprint?.metadata?.art_style?.trim() ||
     "storybook illustration, warm lighting, playful detective mood";
-  const age = blueprint?.metadata?.target_age;
-  const ageCue = age
-    ? `Audience: children aged ${age}. Visual complexity should be age-appropriate.`
-    : "";
-  return [`Style: ${artStyle}`, ageCue].filter(Boolean).join("\n");
+  return [`Style: ${artStyle}`, AUDIENCE_CUE].join("\n");
 }
 
 function startingLocation(blueprint) {

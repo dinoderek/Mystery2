@@ -262,7 +262,7 @@ export const GameStateSchema = z.object({
 export const SessionTranscriptResponseSchema = z.object({
   state: GameStateSchema,
   narration_events: z.array(NarrationEventSchema),
-  /** The age this game is narrated for, saved when it started. */
+  /** The age the game's next narrated line is written at: the profile's, read on this request. */
   reading_age: ReadingAgeSchema,
 });
 
@@ -278,7 +278,6 @@ export const BlueprintSummarySchema = z.object({
   id: z.string().uuid(),
   title: z.string(),
   one_liner: z.string(),
-  target_age: z.number().int().positive(),
   blueprint_image_id: z.string().nullable().optional(),
 });
 
@@ -312,15 +311,29 @@ export const SessionCatalogResponseSchema = z.object({
 // --- Profile settings ---
 
 /**
- * What the playing profile has set. A null `reading_age` means each new game
- * reads at its case's own age; an age means every new game reads at that one.
+ * What the playing profile has set. Its `reading_age` is the age every game of
+ * the profile is written at, read on each request. A profile always has one;
+ * an older local database may hold a profile without, which the engine refuses
+ * to play with (`READING_AGE_REQUIRED`) until one is chosen.
  */
 export const ProfileSettingsSchema = z.object({
-  reading_age: ReadingAgeSchema.nullable(),
+  reading_age: ReadingAgeSchema,
 });
 
-/** Setting or clearing the profile's reading age: the whole settings state. */
+/** Setting the profile's reading age: the whole settings state. */
 export const ProfileSettingsUpdateSchema = ProfileSettingsSchema;
+
+/** The `details.code` of a 400 for a profile that has no reading age yet. */
+export const READING_AGE_REQUIRED = "READING_AGE_REQUIRED";
+
+/**
+ * Signing in. A name no profile has yet creates one, and then needs its
+ * `reading_age`; a known name signs in with the name alone.
+ */
+export const PlayerSignInSchema = z.object({
+  name: z.string().trim().min(1, "Missing profile name").max(60, "Profile name is too long"),
+  reading_age: ReadingAgeSchema.optional(),
+});
 
 // --- AI settings ---
 //

@@ -7,6 +7,7 @@ import { readNarrationEvent } from "../narration.ts";
 import { buildDiscoveryRecords } from "../clue-discovery.ts";
 import { buildGameState } from "../game-state-view.ts";
 import { sessionCase } from "../session-case.ts";
+import { requestReadingAge } from "../reading-age.ts";
 import { markClues, notebookMarks } from "../clue-graph/notebook-view.ts";
 import { playedEvents } from "../turn/no-turn.ts";
 import { accusationsLeft } from "../accusations.ts";
@@ -103,12 +104,16 @@ export async function handle(
       blueprint_id: session.blueprint_id,
       state: gameState,
       narration_events: narrationEvents,
-      // The played case carries the game's age (`sessionCase`).
-      reading_age: blueprint.metadata.target_age,
+      // The age the next narrated line is written at: the profile's, now.
+      reading_age: await requestReadingAge(ctx.profile),
     }), {
       headers: { "Content-Type": "application/json" },
     });
   } catch (err) {
+    if (err instanceof RequestRejectedError) {
+      log("request.invalid", { reason: err.reason, error: err.message });
+      return asRejectedResponse(err)!;
+    }
     logError("request.unhandled_error", {
       error: err instanceof Error ? err.message : String(err),
     });

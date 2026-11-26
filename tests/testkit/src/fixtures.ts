@@ -315,7 +315,6 @@ export function createBlueprintSummary(
     id: "00000000-0000-0000-0000-000000000002",
     title: "The Stolen Cake",
     one_liner: "Find the cake",
-    target_age: 6,
     ...overrides,
   };
   return validate(BlueprintSummarySchema, blueprint);
@@ -323,9 +322,9 @@ export function createBlueprintSummary(
 
 export const MOCK_BLUEPRINT: BlueprintSummary = createBlueprintSummary();
 
-/** The answer to `profile-settings`: a profile that has set no reading age, unless overridden. */
+/** The answer to `profile-settings`: a profile reading at 8, unless overridden. */
 export function createProfileSettings(overrides?: Partial<ProfileSettings>): ProfileSettings {
-  return validate(ProfileSettingsSchema, { reading_age: null, ...overrides });
+  return validate(ProfileSettingsSchema, { reading_age: 8, ...overrides });
 }
 
 export function createBlueprintsListResponse(

@@ -259,9 +259,9 @@ document.getElementById("matrix").innerHTML =
   row("accusations spent", (g) => (g.accusationsSpent != null ? `${g.accusationsSpent}${g.wonOnThird ? " · won on the third" : ""}` : "—")) +
   row("cost", (g) => money(gameCost(g))) +
   `</tbody>`;
-if (DATA.targetAge != null) {
+if (DATA.readingAges.length > 0) {
   document.getElementById("matrix-foot").textContent +=
-    ` Reading level counts narrations at or under the Flesch–Kincaid grade for age ${DATA.targetAge}.`;
+    ` Reading level counts narrations at or under the Flesch–Kincaid grade for the age each was written at (age ${DATA.readingAges.join(", ")}).`;
 }
 
 // Game tabs

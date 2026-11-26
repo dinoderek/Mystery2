@@ -6,10 +6,10 @@
 // and neither. An admission that comes out is checked in the narration, the
 // reported gate id and its notebook line (`expect.whole_fact`).
 
-import { lineCase, type Step } from "../support/play.ts";
+import { lineCase, type Step, type Story } from "../support/play.ts";
 import { HALE_GREETS, HALE_SHOWN_ROTA, SEARCHED } from "./talk.ts";
 
-const GREENHOUSE = "blueprints/clue-graph/greenhouse-prizewinner.json";
+const GREENHOUSE: Story = { file: "blueprints/clue-graph/greenhouse-prizewinner.json", reading_age: 10 };
 const line = (steps: Step[], say: string, labels: Parameters<typeof lineCase>[3]) => lineCase(GREENHOUSE, steps, say, labels);
 
 /** The bench searched and the rota shown: she has stood up for Toby, and her admission is offered. */

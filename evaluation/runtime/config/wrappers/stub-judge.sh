@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Deterministic stub "judge model" for offline wiring tests of LLM judges.
 #
-#   $1 — user message file (JSON.stringify({ target_age, action, narration, ... }))
+#   $1 — user message file (JSON.stringify({ reading_age, action, narration, ... }))
 #
 # stdout — a clean "nothing wrong" verdict: one canned answer whose fields are
 # the union of the LLM judges' contracts that a stub can satisfy:

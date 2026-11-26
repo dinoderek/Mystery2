@@ -144,9 +144,11 @@ describe("buildJudgeUserMessage", () => {
     const blueprint = mockBlueprint();
     const message = JSON.parse(buildJudgeUserMessage("gm_clue_discipline", makeTurn(), blueprint));
     expect(message.dimension_id).toBe("gm_clue_discipline");
+    // The case itself: each judged turn carries the age it was narrated at.
     expect(message.blueprint).toEqual(blueprint.clue_graph);
     expect(message.subject.subject_kind).toBe("interaction");
     expect(message.subject.judged_sequences).toEqual([2]);
+    expect(message.subject.turns.at(-1)).toMatchObject({ judged: true, reading_age: 10 });
   });
 
   it("labels the judged turn with the role the model actually ran as", () => {

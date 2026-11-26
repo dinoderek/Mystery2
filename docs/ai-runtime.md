@@ -9,7 +9,9 @@ reach which output is `docs/blueprint-generation-flows.md`.
 
 Pure `packages/game-engine/src/role-request.ts` builds each role's authorised
 context (`ai-context.ts`) and renders its prompt (`ai-prompts.ts`) at the
-game's `target_age`; it imports no database, so the eval harness calls it too
+request's `reading_age`, its own input and never the case's
+(`packages/game-engine/src/reading-age.ts` reads it from the profile, per
+request); it imports no database, so the eval harness calls it too
 (`tests/api/unit/role-request.test.ts`). `buildRoleMessages` and
 `buildNarrationMessages` construct the system/user pair for live OpenRouter,
 live Claude CLI and replay, including plain `intro` and `ambience`. Provider
@@ -144,5 +146,6 @@ Contract, prompt, context and provider changes update its tests.
   model; `AI_CALL_LOG` adds full prompts and outputs
   (`docs/ai-configuration.md`).
 - Each AI-narrated event stores the model of its own call in
-  `game_events.model` (a forced endgame is two calls); the trace pipeline reads
-  it, not the session's profile.
+  `game_events.model` (a forced endgame is two calls), and the age it was
+  written at in its payload's `reading_age`; the trace pipeline reads both
+  from the event, not the session or its profile.

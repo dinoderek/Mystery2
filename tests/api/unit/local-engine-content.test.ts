@@ -15,7 +15,7 @@ import {
   resolveImageFile,
 } from "../../../packages/game-engine/src/content.ts";
 import type { LogWriter } from "../../../packages/game-engine/src/logging.ts";
-import { CLUE_GRAPH_TITLE_SUFFIX } from "../../../packages/shared/src/clue-graph-case.ts";
+import { CLUE_GRAPH_TITLE_SUFFIX, clueGraphCaseId } from "../../../packages/shared/src/clue-graph-case.ts";
 import { MOCK_CASE_ID, readMockCase, readMockCaseGraph } from "../../testkit/src/mock-case.ts";
 import { createProceduralScene, createSceneManifest } from "../../testkit/src/fixtures.ts";
 
@@ -174,6 +174,18 @@ describe("listBlueprints", () => {
     expect(await store().listBlueprints()).toEqual([expect.objectContaining({ unlisted: true })]);
     expect(await store().loadBlueprint(BLUEPRINT_ID, recordingLogger())).toMatchObject({ id: BLUEPRINT_ID });
     expect((await store(undefined, true).listBlueprints())[0]).not.toHaveProperty("unlisted");
+  });
+
+  it("offers players only the generated cases from the committed catalog", async () => {
+    const committed = store([path.resolve("blueprints")]);
+    const listed = (await committed.listBlueprints()).filter((entry) => !entry.unlisted);
+
+    expect(listed.map((entry) => entry.blueprint.clue_graph.metadata.id).sort()).toEqual([
+      "midnight-train",
+      "missing-blue-rosette",
+      "the-stopped-clock",
+    ]);
+    expect(await committed.loadBlueprint(clueGraphCaseId("dragon-crown"), recordingLogger())).not.toBeNull();
   });
 
   it("fills a case's missing image ids from images filed under their conventional names", async () => {

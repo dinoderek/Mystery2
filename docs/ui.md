@@ -9,8 +9,8 @@ Each landing-menu row, case card and session row is a numbered button,
 disabled where it cannot open; `[ BACK ]` is tappable wherever `b` goes back. A
 tap calls its key's function, never a synthetic key event.
 
-Cards show titles at once and lines, narrated at the profile's age, when they
-arrive (asked anew each visit; none on failure).
+Cards show titles at once, then lines narrated at the profile's age (asked anew
+each visit; none on failure).
 
 ## Shape
 
@@ -33,14 +33,14 @@ game refused with `READING_AGE_REQUIRED` opens it too.
 
 Case selection and opening pages preview the first scene; cards are
 stills. In play, scenes follow the viewed location, history included; talking
-prefers portraits. Scenes respect reduced motion and fall back to illustrations
-on failure.
+prefers portraits. Scenes respect reduced motion (WebGL ones stay still) and
+fall back to illustrations on failure.
 
 Enter, the keyboard's action key and `[ SEND ]` submit the input's form, never
 `keydown`; dictation arrives as plain input. The input is 16 px (iOS zooms
 below). On a coarse pointer it takes focus after a tap or a sent line only. The
-begin and end prompts are buttons that also take any key, once. Key hints show
-under `pointer: fine` only.
+begin and end prompts are buttons that also take any key, once. Key hints need
+`pointer: fine`.
 
 ## Layout
 

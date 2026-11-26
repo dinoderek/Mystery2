@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { BlueprintsListResponseSchema } from "@my2/shared";
 import { readMockCase } from "../../testkit/src/mock-case";
 import { API_URL, MOCK_BLUEPRINT_ID, setupApiTestAuth, type ApiAuthContext } from "./helpers";
 
@@ -23,7 +24,10 @@ describe("blueprints-list endpoint", () => {
   async function list(query = ""): Promise<Listed[]> {
     const res = await fetch(`${API_URL}/blueprints-list${query}`, { headers: auth.headers });
     expect(res.status).toBe(200);
-    return (await res.json()).blueprints;
+    const body = await res.json();
+    // The browser reads it through the shared schema; the raw body shows what else was sent.
+    BlueprintsListResponseSchema.parse(body);
+    return body.blueprints;
   }
 
   it("lists the mock case's title and art at once, with no line", async () => {
@@ -46,6 +50,9 @@ describe("blueprints-list endpoint", () => {
     expect(age.status).toBe(200);
 
     const listed = await list("?one_liners=true");
+    // The case's own line is its first opening fact, which the mock also words,
+    // so only the prefix tells them apart here; that each line is told from the
+    // first fact, at the profile's age, is `unit/blueprints-list.test.ts`.
     const authored = readMockCase().metadata.one_liner;
 
     expect(listed.find((b) => b.id === MOCK_BLUEPRINT_ID)?.one_liner).toBe(`[Mock] ${authored}`);

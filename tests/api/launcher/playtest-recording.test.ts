@@ -19,7 +19,6 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { readResult } from "../../../evaluation/core/result.ts";
 import { readRunIndex } from "../../../evaluation/core/run-folder.ts";
-import { localDate } from "../../../scripts/lib/playtest-recording.mjs";
 import { createTestConfigRoot } from "../../../scripts/lib/test-server.mjs";
 import { resolveLocalConfigRoot } from "../../../scripts/local-config.mjs";
 import { MOCK_CASE_ID } from "../../testkit/src/mock-case.ts";
@@ -30,6 +29,19 @@ const MOCK_JUDGE = path.join(REPO_ROOT, "tests/api/unit/trace-mock-judge.mjs");
 const OPERATOR_ROOT = resolveLocalConfigRoot(REPO_ROOT, process.env);
 const READY_TIMEOUT_MS = 90_000;
 const STOP_TIMEOUT_MS = 30_000;
+
+/**
+ * A time zone where it is about noon now. Every command runs in it, so the
+ * bundle folder, named by the local date, cannot change between the two
+ * launches by crossing midnight.
+ */
+function noonTimeZone(now: Date): string {
+  const offset = 12 - now.getUTCHours();
+  return offset === 0 ? "Etc/GMT" : `Etc/GMT${offset > 0 ? "-" : "+"}${Math.abs(offset)}`;
+}
+const TIME_ZONE = noonTimeZone(new Date());
+/** Today in that zone, as the bundle folder is named. */
+const TODAY = new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 
 let configRoot = "";
 
@@ -54,7 +66,7 @@ function commandEnv(extra: Record<string, string> = {}): Record<string, string> 
   return {
     PATH: process.env.PATH ?? "",
     ...(process.env.HOME ? { HOME: process.env.HOME } : {}),
-    ...(process.env.TZ ? { TZ: process.env.TZ } : {}),
+    TZ: TIME_ZONE,
     MYSTERY_CONFIG_ROOT: configRoot,
     OPENROUTER_URL: "http://127.0.0.1:9/unreachable",
     CLAUDE_CLI_PATH: "/nonexistent/claude-cli-disabled-in-tests",
@@ -278,14 +290,13 @@ describe("a mock-AI playtest on prod", () => {
     expectIsolated(prodFile, "the prod database");
 
     // O2: a run on prod records with no flag, into <config root>/playtests/<date>/.
-    const today = localDate();
     const first = await launch();
     const recordingLine = /Recording this playtest in (\S+)/.exec(first.output());
     expect(recordingLine, "O2: the launcher says where it records").not.toBeNull();
     const bundle = recordingLine![1];
     expectIsolated(bundle, "O2: the bundle folder");
     expect(path.dirname(bundle), "O2: the bundle is under <config root>/playtests/").toBe(path.join(configRoot, "playtests"));
-    expect([today, localDate()], "O2: the folder is named by the local date").toContain(path.basename(bundle));
+    expect(path.basename(bundle), "O2: the folder is named by the local date").toBe(TODAY);
     expect(first.output(), "O2: on the prod database").toContain(`Database: prod (${prodFile})`);
     expect(first.output(), "O2: the bundle is not in the checkout").not.toContain("That is inside the checkout");
     const date = path.basename(bundle);

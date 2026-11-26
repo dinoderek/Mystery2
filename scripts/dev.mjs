@@ -92,24 +92,35 @@ function viteEntry(root) {
   return path.join(path.dirname(manifest), JSON.parse(fs.readFileSync(manifest, "utf8")).bin.vite);
 }
 
-/** @param {Record<string, string | undefined>} serverEnv @param {string | null} serverLog */
-const serve = (serverEnv, serverLog = null) =>
-  args.lan
-    ? runLanServer({ root: rootDir, env: serverEnv, serverLog })
-    : startServer({
-        command: process.execPath,
-        args: [viteEntry(rootDir), "dev", "--port", String(ports.web)],
-        cwd: path.join(rootDir, "web"),
-        env: serverEnv,
-        serverLog,
-      }).exit;
+/** @param {string | null} vite `viteEntry`, for a run not on the LAN */
+const serveWith = (vite) =>
+  /** @param {Record<string, string | undefined>} serverEnv @param {string | null} serverLog */
+  (serverEnv, serverLog = null) =>
+    args.lan
+      ? runLanServer({ root: rootDir, env: serverEnv, serverLog })
+      : startServer({
+          command: process.execPath,
+          args: [vite, "dev", "--port", String(ports.web)],
+          cwd: path.join(rootDir, "web"),
+          env: serverEnv,
+          serverLog,
+        }).exit;
 
 if (recording) {
+  // Found before anything is recorded, so a broken install stops here, in one line.
+  let vite = null;
+  try {
+    if (!args.lan) vite = viteEntry(rootDir);
+  } catch (error) {
+    console.error(`Could not find Vite, which serves the game (run npm install): ${error.message}`);
+    process.exit(1);
+  }
+  const serve = serveWith(vite);
   beginRecording(recording, { root: rootDir, env });
   // Not `process.exit`: that can cut off output still on its way to a pipe.
   process.exitCode = await runRecorded(recording, serve);
 } else if (args.lan) {
-  process.exit(await serve(env));
+  process.exit(await serveWith(null)(env));
 } else {
   runCommand(npmBin, viteArgs, env);
 }

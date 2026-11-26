@@ -875,6 +875,39 @@ async function exportImageChatPackets({
   };
 }
 
+/**
+ * The portraits and location scenes a case already has on disk, by character
+ * and location id: a reference this run does not make is read from here, so a
+ * cover made on its own still sees the cast. A case's named id is tried first,
+ * then the conventional name.
+ */
+async function existingReferencePaths(graph, caseId, outputDir) {
+  async function existingImage(namedId, targetType, targetKey) {
+    for (const imageId of [namedId, conventionalImageId(caseId, targetType, targetKey)].filter(Boolean)) {
+      const imagePath = path.join(outputDir, imageId);
+      try {
+        await fs.access(imagePath);
+        return imagePath;
+      } catch {
+        // Not filed under this name; try the next.
+      }
+    }
+    return null;
+  }
+
+  const portraitPaths = new Map();
+  const locationPaths = new Map();
+  for (const [id, person] of Object.entries(graph.characters)) {
+    const existing = await existingImage(person.portrait_image_id, "character", id);
+    if (existing) portraitPaths.set(id, existing);
+  }
+  for (const [id, place] of Object.entries(graph.locations)) {
+    const existing = await existingImage(place.location_image_id, "location", id);
+    if (existing) locationPaths.set(id, existing);
+  }
+  return { portraitPaths, locationPaths };
+}
+
 export async function runImageGeneration(rawOptions, dependencies = {}) {
   const options = { ...rawOptions };
   const fetchImpl = dependencies.fetchImpl ?? fetch;
@@ -958,33 +991,8 @@ export async function runImageGeneration(rawOptions, dependencies = {}) {
     return results;
   }
 
-  // Maps populated after each phase and read by subsequent phases' helpers.
-  const portraitPaths = new Map();
-  const locationPaths = new Map();
-
-  // An image this run does not make is referenced from disk when the case
-  // already has it, so a cover made on its own still sees the cast.
-  async function existingImage(namedId, targetType, targetKey) {
-    const candidates = [namedId, conventionalImageId(blueprint.id, targetType, targetKey)].filter(Boolean);
-    for (const imageId of candidates) {
-      const imagePath = path.join(options.outputDir, imageId);
-      try {
-        await fs.access(imagePath);
-        return imagePath;
-      } catch {
-        // Not filed under this name; try the next.
-      }
-    }
-    return null;
-  }
-  for (const [id, person] of Object.entries(parsed.characters)) {
-    const existing = await existingImage(person.portrait_image_id, "character", id);
-    if (existing) portraitPaths.set(id, existing);
-  }
-  for (const [id, place] of Object.entries(parsed.locations)) {
-    const existing = await existingImage(place.location_image_id, "location", id);
-    if (existing) locationPaths.set(id, existing);
-  }
+  // Seeded from disk, then updated after each phase for the phases after it.
+  const { portraitPaths, locationPaths } = await existingReferencePaths(parsed, blueprint.id, options.outputDir);
 
   async function readPortraitRef(characterId) {
     const portraitPath = portraitPaths.get(characterId);

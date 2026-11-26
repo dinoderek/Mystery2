@@ -54,10 +54,11 @@ describe.each(STORIES)("the generated story $file", ({ file, brief }) => {
 
   it("has its brief's size, and passes the validator at that size", () => {
     const asked = ClueGraphBriefSchema.parse(JSON.parse(fs.readFileSync(path.join(ROOT, brief), "utf8")));
-    // The size's own counts, none set apart: `validateClueGraph` (in `load`) has already held the case to them.
+    // The size's counts, with only the turn budget set apart, as the brief sets it:
+    // `validateClueGraph` (in `load`) has already held the case to them.
     expect(graph.metadata).toMatchObject({ size: asked.size });
-    expect(asked.sizeOverrides).toBeUndefined();
-    expect(graph.metadata.size_overrides).toBeUndefined();
+    expect(Object.keys(asked.sizeOverrides ?? {})).toEqual(["time_budget"]);
+    expect(graph.metadata.size_overrides).toEqual(asked.sizeOverrides);
   });
 
   it("is won on the mock by the shortest route without the confession, citing one of its clues", async () => {

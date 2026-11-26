@@ -1,6 +1,6 @@
 # The Smashed Prize Pumpkin: trails
 
-Opening at The Greenhouse (12 turns): Big Bertha, the prize pumpkin, was smashed overnight. A greenhouse window is broken. The greenhouse key has been missing for days. Mr. Dobbs saw Bertha whole on his 8pm rounds. Ms. Hale found Bertha smashed at 7:30. Toby and Mia are the club's two pupils. Mr. Thorne is the rival grower next door, and he is being blamed.
+Opening at The Greenhouse (24 turns): Big Bertha, the prize pumpkin, was smashed overnight. A greenhouse window is broken. The greenhouse key has been missing for days. Mr. Dobbs saw Bertha whole on his 8pm rounds. Ms. Hale found Bertha smashed at 7:30. Toby and Mia are the club's two pupils. Mr. Thorne is the rival grower next door, and he is being blamed.
 
 ## `nobody_broke_in`: a stepping stone
 

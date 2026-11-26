@@ -3,8 +3,14 @@
   "metadata": {
     "id": "midnight-train",
     "title": "The Midnight Train",
-    "time_budget": 12,
-    "size": "medium"
+    "time_budget": 24,
+    "size": "medium",
+    "size_overrides": {
+      "time_budget": {
+        "min": 24,
+        "max": 24
+      }
+    }
   },
   "opening": {
     "location": "railway_room",

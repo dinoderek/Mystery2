@@ -38,7 +38,7 @@ function conclusionsAfter(events: ClueGraphEvent[]): string[] {
 
 describe("the dragon-crown clue graph", () => {
   it("passes the schema and the validator, and its culprit has a route within the turn budget", () => {
-    expect(graph.metadata.time_budget).toBe(10);
+    expect(graph.metadata.time_budget).toBe(20);
     const rule = graph.conclusions.culprit_leo.rule;
     expect(cheapestRoute(graph, rule)).toBeLessThanOrEqual(graph.metadata.time_budget);
   });

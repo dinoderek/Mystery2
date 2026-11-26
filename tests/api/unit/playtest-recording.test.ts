@@ -16,6 +16,7 @@ import {
   localDate,
   notesHeading,
   planRecording,
+  playedOn,
   resolvePlaytestDir,
   runBundle,
   updateNotes,
@@ -25,7 +26,8 @@ import { createGameDatabase } from "./trace-database-fixture.ts";
 
 const REPO_ROOT = path.resolve(__dirname, "../../..");
 const DRIVER = path.join(__dirname, "playtest-launcher-driver.mjs");
-const DATE = "2026-07-04";
+/** The local day the fixture's game was played on (it starts at 2026-06-02T00:00Z). */
+const DATE = localDate(new Date("2026-06-02T00:00:00Z"));
 
 let configRoot: string;
 let env: Record<string, string>;
@@ -47,15 +49,15 @@ function createProd() {
   return createGameDatabase(prodDir());
 }
 
-/** Adds a second game to a database, started an hour after the fixture's. */
-function addGame(file: string, id: string, outcome: string | null = "solved") {
+/** Adds a game to a database, by default 30 seconds after the fixture's, so on the same local day. */
+function addGame(file: string, id: string, outcome: string | null = "solved", startedAt = "2026-06-02T00:00:30Z") {
   const db = openDatabase({ path: file });
   try {
     db.prepare(
       `insert into game_sessions (id, player_id, blueprint_id, mode, current_location_id, time_remaining, outcome,
                                    created_at, updated_at, clue_graph_snapshot)
-       values (?, 'player-1', 'case-b', 'explore', 'loc', 5, ?, '2026-06-02T01:00:00Z', '2026-06-02T01:00:00Z', ?)`,
-    ).run(id, outcome, JSON.stringify({ metadata: { title: "The Second Case" } }));
+       values (?, 'player-1', 'case-b', 'explore', 'loc', 5, ?, ?, ?, ?)`,
+    ).run(id, outcome, startedAt, startedAt, JSON.stringify({ metadata: { title: "The Second Case" } }));
   } finally {
     db.close();
   }
@@ -202,6 +204,24 @@ describe("notes.md", () => {
     ]);
   });
 
+  it("heads only the games played on the folder's day", async () => {
+    const { databasePath, sessionId } = createProd();
+    addGame(databasePath, "session-weeks-ago", "solved", "2026-05-01T12:00:00Z");
+    await writeBundle({ dir: bundleDir(), databaseFile: databasePath, log: () => {} });
+    const notes = fs.readFileSync(path.join(bundleDir(), "notes.md"), "utf8");
+    expect(notes).toContain(`## ${sessionId} `);
+    expect(notes).not.toContain("session-weeks-ago");
+  });
+
+  it("counts a game on every day its span touches", () => {
+    const row = { session_id: "s", profile: "Ada", blueprint_id: "b", case_title: null, reading_age: null, turns: 1, outcome: null, duration_seconds: 2 * 86_400 };
+    const startedAt = new Date(2026, 6, 1, 20).toISOString();
+    expect(playedOn({ ...row, started_at: startedAt }, "2026-06-30")).toBe(false);
+    for (const date of ["2026-07-01", "2026-07-02", "2026-07-03"]) expect(playedOn({ ...row, started_at: startedAt }, date), date).toBe(true);
+    expect(playedOn({ ...row, started_at: startedAt }, "2026-07-04")).toBe(false);
+    expect(playedOn({ ...row, started_at: startedAt, duration_seconds: null }, "2026-07-02")).toBe(false);
+  });
+
   it("adds only the new game the second time, and keeps what the parent wrote", () => {
     const file = path.join(configRoot, "notes.md");
     const row = (id: string, startedAt: string, outcome: string | null) => ({
@@ -289,7 +309,8 @@ describe("a recorded launcher run", () => {
   function launch(mode: "exit" | "wait", signal?: NodeJS.Signals) {
     const child = spawn(process.execPath, [DRIVER], {
       cwd: REPO_ROOT,
-      env: { PATH: process.env.PATH, ...env, MYSTERY_DATABASE: "prod", PLAYTEST_DATE: DATE, STAND_IN_MODE: mode },
+      // The same time zone as this process, so both agree on the fixture game's local day.
+      env: { PATH: process.env.PATH, ...(process.env.TZ ? { TZ: process.env.TZ } : {}), ...env, MYSTERY_DATABASE: "prod", PLAYTEST_DATE: DATE, STAND_IN_MODE: mode },
       stdio: ["ignore", "pipe", "pipe"],
     });
     let stdout = "";

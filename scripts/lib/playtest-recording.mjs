@@ -100,7 +100,8 @@ export function beginRecording(recording, { root, env, log = console.log }) {
 
 /**
  * Snapshots `databaseFile` into the folder as `game.db`, then adds a heading
- * to `notes.md` for each game in it not already headed there.
+ * to `notes.md` for each game played on the folder's day not already headed
+ * there.
  *
  * @param {{ dir: string, databaseFile: string, log?: (line: string) => void }} options
  * @returns {Promise<{ snapshot: boolean, added: number }>} `snapshot` is false
@@ -124,7 +125,9 @@ export async function writeBundle({ dir, databaseFile, log = console.log }) {
   const notes = path.join(dir, BUNDLE_FILES.notes);
   let added;
   try {
-    added = updateNotes(notes, await listSessions(snapshot), path.basename(dir));
+    const date = path.basename(dir);
+    const played = (await listSessions(snapshot)).filter((row) => playedOn(row, date));
+    added = updateNotes(notes, played, date);
   } catch (error) {
     throw new Error(`could not write ${notes}: ${error.message}`, { cause: error });
   }
@@ -164,6 +167,23 @@ export async function runRecorded(recording, serve, context) {
   const status = await serve(recording.env, recording.serverLog);
   await finishRecording(recording, context);
   return status;
+}
+
+/**
+ * Whether a game was played on a local day: its span, from its start to its
+ * last event, touches that day. A game resumed days later counts on both.
+ *
+ * @param {import("./dev-sessions.mjs").SessionRow} row
+ * @param {string} date YYYY-MM-DD, local
+ * @returns {boolean}
+ */
+export function playedOn(row, date) {
+  const [year, month, day] = date.split("-").map(Number);
+  const dayStart = new Date(year, month - 1, day).getTime();
+  const dayEnd = new Date(year, month - 1, day + 1).getTime();
+  const start = Date.parse(row.started_at);
+  const end = start + (row.duration_seconds ?? 0) * 1000;
+  return start < dayEnd && end >= dayStart;
 }
 
 /** The session id a notes heading names: its first word. */

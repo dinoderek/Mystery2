@@ -36,8 +36,8 @@ this checkout's database; `prod` needs `--force` to reset or overwrite.
 Serving `prod` (`npm run prod`, `./dev run --lan`) records into
 `playtests/<date>/`: `ai-calls.jsonl` (unless `AI_CALL_LOG` is set) and
 `server.log`, appended; when the server stops, `game.db` (a snapshot) and
-`notes.md`, a heading per game. `./dev sessions bundle [<date>]` redoes the
-last two after a `kill -9`. Other databases record nothing. A bundle holds the
+`notes.md`, a heading per game played that day. `./dev sessions bundle [<date>]`
+redoes the last two after a `kill -9` or a closed terminal. Other databases record nothing. A bundle holds the
 solution and everything typed: set `MYSTERY_CONFIG_ROOT` to keep it outside the repo.
 
 ## One port per worktree

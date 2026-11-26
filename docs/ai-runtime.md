@@ -9,7 +9,7 @@ reach which output is `docs/blueprint-generation-flows.md`.
 
 Pure `packages/game-engine/src/role-request.ts` builds each role's authorised
 context (`ai-context.ts`) and renders its prompt (`ai-prompts.ts`) at the
-request's `reading_age`, its own input and never the case's
+request's `reading_age`, the reader's, its own input
 (`packages/game-engine/src/reading-age.ts` reads it from the profile, per
 request); it imports no database, so the eval harness calls it too
 (`tests/api/unit/role-request.test.ts`). `buildRoleMessages` and

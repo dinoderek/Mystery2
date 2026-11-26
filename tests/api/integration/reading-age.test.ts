@@ -143,14 +143,16 @@ describe("the reading age", () => {
   });
 
   it("writes a profile's first game at the age it was created with", async () => {
-    expect(await (await request(ada, "profile-settings")).json()).toEqual({ reading_age: 8 });
+    const reader = await server.createPlayer("created-at-11", 11);
+    expect(await (await request(reader, "profile-settings")).json()).toEqual({ reading_age: 11 });
 
-    const game = await start(ada);
-    await play(ada, game.gameId, "search");
+    const game = await start(reader);
+    await play(reader, game.gameId, "search");
 
-    expect(game.readingAge).toBe(8);
-    expect(game.startPayload.reading_age).toBe(8);
-    expect(promptAges(game.gameId, "game-turn")).toEqual([8]);
+    expect(game.readingAge).toBe(11);
+    expect(game.startPayload.reading_age).toBe(11);
+    expect(promptAges(game.gameId, "game-start")).toEqual([11]);
+    expect(promptAges(game.gameId, "game-turn")).toEqual([11]);
   });
 
   describe("a profile with no age (a database from before)", () => {

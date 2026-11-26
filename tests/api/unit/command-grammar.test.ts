@@ -361,22 +361,33 @@ describe("interpretLine - age", () => {
 
   it("takes the whole range and nothing outside it", () => {
     expect(interpret("age 6")).toEqual({ kind: "set_age", age: 6 });
-    for (const line of ["age 5", "age 12", "age 0", "age x", "age 8.5", "age -7"]) {
-      for (const mode of MODES) {
+    for (const mode of MODES) {
+      for (const line of ["age 5", "age 12", "age 0"]) {
         const answer = interpret(line, mode);
         expect(answer).toMatchObject({ kind: "refused", reason: "invalid-target" });
         expect((answer as { hint: string }).hint).toContain("a number from 6 to 11");
       }
     }
+    for (const mode of ["explore", "ended"] as const) {
+      for (const line of ["age x", "age 8.5", "age -7"]) {
+        expect(interpret(line, mode)).toMatchObject({ kind: "refused", reason: "invalid-target" });
+      }
+    }
   });
 
-  it("names the range when no age is given", () => {
-    expect(interpret("age")).toMatchObject({ kind: "refused", reason: "missing-target" });
-    expect((interpret("age", "talk") as { hint: string }).hint).toContain("from 6 to 11");
+  it("names the range when no age is given, where the line is not said to someone", () => {
+    for (const mode of ["explore", "ended"] as const) {
+      expect(interpret("age", mode)).toMatchObject({ kind: "refused", reason: "missing-target" });
+      expect((interpret("age", mode) as { hint: string }).hint).toContain("from 6 to 11");
+      expect(interpret("age x", mode)).toMatchObject({ kind: "refused", reason: "invalid-target" });
+    }
   });
 
-  it("leaves a longer line to the mode: a question while talking", () => {
-    expect(interpret("age of the victim", "talk")).toEqual(action({ type: "ask", question: "age of the victim" }));
+  it("leaves other lines to the mode: a question while talking, the reasoning in an accusation", () => {
+    for (const line of ["age of the victim", "age matters", "Age?"]) {
+      expect(interpret(line, "talk")).toEqual(action({ type: "ask", question: line }));
+      expect(interpret(line, "accuse")).toEqual(action({ type: "ask", question: line }));
+    }
     expect(interpret("age of the victim")).toMatchObject({ kind: "refused", reason: "unrecognized" });
   });
 });

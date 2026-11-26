@@ -291,20 +291,26 @@ const AGE_USAGE = `Type age and a number from ${YOUNGEST_AGE} to ${OLDEST_AGE}, 
 
 /**
  * `age <n>`: the reading age the story is written for. Exactly one word
- * follows, so "age of the victim", said while talking, is still a question.
+ * follows. While talking or accusing every other line is said to someone, so
+ * only a number is taken there: "age matters?" is still a question.
  */
-function interpretAge(text: string): Interpretation | null {
+function interpretAge(text: string, mode: GameMode): Interpretation | null {
   if (text !== AGE_ALIAS && !text.startsWith(`${AGE_ALIAS} `)) {
     return null;
   }
   const words = extractAliasTarget(text, AGE_ALIAS).split(" ").filter(Boolean);
+  const saidToSomeone = mode === "talk" || mode === "accuse";
+  if (words.length > 1 || (words.length === 0 && saidToSomeone)) {
+    return null;
+  }
   if (words.length === 0) {
     return refuse("missing-target", `Which age? ${AGE_USAGE}`);
   }
-  if (words.length > 1) {
+  const isNumber = /^\d+$/.test(words[0]);
+  if (!isNumber && saidToSomeone) {
     return null;
   }
-  const age = /^\d+$/.test(words[0]) ? Number(words[0]) : NaN;
+  const age = isNumber ? Number(words[0]) : NaN;
   return READING_AGES.includes(age)
     ? { kind: "set_age", age }
     : refuse("invalid-target", `"${words[0]}" is not an age the story can be written for. ${AGE_USAGE}`);
@@ -387,7 +393,7 @@ export function interpretLine(rawInput: string, state: GrammarState): Interpreta
     return { kind: "view", view: "notebook", section: null };
   }
 
-  const age = interpretAge(text);
+  const age = interpretAge(text, state.mode);
   if (age) {
     return age;
   }

@@ -184,6 +184,12 @@ export class GameSessionStore {
     // beside the blueprint list, so leaving a stale one set showed a message
     // about a request that had already been superseded.
     this.error = null;
+    // Lines narrated for the last load were written at that reader's age, who
+    // may since have changed age or profile: none of them outlives it, and no
+    // lines request still in flight may land.
+    this.oneLinerRequestId += 1;
+    this.oneLinerStatus = 'idle';
+    this.blueprints = this.blueprints.map((entry) => ({ ...entry, one_liner: null }));
     const answer = readAnswer(await callApi('blueprints-list'), BlueprintsListResponseSchema, 'blueprints-list');
     if (!answer.ok) {
       this.error = answer.message;

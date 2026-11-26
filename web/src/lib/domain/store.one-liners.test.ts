@@ -99,4 +99,24 @@ describe('the menu one-liners', () => {
     expect(store.blueprints.map((entry) => entry.one_liner)).toEqual(['New line.', 'Another.']);
     expect(store.oneLinerStatus).toBe('ready');
   });
+
+  it("drops the last load's lines when the list loads again, even if that load fails", async () => {
+    const store = new GameSessionStore();
+    const slow = deferred<ReturnType<typeof lines>>();
+    invokeMock.mockResolvedValueOnce(titles()).mockResolvedValueOnce(lines('For the last reader.', 'Also old.'));
+    await store.loadBlueprints();
+    expect(store.blueprints.map((entry) => entry.one_liner)).toEqual(['For the last reader.', 'Also old.']);
+
+    // A lines request from before is still in flight when the list reloads, and the reload fails.
+    invokeMock.mockReturnValueOnce(slow.promise);
+    const stale = store.loadOneLiners();
+    invokeMock.mockResolvedValueOnce({ error: { message: 'Not signed in', status: 401 }, data: null });
+    await store.loadBlueprints();
+    slow.resolve(lines('Stale.', 'Stale too.'));
+    await stale;
+
+    expect(store.status).toBe('error');
+    expect(store.oneLinerStatus).toBe('idle');
+    expect(store.blueprints.map((entry) => entry.one_liner)).toEqual([null, null]);
+  });
 });

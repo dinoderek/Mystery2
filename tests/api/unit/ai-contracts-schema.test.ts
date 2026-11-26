@@ -160,7 +160,8 @@ describe("the one_liner contract", () => {
   it("refuses two lines for one case, or a blank one", () => {
     expect(() => parseOneLinerOutput({ lines: [{ id: "case-a", line: "One." }, { id: "case-a", line: "Two." }, { id: "case-b", line: "B." }] }, ids))
       .toThrow("two lines for case case-a");
-    expect(() => parseOneLinerOutput({ lines: [{ id: "case-a", line: " " }, { id: "case-b", line: "B." }] }, ids)).toThrow("non-empty");
+    expect(() => parseOneLinerOutput({ lines: [{ id: "case-a", line: " " }, { id: "case-b", line: "B." }] }, ids))
+      .toThrow('"line" must be a non-empty string');
     expect(() => parseOneLinerOutput({}, ids)).toThrow('"lines" must be a list');
   });
 });

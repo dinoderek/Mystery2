@@ -134,6 +134,21 @@ describe("blueprints-list", () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
+  it("answers the titles alone, logged once as its own failure, when the profile's age cannot be read", async () => {
+    const fetch = modelAnswers("{}");
+    vi.stubGlobal("fetch", fetch);
+    const broken = { ...context(), profile: { getReadingAge: async () => { throw new Error("database is locked"); } } } as unknown as EngineContext;
+
+    const { status, blueprints } = await list(broken, "?one_liners=true");
+
+    expect(status).toBe(200);
+    expect(blueprints.map((entry) => entry.one_liner)).toEqual([null, null]);
+    expect(fetch).not.toHaveBeenCalled();
+    expect(errors.map((line) => JSON.parse(line))).toEqual([
+      expect.objectContaining({ reason: "reading_age_read_failed", blueprint_ids: [LISTED.id, SECOND.id], error: "database is locked" }),
+    ]);
+  });
+
   it("takes the request as a JSON body too, and refuses a field it cannot read", async () => {
     vi.stubGlobal("fetch", modelAnswers(JSON.stringify({ lines: [{ id: LISTED.id, line: "A." }, { id: SECOND.id, line: "B." }] })));
     const post = (body: unknown) =>

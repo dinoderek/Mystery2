@@ -68,9 +68,21 @@ async function narrateOneLiners(
   blueprints: PlayableCase[],
   logger: ReturnType<typeof createRequestLogger>,
 ): Promise<Map<string, string>> {
-  // A profile without an age is refused, as a game is (`READING_AGE_REQUIRED`).
-  const readingAge = await requestReadingAge(ctx.profile);
   const caseIds = blueprints.map((blueprint) => blueprint.id);
+  // A profile without an age is refused, as a game is (`READING_AGE_REQUIRED`);
+  // one whose age cannot be read is a failure of its own, not of the list.
+  let readingAge: number;
+  try {
+    readingAge = await requestReadingAge(ctx.profile);
+  } catch (error) {
+    if (error instanceof RequestRejectedError) throw error;
+    logger.logError("request.error", {
+      reason: "reading_age_read_failed",
+      blueprint_ids: caseIds,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return new Map();
+  }
   try {
     const profile = await ctx.aiProfiles.getById(DEFAULT_AI_PROFILE_ID);
     if (!profile) throw new Error("No default AI profile configured");

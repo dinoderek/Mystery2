@@ -74,11 +74,6 @@ export interface GraphVerdictOutput {
   narration: string;
 }
 
-// The menu's lines, one per listed case id.
-export interface OneLinerOutput {
-  lines: NotebookLine[];
-}
-
 // Each role's output contract is one Zod schema doing two jobs:
 //
 //   - Parsing. The `parse*Output` functions validate what the model returned
@@ -111,11 +106,15 @@ function nonEmptyString(field: string) {
 
 // What the player reads. A model sometimes escapes the quotes inside its
 // string twice, which would show the player a literal backslash before each.
-function narrationText() {
+function playerText(field: string) {
   return z.preprocess(
     (value) => (typeof value === "string" ? value.replaceAll('\\"', '"') : value),
-    nonEmptyString("narration"),
+    nonEmptyString(field),
   );
+}
+
+function narrationText() {
+  return playerText("narration");
 }
 
 // Required in the schema, so the model always states it; an omitted value
@@ -209,7 +208,7 @@ const GraphVerdictOutputSchema = roleObject({
 
 const OneLinerOutputSchema = roleObject({
   lines: z.array(
-    z.object({ id: nonEmptyString("case id"), line: narrationText() }),
+    z.object({ id: nonEmptyString("case id"), line: playerText("line") }),
     { required_error: `"lines" must be a list of { id, line }`, invalid_type_error: `"lines" must be a list of { id, line }` },
   ),
 });

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { listOnlyMockCase } from '../session-helpers';
+import { openNewProfileForm } from '../test-profile';
 
 // Runs on the phone and tablet projects: the mock case played to a win against
 // the real server and its mock narrator, from signing in to reviewing the
@@ -25,8 +26,9 @@ test('a player plays a whole case to its end by touch and text entry only', asyn
 
   // Sign in through the picker, and start the case.
   await page.goto('/login');
+  await openNewProfileForm(page, 'tap');
   await page.locator('#profile-name').fill(`touch-play-${crypto.randomUUID().slice(0, 8)}`);
-  await page.locator('[data-testid="reading-age-option"][data-age="8"]').tap();
+  await page.getByTestId('reading-age-select').selectOption('8');
   await page.getByRole('button', { name: '[ START ]' }).tap();
   await expect(page).toHaveURL(/\/$/);
   await page.getByTestId('menu-row-1').tap();

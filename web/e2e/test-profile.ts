@@ -30,17 +30,28 @@ export async function signInAsTestProfile(page: Page, tag = 'e2e', readingAge = 
 	return player;
 }
 
+/**
+ * Opens the new-profile form on `/login`. It waits behind `[ NEW PROFILE ]`
+ * while other profiles exist, which depends on what earlier specs created.
+ */
+export async function openNewProfileForm(page: Page, gesture: 'click' | 'tap' = 'click'): Promise<void> {
+	const button = page.getByTestId('new-profile');
+	await expect(button.or(page.locator('#profile-name'))).toBeVisible();
+	if (await button.isVisible()) await button[gesture]();
+}
+
 /** Signs in the way a player does: through the picker on `/login`. */
 export async function signInThroughPicker(page: Page, tag = 'e2e-ui', readingAge = 8): Promise<string> {
 	const name = uniqueName(tag);
 
 	await page.goto('/login');
+	await openNewProfileForm(page);
 	await page.locator('#profile-name').fill(name);
-	await page.locator(`[data-testid="reading-age-option"][data-age="${readingAge}"]`).click();
+	await page.getByTestId('reading-age-select').selectOption(String(readingAge));
 	await page.getByRole('button', { name: '[ START ]' }).click();
 
 	await expect(page).toHaveURL(/\/$/, { timeout: 15000 });
-	await expect(page.getByText('MYSTERY GAME TERMINAL').first()).toBeVisible();
+	await expect(page.getByTestId('menu-row-1')).toBeVisible();
 
 	return name;
 }

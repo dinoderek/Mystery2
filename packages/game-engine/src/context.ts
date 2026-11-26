@@ -110,7 +110,7 @@ export interface NewGameEvent {
 }
 
 /** An event to save: the save assigns its session and sequence. */
-export type SaveEvent = Omit<NewGameEvent, "session_id" | "sequence">;
+export type SaveEvent = Omit<NewGameEvent, "session_id" | "sequence" | "request_id">;
 
 /** One turn's whole write: the session change and the events it produced. */
 export interface TurnSave {

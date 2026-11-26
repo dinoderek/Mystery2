@@ -632,8 +632,6 @@ class OpenRouterProvider implements AIProvider {
         body: JSON.stringify({
           model: this.profile.model,
           messages,
-          // Asks for token counts and cost in the response.
-          usage: { include: true },
           ...(responseFormat ? { response_format: responseFormat } : {}),
         }),
         signal: controller.signal,

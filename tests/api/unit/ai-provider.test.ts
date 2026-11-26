@@ -362,15 +362,6 @@ describe("ai-provider openrouter usage", () => {
     expect(openrouter.lastUsage).toEqual({ input_tokens: 120, output_tokens: 30, cost_usd: 0.0042, attempts: 1 });
   });
 
-  it("asks for usage in the response", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(reply({}));
-    globalThis.fetch = fetchMock as typeof fetch;
-
-    await provider().generateNarration("Hello narrator");
-
-    expect(JSON.parse(String(fetchMock.mock.calls[0][1].body))).toMatchObject({ usage: { include: true } });
-  });
-
   it("leaves the cost null where OpenRouter returns none", async () => {
     globalThis.fetch = vi.fn().mockResolvedValue(
       reply({ usage: { prompt_tokens: 7, completion_tokens: 3 } }),

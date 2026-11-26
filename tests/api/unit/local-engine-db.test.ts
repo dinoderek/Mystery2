@@ -340,7 +340,8 @@ describe("event request ids", () => {
     const player = createPlayerStore(db).create("Ada");
     const sessions = createSessionStore(db, player.id);
     const gameId = await sessions.create(newSession(player.id));
-    const event = { ...newEvent(gameId, 1), session_id: undefined, sequence: undefined };
+    const { session_id, sequence, ...event } = newEvent(gameId, 1);
+    expect([session_id, sequence]).toEqual([gameId, 1]);
 
     await sessions.saveTurn({ game_id: gameId, expected_sequence: 1, request_id: "req-1", events: [event, event] });
     await sessions.saveTurn({ game_id: gameId, expected_sequence: 3, events: [event] });

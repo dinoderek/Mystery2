@@ -78,6 +78,14 @@ test('a player plays a whole case to its end by touch and text entry only', asyn
   await page.getByTestId('page-latest').tap();
   await expect(label).toHaveText('Living Room');
 
+  // The status is one line until tapped, then wraps to show all of it.
+  const status = page.getByTestId('status-line');
+  expect((await status.boundingBox())?.height).toBeLessThanOrEqual(48);
+  await status.tap();
+  await expect(status).toHaveAttribute('aria-expanded', 'true');
+  await status.tap();
+  await expect(status).toHaveAttribute('aria-expanded', 'false');
+
   // The notebook, from the status bar, with no key hints and a tappable close.
   await page.getByRole('button', { name: /CLUES:/ }).tap();
   const notebook = page.getByRole('dialog', { name: 'CASE NOTEBOOK' });

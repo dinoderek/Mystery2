@@ -2,6 +2,10 @@
   import { gameSessionStore } from "$lib/domain/store.svelte";
   import { accusationsLeftText } from "$lib/domain/accusations";
 
+  // One line on a phone: tapping it wraps the line to show all of it. Wide
+  // screens always show all of it.
+  let expanded = $state(false);
+
   const currentLocationName = $derived.by(() => {
     const state = gameSessionStore.state;
     if (!state) return "UNKNOWN";
@@ -20,40 +24,38 @@
       (character) => character.location_name.trim().toLowerCase() === currentLocation,
     );
   });
+
+  // Who is here before the counts, which matter less when the line is cut.
+  // One string, so a clipped line has no pieces running past its edge.
+  const statusLine = $derived(
+    [
+      currentLocationName,
+      visibleCharacters.map((char) => `${char.first_name} ${char.last_name}`.trim()).join(", "),
+      `TIME: ${gameSessionStore.state?.time_remaining || 0}`,
+      `ACCUSATIONS: ${gameSessionStore.state?.accusations_left ?? 0}`,
+    ]
+      .filter(Boolean)
+      .join(" · "),
+  );
 </script>
 
-<div
-  class="flex flex-wrap justify-between items-center gap-x-4 border border-t-muted/30 p-2 bg-t-muted/5 mt-4 text-sm group-data-[compact=true]:mt-2"
->
-  <span><span class="text-t-muted/70 font-bold">LOCATION:</span> {currentLocationName}</span>
-  <div class="flex flex-wrap items-center gap-x-4">
-    <button
-      class="min-h-11 min-w-11 text-t-primary hover:text-t-bright transition-colors cursor-pointer"
-      onclick={() => gameSessionStore.openNotebook()}
-    >
-      <span class="text-t-muted/70 font-bold">CLUES:</span>
-      {gameSessionStore.state?.discovered_clues.length ?? 0}
-    </button>
-    <span><span class="text-t-muted/70 font-bold">TIME:</span> {gameSessionStore.state?.time_remaining || 0}</span>
-    <span title={accusationsLeftText(gameSessionStore.state?.accusations_left ?? 0)}
-      ><span class="text-t-muted/70 font-bold">ACCUSATIONS:</span>
-      {gameSessionStore.state?.accusations_left ?? 0}</span
-    >
-  </div>
-</div>
-<div class="flex items-center border border-t-muted/30 p-2 bg-t-muted/5 mt-2 text-sm group-data-[compact=true]:hidden">
-  <div class="flex gap-2">
-    <span class="text-t-muted/70 font-bold">CHARACTERS:</span>
-    <div>
-      {#if visibleCharacters.length > 0}
-        {#each visibleCharacters as char, i}
-          <span
-            >{char.first_name} {char.last_name}{i < visibleCharacters.length - 1 ? ", " : ""}</span
-          >
-        {/each}
-      {:else}
-        <span class="text-t-muted/50">None</span>
-      {/if}
-    </div>
-  </div>
+<div class="mt-2 flex items-start gap-3 border-y border-t-muted/30 text-xs">
+  <button
+    class="min-h-11 shrink-0 whitespace-nowrap text-t-primary hover:text-t-bright transition-colors cursor-pointer"
+    onclick={() => gameSessionStore.openNotebook()}
+  >
+    <span class="text-t-muted/70 font-bold">CLUES:</span>
+    {gameSessionStore.state?.discovered_clues.length ?? 0}
+  </button>
+  <button
+    type="button"
+    class="min-h-11 min-w-0 flex-1 py-3 text-left leading-5 lg:cursor-default
+      {expanded ? 'whitespace-normal' : 'truncate lg:whitespace-normal'}"
+    aria-expanded={expanded}
+    data-testid="status-line"
+    title={accusationsLeftText(gameSessionStore.state?.accusations_left ?? 0)}
+    onclick={() => (expanded = !expanded)}
+  >
+    {statusLine}
+  </button>
 </div>

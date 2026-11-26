@@ -8,14 +8,12 @@
   const atEnd = $derived(number >= count);
 </script>
 
-{#if count > 0}
-  <div
-    class="mt-2 flex items-center gap-2 border border-t-muted/30 bg-t-muted/5 p-2 text-sm"
-    data-testid="page-navigator"
-  >
+<!-- One thin row, and none until there is a second page to turn to. -->
+{#if count > 1}
+  <div class="flex h-11 shrink-0 items-center gap-1 text-xs" data-testid="page-navigator">
     <button
       type="button"
-      class="min-h-11 min-w-11 text-t-primary hover:text-t-bright disabled:opacity-30 disabled:hover:text-t-primary"
+      class="h-11 w-11 shrink-0 text-base text-t-primary hover:text-t-bright disabled:opacity-30 disabled:hover:text-t-primary"
       onclick={() => gameSessionStore.prevPage()}
       disabled={atStart}
       aria-label="Previous page"
@@ -24,9 +22,7 @@
       &lsaquo;
     </button>
 
-    <span class="whitespace-nowrap text-t-muted/70">
-      Page {number} / {count}
-    </span>
+    <span class="whitespace-nowrap text-t-muted/70" aria-label="Page {number} of {count}">{number}/{count}</span>
 
     <span class="min-w-0 flex-1 truncate text-t-bright" data-testid="page-label">
       {page?.title ?? page?.fallbackLabel ?? ''}
@@ -35,7 +31,7 @@
     {#if !gameSessionStore.isOnLivePage}
       <button
         type="button"
-        class="min-h-11 whitespace-nowrap px-1 text-t-muted/70 hover:text-t-bright"
+        class="h-11 shrink-0 whitespace-nowrap px-1 text-t-muted/70 hover:text-t-bright"
         onclick={() => gameSessionStore.goToLivePage()}
         data-testid="page-latest"
       >
@@ -45,7 +41,7 @@
 
     <button
       type="button"
-      class="min-h-11 min-w-11 text-t-primary hover:text-t-bright disabled:opacity-30 disabled:hover:text-t-primary"
+      class="h-11 w-11 shrink-0 text-base text-t-primary hover:text-t-bright disabled:opacity-30 disabled:hover:text-t-primary"
       onclick={() => gameSessionStore.nextPage()}
       disabled={atEnd}
       aria-label="Next page"

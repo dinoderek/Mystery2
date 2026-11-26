@@ -48,8 +48,8 @@ From 360 px wide, in either orientation, nothing scrolls sideways and every
 control is at least 44 px on its shorter side. Full-height
 screens use `dvh`, never `h-screen` or `vh`. Below `lg:` art stacks above text.
 The session screen follows the visual viewport (`domain/viewport.ts`), keeping
-the input and latest narration visible with the keyboard up: art shrinks first,
-vanishes under 96 px, and below 480 px the header and character row go too.
+input and narration visible under the keyboard: art shrinks then vanishes
+under 96 px; below 480 px the title goes. Status is one line; tap wraps it.
 
 Two rules are easy to break:
 

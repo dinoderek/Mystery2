@@ -63,7 +63,7 @@
     else if (top < lastTop) atEnd = false;
     lastTop = top;
   }}
-  class="min-h-0 flex-1 overflow-y-auto border border-t-muted/30 p-4 font-mono"
+  class="min-h-0 flex-1 overflow-y-auto px-1 py-2 font-mono sm:border sm:border-t-muted/30 sm:p-4"
   data-testid="page-narration"
 >
   <div class="space-y-4">

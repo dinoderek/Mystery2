@@ -3,8 +3,10 @@
 // root, two profiles play two games over HTTP, the launcher is stopped by
 // signal twice, and then `./dev sessions`, `./dev sessions bundle` and
 // `./dev eval judge game` run on what the playtest left behind, the judges on
-// the stub binding the trace tests use. Each assertion names the objective it
-// proves (`docs/local-infrastructure.md`, "Playtest bundles").
+// the stub binding the trace tests use. A server exiting by itself is left to
+// the launcher's unit test (`tests/api/unit/playtest-recording.test.ts`): Vite's
+// dev server does not. Each assertion names the objective it proves
+// (`docs/local-infrastructure.md`, "Playtest bundles").
 //
 // Nothing here may touch a real database: every path is asserted to be outside
 // the checkout and the operator's config root before it is used.
@@ -272,13 +274,13 @@ beforeAll(() => {
 });
 
 afterAll(() => {
+  // The whole group, even when the launcher has exited: a server it left
+  // running would keep the port.
   for (const child of launched) {
-    if (child.exitCode === null && child.signalCode === null && child.pid) {
-      try {
-        process.kill(-child.pid, "SIGKILL");
-      } catch {
-        // Already gone.
-      }
+    try {
+      if (child.pid) process.kill(-child.pid, "SIGKILL");
+    } catch {
+      // Already gone.
     }
   }
   fs.rmSync(configRoot, { recursive: true, force: true });
@@ -380,6 +382,7 @@ describe("a mock-AI playtest on prod", () => {
     const turnCalls = calls.filter((call) => call.endpoint === "game-turn");
     for (const id of [won, lost]) expect(turnCalls.some((call) => call.game_id === id), `O4: the call log holds ${id}'s turns`).toBe(true);
     for (const call of turnCalls) {
+      expect(call.request_id, `O4: every turn's call has a request_id (${call.game_id})`).toEqual(expect.any(String));
       const joined = events.filter((event) => event.request_id === call.request_id && event.session_id === call.game_id);
       expect(joined.length, `O4: call ${call.request_id} (${call.game_id}) joins to its event`).toBeGreaterThan(0);
       expect(call.latency_ms, `O4: call ${call.request_id} has latency_ms`).toEqual(expect.any(Number));

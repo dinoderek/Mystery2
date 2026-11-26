@@ -6,7 +6,7 @@
 // the stub binding the trace tests use. A server exiting by itself is left to
 // the launcher's unit test (`tests/api/unit/playtest-recording.test.ts`): Vite's
 // dev server does not. Each assertion names the objective it proves
-// (`docs/local-infrastructure.md`, "Playtest bundles").
+// (`docs/local-infrastructure.md`, "Playtests").
 //
 // Nothing here may touch a real database: every path is asserted to be outside
 // the checkout and the operator's config root before it is used.
@@ -121,7 +121,7 @@ async function launch(): Promise<Launcher> {
   while (url === null) {
     const local = /Local:\s+(http:\/\/\S+?)\/?\s/.exec(output());
     if (local) url = local[1];
-    else if (child.exitCode !== null || Date.now() > deadline) throw new Error(`The launcher never served the game:\n${output()}`);
+    else if (child.exitCode !== null || child.signalCode !== null || Date.now() > deadline) throw new Error(`The launcher never served the game:\n${output()}`);
     else await new Promise((resolve) => setTimeout(resolve, 100));
   }
   await waitForApi(url, output);
@@ -283,7 +283,8 @@ afterAll(() => {
       // Already gone.
     }
   }
-  fs.rmSync(configRoot, { recursive: true, force: true });
+  // Retried: a server still dying may write into it mid-delete.
+  fs.rmSync(configRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
 });
 
 describe("a mock-AI playtest on prod", () => {

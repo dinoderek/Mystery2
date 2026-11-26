@@ -273,10 +273,10 @@ describe("the menu's lines", () => {
 describe("a played game, read back for evaluation", () => {
   it("is judged turn by turn at the age each event records, across a change", async () => {
     const reader = await server.createPlayer("evaluation-ages");
-    await request(reader, "profile-settings", { reading_age: 8 });
+    expect((await request(reader, "profile-settings", { reading_age: 8 })).status).toBe(200);
     const game = await start(reader);
     await play(reader, game.gameId, "search");
-    await request(reader, "profile-settings", { reading_age: 6 });
+    expect((await request(reader, "profile-settings", { reading_age: 6 })).status).toBe(200);
     await play(reader, game.gameId, "go to the living room");
     await play(reader, game.gameId, "age 10");
     await play(reader, game.gameId, "search");
@@ -288,7 +288,7 @@ describe("a played game, read back for evaluation", () => {
     const turns = reconstructTrace(trace).turns.map((turn) => [turn.event_type, turn.reading_age]);
     expect(turns).toEqual([["start", null], ["move", 8], ["search", 8], ["move", 6], ["search", 10]]);
 
-    const cases = casesFromTrace(trace as never, ["move", "search"], 10, "case.json", ["flesch"]);
+    const cases = casesFromTrace(trace, ["move", "search"], 10, "case.json", ["flesch"]);
     expect(cases.map((turnCase) => [turnCase.id, turnCase.reading_age])).toEqual([
       ["s2-move", 8],
       ["s3-search", 8],
@@ -296,7 +296,7 @@ describe("a played game, read back for evaluation", () => {
       ["s7-search", 10],
     ]);
 
-    expect(scoreReadability(trace as never).narrations.map((graded) => [graded.event_type, graded.reading_age])).toEqual([
+    expect(scoreReadability(trace).narrations.map((graded) => [graded.event_type, graded.reading_age])).toEqual([
       ["start", 8],
       ...turns.slice(1),
     ]);
@@ -313,7 +313,7 @@ describe("the lines the engine writes", () => {
   /** Every line the engine wrote, and every lead, that a player at `age` reads through SCRIPT. */
   async function engineLines(age: number) {
     const auth = await server.createPlayer(`engine-lines-${age}`);
-    await request(auth, "profile-settings", { reading_age: age });
+    expect((await request(auth, "profile-settings", { reading_age: age })).status).toBe(200);
     const started = await (await request(auth, "game-start", { blueprint_id: MOCK_BLUEPRINT_ID })).json();
     expect((await request(auth, "game-enter", { game_id: started.game_id })).status).toBe(200);
     const system = (events: { narration_parts: { text: string; speaker: { kind: string } }[] }[]) =>

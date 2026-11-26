@@ -83,10 +83,10 @@ cases were written by hand, and each step needs the one before it.
    all of them: the art style, palette, mood and lighting, and a
    `portrait_background` that names no place in the case.
    `cover` is the case's front picture: a few facts describing one moment
-   from the opening, with the characters and the place it shows. A cover
-   shows only what the opening makes public: never the culprit caught, a
-   clue, or a hidden spot, and nothing that contradicts a clue. Then run the
-   validator again.
+   from the opening, with the characters and places it shows. A cover shows
+   only what the opening makes public: never the culprit caught or made to
+   stand out, a clue, or a hidden spot, and nothing that contradicts a clue.
+   Then run the validator again.
 
 Size the case to the brief: its `size` sets how many places, people and clues
 the case has and how long the shortest route is. `schema/clue-graph-sizes.ts`

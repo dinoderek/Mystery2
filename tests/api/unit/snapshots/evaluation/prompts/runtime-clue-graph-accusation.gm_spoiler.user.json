@@ -906,7 +906,6 @@
           "clue_glass_outside"
         ],
         "narration": "The broken glass from the side window lies outside on the brick path, not inside. The window was knocked out from inside the greenhouse, so nobody climbed in through it.",
-        "reading_age": null,
         "is_accusation_phase": false,
         "prior_revealed_clue_ids": []
       },
@@ -922,7 +921,6 @@
           "clue_welly_prints"
         ],
         "narration": "Small welly prints with a leaf pattern are squished into the pumpkin mush. Only the club's two pupils, Toby and Mia, have leaf-pattern wellies.",
-        "reading_age": null,
         "is_accusation_phase": false,
         "prior_revealed_clue_ids": [
           "clue_glass_outside"
@@ -940,7 +938,6 @@
           "clue_boot_prints"
         ],
         "narration": "Huge boot prints sink deep into the flower bed outside the broken window, near Mr. Thorne's fence. They are far too big for a child.",
-        "reading_age": null,
         "is_accusation_phase": false,
         "prior_revealed_clue_ids": [
           "clue_glass_outside",
@@ -957,7 +954,6 @@
         "search_query": null,
         "revealed_clue_ids": [],
         "narration": "You head to Mr. Dobbs's Workshop.",
-        "reading_age": null,
         "is_accusation_phase": false,
         "prior_revealed_clue_ids": [
           "clue_glass_outside",
@@ -978,7 +974,6 @@
           "react_dobbs_slippers"
         ],
         "narration": "Mr. Dobbs looks up from his steaming kettle. \"On my eight o'clock rounds I shone my torch in. Bertha was whole, and the door was locked.\" He rubs the back of his neck and glances at the garden window. \"I should have gone out last night, slippers or no slippers.\"",
-        "reading_age": null,
         "is_accusation_phase": false,
         "prior_revealed_clue_ids": [
           "clue_glass_outside",
@@ -998,7 +993,6 @@
           "clue_dobbs_crash_time"
         ],
         "narration": "Mr. Dobbs scratches his head. \"At about ten to nine I heard a big thud from the garden, then smashing glass. I thought it was the fox at my bins again.\"",
-        "reading_age": null,
         "is_accusation_phase": false,
         "prior_revealed_clue_ids": [
           "clue_glass_outside",
@@ -1018,7 +1012,6 @@
         "search_query": null,
         "revealed_clue_ids": [],
         "narration": "You head to Mr. Thorne's Garden.",
-        "reading_age": null,
         "is_accusation_phase": false,
         "prior_revealed_clue_ids": [
           "clue_glass_outside",
@@ -1044,7 +1037,6 @@
           "react_thorne_boot"
         ],
         "narration": "Mr. Thorne leans on his fence with his arms crossed. \"I was at the fair all evening with Goliath, at the growers' barbecue from seven till eleven. At nine o'clock I bought carrot cake from young Mia at the cake tent, across town. And I've never set foot in that school garden!\" His ears turn red, and he scuffs one huge boot on the grass.",
-        "reading_age": null,
         "is_accusation_phase": false,
         "prior_revealed_clue_ids": [
           "clue_glass_outside",
@@ -1065,7 +1057,6 @@
         "search_query": null,
         "revealed_clue_ids": [],
         "narration": "You head to The Potting Shed.",
-        "reading_age": null,
         "is_accusation_phase": false,
         "prior_revealed_clue_ids": [
           "clue_glass_outside",
@@ -1092,7 +1083,6 @@
           "clue_rota_purple_ink"
         ],
         "narration": "On the watering rota, Toby's name is crossed out for Thursday, Friday and Saturday, and 'MIA' is written over it in sparkly purple pen.",
-        "reading_age": null,
         "is_accusation_phase": false,
         "prior_revealed_clue_ids": [
           "clue_glass_outside",
@@ -1117,7 +1107,6 @@
         "search_query": null,
         "revealed_clue_ids": [],
         "narration": "Everyone gathers round to hear what you have worked out. Who do you think did it, and why?\n\nYou have 3 accusations left. This one uses one. Type \"back\" to go back: that is free.",
-        "reading_age": null,
         "is_accusation_phase": false,
         "prior_revealed_clue_ids": [
           "clue_glass_outside",

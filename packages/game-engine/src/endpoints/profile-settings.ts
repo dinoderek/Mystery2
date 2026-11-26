@@ -1,8 +1,8 @@
 // The playing profile's settings: today, the reading age its games are written at.
 //
-// `GET` reads them; `POST` replaces them, a null age clearing the setting so
-// each new game reads at its case's own age. A game already started keeps the
-// age it saved (`docs/game.md`).
+// `GET` reads them; `POST` replaces them. The age is read on every request, so
+// a change reaches a game's next line; a null age clears it, and the profile
+// then reads at each case's own age (`docs/game.md`).
 
 import {
   ProfileSettingsUpdateSchema,

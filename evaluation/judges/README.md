@@ -44,7 +44,7 @@ input, narration and revealed clues. Two fields carry the design:
   ([`docs/ai-runtime.md`](../../docs/ai-runtime.md), "Earned, not free").
 
 A turn also carries `notebook`, each clue's saved line, and `reading_age`,
-the age it was narrated at (null on a fixture row without one).
+the age it was narrated at (absent on a fixture row without one).
 
 ## The verdict rule
 

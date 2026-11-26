@@ -93,8 +93,8 @@ test.describe('US1 - Start Screen', () => {
       await route.fulfill({
         json: {
           blueprints: [
-            createBlueprintSummary({ id: '00000000-0000-0000-0000-000000000011', title: 'The Stolen Cake', one_liner: 'Find the cake', target_age: 6 }),
-            createBlueprintSummary({ id: '00000000-0000-0000-0000-000000000012', title: 'The Missing Dog', one_liner: 'Find the dog', target_age: 9 }),
+            createBlueprintSummary({ id: '00000000-0000-0000-0000-000000000011', title: 'The Stolen Cake', one_liner: 'Find the cake' }),
+            createBlueprintSummary({ id: '00000000-0000-0000-0000-000000000012', title: 'The Missing Dog', one_liner: 'Find the dog' }),
           ],
         },
       });
@@ -144,7 +144,7 @@ test.describe('US1 - Start Screen', () => {
       await route.fulfill({
         json: {
           blueprints: [
-            createBlueprintSummary({ id: '00000000-0000-0000-0000-000000000011', title: 'The Stolen Cake', one_liner: 'Find the cake', target_age: 6 }),
+            createBlueprintSummary({ id: '00000000-0000-0000-0000-000000000011', title: 'The Stolen Cake', one_liner: 'Find the cake' }),
           ],
         },
       });
@@ -173,7 +173,7 @@ test.describe('US1 - Start Screen', () => {
       await route.fulfill({
         json: {
           blueprints: [
-            createBlueprintSummary({ id: '00000000-0000-0000-0000-000000000011', title: 'The Stolen Cake', one_liner: 'Find the cake', target_age: 6 }),
+            createBlueprintSummary({ id: '00000000-0000-0000-0000-000000000011', title: 'The Stolen Cake', one_liner: 'Find the cake' }),
           ],
         },
       });
@@ -202,7 +202,7 @@ test.describe('US1 - Start Screen', () => {
       await route.fulfill({
         json: {
           blueprints: [
-            createBlueprintSummary({ id: '00000000-0000-0000-0000-000000000011', title: 'The Stolen Cake', one_liner: 'Find the cake', target_age: 6 }),
+            createBlueprintSummary({ id: '00000000-0000-0000-0000-000000000011', title: 'The Stolen Cake', one_liner: 'Find the cake' }),
           ],
         },
       });
@@ -253,7 +253,6 @@ test.describe('US1 - Start Screen', () => {
               id: '123e4567-e89b-12d3-a456-426614174000',
               title: 'The Stolen Cake',
               one_liner: 'Find the cake',
-              target_age: 6,
               blueprint_image_id: 'mock-blueprint.blueprint.png',
             }),
           ],
@@ -288,7 +287,6 @@ test.describe('US1 - Start Screen', () => {
               id: '123e4567-e89b-12d3-a456-426614174000',
               title: 'The Stolen Cake',
               one_liner: 'Find the cake',
-              target_age: 6,
               blueprint_image_id: 'mock-blueprint.blueprint.png',
             }),
           ],

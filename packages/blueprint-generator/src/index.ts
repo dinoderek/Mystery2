@@ -7,7 +7,7 @@ export { ClueGraphBriefSchema, type ClueGraphBrief } from "./clue-graph-brief.ts
 
 /** What a clue-graph case's agent is told to do with its brief; the craft is in the prompt. */
 export const CLUE_GRAPH_GENERATION_INSTRUCTIONS =
-  "Write one clue-graph/2 case for story_brief to ./case.json, following ./CLAUDE.md. Set metadata.target_age to targetAge, metadata.size to size, and metadata.size_overrides to sizeOverrides when it is given.";
+  "Write one clue-graph/2 case for story_brief to ./case.json, following ./CLAUDE.md. Set metadata.size to size, and metadata.size_overrides to sizeOverrides when it is given.";
 
 /**
  * The prompt for a clue-graph case: the clue-graph generator prompt alone, as

@@ -18,7 +18,7 @@ async function bootstrapSession(page: Page) {
 
   await page.route('**/api/blueprints-list*', async (route) => {
     await route.fulfill({
-      json: { blueprints: [createBlueprintSummary({ title: 'B1', one_liner: '1', target_age: 6 })] },
+      json: { blueprints: [createBlueprintSummary({ title: 'B1', one_liner: '1' })] },
     });
   });
 

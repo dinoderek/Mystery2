@@ -21,7 +21,7 @@ async function bootstrapSession(page: Page) {
     await route.fulfill({
       json: {
         blueprints: [
-          createBlueprintSummary({ title: 'Missing Honey Cakes', one_liner: 'A sticky mystery', target_age: 6 }),
+          createBlueprintSummary({ title: 'Missing Honey Cakes', one_liner: 'A sticky mystery' }),
         ],
       },
     });

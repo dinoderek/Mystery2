@@ -244,7 +244,6 @@ describe("shared mystery API contracts", () => {
     const blueprint = createBlueprintSummary({
       title: "Mock Blueprint",
       one_liner: "A mystery",
-      target_age: 8,
       blueprint_image_id: "mock-blueprint.blueprint.png",
     });
     expect(

@@ -96,13 +96,13 @@ function remoteRecords(): string[] {
   return git(remote, "ls-tree", "-r", "--name-only", "main").split("\n").filter((file) => file.startsWith("records/")).sort();
 }
 
-/** The generator: answers each brief, told apart by its title hint, with a case of its size and age, and that case again in every repair round. */
+/** The generator: answers each brief, told apart by its title hint, with a case of its size, and that case again in every repair round. */
 function writeGenerator(): string {
   const cases: Record<string, unknown> = {};
   for (const file of fs.readdirSync(path.join(ROOT, BRIEFS))) {
     const brief = JSON.parse(fs.readFileSync(path.join(ROOT, BRIEFS, file), "utf8"));
     const made = sizedCase(floors(brief.size), brief.size);
-    cases[brief.titleHint] = { ...made, metadata: { ...made.metadata, target_age: brief.targetAge, title: brief.titleHint } };
+    cases[brief.titleHint] = { ...made, metadata: { ...made.metadata, title: brief.titleHint } };
   }
   const answers = path.join(scratch, "generator-answers.json");
   fs.writeFileSync(answers, JSON.stringify(cases));

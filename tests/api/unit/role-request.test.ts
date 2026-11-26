@@ -15,22 +15,10 @@ import { renderComplexityGuidance } from "../../../packages/shared/src/age-profi
 // role-request.ts is the single assembly path for narrator prompts. These tests
 // exist because an earlier arrangement had two: the endpoint handlers,
 // and a parallel implementation in the eval harness that called
-// loadPromptTemplate WITHOUT an age. clampTargetAge silently fell back to
+// loadPromptTemplate WITHOUT an age. clampReadingAge silently fell back to
 // age 6, so every evaluated prompt was built for the wrong reader. Nothing
 // failed. Hence the assertions below: for EVERY role, the request's own
-// `reading_age` must actually appear in the assembled prompt, whatever age the
-// case names.
-
-const CASE_AGE = 11;
-
-/** The case naming an age of its own, which no prompt may read. */
-function namingAge(world: ClueGraphWorld): ClueGraphWorld {
-  return {
-    ...world,
-    metadata: { ...world.metadata, target_age: CASE_AGE },
-    clue_graph: { ...world.clue_graph, metadata: { ...world.clue_graph.metadata, target_age: CASE_AGE } },
-  };
-}
+// `reading_age` must actually appear in the assembled prompt.
 
 // The talk, search and accusation roles play the greenhouse.
 let graphBlueprint: ClueGraphWorld;
@@ -38,10 +26,10 @@ let graphBlueprint: ClueGraphWorld;
 let mockCase: ClueGraphWorld;
 
 beforeAll(async () => {
-  graphBlueprint = namingAge(buildClueGraphWorld(
+  graphBlueprint = buildClueGraphWorld(
     validateClueGraph(JSON.parse(await readFile("blueprints/clue-graph/greenhouse-prizewinner.json", "utf-8"))),
-  ));
-  mockCase = namingAge(readMockCase());
+  );
+  mockCase = readMockCase();
 });
 
 function session(overrides: Record<string, unknown> = {}) {
@@ -156,21 +144,20 @@ const NARRATING: RoleRequestName[] = [
 ];
 
 describe("every assembled prompt carries the request's reading age", () => {
-  it.each(NARRATING)("%s renders the reading age it is given, not the case's or a fallback", async (role) => {
+  it.each(NARRATING)("%s renders the reading age it is given, not a fallback", async (role) => {
     const prompt = await promptFor(role, 8);
 
-    // The exact failure that once went unnoticed: age 6 (MIN_TARGET_AGE).
+    // The exact failure that once went unnoticed: age 6 (MIN_READING_AGE).
     expect(prompt).toContain("is 8 years old");
     expect(prompt).not.toContain("is 6 years old");
-    expect(prompt).not.toContain(`is ${CASE_AGE} years old`);
   });
 
-  it.each(NARRATING)("%s written at 6 for a case of age 11 gets the age-6 complexity and length", async (role) => {
+  it.each(NARRATING)("%s written at 6 gets the age-6 complexity and length, not the age-11", async (role) => {
     const at6 = await promptFor(role, 6);
 
     expect(at6).toContain(renderComplexityGuidance(6));
-    expect(at6).not.toContain(renderComplexityGuidance(CASE_AGE));
-    expect(at6).not.toEqual(await promptFor(role, CASE_AGE));
+    expect(at6).not.toContain(renderComplexityGuidance(11));
+    expect(at6).not.toEqual(await promptFor(role, 11));
   });
 
   // A case sets no voice of its own: every role uses the standard style alone.

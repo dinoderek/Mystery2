@@ -491,6 +491,12 @@ describe("the clue graph/2 case file", () => {
     expect(buildClueGraphWorld(committed).cover_image.description).toBe(committed.metadata.title);
   });
 
+  it("refuses a case that still carries a reading age, naming the field", () => {
+    const old = { ...greenhouse(), metadata: { ...greenhouse().metadata, target_age: 8 } };
+    expect(issues(old)).toEqual([expect.stringMatching(/^metadata: Unrecognized key\(s\) in object: 'target_age'/)]);
+    expect(Object.keys(committed.metadata)).not.toContain("target_age");
+  });
+
   const cases = fs
     .readdirSync("blueprints/clue-graph")
     .filter((name) => name.endsWith(".json"))

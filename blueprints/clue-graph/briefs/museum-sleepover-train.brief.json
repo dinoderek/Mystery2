@@ -1,6 +1,5 @@
 {
   "brief": "During a class sleepover at the small town museum, the little clockwork model of the town's old steam train goes missing from its glass case in the Railway Room before breakfast. The museum has a few rooms the children slept and played in, and a grown-up night guard. One child is blamed because they were seen near the case, and a friend covers for someone by saying they were together when they were not. The culprit took the train for a reason that is wrong but understandable, and it is found unbroken at the end.",
-  "targetAge": 7,
   "size": "medium",
   "titleHint": "The Midnight Train",
   "mustInclude": ["a torch left switched on", "a friend who says two people were together when they were not"]

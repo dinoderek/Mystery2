@@ -10,11 +10,12 @@ import { fileURLToPath } from "node:url";
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { MIN_READING_AGE } from "../../../packages/shared/src/age-profile.ts";
 import { validateClueGraph } from "../../../packages/shared/src/clue-graph-validator.ts";
 import type { ClueGraphCase } from "../../../packages/shared/src/clue-graph-schema.ts";
 import { CLUE_GRAPH_BREAKS, brokenCopy } from "../../../evaluation/blueprint/clue-graph-breaks.ts";
 import { clueWaves, playerView } from "../../../evaluation/blueprint/player-view.ts";
-import { runClueGraphChecks } from "../../../evaluation/checks/clue-graph-case.ts";
+import { briefIssues, runClueGraphChecks } from "../../../evaluation/checks/clue-graph-case.ts";
 import { COMMANDS } from "../../../evaluation/commands.ts";
 import { runEval } from "../../../evaluation/core/dispatch.ts";
 import { loadJudge } from "../../../evaluation/core/judge-loader.ts";
@@ -121,6 +122,23 @@ describe("each judge's prompt and answer", () => {
   });
 });
 
+describe("the case check and the step-sense judge, with no case age", () => {
+  const brief = { brief: "A missing crown.", size: dragon.metadata.size ?? "small" };
+
+  it("holds a case to its brief's size alone, and passes a case with no age", () => {
+    expect(dragon.metadata).not.toHaveProperty("target_age");
+    expect(briefIssues(brief, dragon).filter((issue) => issue.startsWith("metadata.target_age"))).toEqual([]);
+    expect(briefIssues({ ...brief, targetAge: 8 }, dragon)).toEqual([expect.stringContaining("targetAge")]);
+  });
+
+  it("asks step sense about the youngest reader", () => {
+    const prompt = fs.readFileSync(path.join(HERE, "../../../evaluation/dimensions/cg-step-sense.md"), "utf8");
+    expect(prompt).toContain(`\`player_view.reading_age\`, ${MIN_READING_AGE}`);
+    expect(prompt).not.toContain("target_age");
+    expect(playerView(dragon).reading_age).toBe(MIN_READING_AGE);
+  });
+});
+
 describe("the player's view", () => {
   const view = playerView(dragon);
   const step = (id: string) => view.steps.find((s) => s.clue_id === id);
@@ -130,7 +148,7 @@ describe("the player's view", () => {
     expect(view.waves[0]).toEqual(expect.arrayContaining(["pike_roof", "clue_gold_on_steps", "sam_alibi_nina"]));
     expect(view.waves[0]).not.toContain("clue_crown_behind_dragon");
     expect(clueWaves(dragon)).toEqual(view.waves);
-    expect(view.target_age).toBe(8);
+    expect(view.reading_age).toBe(MIN_READING_AGE);
   });
 
   it("makes a step of each ask, gate and hidden spot, leading with what is held before it", () => {

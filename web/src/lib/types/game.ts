@@ -47,8 +47,8 @@ export interface NotebookLead {
 }
 
 export interface GameState {
-  mystery_summary: string | null;
-  premise: string | null;
+  /** The notebook's Story: the opening as it was narrated; null when the game has none. */
+  story: string | null;
   locations: { id: string; name: string; summary?: string | null }[];
   characters: {
     id: string;
@@ -71,7 +71,8 @@ export interface GameState {
 export interface Blueprint {
   id: string;
   title: string;
-  one_liner: string;
+  /** Narrated at the profile's age when the list was asked for lines; null otherwise. */
+  one_liner: string | null;
   blueprint_image_id?: string | null;
 }
 

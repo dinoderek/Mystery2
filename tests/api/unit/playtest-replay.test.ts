@@ -20,7 +20,7 @@ import {
 // The shape `game-get` returns (see packages/game-engine/src/endpoints/game-get.ts).
 function state(overrides: Record<string, unknown> = {}): GameState {
 	return {
-		premise: 'The cookies are gone.',
+		story: 'The cookies are gone.',
 		locations: [
 			{ id: 'loc-kitchen', name: 'Kitchen' },
 			{ id: 'loc-living-room', name: 'Living Room' }

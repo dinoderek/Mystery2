@@ -6,11 +6,14 @@ import { ENDPOINTS } from "../../../packages/game-engine/src/endpoints/index.ts"
 //
 // The criterion is ownership: an endpoint that manages or plays a game session,
 // or reads and changes a profile's own settings, runs as somebody, and
-// everything else does not. Nothing can check that
+// everything else does not, unless what it answers is narrated at the
+// profile's reading age, as the case list's lines are. Nothing can check that
 // statically — a handler's access is a claim about what it touches — so the
 // claim is written down here, and a new endpoint has to come past it.
 
-const CATALOG_ENDPOINTS = ["blueprint-scenes", "blueprints-list"];
+const CATALOG_ENDPOINTS = ["blueprint-scenes"];
+// Shared content, but narrated at the profile's reading age.
+const NARRATED_FOR_THE_PROFILE = ["blueprints-list"];
 
 describe("endpoint access", () => {
   it("lists exactly the endpoints the game answers", () => {
@@ -26,7 +29,7 @@ describe("endpoint access", () => {
     ]);
   });
 
-  it("runs as a profile for everything that manages or plays a session, or a profile's settings", () => {
+  it("runs as a profile for everything that manages or plays a session, a profile's settings, or narrates for the profile", () => {
     const profileScoped = ENDPOINTS.filter((endpoint) => endpoint.access === "profile")
       .map((endpoint) => endpoint.name)
       .sort();
@@ -35,7 +38,7 @@ describe("endpoint access", () => {
     // profile's own settings are `profile-*`.
     expect(profileScoped).toEqual(
       ENDPOINTS.map((endpoint) => endpoint.name)
-        .filter((name) => name.startsWith("game-") || name.startsWith("profile-"))
+        .filter((name) => name.startsWith("game-") || name.startsWith("profile-") || NARRATED_FOR_THE_PROFILE.includes(name))
         .sort(),
     );
   });

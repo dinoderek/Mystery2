@@ -30,8 +30,7 @@ function createStore(mode: 'explore' | 'talk' | 'accuse' = 'explore') {
   store.game_id = 'game-1';
   store.blueprint_id = 'bp-1';
   store.state = {
-    mystery_summary: null,
-    premise: null,
+    story: null,
     locations: LOCATIONS.map((location) => ({ id: location.id, name: location.name })),
     characters: CHARACTERS.map((character) => ({
       id: character.id,

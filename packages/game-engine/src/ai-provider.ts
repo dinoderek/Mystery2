@@ -10,6 +10,7 @@ import { RetriableAIError } from "./errors.ts";
 import type { GraphSearchContext, GraphTalkContext } from "./clue-graph/narrator-context.ts";
 import type { GraphAccusationContext, GraphVerdictContext } from "./clue-graph/accusation.ts";
 import type { NamedSpot, Rider } from "./clue-graph/talk-state.ts";
+import type { OneLinerContext } from "./role-request.ts";
 
 export type AIProviderName = "mock" | "openrouter" | "claude-cli";
 
@@ -436,6 +437,12 @@ class MockAIProvider implements AIProvider {
         const verdict = context.graph_accusation_context as GraphVerdictContext | undefined;
         if (!verdict) throw new Error(`Mock AI ${role} requires graph_accusation_context`);
         return { narration: mockGraphVerdict(verdict, context.forced_by_timeout === true) };
+      }
+      case "one_liner": {
+        const menu = context.one_liner_context as OneLinerContext["one_liner_context"] | undefined;
+        if (!menu) throw new Error("Mock AI one_liner requires one_liner_context");
+        // Each case's line is its opening fact, as given.
+        return { lines: menu.cases.map((entry) => ({ id: entry.id, line: `[Mock] ${entry.fact}` })) };
       }
       case "accusation_start": {
         const forcedByTimeout = context.forced_by_timeout === true;

@@ -3,10 +3,11 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createAIProviderFromProfile } from "../../../packages/game-engine/src/ai-provider.ts";
-import { allRoleRequestNames, buildNarrationPrompt, buildRoleRequest, type TemplateRoleInput, type NarrationRoleInput } from "../../../packages/game-engine/src/role-request.ts";
+import { allRoleRequestNames, buildNarrationPrompt, buildOneLinerRequest, buildRoleMessages, buildRoleRequest, type TemplateRoleInput, type NarrationRoleInput } from "../../../packages/game-engine/src/role-request.ts";
 import * as replay from "../../../evaluation/runtime/lib/prompt-build.ts";
 import { readBlueprint } from "../../../evaluation/runtime/lib/case.ts";
 import { gradeExpect } from "../../../evaluation/runtime/lib/expect.ts";
+import type { ClueGraphWorld } from "@my2/shared";
 import { makeTurn } from "./runtime-turn-helpers.ts";
 
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.restoreAllMocks(); });
@@ -53,7 +54,15 @@ describe("captured live and replay messages", () => {
           ],
         };
         let messages: { system: string; user: string };
-        if (role === "intro" || role === "ambience") {
+        if (role === "one_liner") {
+          // The menu's lines are played by no game, so nothing replays them: live alone sends them.
+          const request = await buildOneLinerRequest({ role, blueprints: [blueprint as unknown as ClueGraphWorld], reading_age: 8 });
+          messages = buildRoleMessages(request);
+          expect(messages.system).toBe('You are a strict JSON API for role "one_liner". Output JSON only.');
+          expect(request.context.one_liner_context.cases[0].fact).toBe(graphCase.opening.facts[0]);
+          for (const provider of providers) await provider.generateRoleOutput({ ...request, parse: (value) => value });
+          expect(requests.at(-1)?.response_format).toEqual({ type: "json_object" });
+        } else if (role === "intro" || role === "ambience") {
           const prompt = buildNarrationPrompt(input as unknown as NarrationRoleInput);
           messages = { system: "You are the narrator for a kids mystery game. Return plain text only.", user: prompt };
           expect(replay.buildNarrationMessages(replay.buildNarrationPrompt(input as unknown as NarrationRoleInput))).toEqual(messages);

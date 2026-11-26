@@ -51,6 +51,9 @@ export class GameSessionStore {
   state = $state<GameState | null>(null);
   error = $state<string | null>(null);
   blueprints = $state<Blueprint[]>([]);
+  /** The menu's lines: asked for after the titles, at the profile's age, every time the list loads. */
+  oneLinerStatus = $state<'idle' | 'loading' | 'ready' | 'failed'>('idle');
+  private oneLinerRequestId = 0;
   showHelp = $state(false);
   showNotebook = $state(false);
   notebookSection = $state<NotebookSection>(DEFAULT_NOTEBOOK_SECTION);
@@ -190,6 +193,31 @@ export class GameSessionStore {
 
     this.blueprints = answer.value.blueprints;
     this.status = 'idle';
+    await this.loadOneLiners();
+  }
+
+  /**
+   * Fills in each case's line, narrated at the profile's age, once the titles
+   * are on screen. The server logs a failed narration and answers with no
+   * lines; any failure here leaves the titles alone. Only the newest request
+   * may write, so a slow one cannot land on top of the list that replaced it.
+   */
+  async loadOneLiners() {
+    const requestId = ++this.oneLinerRequestId;
+    this.oneLinerStatus = 'loading';
+    const response = await callApi('blueprints-list', { one_liners: true });
+    if (requestId !== this.oneLinerRequestId) {
+      return;
+    }
+
+    const answer = readAnswer(response, BlueprintsListResponseSchema, 'blueprints-list');
+    if (!answer.ok) {
+      this.oneLinerStatus = 'failed';
+      return;
+    }
+    const lines = new Map(answer.value.blueprints.map((entry) => [entry.id, entry.one_liner]));
+    this.blueprints = this.blueprints.map((entry) => ({ ...entry, one_liner: lines.get(entry.id) ?? null }));
+    this.oneLinerStatus = 'ready';
   }
 
   /**

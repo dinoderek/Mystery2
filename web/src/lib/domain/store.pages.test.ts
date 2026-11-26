@@ -42,8 +42,7 @@ function createStore(history: NarrationEvent[]) {
     { id: 'bp-1', title: 'The Missing Cake', one_liner: '' },
   ];
   store.state = {
-    mystery_summary: null,
-    premise: null,
+    story: null,
     locations: [{ id: 'kitchen', name: 'Kitchen' }, { id: 'garden', name: 'Garden' }],
     characters: [],
     discovered_clues: [],

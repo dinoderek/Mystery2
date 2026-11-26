@@ -21,8 +21,7 @@ export const EMPTY_CATALOG: SessionCatalog = {
  */
 export function toGameState(state: WireGameState, history: WireNarrationEvent[]): GameState {
   return {
-    mystery_summary: state.mystery_summary ?? null,
-    premise: state.premise ?? null,
+    story: state.story,
     locations: state.locations,
     characters: state.characters.map((character) => ({
       id: character.id,

@@ -5,6 +5,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import {
   allRoleRequestNames,
   buildNarrationPrompt,
+  buildOneLinerRequest,
   buildRoleRequest,
   type RoleRequestName,
 } from "../../../packages/game-engine/src/role-request.ts";
@@ -95,6 +96,8 @@ function inputFor(role: RoleRequestName, readingAge = 8): any {
       };
     case "accusation_start":
       return { ...common, role, session: session({ mode: "accuse" }) };
+    case "one_liner":
+      return { role, reading_age: readingAge, blueprints: [mockCase, graphBlueprint] };
     default:
       throw new Error(`No test input defined for role "${role}"`);
   }
@@ -104,9 +107,9 @@ const NARRATION_ROLES: RoleRequestName[] = ["intro", "ambience"];
 
 async function promptFor(role: RoleRequestName, readingAge?: number): Promise<string> {
   const input = inputFor(role, readingAge);
-  return NARRATION_ROLES.includes(role)
-    ? buildNarrationPrompt(input)
-    : (await buildRoleRequest(input)).prompt;
+  if (NARRATION_ROLES.includes(role)) return buildNarrationPrompt(input);
+  if (role === "one_liner") return (await buildOneLinerRequest(input)).prompt;
+  return (await buildRoleRequest(input)).prompt;
 }
 
 describe("role coverage", () => {
@@ -120,6 +123,7 @@ describe("role coverage", () => {
       "graph_search",
       "graph_talk",
       "intro",
+      "one_liner",
       "talk_end",
     ]);
   });
@@ -142,9 +146,11 @@ const NARRATING: RoleRequestName[] = [
   "intro", "ambience", "talk_end", "accusation_start", "graph_talk", "graph_search",
   "graph_accusation_round", "graph_ending",
 ];
+// Narrated, but on the menu rather than in a scene: the reader's age, and no scene's style.
+const MENU: RoleRequestName[] = ["one_liner"];
 
 describe("every assembled prompt carries the request's reading age", () => {
-  it.each(NARRATING)("%s renders the reading age it is given, not a fallback", async (role) => {
+  it.each([...NARRATING, ...MENU])("%s renders the reading age it is given, not a fallback", async (role) => {
     const prompt = await promptFor(role, 8);
 
     // The exact failure that once went unnoticed: age 6 (MIN_READING_AGE).
@@ -152,7 +158,7 @@ describe("every assembled prompt carries the request's reading age", () => {
     expect(prompt).not.toContain("is 6 years old");
   });
 
-  it.each(NARRATING)("%s written at 6 gets the age-6 complexity and length, not the age-11", async (role) => {
+  it.each([...NARRATING, ...MENU])("%s written at 6 gets the age-6 complexity and length, not the age-11", async (role) => {
     const at6 = await promptFor(role, 6);
 
     expect(at6).toContain(renderComplexityGuidance(6));
@@ -170,7 +176,7 @@ describe("every assembled prompt carries the request's reading age", () => {
   it("covers every registered role in the assertions above", () => {
     // Guards the hand-written lists against a role being added to the
     // registry but not to them.
-    const asserted = new Set<string>([...NARRATING, "graph_accusation"]);
+    const asserted = new Set<string>([...NARRATING, ...MENU, "graph_accusation"]);
     for (const role of allRoleRequestNames()) {
       expect(asserted.has(role), `role "${role}" is not asserted above`).toBe(true);
     }
@@ -182,6 +188,34 @@ describe("the accusation's judge", () => {
     const prompt = await promptFor("graph_accusation");
     expect(prompt).not.toMatch(/years old|Length \(guidance/);
     expect(prompt).not.toContain("## Narration style");
+  });
+});
+
+describe("the menu's one-liners", () => {
+  it("tells every listed case's line from its first opening fact, at the reader's age, in one request", async () => {
+    const { role, prompt, context } = await buildOneLinerRequest(inputFor("one_liner", 7));
+    expect(role).toBe("one_liner");
+    expect(context.role_name).toBe("one_liner");
+    expect(context.one_liner_context.cases).toEqual([mockCase, graphBlueprint].map((blueprint) => ({
+      id: blueprint.id,
+      title: blueprint.metadata.title,
+      fact: blueprint.clue_graph.opening.facts[0],
+    })));
+    expect(prompt).toContain(renderComplexityGuidance(7));
+    expect(prompt).toContain("aim for about 10 words in each line");
+    expect(prompt).toContain("exactly one line for every case id");
+  });
+
+  it("budgets each line as the case's one-liner was budgeted at that age", async () => {
+    expect(await promptFor("one_liner", 6)).toContain("about 8 words in each line");
+    expect(await promptFor("one_liner", 11)).toContain("about 18 words in each line");
+  });
+
+  it("shows the narrator nothing of a case beyond its title and opening fact", async () => {
+    const { context } = await buildOneLinerRequest(inputFor("one_liner"));
+    const sent = JSON.stringify(context);
+    expect(sent).not.toContain(graphBlueprint.clue_graph.opening.facts.at(-1));
+    for (const character of graphBlueprint.world.characters) expect(sent).not.toContain(character.appearance);
   });
 });
 

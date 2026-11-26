@@ -1,26 +1,57 @@
-import { describe, expect, it } from "vitest";
-import { API_URL, MOCK_BLUEPRINT_ID } from "./helpers";
+import { beforeEach, describe, expect, it } from "vitest";
+import { readMockCase } from "../../testkit/src/mock-case";
+import { API_URL, MOCK_BLUEPRINT_ID, setupApiTestAuth, type ApiAuthContext } from "./helpers";
 
-// The catalog belongs to nobody, so these requests carry no cookie.
+// The case list runs as a profile: its lines are narrated at the profile's
+// reading age (the prompt and the failure path are `unit/blueprints-list.test.ts`).
+
+interface Listed {
+  id: string;
+  title: string;
+  one_liner: string | null;
+  blueprint_image_id?: string | null;
+  world?: unknown;
+}
 
 describe("blueprints-list endpoint", () => {
-  it("lists the mock case", async () => {
-    const res = await fetch(`${API_URL}/blueprints-list`);
+  let auth: ApiAuthContext;
+
+  beforeEach(async () => {
+    auth = await setupApiTestAuth("blueprints-list");
+  });
+
+  async function list(query = ""): Promise<Listed[]> {
+    const res = await fetch(`${API_URL}/blueprints-list${query}`, { headers: auth.headers });
     expect(res.status).toBe(200);
-    const data = await res.json();
+    return (await res.json()).blueprints;
+  }
 
-    expect(data.blueprints).toBeDefined();
-    expect(Array.isArray(data.blueprints)).toBe(true);
-    expect(data.blueprints.length).toBeGreaterThanOrEqual(1);
+  it("lists the mock case's title and art at once, with no line", async () => {
+    const mockCase = (await list()).find((b) => b.id === MOCK_BLUEPRINT_ID);
 
-    const mockDb = data.blueprints.find(
-      (b: { id: string; title: string; world?: unknown }) => b.id === MOCK_BLUEPRINT_ID,
-    );
-    expect(mockDb).toBeDefined();
-    expect(mockDb.title).toBe("Mock Case — clue graph");
-    expect(mockDb.world).toBeUndefined();
-    expect(mockDb.blueprint_image_id).toBe(
-      "mock-case.blueprint.png",
-    );
+    expect(mockCase).toMatchObject({
+      title: "Mock Case — clue graph",
+      one_liner: null,
+      blueprint_image_id: "mock-case.blueprint.png",
+    });
+    expect(mockCase?.world).toBeUndefined();
+  });
+
+  it("narrates every listed case's line when asked, never the case's own", async () => {
+    const age = await fetch(`${API_URL}/profile-settings`, {
+      method: "POST",
+      headers: auth.headers,
+      body: JSON.stringify({ reading_age: 7 }),
+    });
+    expect(age.status).toBe(200);
+
+    const listed = await list("?one_liners=true");
+    const authored = readMockCase().metadata.one_liner;
+
+    expect(listed.find((b) => b.id === MOCK_BLUEPRINT_ID)?.one_liner).toBe(`[Mock] ${authored}`);
+    for (const entry of listed) {
+      expect(entry.one_liner, entry.id).toMatch(/^\[Mock\] /);
+    }
+    expect(listed.map((b) => b.one_liner)).not.toContain(authored);
   });
 });

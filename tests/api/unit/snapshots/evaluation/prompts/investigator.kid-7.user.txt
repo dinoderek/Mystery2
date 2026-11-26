@@ -8,9 +8,7 @@ Turns left: 7
 Accusations left: 3 of 3
 
 == NOTEBOOK: STORY ==
-The cookie plate is empty and snack time is almost here.
-
-The cookies disappeared from the kitchen sometime around 10 AM.
+The cookie plate is empty and snack time is almost here. The cookies disappeared from the kitchen sometime around 10 AM.
 
 == NOTEBOOK: PLACES ==
 - Kitchen (you are here) — Alice Smith: Where the cookies were set out.

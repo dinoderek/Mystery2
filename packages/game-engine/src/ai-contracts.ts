@@ -11,7 +11,9 @@ export type AIRoleName =
   // narration of what the engine decided, before or at the end of the case.
   | "graph_accusation"
   | "graph_accusation_round"
-  | "graph_ending";
+  | "graph_ending"
+  // The menu: every listed case's line under its title, in one call.
+  | "one_liner";
 
 // Every role has one prompt template, keyed by its name.
 export type AIPromptKey = AIRoleName;
@@ -70,6 +72,11 @@ export interface GraphAccusationOutput {
 // The narration of a failed clue-graph accusation, or of its closing scene.
 export interface GraphVerdictOutput {
   narration: string;
+}
+
+// The menu's lines, one per listed case id.
+export interface OneLinerOutput {
+  lines: NotebookLine[];
 }
 
 // Each role's output contract is one Zod schema doing two jobs:
@@ -200,6 +207,13 @@ const GraphVerdictOutputSchema = roleObject({
   narration: narrationText(),
 });
 
+const OneLinerOutputSchema = roleObject({
+  lines: z.array(
+    z.object({ id: nonEmptyString("case id"), line: narrationText() }),
+    { required_error: `"lines" must be a list of { id, line }`, invalid_type_error: `"lines" must be a list of { id, line }` },
+  ),
+});
+
 const ROLE_OUTPUT_SCHEMAS = {
   talk_end: TalkEndOutputSchema,
   accusation_start: AccusationStartOutputSchema,
@@ -208,6 +222,7 @@ const ROLE_OUTPUT_SCHEMAS = {
   graph_accusation: GraphAccusationOutputSchema,
   graph_accusation_round: GraphVerdictOutputSchema,
   graph_ending: GraphVerdictOutputSchema,
+  one_liner: OneLinerOutputSchema,
 } satisfies Record<AIRoleName, z.ZodTypeAny>;
 
 function parseWithSchema<S extends z.ZodTypeAny>(
@@ -275,4 +290,25 @@ export function parseGraphAccusationRoundOutput(value: unknown): GraphVerdictOut
 
 export function parseGraphEndingOutput(value: unknown): GraphVerdictOutput {
   return parseWithSchema("graph_ending", GraphVerdictOutputSchema, value);
+}
+
+/**
+ * The menu's lines, by case id: exactly one for each case asked about. A line
+ * for a case not asked about is dropped; a case left without one, or given two,
+ * breaks the output, unretried, like any reply that fails its parser.
+ */
+export function parseOneLinerOutput(value: unknown, caseIds: readonly string[]): Map<string, string> {
+  const { lines } = parseWithSchema("one_liner", OneLinerOutputSchema, value);
+  const asked = new Set(caseIds);
+  const byId = new Map<string, string>();
+  for (const { id, line } of lines) {
+    if (!asked.has(id)) continue;
+    if (byId.has(id)) throw new Error(`Invalid AI one_liner output: two lines for case ${id}`);
+    byId.set(id, line);
+  }
+  const missing = caseIds.filter((id) => !byId.has(id));
+  if (missing.length > 0) {
+    throw new Error(`Invalid AI one_liner output: no line for case ${missing.join(", ")}`);
+  }
+  return byId;
 }

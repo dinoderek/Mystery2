@@ -106,8 +106,7 @@ export function buildView({
     `Accusations left: ${state.accusations_left} of ${ACCUSATIONS}`,
     "",
     "== NOTEBOOK: STORY ==",
-    normalized.premise ?? "",
-    normalized.mystery_summary ? `\n${normalized.mystery_summary}` : "",
+    state.story ?? "",
     "",
     "== NOTEBOOK: PLACES ==",
     ...places.map((place) =>

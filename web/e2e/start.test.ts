@@ -163,6 +163,37 @@ test.describe('US1 - Start Screen', () => {
     await expect(page.getByText('Error: Not signed in')).toHaveCount(0);
   });
 
+  test('shows the titles alone when the lines are not narrated, and asks for them on every visit', async ({ page }) => {
+    // The server answers a failed narration with the titles and no lines.
+    await signInAsTestProfile(page);
+    await mockEmptyCatalog(page);
+
+    let lineRequests = 0;
+    await page.route('**/api/blueprints-list*', async (route) => {
+      if (route.request().postDataJSON()?.one_liners === true) lineRequests += 1;
+      await route.fulfill({
+        json: {
+          blueprints: [
+            createBlueprintSummary({ id: '00000000-0000-0000-0000-000000000011', title: 'The Stolen Cake', one_liner: null }),
+          ],
+        },
+      });
+    });
+
+    await page.goto('/');
+    await expect(page.getByText('1. Start a new game')).toBeVisible();
+    await page.keyboard.press('1');
+    await expect(page.getByText('The Stolen Cake')).toBeVisible();
+    await expect(page.getByTestId('case-line-loading-1')).toHaveCount(0);
+    await expect(page.getByTestId('case-line-1')).toHaveCount(0);
+    await expect.poll(() => lineRequests).toBe(1);
+
+    await page.keyboard.press('b');
+    await page.keyboard.press('1');
+    await expect(page.getByText('The Stolen Cake')).toBeVisible();
+    await expect.poll(() => lineRequests).toBe(2);
+  });
+
   test('keeps the case list on screen when starting a game fails', async ({ page }) => {
     // The error replaced the list, so the only way back to the cases was to go
     // back to the menu and come in again — which is what cleared `error`.

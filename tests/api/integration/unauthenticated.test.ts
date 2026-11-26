@@ -1,5 +1,3 @@
-import { isDeepStrictEqual } from "node:util";
-
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   API_URL,
@@ -15,10 +13,10 @@ import {
 //
 // A profile is not a wall — the game is one process on the player's own
 // machine. It is how one person's cases stay separate from another's, so what
-// a missing cookie can reach is exactly what belongs to nobody: the catalog
-// and its artwork. Anything that manages or plays a session needs someone to
-// be, and there is no way to be them without a cookie naming a profile that
-// exists.
+// a missing cookie can reach is exactly what belongs to nobody: the cases'
+// scenes and artwork. Anything that manages or plays a session, or is narrated
+// at a profile's reading age as the case list is, needs someone to be, and
+// there is no way to be them without a cookie naming a profile that exists.
 
 // A portrait rather than the cover: `blueprint-images.test.ts` deletes the
 // cover to prove a missing file 404s, and suites in a run share one image
@@ -61,6 +59,8 @@ describe("requests without a profile", () => {
     // One per profile-scoped endpoint, so adding one that forgets to run as
     // somebody fails here rather than quietly serving another player's game.
     const sessionEndpoints: ReadonlyArray<readonly [string, "GET" | "POST"]> = [
+      ["blueprints-list", "GET"],
+      ["blueprints-list", "POST"],
       ["game-enter", "POST"],
       ["game-get", "GET"],
       ["game-sessions-list", "GET"],
@@ -82,26 +82,22 @@ describe("requests without a profile", () => {
     }
   });
 
-  it("serves the catalog without a profile", async () => {
-    const listed = await fetch(`${API_URL}/blueprints-list`);
+  it("serves a case's scenes without a profile, the same as with one", async () => {
+    const read = async (headers?: Record<string, string>) => {
+      const res = await fetch(`${API_URL}/blueprint-scenes?blueprint_id=${MOCK_BLUEPRINT_ID}`, headers ? { headers } : {});
+      expect(res.status).toBe(200);
+      return res.json();
+    };
+    const anonymous = await read();
+    expect(anonymous.blueprint_id).toBe(MOCK_BLUEPRINT_ID);
+    expect(await read(auth.headers)).toEqual(anonymous);
+  });
+
+  it("lists the cases only for a profile, since each line is narrated at its age", async () => {
+    expect((await fetch(`${API_URL}/blueprints-list`)).status).toBe(401);
+    const listed = await fetch(`${API_URL}/blueprints-list`, { headers: auth.headers });
     expect(listed.status).toBe(200);
-
-    const anonymous = await listed.json();
-    expect(anonymous.blueprints.some((b: { id: string }) => b.id === MOCK_BLUEPRINT_ID)).toBe(
-      true,
-    );
-
-    // Signing in does not change it: the catalog belongs to nobody, so both
-    // callers see the same thing. Another file installs a case in the config
-    // root every file shares for a moment, so one pair of reads can straddle
-    // it; a catalog that depended on the profile would differ on every pair.
-    const read = async (headers?: Record<string, string>) =>
-      (await fetch(`${API_URL}/blueprints-list`, headers ? { headers } : {})).json();
-    let pair = [anonymous, await read(auth.headers)];
-    for (let attempt = 0; attempt < 3 && !isDeepStrictEqual(pair[0], pair[1]); attempt += 1) {
-      pair = await Promise.all([read(), read(auth.headers)]);
-    }
-    expect(pair[1]).toEqual(pair[0]);
+    expect((await listed.json()).blueprints.some((b: { id: string }) => b.id === MOCK_BLUEPRINT_ID)).toBe(true);
   });
 
   it("serves image bytes without a profile", async () => {

@@ -13,8 +13,7 @@ import type { DiscoveredClue, GameState } from '../types/game';
 
 function makeState(overrides: Partial<GameState> = {}): GameState {
   return {
-    mystery_summary: 'Someone took the pie.',
-    premise: 'A pie went missing.',
+    story: 'A pie went missing. Someone took it.',
     locations: [
       { id: 'loc-kitchen', name: 'Kitchen', summary: 'Warm and floury.' },
       { id: 'loc-garden', name: 'Garden', summary: null },

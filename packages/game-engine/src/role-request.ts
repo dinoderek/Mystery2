@@ -113,7 +113,42 @@ interface SessionInput extends CommonInput {
   session: SessionSnapshot;
 }
 
-export type RoleRequestInput =
+/** One menu case, as the `one_liner` role sees it: its title and its opening fact, both public. */
+export interface OneLinerCase {
+  id: string;
+  title: string;
+  fact: string;
+}
+
+// An alias, like `AIContext`, so a provider can take it as a record.
+export type OneLinerContext = {
+  role_name: "one_liner";
+  one_liner_context: { cases: OneLinerCase[] };
+};
+
+/** The menu's lines: no game, only the listed cases and the reader's age. */
+export interface OneLinerRoleInput {
+  role: "one_liner";
+  blueprints: readonly BlueprintContext[];
+  reading_age: number;
+}
+
+export interface OneLinerRequest {
+  role: "one_liner";
+  prompt: string;
+  context: OneLinerContext;
+}
+
+/** Each case's line is told from its first opening fact, the one the case leads with. */
+export function oneLinerCases(blueprints: readonly BlueprintContext[]): OneLinerCase[] {
+  return blueprints.map((blueprint) => ({
+    id: blueprint.id,
+    title: blueprint.metadata.title,
+    fact: blueprint.clue_graph.opening.facts[0],
+  }));
+}
+
+export type GameRoleInput =
   | ({ role: "intro" } & CommonInput)
   // Everything else an arrival needs — whether the place was visited before,
   // what happened there, who is present and what the player already holds — is
@@ -140,6 +175,8 @@ export type RoleRequestInput =
     forced_context?: string;
     history_mode?: "all" | "none";
   } & SessionInput);
+
+export type RoleRequestInput = GameRoleInput | OneLinerRoleInput;
 
 type InputFor<R extends RoleRequestName> = Extract<RoleRequestInput, { role: R }>;
 
@@ -337,6 +374,14 @@ const REGISTRY: Record<RoleRequestName, any> = {
     vars: (input: InputFor<"graph_ending">) => ({ player_input: input.player_input }),
   } satisfies TemplateRoleSpec<"graph_ending">,
 
+  one_liner: {
+    kind: "template",
+    context: (input: OneLinerRoleInput): OneLinerContext => ({
+      role_name: "one_liner",
+      one_liner_context: { cases: oneLinerCases(input.blueprints) },
+    }),
+    vars: () => ({}),
+  },
 };
 
 /** The extra guidance the clue graph adds to a shared role's prompt. */
@@ -346,7 +391,7 @@ function roleGuidance(role: AIPromptKey): string {
 }
 
 export type NarrationRoleInput = Extract<RoleRequestInput, { role: NarrationRoleName }>;
-export type TemplateRoleInput = Extract<RoleRequestInput, { role: AIPromptKey }>;
+export type TemplateRoleInput = Extract<GameRoleInput, { role: AIPromptKey }>;
 
 /** Every role this module can assemble — used by tests to assert coverage. */
 export function allRoleRequestNames(): RoleRequestName[] {
@@ -375,11 +420,21 @@ export function buildNarrationPrompt(input: NarrationRoleInput): string {
 }
 
 /**
- * Assemble prompt + context for a role-output request. This and
- * `buildNarrationPrompt` are the ONLY places the reading age is applied, so a
- * caller cannot build a prompt without naming its reader.
+ * Assemble prompt + context for a role-output request. This,
+ * `buildOneLinerRequest` and `buildNarrationPrompt` are the ONLY places the
+ * reading age is applied, so a caller cannot build a prompt without naming its
+ * reader.
  */
 export async function buildRoleRequest(input: TemplateRoleInput): Promise<RoleRequest> {
+  return (await assembleTemplate(input)) as RoleRequest;
+}
+
+/** The menu's lines: the same assembly as `buildRoleRequest`, for the one role played outside a game. */
+export async function buildOneLinerRequest(input: OneLinerRoleInput): Promise<OneLinerRequest> {
+  return (await assembleTemplate(input)) as unknown as OneLinerRequest;
+}
+
+async function assembleTemplate(input: TemplateRoleInput | OneLinerRoleInput) {
   const spec = specFor(input.role);
   if (spec.kind !== "template") {
     throw new Error(`Role "${input.role}" is a narration role — use buildNarrationPrompt`);

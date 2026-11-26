@@ -1,7 +1,8 @@
 /**
  * The game's own AI call log (`AI_CALL_LOG`, `packages/game-engine/src/ai-call-log.ts`)
  * read back as model calls, for the commands that narrate through the game:
- * `judge turn --narrator server` and `play`.
+ * `judge turn --narrator server` and `play`, and for `judge game` over a bundle,
+ * which joins a game's events to the log by `request_id` (`joinedTo`).
  *
  * A line holds the whole prompt and the model's answer, and goes nowhere but
  * the run's own folder. What this turns it into holds the metrics and the
@@ -97,6 +98,16 @@ export function modelCallFromLine(line: AICallLine, binding: string = SERVER_BIN
     tokens,
     attempts: [{ attempt: 1, outcome: failureOutcome(line), duration_ms: line.latency_ms, cost_usd: line.cost_usd, tokens }],
   };
+}
+
+/**
+ * The filter that keeps the lines of the requests `events` name: the exact join
+ * from a call to the event it narrated. A line with no `request_id`, and an
+ * event with none (one saved before events kept it), join to nothing.
+ */
+export function joinedTo(events: ReadonlyArray<{ request_id?: string | null }>): (line: AICallLine) => boolean {
+  const ids = new Set(events.flatMap((event) => (typeof event.request_id === "string" ? [event.request_id] : [])));
+  return (line) => line.request_id !== null && ids.has(line.request_id);
 }
 
 /** The calls the lines `keep` accepts, as model calls. */

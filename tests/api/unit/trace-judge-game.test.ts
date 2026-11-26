@@ -11,11 +11,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { COMMANDS } from "../../../evaluation/commands.ts";
 import { runEval } from "../../../evaluation/core/dispatch.ts";
+import { readRunIndex } from "../../../evaluation/core/run-folder.ts";
 import { readResult } from "../../../evaluation/core/result.ts";
 import type { Result } from "../../../evaluation/core/result.ts";
 import { contentHash } from "../../../evaluation/core/suite-attributes.ts";
 import { locateSubject, traceContent } from "../../../evaluation/trace/judge-game.ts";
-import { createGameDatabase } from "./trace-database-fixture.ts";
+import { openDatabase } from "../../../packages/game-engine/src/db/client.ts";
+import { createGameDatabase, REQUEST_ID } from "./trace-database-fixture.ts";
 import { makeRawTrace } from "./trace-fixtures.ts";
 
 const MOCK_JUDGE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "trace-mock-judge.mjs");
@@ -79,6 +81,14 @@ async function runForResult(args: string[], mode: string, root?: string): Promis
   const code = await judgeGame([...args, "--output-root", out, "--quiet"], root);
   const [file] = resultsUnder(out);
   return { code, result: await readResult(file), file };
+}
+
+/** Runs a batch and reads back its parent run: the exit code, the index and each game's result. */
+async function runBatch(args: string[], mode: string, root: string) {
+  vi.stubEnv("MOCK_JUDGE_MODE", mode);
+  const out = path.join(scratch, `out-${fs.readdirSync(scratch).length}`);
+  const code = await judgeGame([...args, "--output-root", out, "--quiet"], root);
+  return { code, ...(await readBatch(out)) };
 }
 
 const statuses = (result: Result) => Object.fromEntries(result.verdicts.map((verdict) => [verdict.id, verdict.status]));
@@ -346,6 +356,243 @@ describe("judge game on a session id", () => {
 
     expect(code).toBe(1);
     expect(errors.join("\n")).toMatch(/needs no database/);
+  });
+});
+
+/** A copy of the fixture's game as another session, started at `startedAt`, whose search was made by its own request. */
+function addGame(databasePath: string, id: string, startedAt: string): string {
+  const db = openDatabase({ path: databasePath });
+  try {
+    const session = db.prepare("select * from game_sessions where id = 'session-under-test'").get() as Record<string, unknown>;
+    const events = db.prepare("select * from game_events where session_id = 'session-under-test'").all() as Array<Record<string, unknown>>;
+    const insert = (table: string, row: Record<string, unknown>) =>
+      db.prepare(`insert into ${table} (${Object.keys(row).join(", ")}) values (${Object.keys(row).map(() => "?").join(", ")})`).run(...(Object.values(row) as Array<string | number | null>));
+    insert("game_sessions", { ...session, id, created_at: startedAt });
+    for (const event of events) {
+      const requestId = event.request_id === null ? null : `${event.request_id}-${id}`;
+      insert("game_events", { ...event, id: `${id}-${event.id}`, session_id: id, request_id: requestId });
+    }
+  } finally {
+    db.close();
+  }
+  return `${REQUEST_ID}-${id}`;
+}
+
+function callLine(over: Record<string, unknown>): string {
+  return `${JSON.stringify({
+    ts: "2026-06-02T00:00:00.000Z",
+    game_id: "session-under-test",
+    endpoint: "game-turn",
+    action: "search",
+    request_id: null,
+    role: "ask",
+    provider: "claude-cli",
+    model: "haiku",
+    resolved_model: "claude-haiku-4-5",
+    prompt: "TELL THE STORY",
+    context: null,
+    output: { narration: "x" },
+    parsed_ok: true,
+    error: null,
+    latency_ms: 1200,
+    input_tokens: 100,
+    output_tokens: 10,
+    cost_usd: 0.002,
+    attempts: 1,
+    ...over,
+  })}\n`;
+}
+
+/** A playtest bundle: two games in `game.db` and a call log with a line for each game's search and one with no request. */
+function makeBundle(): { folder: string; ids: string[] } {
+  const folder = path.join(scratch, "bundle");
+  const game = createGameDatabase(folder);
+  const second = addGame(game.databasePath, "second-session", "2026-06-03T00:00:00Z");
+  fs.writeFileSync(
+    path.join(folder, "ai-calls.jsonl"),
+    callLine({ request_id: REQUEST_ID, latency_ms: 111 }) +
+      callLine({ request_id: second, game_id: "second-session", latency_ms: 222 }) +
+      callLine({ request_id: second, game_id: "second-session", latency_ms: 333 }) +
+      callLine({ request_id: null, latency_ms: 444 }),
+  );
+  return { folder, ids: [game.sessionId, "second-session"] };
+}
+
+/** The run a batch wrote: its index, and each game's result by id. */
+async function readBatch(out: string): Promise<{ run: ReturnType<typeof readRunIndex>; dir: string; results: Record<string, Result> }> {
+  const [day] = fs.readdirSync(out);
+  const [name] = fs.readdirSync(path.join(out, day));
+  const dir = path.join(out, day, name);
+  const run = readRunIndex(dir);
+  const results = Object.fromEntries(
+    await Promise.all(run.subjects.map(async (subject) => [subject.id, await readResult(path.join(dir, subject.dir, "result.json"))] as const)),
+  );
+  return { run, dir, results };
+}
+
+describe("judge game on a batch", () => {
+  it("judges several ids, writing one parent run and a child run per game", async () => {
+    const bundle = makeBundle();
+    vi.stubEnv("MOCK_JUDGE_MODE", "pass");
+    const out = path.join(scratch, "out-batch");
+    const code = await judgeGame(
+      [...bundle.ids, "--database", path.join(bundle.folder, "game.db"), "--config", withJudge(), "--suite", "narration-loop", "--output-root", out, "--quiet"],
+      bundle.folder,
+    );
+
+    expect(code).toBe(0);
+    const { run, dir, results } = await readBatch(out);
+    expect(run.subjects.map((subject) => subject.id).sort()).toEqual([...bundle.ids].sort());
+    expect(run.exit_code).toBe(0);
+    for (const id of bundle.ids) {
+      const result = results[id];
+      expect(result.run).toMatchObject({ command: "judge game", parent_run: null, suite: "narration-loop" });
+      expect(result.subject).toEqual({ kind: "game", id, path: "trace.json" });
+      expect(statuses(result)).toMatchObject({ clue_accounting: "pass", gm_spoiler: "pass" });
+      expect(result.summary.passed).toBe(true);
+      // The child is the run a single game writes: its own folder, naming the batch as its parent.
+      const subjectDir = path.join(dir, run.subjects.find((subject) => subject.id === id)!.dir);
+      const [childFile] = resultsUnder(path.join(subjectDir, "judge"));
+      const child = await readResult(childFile);
+      expect(child.run).toMatchObject({ command: "judge game", parent_run: run.run.id, suite: "narration-loop" });
+      expect(child.verdicts).toEqual(result.verdicts);
+      expect(fs.existsSync(path.join(path.dirname(childFile), "reconstruction.json"))).toBe(true);
+    }
+    expect(run.run.attributes).toMatchObject({ command: "judge game", concurrency: 2, inputs: [{ id: expect.any(String) }, { id: expect.any(String) }] });
+  });
+
+  it("judges every game in a bundle and attaches each game's calls, joined by request_id", async () => {
+    const bundle = makeBundle();
+    const { code, ...batch } = await runBatch(["--bundle", bundle.folder, "--config", withJudge()], "pass", scratch);
+
+    expect(code).toBe(0);
+    expect(Object.keys(batch.results).sort()).toEqual([...bundle.ids].sort());
+    const durations = (id: string) => batch.results[id].production?.calls.map((call) => call.duration_ms);
+    expect(durations("session-under-test")).toEqual([111]);
+    expect(durations("second-session")).toEqual([222, 333]);
+    expect(batch.results["second-session"].production?.calls[0]).toMatchObject({
+      binding: "server",
+      model: "claude-haiku-4-5",
+      cost_usd: 0.002,
+      tokens: { input: 100, output: 10 },
+    });
+    // The line with no request is nobody's, and each game keeps only its own lines.
+    const kept = fs.readFileSync(path.join(batch.dir, batch.run.subjects.find((s) => s.id === "second-session")!.dir, "ai-calls.jsonl"), "utf8");
+    expect(kept.trim().split("\n").map((text) => JSON.parse(text).latency_ms)).toEqual([222, 333]);
+  });
+
+  it("takes a bundle without a call log, and attaches no calls", async () => {
+    const bundle = makeBundle();
+    fs.rmSync(path.join(bundle.folder, "ai-calls.jsonl"));
+    const { code, results } = await runBatch(["--bundle", bundle.folder, "--config", withJudge()], "pass", scratch);
+
+    expect(code).toBe(0);
+    expect(Object.values(results).map((result) => result.production)).toEqual([null, null]);
+  });
+
+  it("with --since and --database, judges only the games started on or after the date", async () => {
+    const bundle = makeBundle();
+    const database = path.join(bundle.folder, "game.db");
+
+    const later = await runBatch(["--since", "2026-06-03", "--database", database, "--config", withJudge()], "pass", scratch);
+    expect(Object.keys(later.results)).toEqual(["second-session"]);
+    expect(later.results["second-session"].production).toBeNull();
+
+    const all = await runBatch(["--since", "2026-06-02", "--database", database, "--config", withJudge()], "pass", scratch);
+    expect(Object.keys(all.results).sort()).toEqual([...bundle.ids].sort());
+  });
+
+  it("writes no run and exits 1 when the selection is empty, saying so", async () => {
+    const bundle = makeBundle();
+    const out = path.join(scratch, "out-empty");
+    vi.stubEnv("MOCK_JUDGE_MODE", "pass");
+    const code = await judgeGame(["--since", "2030-01-01", "--database", path.join(bundle.folder, "game.db"), "--config", withJudge(), "--output-root", out], bundle.folder);
+
+    expect(code).toBe(1);
+    expect(errors.join("\n")).toMatch(/no games started on or after 2030-01-01/);
+    expect(fs.existsSync(out)).toBe(false);
+  });
+
+  it("reports a game that cannot be read and judges the others, exiting 1", async () => {
+    const bundle = makeBundle();
+    const { code, results, run } = await runBatch([...bundle.ids, "no-such-session", "--database", path.join(bundle.folder, "game.db"), "--config", withJudge()], "pass", bundle.folder);
+
+    expect(code).toBe(1);
+    expect(results["no-such-session"].run_error).toMatchObject({ stage: "extract" });
+    expect(results["no-such-session"].subject.path).toBeNull();
+    expect(results["session-under-test"].summary.passed).toBe(true);
+    expect(results["second-session"].summary.passed).toBe(true);
+    expect(run.subjects).toHaveLength(3);
+    expect(errors.join("\n")).toMatch(/no-such-session\] error/);
+  });
+
+  it("reports a game whose judge fails, exiting 2, and keeps judging the rest", async () => {
+    const bundle = makeBundle();
+    const { code, results } = await runBatch(["--bundle", bundle.folder, "--config", withJudge()], "fail", scratch);
+
+    expect(code).toBe(2);
+    expect(Object.values(results).map((result) => statuses(result).gm_fabrication)).toEqual(["fail", "fail"]);
+  });
+
+  it("reports a call log it cannot read once, on the result of each game, and still judges them", async () => {
+    const bundle = makeBundle();
+    fs.writeFileSync(path.join(bundle.folder, "ai-calls.jsonl"), '{"half":\n');
+    const { code, results } = await runBatch(["--bundle", bundle.folder, "--config", withJudge()], "pass", scratch);
+
+    expect(code).toBe(1);
+    for (const id of bundle.ids) {
+      expect(results[id].run_error).toMatchObject({ stage: "model_calls" });
+      expect(results[id].run_error?.message).toMatch(/ai-calls\.jsonl line 1 is not JSON/);
+      expect(statuses(results[id]).gm_spoiler).toBe("pass");
+      expect(errors.filter((text) => text.includes(`[${id}] error`))).toHaveLength(1);
+    }
+  });
+
+  it("reports judges that all error on every game, exiting 2", async () => {
+    const bundle = makeBundle();
+    const { code, results } = await runBatch(["--bundle", bundle.folder, "--config", withJudge()], "crash", scratch);
+
+    expect(code).toBe(2);
+    for (const id of bundle.ids) expect(statuses(results[id]).gm_spoiler).toBe("error");
+  });
+
+  it("judges several trace files, and a single id still writes no parent", async () => {
+    const first = writeTrace();
+    const second = path.join(scratch, "second-trace.json");
+    fs.writeFileSync(second, JSON.stringify(makeRawTrace({ session: { ...makeRawTrace().session, id: "other-game" } })));
+    const { code, results } = await runBatch([first, second, "--config", withJudge()], "pass", scratch);
+
+    expect(code).toBe(0);
+    expect(Object.keys(results).sort()).toEqual([makeRawTrace().session.id, "other-game"].sort());
+
+    const single = await runForResult([first, "--config", withJudge()], "pass");
+    expect(single.result.run.parent_run).toBeNull();
+    expect(fs.existsSync(path.join(path.dirname(single.file), "judge"))).toBe(false);
+  });
+
+  it.each([
+    [["a-session", "--bundle", "x"], /drop the session ids/],
+    [["a-session", "b-session", "--since", "2026-06-01"], /drop the session ids/],
+    [["--bundle", "x", "--since", "2026-06-01"], /use one/],
+    [["--bundle", "x", "--database", "y.db"], /drop --database/],
+    [["--since", "yesterday"], /--since needs a date/],
+    [["--bundle", " "], /--bundle needs a folder/],
+    [["--since", "2026-06-01", "--concurrency", "0"], /--concurrency needs a positive integer/],
+    [[], /name a session id or trace file/],
+  ])("refuses %j as a usage error", async (args, message) => {
+    expect(await judgeGame([...args, "--config", withJudge()])).toBe(1);
+    expect(errors.join("\n")).toMatch(message);
+  });
+
+  it("refuses a trace file among several ids read with --database", async () => {
+    const bundle = makeBundle();
+    expect(await judgeGame([writeTrace(), "second-session", "--database", path.join(bundle.folder, "game.db"), "--config", withJudge()])).toBe(1);
+    expect(errors.join("\n")).toMatch(/needs no database/);
+  });
+
+  it("is an error when the bundle folder holds no game.db", async () => {
+    expect(await judgeGame(["--bundle", scratch, "--config", withJudge()])).toBe(1);
+    expect(errors.join("\n")).toMatch(/no game\.db in .* not a playtest bundle/);
   });
 });
 

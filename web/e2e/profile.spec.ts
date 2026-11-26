@@ -70,6 +70,14 @@ test.describe('Local profiles', () => {
 
 		const existing = page.getByTestId('profile-option').filter({ hasText: name });
 		await expect(existing).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'MYSTERY', exact: true })).toBeVisible();
+		await expect(page.getByText(/Who is playing|local to this machine/i)).toHaveCount(0);
+
+		// With profiles to pick, the new-profile form waits behind its button.
+		await expect(page.locator('#profile-name')).toBeHidden();
+		await page.getByTestId('new-profile').click();
+		await expect(page.locator('#profile-name')).toBeVisible();
+		await expect(page.getByTestId('reading-age-select')).toBeVisible();
 
 		await existing.click();
 		await expect(page).toHaveURL(/\/$/);

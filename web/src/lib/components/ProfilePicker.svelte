@@ -89,9 +89,10 @@
 	<button
 		type="button"
 		data-testid="new-profile"
+		disabled={submitting}
 		onclick={() => (creating = true)}
 		class="min-h-11 w-full border border-t-primary px-3 py-2 font-mono text-t-bright
-			hover:bg-t-primary/10 focus:outline-none"
+			hover:bg-t-primary/10 focus:outline-none disabled:opacity-50"
 	>
 		[ NEW PROFILE ]
 	</button>

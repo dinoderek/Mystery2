@@ -500,5 +500,29 @@
         ]
       }
     }
+  },
+  "visual_direction": {
+    "art_style": "Bright gouache picture-book illustration with soft rounded shapes",
+    "color_palette": "Fresh grass greens, sky blue, white tent canvas and a bright rosette blue",
+    "mood": "Cheerful village fun with a small puzzle at its heart",
+    "lighting": "Dry, sunny late-morning light with soft shadows",
+    "texture": "Light brushy gouache texture",
+    "portrait_background": "A soft blur of summer green and blue sky"
+  },
+  "cover": {
+    "facts": [
+      "It is a sunny morning in the white marquee at the village dog show.",
+      "The judges' table at the far end has a white tablecloth and an empty space where the blue rosette was.",
+      "Oliver holds his spaniel Pepper on her lead and looks at the empty table.",
+      "Tilly holds her scruffy little terrier Biscuit, and Mrs. Dove carries a tray of tea cups."
+    ],
+    "characters": [
+      "oliver",
+      "tilly",
+      "dove"
+    ],
+    "locations": [
+      "marquee"
+    ]
   }
 }

@@ -1087,5 +1087,31 @@
         ]
       }
     }
+  },
+  "visual_direction": {
+    "art_style": "Detailed storybook illustration in coloured ink and watercolour",
+    "color_palette": "Old grey stone, brick red, bunting colours and brass gold",
+    "mood": "Busy fair-day excitement with a mystery to solve",
+    "lighting": "Bright morning light across the square, with long soft shadows",
+    "texture": "Fine ink linework over watercolour washes",
+    "portrait_background": "A soft blur of bunting colours and grey stone"
+  },
+  "cover": {
+    "facts": [
+      "It is the morning of Fairbridge's hundredth birthday fair, and stalls are being set up across the cobbled town square.",
+      "The old clock tower rises over the square, its hands stopped at ten past six.",
+      "Mayor Bramble, in her red coat and gold chain, looks up at the clock with Mr. Hobbs the clockkeeper.",
+      "Mrs. Okafor and her son Sam carry the big birthday cake across the square."
+    ],
+    "characters": [
+      "bramble",
+      "hobbs",
+      "okafor",
+      "sam"
+    ],
+    "locations": [
+      "town_square",
+      "clock_tower"
+    ]
   }
 }

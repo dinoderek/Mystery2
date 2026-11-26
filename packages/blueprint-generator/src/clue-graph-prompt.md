@@ -78,6 +78,14 @@ cases were written by hand, and each step needs the one before it.
    when asked, never a clue and never a hint at one), their `appearance` (a
    few facts about how they look), and one demeanor line for each stance they
    can take.
+8. **The pictures.** Every portrait, place and the cover is drawn from the
+   case, so write how they should look. `visual_direction` sets one style for
+   all of them: the art style, palette, mood and lighting, suited to the
+   child's age, and a `portrait_background` that names no place in the case.
+   `cover` is the case's front picture: a few facts describing one moment
+   from the opening, with the characters and the place it shows. A cover
+   shows only what the opening makes public: never the culprit caught, a
+   clue, or a hidden spot.
 
 Size the case to the brief: its `size` sets how many places, people and clues
 the case has and how long the shortest route is. `schema/clue-graph-sizes.ts`

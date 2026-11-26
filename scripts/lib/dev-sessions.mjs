@@ -131,7 +131,10 @@ export async function listSessions(file, { since = null, profile = null } = {}) 
  * copy in memory. A read-only connection to a WAL file would create those two
  * files and cannot remove them, and fails in a read-only folder; this touches
  * nothing. The copy's header says rollback journal, since an in-memory
- * database has no WAL.
+ * database has no WAL. A game that starts while the file is being copied can
+ * tear the copy: the listing then fails naming the file, or is momentarily
+ * inconsistent, which a diagnostic listing accepts. The copy is held in memory,
+ * about twice the file's size.
  *
  * @param {string} file
  */

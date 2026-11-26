@@ -7,8 +7,8 @@
 // Each case is deterministic in the usual way: a short play the engine folds
 // into history, then exactly ONE action, so the model input is identical every
 // run and across models. `start` is the exception to the shape: it creates its
-// own session, so its `given` is empty. The mock case targets age 10, so
-// `flesch` and `age_appropriate_turn` both grade against age 10.
+// own session, so its `given` is empty. These cases are narrated at age 10,
+// so `flesch` and `age_appropriate_turn` both grade against age 10.
 
 import { accusationCase, actionCase, lineCase, searchCase, startCase, type Step, type Story } from "../support/play.ts";
 

@@ -34,7 +34,7 @@ const TEMPLATE = path.join(path.dirname(url.fileURLToPath(import.meta.url)), "re
 
 type Json = Record<string, unknown>;
 
-/** A blueprint as far as the report reads it: a title, an age and the clues' words. */
+/** A blueprint as far as the report reads it: a title and the clues' words. */
 type ReportBlueprint = Partial<PlaytestBlueprint> & {
   world?: {
     locations?: Array<{ clues?: ClueText[]; sub_locations?: Array<{ clues?: ClueText[] }> }>;

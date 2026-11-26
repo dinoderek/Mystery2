@@ -11,7 +11,14 @@ import {
 } from "../../../packages/game-engine/src/role-request.ts";
 import { buildClueGraphWorld, validateClueGraph, type ClueGraphWorld } from "@my2/shared";
 import { readMockCase } from "../../testkit/src/mock-case.ts";
-import { renderComplexityGuidance } from "../../../packages/shared/src/age-profile.ts";
+import {
+  allInteractions,
+  authoredFieldBudget,
+  renderComplexityGuidance,
+  renderGuidance,
+} from "../../../packages/shared/src/age-profile.ts";
+import { buildAgeGuidance } from "../../../packages/game-engine/src/ai-prompts.ts";
+import type { AIPromptKey } from "../../../packages/game-engine/src/ai-contracts.ts";
 
 // role-request.ts is the single assembly path for narrator prompts. These tests
 // exist because an earlier arrangement had two: the endpoint handlers,
@@ -181,6 +188,65 @@ describe("every assembled prompt carries the request's reading age", () => {
       expect(asserted.has(role), `role "${role}" is not asserted above`).toBe(true);
     }
   });
+});
+
+// The reading age is a prompt's own input and nothing else about it: the same
+// case and moment at two ages differ only where the age is written in.
+describe("one case's prompts at two ages", () => {
+  const YOUNG = 6;
+  const OLD = 11;
+
+  /** Every line the age guidance can put in a prompt at `age`: complexity and each length. */
+  function ageGuidanceLines(age: number): Set<string> {
+    const roles = allRoleRequestNames().filter((role) => !NARRATION_ROLES.includes(role)) as AIPromptKey[];
+    const blocks = [
+      ...roles.map((role) => buildAgeGuidance(role, age)),
+      ...allInteractions().map(({ id }) => renderGuidance(id, age)),
+    ];
+    return new Set(blocks.flatMap((block) => block.split("\n")));
+  }
+
+  /** A line with the notebook line's size at `age` written as N, the one age-sized number inside a task line. */
+  const sizeless = (line: string, age: number) =>
+    line.replaceAll(`about ${authoredFieldBudget("clue_text", age)} words`, "about N words");
+
+  /** Every key but the age and the size it sets, at any depth. */
+  function ageless(value: unknown): unknown {
+    if (Array.isArray(value)) return value.map(ageless);
+    if (value === null || typeof value !== "object") return value;
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([key]) => key !== "reading_age" && key !== "notebook_words")
+        .map(([key, inner]) => [key, ageless(inner)]),
+    );
+  }
+
+  it.each([...NARRATING, ...MENU])("%s differs only in its age guidance", async (role) => {
+    const young = (await promptFor(role, YOUNG)).split("\n");
+    const old = (await promptFor(role, OLD)).split("\n");
+    const youngGuidance = ageGuidanceLines(YOUNG);
+    const oldGuidance = ageGuidanceLines(OLD);
+
+    expect(old).toHaveLength(young.length);
+    const differing = young.flatMap((line, index) => (line === old[index] ? [] : [[line, old[index]]]));
+    expect(differing.length).toBeGreaterThan(0);
+    for (const [at6, at11] of differing) {
+      const guidance = youngGuidance.has(at6) && oldGuidance.has(at11);
+      expect(guidance || sizeless(at6, YOUNG) === sizeless(at11, OLD), `${at6}\n${at11}`).toBe(true);
+    }
+  });
+
+  it.each([...NARRATING, ...MENU].filter((role) => !NARRATION_ROLES.includes(role)))(
+    "%s sends the same context, but for any age it carries",
+    async (role) => {
+      const at = async (age: number) =>
+        role === "one_liner"
+          ? (await buildOneLinerRequest(inputFor(role, age))).context
+          : (await buildRoleRequest(inputFor(role, age))).context;
+
+      expect(ageless(await at(YOUNG))).toEqual(ageless(await at(OLD)));
+    },
+  );
 });
 
 describe("the accusation's judge", () => {

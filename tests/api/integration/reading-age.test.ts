@@ -4,6 +4,10 @@ import path from "node:path";
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
+import { createLocalTraceSource, extractSessionTrace } from "../../../evaluation/trace/lib/datasource.ts";
+import { reconstructTrace } from "../../../evaluation/trace/lib/reconstruct.ts";
+import { casesFromTrace } from "../../../evaluation/runtime/cases.ts";
+import { scoreReadability } from "../../../evaluation/playtest/lib/judge.ts";
 import { startOwnServer, type OwnServer } from "../../testkit/src/own-server";
 import { MOCK_BLUEPRINT_ID, readStoredEvents, type ApiAuthContext } from "./helpers";
 
@@ -15,8 +19,6 @@ import { MOCK_BLUEPRINT_ID, readStoredEvents, type ApiAuthContext } from "./help
 //
 // A profile always has an age: `/api/player` makes one only with it. One
 // without (a database from before) is refused at play with a typed error.
-
-const CASE_AGE = 10; // blueprints/clue-graph/mock-case.json; no profile reads it
 
 let server: OwnServer;
 let logDir: string;
@@ -33,6 +35,27 @@ afterAll(async () => {
   fs.rmSync(logDir, { recursive: true, force: true });
 });
 
+const request = (auth: ApiAuthContext, endpoint: string, body?: unknown) =>
+  fetch(`${server.apiUrl}/${endpoint}`, {
+    method: body === undefined ? "GET" : "POST",
+    headers: auth.headers,
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
+
+async function start(auth: ApiAuthContext) {
+  const res = await request(auth, "game-start", { blueprint_id: MOCK_BLUEPRINT_ID });
+  expect(res.status).toBe(200);
+  const body = await res.json();
+  expect((await request(auth, "game-enter", { game_id: body.game_id })).status).toBe(200);
+  return { gameId: body.game_id as string, readingAge: body.reading_age as number, startPayload: body.narration_events[0].payload };
+}
+
+async function play(auth: ApiAuthContext, gameId: string, input: string) {
+  const res = await request(auth, "game-turn", { game_id: gameId, input });
+  expect(res.status).toBe(200);
+  return res.json();
+}
+
 describe("the reading age", () => {
   let ada: ApiAuthContext;
   let grace: ApiAuthContext;
@@ -42,31 +65,10 @@ describe("the reading age", () => {
     grace = await server.createPlayer("reading-age-grace");
   });
 
-  const request = (auth: ApiAuthContext, endpoint: string, body?: unknown) =>
-    fetch(`${server.apiUrl}/${endpoint}`, {
-      method: body === undefined ? "GET" : "POST",
-      headers: auth.headers,
-      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-    });
-
   async function setAge(auth: ApiAuthContext, age: number) {
     const res = await request(auth, "profile-settings", { reading_age: age });
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ reading_age: age });
-  }
-
-  async function start(auth: ApiAuthContext) {
-    const res = await request(auth, "game-start", { blueprint_id: MOCK_BLUEPRINT_ID });
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect((await request(auth, "game-enter", { game_id: body.game_id })).status).toBe(200);
-    return { gameId: body.game_id as string, readingAge: body.reading_age as number, startPayload: body.narration_events[0].payload };
-  }
-
-  async function play(auth: ApiAuthContext, gameId: string, input: string) {
-    const res = await request(auth, "game-turn", { game_id: gameId, input });
-    expect(res.status).toBe(200);
-    return res.json();
   }
 
   async function resumedAge(auth: ApiAuthContext, gameId: string): Promise<number> {
@@ -90,7 +92,7 @@ describe("the reading age", () => {
   const eventAges = (gameId: string) =>
     readStoredEvents(gameId, server.database()).map((event) => [event.event_type, event.payload?.reading_age ?? null]);
 
-  it("writes a game at the profile's age, not its case's, and records it on each narrated event", async () => {
+  it("writes a game at the profile's age, and records it on each narrated event", async () => {
     await setAge(ada, 8);
     const game = await start(ada);
     await play(ada, game.gameId, "search");
@@ -140,14 +142,17 @@ describe("the reading age", () => {
     ]);
   });
 
-  it("writes a profile at the age it was created with, never its case's", async () => {
-    expect(await (await request(ada, "profile-settings")).json()).toEqual({ reading_age: 8 });
+  it("writes a profile's first game at the age it was created with", async () => {
+    const reader = await server.createPlayer("created-at-11", 11);
+    expect(await (await request(reader, "profile-settings")).json()).toEqual({ reading_age: 11 });
 
-    const game = await start(ada);
-    await play(ada, game.gameId, "search");
+    const game = await start(reader);
+    await play(reader, game.gameId, "search");
 
-    expect(game.readingAge).not.toBe(CASE_AGE);
-    expect(promptAges(game.gameId, "game-turn")).toEqual([8]);
+    expect(game.readingAge).toBe(11);
+    expect(game.startPayload.reading_age).toBe(11);
+    expect(promptAges(game.gameId, "game-start")).toEqual([11]);
+    expect(promptAges(game.gameId, "game-turn")).toEqual([11]);
   });
 
   describe("a profile with no age (a database from before)", () => {
@@ -228,6 +233,124 @@ describe("the reading age", () => {
     expect(res.status).toBe(400);
     expect((await res.json()).details.field).toBe("reading_age");
     expect(await (await request(ada, "profile-settings")).json()).toEqual({ reading_age: 8 });
+  });
+});
+
+// The menu's lines are narrated on request at the profile's age then, and never
+// kept: each visit asks the narrator again.
+describe("the menu's lines", () => {
+  const menuPromptAges = () =>
+    fs
+      .readFileSync(callLog, "utf8")
+      .split("\n")
+      .filter(Boolean)
+      .map((line) => JSON.parse(line))
+      .filter((call) => call.endpoint === "blueprints-list")
+      .map((call) => Number(String(call.prompt).match(/The reader is (\d+) years old/)?.[1]));
+
+  it("are asked anew on every visit, at the age the profile has then", async () => {
+    const reader = await server.createPlayer("menu-lines");
+    const visit = async (age: number) => {
+      expect((await request(reader, "profile-settings", { reading_age: age })).status).toBe(200);
+      const res = await request(reader, "blueprints-list?one_liners=true");
+      expect(res.status).toBe(200);
+      const { blueprints } = await res.json();
+      expect(blueprints.find((entry: { id: string }) => entry.id === MOCK_BLUEPRINT_ID)?.one_liner).toMatch(/^\[Mock\] /);
+    };
+    const before = fs.existsSync(callLog) ? menuPromptAges().length : 0;
+
+    await visit(7);
+    await visit(10);
+    await visit(10);
+
+    expect(menuPromptAges().slice(before)).toEqual([7, 10, 10]);
+  });
+});
+
+// The evaluation readers take each turn's age from its own event in a game as
+// played: trace extraction, runtime cases and playtest's reading level. Each
+// reader's refusal of an event without one is its own unit test.
+describe("a played game, read back for evaluation", () => {
+  it("is judged turn by turn at the age each event records, across a change", async () => {
+    const reader = await server.createPlayer("evaluation-ages");
+    expect((await request(reader, "profile-settings", { reading_age: 8 })).status).toBe(200);
+    const game = await start(reader);
+    await play(reader, game.gameId, "search");
+    expect((await request(reader, "profile-settings", { reading_age: 6 })).status).toBe(200);
+    await play(reader, game.gameId, "go to the living room");
+    await play(reader, game.gameId, "age 10");
+    await play(reader, game.gameId, "search");
+
+    const source = createLocalTraceSource({ databasePath: server.databaseFile, repoRoot: process.cwd(), env: {} });
+    const trace = await extractSessionTrace(source, game.gameId).finally(() => source.close?.());
+
+    // The opening is no game master's turn, so its record holds no age; playtest scores it at its event's.
+    const turns = reconstructTrace(trace).turns.map((turn) => [turn.event_type, turn.reading_age]);
+    expect(turns).toEqual([["start", null], ["move", 8], ["search", 8], ["move", 6], ["search", 10]]);
+
+    const cases = casesFromTrace(trace, ["move", "search"], 10, "case.json", ["flesch"]);
+    expect(cases.map((turnCase) => [turnCase.id, turnCase.reading_age])).toEqual([
+      ["s2-move", 8],
+      ["s3-search", 8],
+      ["s5-move", 6],
+      ["s7-search", 10],
+    ]);
+
+    expect(scoreReadability(trace).narrations.map((graded) => [graded.event_type, graded.reading_age])).toEqual([
+      ["start", 8],
+      ...turns.slice(1),
+    ]);
+  });
+});
+
+// Engine-written lines are one fixed text for every age: only the narrator
+// writes at the reader's age.
+describe("the lines the engine writes", () => {
+  // The opening tip, help, errors, the accusation's rule and the way back, three
+  // failures to a loss, and a line once the case has ended.
+  const SCRIPT = ["help", "dance", "age 12", "search", "accuse", "back", ...Array(3).fill("accuse Bob did it."), "search"];
+
+  /** Every line the engine wrote, and every lead, that a player at `age` reads through SCRIPT. */
+  async function engineLines(age: number) {
+    const auth = await server.createPlayer(`engine-lines-${age}`);
+    expect((await request(auth, "profile-settings", { reading_age: age })).status).toBe(200);
+    const started = await (await request(auth, "game-start", { blueprint_id: MOCK_BLUEPRINT_ID })).json();
+    expect((await request(auth, "game-enter", { game_id: started.game_id })).status).toBe(200);
+    const system = (events: { narration_parts: { text: string; speaker: { kind: string } }[] }[]) =>
+      events.flatMap((event) => event.narration_parts).filter((part) => part.speaker.kind === "system").map((part) => part.text);
+
+    // The opening's second part is the engine's notebook tip, saved beside the narration.
+    const tip = started.narration_events[0].narration_parts[1].text;
+    expect(tip).toMatch(/^Tip: /);
+
+    const lines: unknown[] = [["start", tip, started.state.leads]];
+    for (const input of SCRIPT) {
+      const answer = await (await request(auth, "game-turn", { game_id: started.game_id, input })).json();
+      if (answer.kind === "turn") lines.push([input, system(answer.events), answer.leads, answer.result]);
+      else lines.push([input, answer.kind, answer.hint ?? answer.note ?? null]);
+    }
+    const narratedAt = readStoredEvents(started.game_id, server.database()).flatMap((event) => event.payload?.reading_age ?? []);
+    return { lines, narratedAt: [...new Set(narratedAt)] };
+  }
+
+  it("leads, the tip, help, errors and the end of the case read the same at 6 and at 11", async () => {
+    const young = await engineLines(6);
+    const old = await engineLines(11);
+
+    expect(young.narratedAt).toEqual([6]);
+    expect(old.narratedAt).toEqual([11]);
+    expect(old.lines).toEqual(young.lines);
+    // The script reached each kind of line it is meant to compare.
+    expect(young.lines.flat(2)).toEqual(
+      expect.arrayContaining([
+        "Help menu opened.",
+        expect.stringContaining("from 6 to 11"),
+        expect.stringContaining("accusations left"),
+        expect.stringContaining("You put the accusation aside"),
+        "lose",
+        expect.stringMatching(/^Commands: notebook, age <number>, help, quit/),
+      ]),
+    );
   });
 });
 

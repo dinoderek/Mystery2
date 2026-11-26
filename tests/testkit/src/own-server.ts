@@ -26,7 +26,8 @@ const MOCK_ONLY_ENV = {
 export interface OwnServer {
 	apiUrl: string;
 	databaseFile: string;
-	createPlayer(tag: string): Promise<TestPlayer>;
+	/** A profile made through `/api/player`, at `readingAge` (8 unless given). */
+	createPlayer(tag: string, readingAge?: number): Promise<TestPlayer>;
 	/** The server's database, opened once and closed by `stop()`. */
 	database(): Db;
 	stop(): Promise<void>;
@@ -78,12 +79,12 @@ export async function startOwnServer({ aiConfig, seed: callerSeed, env = {} }: O
 	return {
 		apiUrl,
 		databaseFile: server.databaseFile,
-		async createPlayer(tag) {
+		async createPlayer(tag, readingAge = 8) {
 			const name = `${tag}-${crypto.randomUUID().slice(0, 8)}`;
 			const response = await fetch(`${apiUrl}/player`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ name, reading_age: 8 }),
+				body: JSON.stringify({ name, reading_age: readingAge }),
 			});
 			if (!response.ok) throw new Error(`Failed to create test profile ${name}: ${response.status}`);
 			const { player } = (await response.json()) as { player: { id: string; name: string } };

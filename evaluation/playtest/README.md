@@ -29,7 +29,7 @@ played, 2 when a judge failed a game.
 
 - **The runner makes no choices.** Every input comes from the investigator. The
   only step the runner takes itself is the browser's: `game-enter` (the "press
-  any key") after `game-start` narrates the premise.
+  any key") after `game-start` narrates the opening.
 - **The investigator sees what a player sees, and no more.** Its view comes from
   the session state the API returns to the browser, never from the blueprint. A
   clue-graph view adds leads, and taken-back and noticed marks. It shows

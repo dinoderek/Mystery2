@@ -34,7 +34,7 @@ Three phases keep images consistent:
 
 - A portrait's backdrop is `visual_direction.portrait_background` when set,
   otherwise a built-in bokeh wash, and never depicts a mystery location.
-- References use `input_references[]` in the prompt legend’s order. At most 16 are sent; beyond that the first 16, with a warning.
+- References use `input_references[]` in the prompt legend’s order. At most 10 are sent, the default model's limit; beyond that the first 10, with a warning.
 - `--chat-packets` writes the same prompts, with the references to upload in
   the same order, for pasting into a chat.
 - A case committed under `blueprints/` is never patched, so the tracked file

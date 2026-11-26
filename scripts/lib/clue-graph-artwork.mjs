@@ -2,6 +2,10 @@
  * A clue-graph case's artwork view: what the image prompts read, under the
  * names they read it by. Only public visual facts enter image prompts; clues
  * and hidden truth never do. A character goes by one name.
+ *
+ * What a case's `cover` leaves out comes from the opening: its facts, every
+ * character and the opening location, so the cover shows the case's own cast
+ * rather than whatever its title suggests.
  */
 export function projectClueGraphArtwork(graph) {
   return {
@@ -26,9 +30,9 @@ export function projectClueGraphArtwork(graph) {
       })),
     },
     cover_image: {
-      description: graph.cover?.facts.join(" ") ?? graph.metadata.title,
-      character_ids: graph.cover?.characters ?? [],
-      location_ids: graph.cover?.locations ?? [],
+      description: (graph.cover?.facts ?? graph.opening.facts).join(" "),
+      character_ids: graph.cover?.characters ?? Object.keys(graph.characters),
+      location_ids: graph.cover?.locations ?? [graph.opening.location],
     },
   };
 }

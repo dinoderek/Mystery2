@@ -27,15 +27,15 @@ const MAX_ERROR_BODY_LENGTH = 16_000;
 // OpenRouter serves image models from a dedicated Images API; image models are
 // rejected by /chat/completions with a 404.
 export const OPENROUTER_IMAGES_URL = "https://openrouter.ai/api/v1/images";
-const DEFAULT_IMAGE_MODEL = "openai/gpt-image-2";
+const DEFAULT_IMAGE_MODEL = "bytedance-seed/seedream-5-5";
 const DEFAULT_OPENROUTER_TIMEOUT_MS = 120_000;
 // The documented ratio union. Per-model support is a subset and is only
 // discoverable via GET /api/v1/images/models, so this is a syntax check only.
 const SUPPORTED_ASPECT_RATIOS = new Set([
   "1:1", "3:2", "2:3", "4:3", "3:4", "16:9", "9:16", "21:9", "auto",
 ]);
-// gpt-image-1 and gpt-image-2 both advertise input_references 0-16.
-const MAX_INPUT_REFERENCES = 16;
+// The default model advertises input_references 0-10.
+const MAX_INPUT_REFERENCES = 10;
 
 function parseCsv(value) {
   return String(value ?? "")

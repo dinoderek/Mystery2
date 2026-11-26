@@ -59,7 +59,9 @@ describe("./dev gen-images on clue-graph cases", () => {
       expect(cover.prompt).toContain("Paper collage");
       expect(cover.input_references).toHaveLength(2);
     } else {
-      expect(cover.prompt).toContain(graph.metadata.title);
+      // No cover: the opening stands in, with the whole cast and the opening location as references.
+      expect(cover.prompt).toContain(graph.opening.facts[0]);
+      expect(cover.input_references).toHaveLength(Object.keys(graph.characters).length + 1);
     }
     for (const place of Object.values(graph.locations)) {
       const scene = requests.find(({ prompt }) => prompt.includes(`Location: ${place.name}.`));

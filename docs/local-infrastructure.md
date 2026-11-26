@@ -13,7 +13,7 @@ One Node 24 process on loopback (`npm run dev`). AIs and keys:
 
 `MYSTERY_CONFIG_ROOT` (absolute) moves all of it outside the repo, so clones and
 worktrees share content. `.local` files are machine-specific and gitignored.
-`MYSTERY_LIST_FIXTURES=1` shows `mock-case`.
+`MYSTERY_LIST_FIXTURES=1` shows the test cases.
 
 ## Which database
 

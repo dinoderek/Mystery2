@@ -237,12 +237,12 @@ describe("generateImageAsset", () => {
 });
 
 describe("generate-blueprint-images CLI args", () => {
-  it("defaults to gpt-image-2 at 4:3 and honours the override chain", () => {
+  it("defaults to Seedream 5.5 at 4:3 and honours the override chain", () => {
     expect(
       parseGenerateImageArgs(["--blueprint-path", "bp.json"], {
         MYSTERY_CONFIG_ROOT: "/tmp/shared-config",
       }),
-    ).toMatchObject({ model: "openai/gpt-image-2", aspectRatio: "4:3" });
+    ).toMatchObject({ model: "bytedance-seed/seedream-5-5", aspectRatio: "4:3" });
 
     expect(
       parseGenerateImageArgs(["--blueprint-path", "bp.json"], {

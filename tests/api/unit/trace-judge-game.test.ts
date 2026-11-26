@@ -576,6 +576,7 @@ describe("judge game on a batch", () => {
     [["--bundle", "x", "--since", "2026-06-01"], /use one/],
     [["--bundle", "x", "--database", "y.db"], /drop --database/],
     [["--since", "yesterday"], /--since needs a date/],
+    [["--bundle", " "], /--bundle needs a folder/],
     [["--since", "2026-06-01", "--concurrency", "0"], /--concurrency needs a positive integer/],
     [[], /name a session id or trace file/],
   ])("refuses %j as a usage error", async (args, message) => {

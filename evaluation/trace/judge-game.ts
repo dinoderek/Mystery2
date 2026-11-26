@@ -99,7 +99,7 @@ const HELP = formatHelp({
     ["--database <file>", "the database to read session ids from (default: this checkout's play database); with --since, a name or a file"],
     ["--bundle <folder>", "every game in <folder>/game.db, with <folder>/ai-calls.jsonl as the call log when present"],
     ["--since <date>", "every game in --database started on or after YYYY-MM-DD (UTC) or a full timestamp"],
-    ["--concurrency <n>", `games judged at once in a batch (default: ${DEFAULT_CONCURRENCY})`],
+    ["--concurrency <n>", `games judged at once; a batch only (default: ${DEFAULT_CONCURRENCY})`],
     ["--judges <id,id>", "run only these judges, or candidate judges, which run only when named; the rest are skipped"],
     ["--no-judges", "run the mechanical checks only; no model is called"],
     ["--quiet", "no live progress while the judges run"],

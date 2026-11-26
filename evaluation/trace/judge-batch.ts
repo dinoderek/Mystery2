@@ -90,8 +90,8 @@ export async function pickGames(
 ): Promise<PickedGames | null> {
   if (values.bundle === undefined && values.since === undefined) return null;
   refuseMisuse(values, positionals);
-  const bundle = str(values.bundle);
-  const since = str(values.since);
+  const bundle = str(values.bundle)?.trim() || null;
+  const since = str(values.since)?.trim() || null;
   if (bundle === null && since === null) throw new UsageError(`--${values.bundle === undefined ? "since needs a date" : "bundle needs a folder"}`);
   const source = bundle === null ? sinceSource(String(since), str(values.database), context) : bundleSource(bundle);
   try {

@@ -19,7 +19,6 @@ import { insertEventRow } from "./events.ts";
 import { validateClueGraph } from "../../../shared/src/clue-graph-validator.ts";
 import { clueGraphCaseId } from "../../../shared/src/clue-graph-case.ts";
 import type { ClueGraphCase } from "../../../shared/src/clue-graph-schema.ts";
-import { ReadingAgeSchema } from "../../../shared/src/reading-age.ts";
 
 const SUMMARY_COLUMNS =
   "id, blueprint_id, mode, time_remaining, outcome, updated_at, created_at, json_extract(clue_graph_snapshot, '$.metadata.title') as clue_graph_title";
@@ -79,7 +78,6 @@ function toSessionRow(row: Record<string, unknown>): GameSessionRow {
     time_remaining: Number(row.time_remaining),
     discovered_clues: readJsonArray(row.discovered_clues),
     outcome: row.outcome === null ? null : String(row.outcome),
-    reading_age: row.reading_age === null ? null : Number(row.reading_age),
     created_at: String(row.created_at),
     updated_at: String(row.updated_at),
   };
@@ -106,8 +104,8 @@ function insertSessionRow(db: Db, id: string, session: NewGameSession): void {
     `insert into game_sessions (
        id, player_id, blueprint_id, ai_profile_id, mode,
        current_location_id, time_remaining, created_at, updated_at,
-       clue_graph_snapshot, reading_age
-     ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       clue_graph_snapshot
+     ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     id,
     session.player_id,
@@ -119,7 +117,6 @@ function insertSessionRow(db: Db, id: string, session: NewGameSession): void {
     now,
     now,
     session.clue_graph_snapshot ? JSON.stringify(validateClueGraph(session.clue_graph_snapshot, { story: false })) : null,
-    ReadingAgeSchema.parse(session.reading_age),
   );
 }
 

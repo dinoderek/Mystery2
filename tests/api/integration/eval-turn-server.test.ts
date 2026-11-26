@@ -172,6 +172,7 @@ describe("judge turn through a throwaway server", () => {
       JSON.stringify({
         id: "ask-toby-last-night",
         blueprint: { path: "blueprints/clue-graph/greenhouse-prizewinner.json" },
+        reading_age: 10,
         given: {
           mode: "talk",
           location_id: "potting_shed",

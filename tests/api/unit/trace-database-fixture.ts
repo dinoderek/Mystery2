@@ -20,6 +20,8 @@ export interface GameDatabase {
 }
 
 const SESSION_ID = "session-under-test";
+/** The age the session's narrated event records it was written at. */
+export const PLAYED_AT = 8;
 const NOW = "2026-06-02T00:00:00Z";
 
 function parts(text: string): string {
@@ -63,7 +65,7 @@ export function createGameDatabase(dir: string, { profileId = "mock", eventModel
       2,
       "search",
       "player",
-      JSON.stringify({ location_id: "loc-kitchen", search_query: "the pantry shelf", clue_graph: { type: "search", spot: "the pantry shelf" } }),
+      JSON.stringify({ location_id: "loc-kitchen", search_query: "the pantry shelf", reading_age: PLAYED_AT, clue_graph: { type: "search", spot: "the pantry shelf" } }),
       "You look over the pantry shelf and find an empty jar.",
       parts("You look over the pantry shelf and find an empty jar."),
       eventModel,

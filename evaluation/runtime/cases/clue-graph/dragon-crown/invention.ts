@@ -3,10 +3,10 @@
 // looks like evidence, and a detail an earlier turn made up stays, later in the
 // talk and on a later visit.
 
-import { lineCase, searchCase, type Step } from "../support/play.ts";
+import { lineCase, searchCase, type Step, type Story } from "../support/play.ts";
 import { HALL } from "./talk.ts";
 
-const CROWN = "blueprints/clue-graph/dragon-crown.json";
+const CROWN: Story = { file: "blueprints/clue-graph/dragon-crown.json", reading_age: 8 };
 type Labels = Parameters<typeof lineCase>[3];
 const line = (steps: Step[], say: string, labels: Labels) => lineCase(CROWN, steps, say, labels);
 const search = (steps: Step[], query: string | null, labels: Labels) => searchCase(CROWN, steps, query, labels);

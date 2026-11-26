@@ -23,7 +23,7 @@ import { buildGameState } from "../game-state-view.ts";
 import { buildNarrationPrompt } from "../role-request.ts";
 import { createRequestLogger, type LogWriter } from "../logging.ts";
 import { readJsonRequest } from "../request.ts";
-import { atReadingAge, gameReadingAge } from "../../../shared/src/reading-age.ts";
+import { requestReadingAge } from "../reading-age.ts";
 import { NARRATOR_SPEAKER } from "../speaker.ts";
 import {
   createNarrationDiagnostics,
@@ -102,13 +102,19 @@ function startPayload(blueprint: PlayableCase) {
   };
 }
 
+/** What a game opens with: its case, the AI narrating it, and the reader's age. */
+interface Opening {
+  blueprint: PlayableCase;
+  profile: EngineAIProfile;
+  readingAge: number;
+}
+
 /** Narrates the opening and saves the session with its first event, in one write. */
 async function openCase(
   req: Request,
   ctx: EngineContext,
   logger: ReturnType<typeof createRequestLogger>,
-  blueprint: PlayableCase,
-  profile: EngineAIProfile,
+  { blueprint, profile, readingAge }: Opening,
 ) {
   // The id exists before the session does: nothing is written until the
   // narration has, so a failed model call leaves no game behind.
@@ -118,7 +124,7 @@ async function openCase(
     openrouterApiKey: profile.openrouter_api_key,
   });
   const narration = await provider.generateNarration(
-    buildNarrationPrompt({ role: "intro", game_id: gameId, blueprint }),
+    buildNarrationPrompt({ role: "intro", game_id: gameId, blueprint, reading_age: readingAge }),
     createAIRequestMetadata(req, {
       request_id: logger.requestId,
       endpoint: "game-start",
@@ -138,6 +144,7 @@ async function openCase(
     payload: startPayload(blueprint),
     narration_parts: narrationParts,
     model: provider.resolvedModel,
+    reading_age: readingAge,
     diagnostics: startDiagnostics(blueprint),
     logger,
   };
@@ -153,7 +160,6 @@ async function openCase(
         mode: "explore",
         current_location_id: blueprint.world.starting_location_id,
         time_remaining: blueprint.metadata.time_budget,
-        reading_age: blueprint.metadata.target_age,
         clue_graph_snapshot: blueprint.clue_graph,
       },
       events: [buildNarrationEvent(startEvent, 1)],
@@ -174,6 +180,7 @@ async function openCase(
 
 function startResponse(
   blueprint: PlayableCase,
+  readingAge: number,
   opened: { gameId: string; narrationParts: ReturnType<typeof createNarrationPart>[] },
 ): Response {
   const state = buildGameState(blueprint, {
@@ -190,14 +197,14 @@ function startResponse(
     sequence: 1,
     event_type: "start",
     narration_parts: opened.narrationParts,
-    payload: { ...startPayload(blueprint), diagnostics: startDiagnostics(blueprint, 1) },
+    payload: { ...startPayload(blueprint), reading_age: readingAge, diagnostics: startDiagnostics(blueprint, 1) },
   };
   return new Response(
     JSON.stringify({
       game_id: opened.gameId,
       state,
       narration_events: [event],
-      reading_age: blueprint.metadata.target_age,
+      reading_age: readingAge,
     }),
     { headers: JSON_HEADERS },
   );
@@ -233,14 +240,14 @@ export async function handle(
       log("request.invalid", { reason: "blueprint_not_found", blueprint_id });
       return notFound("Blueprint not found");
     }
-    // The game reads at the profile's age when it has set one, else at the
-    // case's own; the session saves it, so a later change leaves this game be.
-    const readingAge = gameReadingAge(loaded.blueprint.metadata.target_age, await ctx.profile.getReadingAge());
-    const blueprint = atReadingAge(loaded.blueprint, readingAge);
+    // The opening is written at the profile's age as it is now; every later
+    // request reads it again.
+    const blueprint = loaded.blueprint;
+    const readingAge = await requestReadingAge(ctx.profile, blueprint);
 
-    const opened = await openCase(req, ctx, logger, blueprint, resolved.profile);
+    const opened = await openCase(req, ctx, logger, { blueprint, profile: resolved.profile, readingAge });
     if (!opened) return internalError("Failed to start game");
-    return startResponse(blueprint, opened);
+    return startResponse(blueprint, readingAge, opened);
   } catch (err) {
     if (err instanceof RetriableAIError) {
       log("request.ai_retriable", {

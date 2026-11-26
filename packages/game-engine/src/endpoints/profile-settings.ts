@@ -1,4 +1,4 @@
-// The playing profile's settings: today, the reading age its new games start at.
+// The playing profile's settings: today, the reading age its games are written at.
 //
 // `GET` reads them; `POST` replaces them, a null age clearing the setting so
 // each new game reads at its case's own age. A game already started keeps the

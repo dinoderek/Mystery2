@@ -10,7 +10,7 @@
 //     subject_kind: "trace" | "interaction",
 //     turns: [ { sequence, judged, role_name, location_id, character_id,
 //                player_input, search_query, revealed_clue_ids,
-//                prior_revealed_clue_ids, notebook?, narration } ],
+//                prior_revealed_clue_ids, notebook?, narration, reading_age } ],
 //     judged_sequences: number[],
 //   }
 //
@@ -45,6 +45,8 @@ export interface JudgeTurn {
   search_query: string | null;
   revealed_clue_ids: string[];
   narration: string;
+  /** The age the turn was narrated at, from its own event; null for a fixture turn that records none. */
+  reading_age: number | null;
   is_accusation_phase: boolean;
   /** Clue ids established by every turn before this one, in reveal order. */
   prior_revealed_clue_ids: string[];
@@ -72,6 +74,7 @@ export interface TraceTurnLike {
   revealed_clue_ids?: string[];
   notebook?: Record<string, string> | null;
   narration: string;
+  reading_age: number | null;
 }
 
 /** One replayed interaction, as far as the projection reads it. */
@@ -85,6 +88,8 @@ export interface InteractionLike {
     search_query?: string;
   };
   response?: { raw?: unknown; narration_text?: string };
+  /** The age the action under test was narrated at. */
+  reading_age?: number | null;
 }
 
 /** Clue ids established by every turn before `index`, in reveal order. */
@@ -133,6 +138,7 @@ export function projectTraceSubject(reconstructedTurns: readonly TraceTurnLike[]
       revealed_clue_ids: t.revealed_clue_ids ?? [],
       ...notebookField(t.notebook ?? null),
       narration: t.narration,
+      reading_age: t.reading_age,
       is_accusation_phase: CLOSING_SCENE_EVENT_TYPES.has(t.event_type),
     }));
   return finalizeSubject("trace", turns);
@@ -204,6 +210,8 @@ function historyTurns(history: readonly GameEventLike[] | undefined): TurnBefore
     revealed_clue_ids: revealedClueIdsForEvent(event),
     ...notebookField(notebookLinesForEvent(event)),
     narration: event.narration ?? "",
+    // A fixture row may record the age it stands for; a hand-written one need not.
+    reading_age: typeof event.payload?.reading_age === "number" ? event.payload.reading_age : null,
     is_accusation_phase: CLOSING_SCENE_EVENT_TYPES.has(event.event_type),
   }));
 }
@@ -238,6 +246,7 @@ export function projectInteractionSubject(
     revealed_clue_ids: revealedClueIdsFromResponse(response).filter((id) => !held.has(id)),
     ...notebookField(notebookFromResponse(response)),
     narration: response.narration_text ?? "",
+    reading_age: interaction.reading_age ?? null,
     is_accusation_phase: isAccusationPhase,
   };
 

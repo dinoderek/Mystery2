@@ -4,8 +4,7 @@ These judges ask whether the AI **game master** honored the case. That
 question does not depend on how the narration was produced, so the briefs and
 output schemas live here, outside both harnesses. Each harness projects its own
 data into one shared subject, and sends the clue-graph case itself as
-`blueprint` (`judgedCase` in `index.ts`), at the age the turns were narrated
-for:
+`blueprint` (`judgedCase` in `index.ts`), without a case age:
 
 | Harness | Subject | Judged turns | Bound as |
 |---|---|---|---|
@@ -44,7 +43,8 @@ input, narration and revealed clues. Two fields carry the design:
   the player's words
   ([`docs/ai-runtime.md`](../../docs/ai-runtime.md), "Earned, not free").
 
-A turn also carries `notebook`, the line saved for each clue.
+A turn also carries `notebook`, each clue's saved line, and `reading_age`,
+the age it was narrated at (null on a fixture row without one).
 
 ## The verdict rule
 

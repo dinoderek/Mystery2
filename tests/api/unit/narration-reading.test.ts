@@ -231,7 +231,7 @@ describe("buildNarrationEvent", () => {
     });
   });
 
-  it("keeps the payload, and the model that wrote the narration", () => {
+  it("keeps the payload, the model that wrote the narration and the age it wrote at", () => {
     const event = buildNarrationEvent(
       {
         session_id: "g",
@@ -240,10 +240,26 @@ describe("buildNarrationEvent", () => {
         narration_parts: parts,
         payload: { a: 1 },
         model: "m-1",
+        reading_age: 7,
       },
       4,
     );
 
-    expect(event).toMatchObject({ payload: { a: 1 }, model: "m-1" });
+    expect(event).toMatchObject({ payload: { a: 1, reading_age: 7 }, model: "m-1" });
+  });
+
+  it("refuses a narrated event without the age it was written at", () => {
+    expect(() =>
+      buildNarrationEvent({ session_id: "g", event_type: "search", actor: "player", narration_parts: parts, model: "m-1" }, 4),
+    ).toThrow(/search event needs the reading age/);
+  });
+
+  it("records no age on an event the narrator did not write", () => {
+    const event = buildNarrationEvent(
+      { session_id: "g", event_type: "refused", actor: "system", narration_parts: parts, reading_age: 7 },
+      4,
+    );
+
+    expect(event.payload).toBeNull();
   });
 });

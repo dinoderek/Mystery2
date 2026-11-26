@@ -1,6 +1,7 @@
 // `judge turn <trace>`: the narration a stored game already holds is what the
-// reading-level check and the age judge read. No narrator is asked, and every
-// result names the event sequence it judged. No model is called.
+// reading-level check and the age judge read, at the age each event records.
+// No narrator is asked, and every result names the event sequence it judged.
+// No model is called.
 
 import fs from "node:fs";
 import os from "node:os";
@@ -12,7 +13,7 @@ import { loadCheck } from "../../../evaluation/core/judge-loader.ts";
 import { runEval } from "../../../evaluation/core/dispatch.ts";
 import { readResult } from "../../../evaluation/core/result.ts";
 import { readRunIndex } from "../../../evaluation/core/run-folder.ts";
-import { judgeTurnCommand } from "../../../evaluation/runtime/judge-turn.ts";
+import { judgeTurnCommand, storedGameTurns } from "../../../evaluation/runtime/judge-turn.ts";
 import type { StoredTurn } from "../../../evaluation/runtime/lib/turn.ts";
 import { makeTurn } from "./runtime-turn-helpers.ts";
 
@@ -21,7 +22,7 @@ const FIXTURE_TRACE = path.resolve("tests/api/unit/fixtures/medal-trace.json");
 const MISSING = "/nonexistent/narrator-command";
 
 interface TraceFile {
-  events: Array<{ sequence: number; event_type: string; narration: string; narration_parts: unknown[]; payload: Record<string, unknown> }>;
+  events: Array<{ sequence: number; event_type: string; narration: string; narration_parts: unknown[]; payload: Record<string, unknown>; model?: string | null }>;
   [key: string]: unknown;
 }
 
@@ -85,7 +86,7 @@ async function run(args: string[]): Promise<{ code: number; output: string; runD
 }
 
 /** What the age judge was handed, one message per call; calls run side by side, so each has a file of its own. */
-function handedToJudge(): Array<{ narration: string; target_age: number }> {
+function handedToJudge(): Array<{ narration: string; reading_age: number }> {
   if (!fs.existsSync(capturedDir)) return [];
   return fs.readdirSync(capturedDir).map((name) => JSON.parse(fs.readFileSync(path.join(capturedDir, name), "utf8")));
 }
@@ -129,7 +130,7 @@ describe("judge turn on a stored game", () => {
 
     const handed = handedToJudge();
     expect(handed.map((message) => message.narration).sort()).toEqual(narrated().map((event) => event.narration).sort());
-    expect(handed.every((message) => message.target_age === 9)).toBe(true);
+    expect(handed.every((message) => message.reading_age === 9)).toBe(true);
 
     const flesch = (await loadCheck("flesch")) as (turn: StoredTurn, options: object) => { details?: unknown; status: string };
     for (const event of narrated()) {
@@ -137,7 +138,8 @@ describe("judge turn on a stored game", () => {
       const turn = JSON.parse(fs.readFileSync(path.join(dir, "turn.json"), "utf8")) as StoredTurn;
       expect(turn.response.narration_text).toBe(event.narration);
       const result = await readResult(path.join(dir, "result.json"));
-      const expected = flesch(makeTurn({ target_age: 9, response: { ...makeTurn().response, narration_text: event.narration, narration_parts: [] } }), {});
+      expect(turn.reading_age).toBe(9);
+      const expected = flesch(makeTurn({ reading_age: 9, response: { ...makeTurn().response, narration_text: event.narration, narration_parts: [] } }), {});
       expect(result.verdicts[0].status).toBe(expected.status);
       expect(result.verdicts[0].details).toMatchObject({
         score: (expected.details as { score: number }).score,
@@ -157,6 +159,21 @@ describe("judge turn on a stored game", () => {
       const turn = JSON.parse(fs.readFileSync(path.join(dir, "turn.json"), "utf8")) as StoredTurn;
       expect(turn.sequence).toBe(event.sequence);
     }
+  });
+
+  it("judges each turn at the age its own event records, and skips engine-written lines", () => {
+    const events = [
+      { sequence: 2, event_type: "search", narration: "You find a ribbon.", model: "mock", payload: { reading_age: 7 } },
+      { sequence: 3, event_type: "ask", narration: "\"I was in the hall,\" says Mara.", model: "mock", payload: { reading_age: 10 } },
+      { sequence: 4, event_type: "accuse_back", narration: "You put the accusation aside.", model: null, payload: {} },
+    ];
+    const turns = storedGameTurns({ blueprint: {}, events }, "medal");
+    expect(turns.map((turn) => [turn.sequence, turn.reading_age])).toEqual([[2, 7], [3, 10]]);
+  });
+
+  it("refuses a narrated event recorded without its age, by name", () => {
+    const events = [{ sequence: 2, event_type: "search", narration: "You find a ribbon.", model: "mock", payload: {} }];
+    expect(() => storedGameTurns({ blueprint: {}, events }, "medal")).toThrow(/event 2 \(search\) has no reading_age/);
   });
 
   it("takes only the judges that read the narration alone", async () => {

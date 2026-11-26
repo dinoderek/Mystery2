@@ -121,7 +121,7 @@ describe("ai-prompts", () => {
 
   it("builds a game-start prompt with target age and every opening fact", () => {
     const prompt = buildGameStartPrompt({
-      target_age: 8,
+      reading_age: 8,
       facts: ["Someone stole the cake.", "The baker was out at noon."],
     });
 
@@ -133,7 +133,7 @@ describe("ai-prompts", () => {
 
   it("builds a revisit-aware move prompt", () => {
     const prompt = buildGameMovePrompt({
-      target_age: 9,
+      reading_age: 9,
       destination_name: "Kitchen",
       destination_facts: ["A messy kitchen."],
       has_visited_before: true,
@@ -163,7 +163,7 @@ describe("ai-prompts", () => {
 
   it("leaves the character rules out of an arrival with nobody there", () => {
     const move = buildGameMovePrompt({
-      target_age: 9,
+      reading_age: 9,
       destination_name: "Kitchen",
       destination_facts: ["A messy kitchen."],
       has_visited_before: false,
@@ -177,7 +177,7 @@ describe("ai-prompts", () => {
 
   it("lists the searchable areas an arrival may advertise", () => {
     const move = buildGameMovePrompt({
-      target_age: 9,
+      reading_age: 9,
       destination_name: "Kitchen",
       destination_facts: ["A messy kitchen."],
       has_visited_before: false,

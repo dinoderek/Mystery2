@@ -1,6 +1,6 @@
 <!--
 	Settings: which AI narrates, chosen among mock and the AIs in ai.json, and,
-	once a profile is chosen, the reading age its new games start at.
+	once a profile is chosen, the reading age its games are written at.
 
 	Reachable without a profile — it sits in front of the picker, and a machine
 	whose chosen AI is missing or broken is exactly the one that cannot get past
@@ -107,7 +107,7 @@
 		<section class="mt-8" data-testid="reading-age">
 			<p class="text-t-muted text-sm mb-1">&gt; READING AGE FOR {profile.name.toUpperCase()}</p>
 			<p class="text-t-dim text-xs mb-2">
-				New games are written for this age. A game already started keeps its own.
+				Every game is written for this age, from the next line on.
 			</p>
 			{#if profileSettingsStore.loading}
 				<TerminalSpinner text="Loading reading age..." />

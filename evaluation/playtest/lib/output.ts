@@ -23,7 +23,7 @@ import { renderEntry } from "./view.ts";
 export interface PlaytestBlueprint {
   clue_graph: ClueGraphCase;
   id: string;
-  metadata: { title: string; time_budget: number; target_age?: number };
+  metadata: { title: string; time_budget: number };
 }
 
 /** A replay's source, and where it first found different clues. */

@@ -10,10 +10,10 @@
 // search names, the statement a question about the noon earns, and the
 // verdict a well-argued accusation earns.
 
-import { accusationCase, lineCase, searchCase } from "../support/play.ts";
+import { accusationCase, lineCase, searchCase, type Story } from "../support/play.ts";
 import { ALICE_GREETS, WELL_ARGUED, WELL_ARGUED_STEPS } from "./all-interactions.ts";
 
-const MOCK = "blueprints/clue-graph/mock-case.json";
+const MOCK: Story = { file: "blueprints/clue-graph/mock-case.json", reading_age: 10 };
 
 export default [
   // Naming the spot that holds a clue earns it.

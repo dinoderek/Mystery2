@@ -179,8 +179,8 @@ describe("composer reproduces the prompt snapshots through the registry", () => 
   });
 
   it("composes the turn-level age judge's prompt from the age profile", () => {
-    const message = JSON.parse(stored("runtime-clue-graph.age_appropriate.user.json")) as { target_age: number };
-    expect(composeTurnAgeSystemPrompt(message.target_age)).toBe(stored("runtime-clue-graph.age_appropriate.system.txt"));
+    const message = JSON.parse(stored("runtime-clue-graph.age_appropriate.user.json")) as { reading_age: number };
+    expect(composeTurnAgeSystemPrompt(message.reading_age)).toBe(stored("runtime-clue-graph.age_appropriate.system.txt"));
   });
 
   it("refuses to compose a file prompt for a judge built in code", async () => {

@@ -3,10 +3,10 @@ import { listOnlyMockCase } from './session-helpers';
 import { signInAsTestProfile } from './test-profile';
 
 // A player sets the reading age on the settings page, against the real server,
-// and the next game they start is saved at it.
+// and the next game they start is written at it.
 
 test.describe('Reading age', () => {
-	test('a player sets the age, and the next game starts at it', async ({ page }) => {
+	test('a player sets the age, and the next game is written at it', async ({ page }) => {
 		const profile = await signInAsTestProfile(page, 'reading-age');
 
 		await listOnlyMockCase(page);
@@ -39,8 +39,9 @@ test.describe('Reading age', () => {
 		await page.keyboard.press('1');
 		const answer = await (await started).json();
 
-		// That every narrator prompt is written for it is the unit suite's (`tests/api/unit/reading-age.test.ts`).
+		// That every prompt is written for it is the integration suite's (`tests/api/integration/reading-age.test.ts`).
 		expect(answer.reading_age).toBe(7);
+		expect(answer.narration_events[0].payload.reading_age).toBe(7);
 		await expect(page).toHaveURL(/\/session/);
 	});
 

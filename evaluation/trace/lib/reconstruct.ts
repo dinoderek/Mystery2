@@ -22,6 +22,7 @@ import {
   playedEvents,
   notebookLinesForEvent,
   readField,
+  readingAgeOf,
   revealedClueIdsForEvent,
 } from "../../lib/game-events.ts";
 import type {
@@ -68,6 +69,8 @@ function toFragment(event: RawEvent): ConversationFragment {
 interface ReconstructInput {
   gameId: string;
   blueprint: BlueprintContext;
+  /** The age this turn was narrated at, as its event records it. */
+  readingAge: number;
   session: SessionSnapshot;
   locationId: string;
   characterId: string;
@@ -83,7 +86,7 @@ interface ReconstructInput {
 function reconstructContext(roleName: string, ctx: ReconstructInput): AIContext | null {
   const { blueprint, session, locationId, characterId, playerInput, history } =
     ctx;
-  const common = { game_id: ctx.gameId, session, blueprint, conversation_history: history };
+  const common = { game_id: ctx.gameId, session, blueprint, reading_age: ctx.readingAge, conversation_history: history };
   // The runtime always builds accusation contexts with the session forced into
   // "accuse" mode (forced-endgame.ts, and the accuse action's immediate-judge-on-entry
   // path where the prior mode is still "explore"). Mirror that so context.mode
@@ -155,6 +158,8 @@ export interface TurnRecord {
   notebook?: Record<string, string>;
   location_id: string | null;
   character_id: string | null;
+  /** The age the turn was narrated at, from its event; null for a turn with no game-master role. */
+  reading_age: number | null;
   pre_state: SessionState;
   reconstructed_context: AIContext | null;
   context_error: string | null;
@@ -229,12 +234,16 @@ export function reconstructTrace(rawTrace: RawTrace): Reconstruction {
     const preState = { ...state };
     let reconstructedContext = null;
     let contextError = null;
+    // A game-master turn is judged at the age its own event records; an old
+    // trace without one is refused whole, never judged at a guessed age.
+    const readingAge = roleName ? readingAgeOf(event) : null;
 
     if (roleName) {
       try {
         reconstructedContext = reconstructContext(roleName, {
           gameId: rawTrace.session.id,
           blueprint,
+          readingAge: readingAge as number,
           // A trace whose blueprint names no starting location folds to null
           // here; the builders then fail and the turn records a context error.
           session: preState as SessionSnapshot,
@@ -266,6 +275,7 @@ export function reconstructTrace(rawTrace: RawTrace): Reconstruction {
       ...notebookOf(event),
       location_id: locationId,
       character_id: roleName && roleName.startsWith("talk") ? characterId : null,
+      reading_age: readingAge,
       pre_state: preState,
       reconstructed_context: reconstructedContext,
       context_error: contextError,

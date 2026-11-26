@@ -4,10 +4,10 @@
 // plainly that they do not know, and nothing opens.
 
 import type { Expect } from "../../../lib/case.ts";
-import { lineCase, type Step } from "../support/play.ts";
+import { lineCase, type Step, type Story } from "../support/play.ts";
 import { ABARA_GREETS, HALL, NINA_MET, PIKE_MET, SAM_MET } from "./talk.ts";
 
-const CROWN = "blueprints/clue-graph/dragon-crown.json";
+const CROWN: Story = { file: "blueprints/clue-graph/dragon-crown.json", reading_age: 8 };
 const line = (steps: Step[], say: string, labels: Parameters<typeof lineCase>[3]) => lineCase(CROWN, steps, say, labels);
 const UNKNOWN: Expect = { revealed_clue_ids: [], input_understood: true, judges: { gm_fabrication: "either" } };
 

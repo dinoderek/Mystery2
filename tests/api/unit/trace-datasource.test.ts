@@ -14,7 +14,9 @@ import {
   createLocalTraceSource,
   extractSessionTrace,
 } from "../../../evaluation/trace/lib/datasource.ts";
-import { createGameDatabase } from "./trace-database-fixture.ts";
+import { buildClueGraphWorld } from "../../../packages/shared/src/clue-graph-case.ts";
+import { readMockCaseGraph } from "../../testkit/src/mock-case.ts";
+import { createGameDatabase, PLAYED_AT } from "./trace-database-fixture.ts";
 
 let scratch = "";
 
@@ -67,6 +69,7 @@ describe("extraction from a database the test made", () => {
     expect(trace.events[1].payload).toEqual({
       location_id: "loc-kitchen",
       search_query: "the pantry shelf",
+      reading_age: PLAYED_AT,
       clue_graph: { type: "search", spot: "the pantry shelf" },
     });
     // The world view of the case the session saved, with the graph itself and what the player had earned.
@@ -118,17 +121,12 @@ describe("extraction from a database the test made", () => {
     expect(trace.ai_profile).toEqual({ id: "default", model: "vendor/model-x" });
   });
 
-  it("reads a game at the age it was narrated for", async () => {
+  it("keeps the case as stored, leaving each event the age it was narrated at", async () => {
     const game = createGameDatabase(makeScratch());
-    const caseAge = ((await extract(game)).blueprint as unknown as { metadata: { target_age: number } }).metadata.target_age;
-    const playedAge = caseAge === 6 ? 7 : 6;
-
-    const db = openDatabase({ path: game.databasePath });
-    db.prepare("update game_sessions set reading_age = ? where id = ?").run(playedAge, game.sessionId);
-    db.close();
-
     const trace = await extract(game);
-    expect((trace.blueprint as unknown as { metadata: { target_age: number } }).metadata.target_age).toBe(playedAge);
+
+    expect(trace.blueprint).toEqual(buildClueGraphWorld(readMockCaseGraph()));
+    expect(trace.events.find((event) => event.event_type === "search")?.payload?.reading_age).toBe(PLAYED_AT);
   });
 
   it("refuses a game saved without a clue graph, naming the blueprint it played", async () => {

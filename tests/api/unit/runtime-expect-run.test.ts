@@ -89,6 +89,7 @@ function searchOnly(extra: Record<string, unknown> = {}): string {
   fs.writeFileSync(file, JSON.stringify({
     id: "search-pantry",
     blueprint: { path: MOCK_CASE_PATH },
+    reading_age: 10,
     group: "should-reveal",
     given: { mode: "explore", location_id: "loc-kitchen", time_remaining: 8, history: [] },
     action: { type: "search", search_query: "the pantry shelf" },
@@ -165,7 +166,7 @@ describe("judge turn on a case with expect", () => {
 describe("a clue-graph accusation", () => {
   it("rejects fenced role JSON as live OpenRouter does", async () => {
     const file = path.join(scratch, "fenced-role.json");
-    fs.writeFileSync(file, JSON.stringify({ id: "fenced-role", blueprint: { path: "blueprints/clue-graph/greenhouse-prizewinner.json" }, given: { mode: "explore", location_id: "greenhouse", time_remaining: 5, history: [] }, action: { type: "search" } }));
+    fs.writeFileSync(file, JSON.stringify({ id: "fenced-role", blueprint: { path: "blueprints/clue-graph/greenhouse-prizewinner.json" }, reading_age: 10, given: { mode: "explore", location_id: "greenhouse", time_remaining: 5, history: [] }, action: { type: "search" } }));
     // The binding envelope extracts exactly what the provider put in content.
     const config = JSON.parse(fs.readFileSync(configFile, "utf8"));
     const envelope = path.join(scratch, "fenced-binding.json");
@@ -179,7 +180,7 @@ describe("a clue-graph accusation", () => {
   });
   it("opens a clue-graph accusation with one normal scene call", async () => {
     const file = path.join(scratch, "graph-accusation-start.json");
-    fs.writeFileSync(file, JSON.stringify({ id: "graph-start", blueprint: { path: "blueprints/clue-graph/greenhouse-prizewinner.json" }, given: { mode: "explore", location_id: "greenhouse", time_remaining: 5, history: [] }, action: { type: "accuse" } }));
+    fs.writeFileSync(file, JSON.stringify({ id: "graph-start", blueprint: { path: "blueprints/clue-graph/greenhouse-prizewinner.json" }, reading_age: 10, given: { mode: "explore", location_id: "greenhouse", time_remaining: 5, history: [] }, action: { type: "accuse" } }));
     const { code, runDir } = await judgeTurn([file, "--narrator", "narrator-stub"], [{ narration: "You gather your thoughts." }]);
     expect(code).toBe(0);
     const folder = path.join(runDir, "graph-start-narrator-stub");
@@ -188,7 +189,7 @@ describe("a clue-graph accusation", () => {
   });
   it("rejects an invalid graph notebook before judging, even without expect", async () => {
     const file = path.join(scratch, "invalid-notebook.json");
-    fs.writeFileSync(file, JSON.stringify({ id: "invalid-notebook", blueprint: { path: "blueprints/clue-graph/greenhouse-prizewinner.json" }, given: { mode: "explore", location_id: "greenhouse", time_remaining: 5, history: [] }, action: { type: "search" } }));
+    fs.writeFileSync(file, JSON.stringify({ id: "invalid-notebook", blueprint: { path: "blueprints/clue-graph/greenhouse-prizewinner.json" }, reading_age: 10, given: { mode: "explore", location_id: "greenhouse", time_remaining: 5, history: [] }, action: { type: "search" } }));
     const { code, runDir } = await judgeTurn([file, "--narrator", "narrator-stub"], [{ narration: "Nothing here.", revealed_clue_id: null, notebook: {} }]);
     expect(code).toBe(1);
     const result = await readResult(path.join(runDir, "invalid-notebook-narrator-stub", "result.json"));
@@ -247,6 +248,7 @@ describe("a clue-graph accusation", () => {
     fs.writeFileSync(file, JSON.stringify({
       id: "v2-accuse",
       blueprint: { path: v2 },
+      reading_age: 10,
       given: { mode: "accuse", location_id: "loc-kitchen", time_remaining: 4, history: [] },
       action: { type: "accuse", player_reasoning: "It was Alice." },
       expect: { verdict: "win" },

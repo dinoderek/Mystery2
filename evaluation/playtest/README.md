@@ -78,9 +78,9 @@ Off by default. With `--judge`, each game is graded as soon as it ends, while th
 next ones play, by running the game command (`evaluation/trace/README.md`) on a
 trace extracted read-only from a copy of the database. That gives the
 mechanical checks and the four `gm_*` judges, one Opus call each. Games are graded
-one at a time, so at most four judge calls run at once. Every narration is then
-scored with the runtime's `flesch` check (`evaluation/runtime/lib/flesch.ts`, no
-model call) against the blueprint's `target_age`.
+one at a time, so at most four judge calls run at once. Each narration is then
+scored by the runtime's `flesch` (no model call) at its event's
+`reading_age`; one without is refused.
 
 The verdicts go into the game's `result.json`, `summary.json` and transcript. A
 game that cannot be graded says why there. Exit 2 means a judge failed a game:

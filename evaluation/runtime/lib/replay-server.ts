@@ -140,6 +140,11 @@ export class ServerNarrator {
 
     const playerName = `runtime-eval-${randomUUID().slice(0, 8)}`;
     const api = await signIn(server.url, playerName);
+    // The game narrates at its profile's age, read on every request: the case's.
+    const aged = await api.post("profile-settings", { reading_age: testCase.reading_age });
+    if (!aged.ok) {
+      throw new NarratorReplayError(`profile-settings failed: HTTP ${aged.status} ${JSON.stringify(aged.body).slice(0, 500)}`, [], "replay");
+    }
     // `start` creates its own session, so there is nothing to seed and no game
     // id to address; every other action acts on a fully specified seeded one.
     const gameId = action.createsSession

@@ -306,7 +306,7 @@ describe("mock arrival narration", () => {
     createAIProviderFromProfile({ provider: "mock", model: "mock/default" });
   const arrivalPrompt = (characters: unknown[]) =>
     buildGameMovePrompt({
-      target_age: 7,
+      reading_age: 7,
       destination_name: "Leaf-Lab",
       has_visited_before: false,
       destination_characters_json: JSON.stringify(characters),

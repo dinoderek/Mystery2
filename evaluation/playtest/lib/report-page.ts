@@ -287,7 +287,8 @@ export interface ReportData {
   persona: string | null;
   narratorModel: string | null;
   investigatorModel: string | null;
-  targetAge: number | null;
+  /** Every age the run's graded narration was written at. */
+  readingAges: number[];
   games: ReportGame[];
   failed: Array<{ number: number; error: string }>;
 }
@@ -384,7 +385,7 @@ export async function buildReportData(runDir: string, { repoRoot = process.cwd()
     persona: first?.persona ?? null,
     narratorModel: first?.narrator_model ?? null,
     investigatorModel: first?.investigator_model ?? null,
-    targetAge: blueprint?.metadata?.target_age ?? null,
+    readingAges: [...new Set(games.flatMap((game) => (game.readability as { reading_ages?: number[] } | null)?.reading_ages ?? []))],
     games,
     failed,
   };

@@ -16,7 +16,7 @@ import {
   historyPayload,
   sampleEvenly,
 } from "../../../evaluation/runtime/cases.ts";
-import { makeRawTrace } from "./trace-fixtures";
+import { makeRawTrace, PLAYED_AT } from "./trace-fixtures";
 
 // These helpers turn a collected game-master trace into deterministic
 // single-event runtime-eval cases. They run without a database or LLM, so we
@@ -96,9 +96,9 @@ it("reconstructs identical messages from engine-folded clue-graph history", asyn
   const time = graph.metadata.time_budget - before.play.turns;
   const source = { mode: "talk", location_id: before.play.at, talk_character_id: "toby", time_remaining: time, history: before.history };
   const action = { type: "ask", player_input: "What happened next?" };
-  const exported = buildCase({ sequence: 99, event_type: "ask", payload: { role: "graph_talk", character_id: "toby", location_id: before.play.at, player_input: action.player_input, diagnostics: { mode: "talk", time_before: time } } }, before.history.map((row, i) => ({ ...row, sequence: i + 1 })), file, []);
+  const exported = buildCase({ sequence: 99, event_type: "ask", payload: { role: "graph_talk", character_id: "toby", location_id: before.play.at, player_input: action.player_input, reading_age: 10, diagnostics: { mode: "talk", time_before: time } } }, before.history.map((row, i) => ({ ...row, sequence: i + 1 })), file, []);
   const { blueprint } = await readBlueprint(file, process.cwd());
-  const messages = (given: typeof exported.given) => buildRoleRequest(getAction("ask").roleInput(given, action, blueprint, normalizeHistory(given.history)) as unknown as TemplateRoleInput);
+  const messages = (given: typeof exported.given) => buildRoleRequest({ ...getAction("ask").roleInput(given, action, blueprint, normalizeHistory(given.history)), reading_age: exported.reading_age } as unknown as TemplateRoleInput);
   // Compare the request after export with the original recorded state, including sequence.
   source.history = source.history.map((row, i) => ({ ...row, sequence: i + 1 }));
   expect(await messages(exported.given)).toEqual(await messages(source));
@@ -130,6 +130,7 @@ describe("buildCase", () => {
         player_input: "who did it?",
         character_id: "c1",
         location_id: "l1",
+        reading_age: 8,
         diagnostics: { mode: "talk", time_before: 42 },
       },
     };
@@ -148,6 +149,8 @@ describe("buildCase", () => {
     expect(built).toEqual({
       id: "s7-ask",
       blueprint: { path: blueprintPath },
+      // The age the event records it was narrated at, never the case's.
+      reading_age: 8,
       given: {
         mode: "talk",
         location_id: "l1",
@@ -174,7 +177,7 @@ describe("buildCase", () => {
     const target = {
       sequence: 3,
       event_type: "search",
-      payload: { location_id: "l9" },
+      payload: { location_id: "l9", reading_age: 7 },
     };
 
     const { given, id } = buildCase(target, [], blueprintPath, ["flesch"]);
@@ -191,11 +194,16 @@ describe("buildCase", () => {
     const target = {
       sequence: 4,
       event_type: "talk",
-      payload: { location_id: "l1", character_id: "c2", time_remaining: 99 },
+      payload: { location_id: "l1", character_id: "c2", time_remaining: 99, reading_age: 7 },
     };
     const { given } = buildCase(target, [], blueprintPath, ["flesch"]);
     expect(given.time_remaining).toBe(99);
     expect(given.talk_character_id).toBe("c2");
+  });
+
+  it("refuses an event recorded without its reading age, by name", () => {
+    const target = { sequence: 5, event_type: "ask", payload: { player_input: "who?", character_id: "c1" } };
+    expect(() => buildCase(target, [], blueprintPath, ["flesch"])).toThrow(/event 5 \(ask\) has no reading_age/);
   });
 });
 
@@ -221,18 +229,28 @@ describe("the cases command", () => {
     expect(blueprint.clue_graph.metadata.id).toBe("mock-case");
   });
 
-  it("writes the case at the age the game was played, which the trace's world view carries", async () => {
+  it("gives each case the age its own event was narrated at, and writes the case as stored", async () => {
     scratch = fs.mkdtempSync(path.join(os.tmpdir(), "mystery-cases-command-"));
     const tracePath = path.join(scratch, "trace.json");
     const trace = makeRawTrace();
-    const authored = trace.blueprint.clue_graph!.metadata.target_age;
-    const played = authored === 7 ? 8 : 7;
-    fs.writeFileSync(tracePath, JSON.stringify({ ...trace, blueprint: { ...trace.blueprint, metadata: { ...trace.blueprint.metadata, target_age: played } } }));
+    // The reader's age changed before the conversation's line.
+    const events = trace.events.map((event) => (event.event_type === "ask" ? { ...event, payload: { ...event.payload, reading_age: 7 } } : event));
+    fs.writeFileSync(tracePath, JSON.stringify({ ...trace, events }));
     expect(await run(tracePath, path.join(scratch, "out"))).toBe(0);
 
-    const cases = JSON.parse(fs.readFileSync(path.join(scratch, "out", "trace.cases.json"), "utf8"));
-    const { blueprint } = await readBlueprint(cases[0].blueprint.path, process.cwd());
-    expect(blueprint.clue_graph.metadata.target_age).toBe(played);
+    const cases = JSON.parse(fs.readFileSync(path.join(scratch, "out", "trace.cases.json"), "utf8")) as Array<{ id: string; reading_age: number; blueprint: { path: string } }>;
+    expect(cases.map((c) => [c.id, c.reading_age])).toEqual([["s3-talk", PLAYED_AT], ["s4-ask", 7]]);
+    const written = JSON.parse(fs.readFileSync(cases[0].blueprint.path, "utf8"));
+    expect(written).toEqual(trace.blueprint.clue_graph);
+  });
+
+  it("refuses a trace whose chosen event has no reading age, naming it", async () => {
+    scratch = fs.mkdtempSync(path.join(os.tmpdir(), "mystery-cases-command-"));
+    const tracePath = path.join(scratch, "trace.json");
+    const trace = makeRawTrace();
+    const events = trace.events.map((event) => (event.event_type === "ask" ? { ...event, payload: { ...event.payload, reading_age: undefined } } : event));
+    fs.writeFileSync(tracePath, JSON.stringify({ ...trace, events }));
+    await expect(run(tracePath, path.join(scratch, "out"))).rejects.toThrow(/event 4 \(ask\) has no reading_age/);
   });
 
   it("refuses a trace of a blueprint that is not a clue graph, by name, and writes nothing", async () => {

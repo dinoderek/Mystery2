@@ -10,7 +10,7 @@
       "status": "pass",
       "score": 0.56,
       "details": {
-        "target_age": 10,
+        "reading_age": 10,
         "expected_grade": 5,
         "tolerance": 2,
         "threshold": 7,
@@ -36,7 +36,7 @@
       "status": "pass",
       "score": 9,
       "details": {
-        "target_age": 10,
+        "reading_age": 10,
         "estimated_reading_age": 9,
         "reasoning": "Close to the target age."
       },

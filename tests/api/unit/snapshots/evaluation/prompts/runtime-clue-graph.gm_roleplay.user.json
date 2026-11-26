@@ -6,7 +6,6 @@
     "metadata": {
       "id": "greenhouse-prizewinner",
       "title": "The Smashed Prize Pumpkin",
-      "target_age": 10,
       "time_budget": 12
     },
     "opening": {
@@ -905,6 +904,7 @@
         "search_query": null,
         "revealed_clue_ids": [],
         "narration": "You step into the potting shed.",
+        "reading_age": null,
         "is_accusation_phase": false,
         "prior_revealed_clue_ids": []
       },
@@ -929,6 +929,7 @@
           "toby_blames_thorne": "Toby says Mr. Thorne climbed the fence and smashed the window."
         },
         "narration": "Toby looks up from the pots. \"I was sweeping up all evening,\" he says.",
+        "reading_age": null,
         "is_accusation_phase": false,
         "prior_revealed_clue_ids": []
       },
@@ -942,6 +943,7 @@
         "search_query": null,
         "revealed_clue_ids": [],
         "narration": "You take a slow look around. Nothing new catches your eye just yet.",
+        "reading_age": 10,
         "is_accusation_phase": false,
         "prior_revealed_clue_ids": [
           "toby_alibi",

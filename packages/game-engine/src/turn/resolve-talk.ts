@@ -25,6 +25,7 @@ export async function resolveEndTalk(
     game_id: game.game_id,
     session,
     blueprint: game.blueprint,
+    reading_age: game.reading_age,
     character_id: characterId,
     location_id: session.current_location_id,
     conversation_history: game.history,

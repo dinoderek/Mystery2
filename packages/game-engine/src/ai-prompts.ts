@@ -1,5 +1,6 @@
 import type { AIPromptKey } from "./ai-contracts.ts";
 import {
+  authoredFieldBudget,
   type InteractionId,
   renderComplexityGuidance,
   renderGuidance,
@@ -12,7 +13,7 @@ import { GRAPH_ACCUSATION_PROMPT, GRAPH_ACCUSATION_ROUND_PROMPT, GRAPH_ENDING_PR
 // Each runtime role maps to one interaction, which sets its length guidance.
 // A search whose outcome the engine does not know needs OUTCOME_LENGTH_BY_ROLE
 // instead — see there.
-const INTERACTION_BY_ROLE: Record<AIPromptKey, InteractionId> = {
+const INTERACTION_BY_ROLE: Record<Exclude<AIPromptKey, "one_liner">, InteractionId> = {
   talk_end: "talk_farewell",
   accusation_start: "accusation_open",
   // A greeting asks for `talk_greeting`, and a search whose outcome
@@ -49,6 +50,7 @@ function renderRoleGuidance(
   readingAge: number,
   interaction?: InteractionId,
 ): string {
+  if (role === "one_liner") return renderOneLinerGuidance(readingAge);
   const branches = OUTCOME_LENGTH_BY_ROLE[role];
   if (!interaction && branches) {
     return `${renderComplexityGuidance(readingAge)}\n${
@@ -56,6 +58,17 @@ function renderRoleGuidance(
     }`;
   }
   return renderGuidance(interaction ?? INTERACTION_BY_ROLE[role], readingAge);
+}
+
+/**
+ * The menu's lines are not a moment of play but the line the generator once
+ * authored under a title, so each takes that field's budget at the reader's age.
+ */
+function renderOneLinerGuidance(readingAge: number): string {
+  return [
+    renderComplexityGuidance(readingAge),
+    `Length (guidance, not a hard limit): aim for about ${authoredFieldBudget("one_liner", readingAge)} words in each line, and one sentence. Prefer shorter.`,
+  ].join("\n");
 }
 
 /**
@@ -149,6 +162,19 @@ Return JSON:
   graph_accusation: GRAPH_ACCUSATION_PROMPT,
   graph_accusation_round: GRAPH_ACCUSATION_ROUND_PROMPT,
   graph_ending: GRAPH_ENDING_PROMPT,
+  one_liner: `You write the line shown under each case's title on the menu of a children's mystery game, where the reader picks a case to play.
+{{age_guidance}}
+
+Task:
+- one_liner_context.cases lists every case on the menu: its id, its title and its opening fact.
+- For each case, write one line that makes the reader want to open it, from its opening fact alone. Keep every name, place and object the fact gives, and add no clue, suspect, answer, person or place it does not.
+- Tone: warm, playful and curious, never scary or gory. Do not repeat the title, and never mention game mechanics, prompts, JSON, or that you are an AI.
+- Write exactly one line for every case id, and no other.
+
+Return JSON:
+{
+  "lines": [{ "id": "...", "line": "..." }]
+}`,
 };
 
 export interface LoadPromptOptions {

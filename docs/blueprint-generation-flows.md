@@ -37,7 +37,7 @@ the opening location. References not made this run are read from disk.
 
 - A portrait's backdrop is `visual_direction.portrait_background` when set,
   otherwise a built-in bokeh wash, and never depicts a mystery location.
-- References use `input_references[]` in the prompt legend’s order; beyond the default model's limit of 10, the first 10 are sent, with a warning.
+- References use `input_references[]` in the prompt legend’s order; past the default model's limit of 10, the first 10 go, with a warning.
 - `--chat-packets` writes the same prompts and references for pasting into a
   chat.
 - A case committed under `blueprints/` is never patched, so tracked file and
@@ -48,7 +48,7 @@ the opening location. References not made this run are read from disk.
 For `clue-graph/2`, portraits use appearance facts, locations public facts,
 covers cover facts (else the opening's) and visual direction; artwork is optional.
 
-Ratios are checked against OpenRouter’s list; support varies by model.
+Ratios are checked against OpenRouter’s list.
 
 ## 3D scenes
 
@@ -64,7 +64,8 @@ Every row also receives the reader's age, `reading_age`, from the profile.
 
 | Output | Source (role) | Case input | Other input | Attached |
 |---|---|---|---|---|
-| Opening | `game-start` (`intro`) | `opening.facts` | — | `metadata.image_id` |
+| Menu line | `blueprints-list` (`one_liner`) | `metadata.title`, the first opening fact | — | — |
+| Opening | `game-start` (`intro`); the notebook's Story | `opening.facts` | — | `metadata.image_id` |
 | Arrival | the move action, `game-enter` (`ambience`) | The destination's name, `facts` and visible spot names; each character there's public face, `personality` and attitude | The last arrival's narration there, whether it was visited before | `location_image_id` |
 | Search | the search action (`graph_search`) | The location's name, `facts` and visible spots; the clue the named spot holds, or the candidates to choose from | History at that location; the player's `search_query` | — |
 | Talk | the talk and ask actions (`graph_talk`) | The character's state: first words, answers, tells, gates and what they keep back; `knows`; first-meeting appearance | History with that character; the line, and earlier lines of this conversation | `portrait_image_id` (talk) |
@@ -74,11 +75,8 @@ Every row also receives the reader's age, `reading_age`, from the profile.
 
 A character's **public face** is their name, `sex` and `appearance`; the rest
 reaches only their own conversation, through the graph. Saved lines stand for
-found clues.
-
-`narrative.starting_knowledge.mystery_summary` is never narrated: `game-start`
-and `game-get` return it as the notebook's case facts. The engine chooses
-accusation verdicts and reply material ([clue graph](clue-graph.md)).
+found clues. The engine chooses accusation verdicts and reply material
+([clue graph](clue-graph.md)).
 
 ## Evaluation
 

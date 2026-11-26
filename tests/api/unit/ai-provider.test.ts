@@ -13,8 +13,11 @@ import {
   type AIRoleName,
   parseAccusationStartOutput,
   parseGraphSearchOutput,
+  parseOneLinerOutput,
   parseTalkEndOutput,
 } from "../../../packages/game-engine/src/ai-contracts.ts";
+import { buildOneLinerRequest } from "../../../packages/game-engine/src/role-request.ts";
+import { readMockCase } from "../../testkit/src/mock-case.ts";
 
 /** A search whose outcome the engine knows, as the mock reads it. */
 function knownSearch(finds: { id: string; text: string } | null) {
@@ -303,6 +306,28 @@ describe("ai-provider mock role output", () => {
       ).rejects.toThrow(`Mock AI has no handler for role ${role}`);
     },
   );
+});
+
+describe("mock one-liners", () => {
+  it("gives every listed case its opening fact as given, one line per id", async () => {
+    const mockCase = readMockCase();
+    const second = { ...mockCase, id: "second", clue_graph: { ...mockCase.clue_graph, opening: { ...mockCase.clue_graph.opening, facts: ["A bell rang."] } } };
+    const request = await buildOneLinerRequest({ role: "one_liner", blueprints: [mockCase, second], reading_age: 7 });
+    const lines = await createAIProviderFromProfile({ provider: "mock", model: "mock/default" })
+      .generateRoleOutput({ ...request, parse: (value) => parseOneLinerOutput(value, [mockCase.id, "second"]) });
+
+    expect([...lines.entries()]).toEqual([
+      [mockCase.id, `[Mock] ${mockCase.clue_graph.opening.facts[0]}`],
+      ["second", "[Mock] A bell rang."],
+    ]);
+  });
+
+  it("refuses a request with no menu to narrate", async () => {
+    await expect(
+      createAIProviderFromProfile({ provider: "mock", model: "mock/default" })
+        .generateRoleOutput({ role: "one_liner", prompt: "prompt", context: {}, parse: (value) => value }),
+    ).rejects.toThrow("one_liner_context");
+  });
 });
 
 describe("mock arrival narration", () => {

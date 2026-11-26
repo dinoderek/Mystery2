@@ -7,6 +7,7 @@ import {
   parseGraphEndingOutput,
   parseGraphSearchOutput,
   parseGraphTalkOutput,
+  parseOneLinerOutput,
   parseTalkEndOutput,
   roleOutputJsonSchema,
 } from "../../../packages/game-engine/src/ai-contracts.ts";
@@ -51,6 +52,11 @@ const MINIMAL_OUTPUTS: Record<
     fields: ["narration"],
     sample: { narration: "Case closed." },
     parse: parseGraphEndingOutput,
+  },
+  one_liner: {
+    fields: ["lines"],
+    sample: { lines: [{ id: "case-a", line: "Who took the cookies?" }] },
+    parse: (value) => parseOneLinerOutput(value, ["case-a"]),
   },
 };
 
@@ -127,5 +133,35 @@ describe("role output parsing tolerance", () => {
       input_understood: false,
       notebook: [],
     });
+  });
+});
+
+describe("the one_liner contract", () => {
+  const ids = ["case-a", "case-b"];
+
+  it("parses one line per case id asked about, dropping any other", () => {
+    const lines = parseOneLinerOutput({
+      lines: [
+        { id: "case-b", line: "A clock stopped at noon." },
+        { id: "case-x", line: "Not on the menu." },
+        { id: "case-a", line: '  Who took the \\"cookies\\"?  ' },
+      ],
+    }, ids);
+    expect([...lines.entries()]).toEqual([
+      ["case-b", "A clock stopped at noon."],
+      ["case-a", 'Who took the "cookies"?'],
+    ]);
+  });
+
+  it("refuses an output that leaves a case without a line", () => {
+    expect(() => parseOneLinerOutput({ lines: [{ id: "case-a", line: "Who?" }] }, ids)).toThrow("no line for case case-b");
+  });
+
+  it("refuses two lines for one case, or a blank one", () => {
+    expect(() => parseOneLinerOutput({ lines: [{ id: "case-a", line: "One." }, { id: "case-a", line: "Two." }, { id: "case-b", line: "B." }] }, ids))
+      .toThrow("two lines for case case-a");
+    expect(() => parseOneLinerOutput({ lines: [{ id: "case-a", line: " " }, { id: "case-b", line: "B." }] }, ids))
+      .toThrow('"line" must be a non-empty string');
+    expect(() => parseOneLinerOutput({}, ids)).toThrow('"lines" must be a list');
   });
 });

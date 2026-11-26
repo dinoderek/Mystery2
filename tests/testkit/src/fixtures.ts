@@ -164,6 +164,7 @@ export function createGameState(
   overrides?: Record<string, unknown>,
 ): GameState & { characters: CharacterWithLocationName[] } {
   const state = {
+    story: "The cookies vanished from the kitchen at noon.",
     locations: LOCATIONS.map((l) => ({ id: l.id, name: l.name })),
     characters: CHARACTERS.map((c) => ({
       id: c.id,

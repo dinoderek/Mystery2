@@ -441,8 +441,7 @@ async function composeInvestigatorPrompts() {
     const view = buildView({
       title: "The Missing Cookies",
       state: {
-        premise: "The cookie plate is empty and snack time is almost here.",
-        mystery_summary: "The cookies disappeared from the kitchen sometime around 10 AM.",
+        story: "The cookie plate is empty and snack time is almost here. The cookies disappeared from the kitchen sometime around 10 AM.",
         locations: [
           { id: "kitchen", name: "Kitchen", summary: "Where the cookies were set out." },
           { id: "hallway", name: "Hallway", summary: null },

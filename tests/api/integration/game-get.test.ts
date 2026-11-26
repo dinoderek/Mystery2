@@ -61,8 +61,11 @@ describe("game-get endpoint", () => {
       sex: "female",
       summary: null,
     });
-    expect(getData.state.premise).toBe(MOCK_PREMISE);
-    expect(getData.state.mystery_summary).toContain("The cookies vanished");
+    // The Story is the opening as it was narrated into the start event, not the case's text.
+    expect(getData.state.story).toBe(getData.narration_events[0].narration_parts[0].text);
+    expect(getData.state.story).toBe(`[Mock] ${MOCK_PREMISE}`);
+    expect(getData.state).not.toHaveProperty("premise");
+    expect(getData.state).not.toHaveProperty("mystery_summary");
     expect(Array.isArray(getData.state.discovered_clues)).toBe(true);
     expect(getData.narration_events.length).toBeGreaterThanOrEqual(3);
     expect(getData.narration_events[0].event_type).toBe("start");

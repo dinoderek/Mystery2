@@ -37,6 +37,12 @@ reply, from only its supplied material, and `graph_ending` the closing scene
 and `talk_end` closes a conversation. `talk_end` moves nobody; `gm_fabrication`
 reports invented movement.
 
+`one_liner` is played outside a game: `blueprints-list`, asked for lines,
+words every listed case's line in one call, from its first opening fact, at
+the profile's age and the case one-liner's word budget (`authoredFieldBudget`).
+A case left without exactly one line fails the call; the endpoint logs it once
+and answers the titles alone. Nothing caches a line.
+
 ## Narration style
 
 `buildStyleGuidance` gives the narrator a warm, cozy voice in second person
@@ -131,7 +137,7 @@ so a double confirmation cannot narrate twice. It costs no turn, and its
 ## The mock provider
 
 The deterministic default for `npm run dev` and automated suites. It reads
-the opening and arrival fact lists and voices those facts and visible names.
+the opening, menu and arrival fact lists and voices those facts and visible names.
 Contract, prompt, context and provider changes update its tests.
 
 ## Failures, logs and attribution

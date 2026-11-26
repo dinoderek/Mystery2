@@ -53,6 +53,9 @@ export class GameSessionStore {
   state = $state<GameState | null>(null);
   error = $state<string | null>(null);
   blueprints = $state<Blueprint[]>([]);
+  /** The menu's lines: asked for after the titles, at the profile's age, every time the list loads. */
+  oneLinerStatus = $state<'idle' | 'loading' | 'ready' | 'failed'>('idle');
+  private oneLinerRequestId = 0;
   showHelp = $state(false);
   showNotebook = $state(false);
   notebookSection = $state<NotebookSection>(DEFAULT_NOTEBOOK_SECTION);
@@ -183,6 +186,12 @@ export class GameSessionStore {
     // beside the blueprint list, so leaving a stale one set showed a message
     // about a request that had already been superseded.
     this.error = null;
+    // Lines narrated for the last load were written at that reader's age, who
+    // may since have changed age or profile: none of them outlives it, and no
+    // lines request still in flight may land.
+    this.oneLinerRequestId += 1;
+    this.oneLinerStatus = 'idle';
+    this.blueprints = this.blueprints.map((entry) => ({ ...entry, one_liner: null }));
     const answer = readAnswer(await callApi('blueprints-list'), BlueprintsListResponseSchema, 'blueprints-list');
     if (!answer.ok) {
       this.error = answer.message;
@@ -192,6 +201,31 @@ export class GameSessionStore {
 
     this.blueprints = answer.value.blueprints;
     this.status = 'idle';
+    await this.loadOneLiners();
+  }
+
+  /**
+   * Fills in each case's line, narrated at the profile's age, once the titles
+   * are on screen. The server logs a failed narration and answers with no
+   * lines; any failure here leaves the titles alone. Only the newest request
+   * may write, so a slow one cannot land on top of the list that replaced it.
+   */
+  async loadOneLiners() {
+    const requestId = ++this.oneLinerRequestId;
+    this.oneLinerStatus = 'loading';
+    const response = await callApi('blueprints-list', { one_liners: true });
+    if (requestId !== this.oneLinerRequestId) {
+      return;
+    }
+
+    const answer = readAnswer(response, BlueprintsListResponseSchema, 'blueprints-list');
+    if (!answer.ok) {
+      this.oneLinerStatus = 'failed';
+      return;
+    }
+    const lines = new Map(answer.value.blueprints.map((entry) => [entry.id, entry.one_liner]));
+    this.blueprints = this.blueprints.map((entry) => ({ ...entry, one_liner: lines.get(entry.id) ?? null }));
+    this.oneLinerStatus = 'ready';
   }
 
   /**

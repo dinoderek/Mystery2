@@ -366,6 +366,7 @@ describe('session catalog helpers', () => {
     // it loaded rather than reporting the error in its place.
     const store = new GameSessionStore();
     invokeMock.mockResolvedValueOnce({ error: null, data: createBlueprintsListResponse() });
+    invokeMock.mockResolvedValueOnce({ error: null, data: createBlueprintsListResponse() });
     await store.loadBlueprints();
 
     invokeMock.mockResolvedValueOnce({

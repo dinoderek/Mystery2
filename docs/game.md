@@ -18,9 +18,9 @@ contract; prompts: `docs/ai-runtime.md`; screens: `docs/ui.md`.
 
 ## Starting a case
 
-The player picks a mystery. The premise appears on a page of its own, with a
-line pointing to the notebook, until a keypress or tap; the narrator then
-describes arrival at the start.
+The player picks a mystery, each with a line written at their age. The
+opening has a page of its own, with a pointer to the notebook, until a
+keypress or tap; then the narrator describes arrival at the start.
 
 ## Commands and what they cost
 
@@ -89,8 +89,8 @@ acknowledges a return. Moving describes; searching discovers.
 
 ## The notebook
 
-A full-screen overlay, free in every mode, with four sections:
-**Story** (premise and what happened), **Places** (where everyone is),
+A full-screen overlay, free in every mode:
+**Story** (the opening as narrated), **Places** (where everyone is),
 **People** (everyone met), and **Clues** (everything discovered, a statement
 taken back marked so), with leads on what to do next.
 

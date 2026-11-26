@@ -10,8 +10,8 @@ import {
 } from "./helpers";
 
 // Every endpoint that takes fields checks them against the shared schema and
-// answers `400` naming the one that is wrong. The two that take none
-// (`blueprints-list`, `game-sessions-list`) have nothing to check.
+// answers `400` naming the one that is wrong. The one that takes none
+// (`game-sessions-list`) has nothing to check.
 
 const REMOVED_ENDPOINTS = ["game-move", "game-search", "game-talk", "game-ask", "game-end-talk", "game-accuse"];
 
@@ -84,6 +84,12 @@ describe("request validation", () => {
     await expectBadField(await post("game-turn", { game_id: gameId, input: 7 }), "input");
     await expectBadField(await post("game-turn", "not json"), null);
     expect(readStoredEvents(gameId)).toHaveLength(1);
+  });
+
+  it("names the field blueprints-list finds wrong, in a body or a query", async () => {
+    await expectBadField(await post("blueprints-list", { one_liners: "yes" }), "one_liners");
+    await expectBadField(await fetch(`${API_URL}/blueprints-list?one_liners=1`, { headers: auth.headers }), "one_liners");
+    await expectBadField(await post("blueprints-list", "not json"), null);
   });
 
   it("names the game_id game-get finds missing or wrong", async () => {

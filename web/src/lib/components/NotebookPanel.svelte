@@ -164,14 +164,10 @@
       >
         <div class="max-w-3xl">
           {#if active === 'story'}
-            {#if gameState.premise}
-              <p class="mb-2">{gameState.premise}</p>
-            {/if}
-            {#if gameState.mystery_summary}
-              <p class="text-t-bright">{gameState.mystery_summary}</p>
-            {/if}
-            {#if !gameState.premise && !gameState.mystery_summary}
-              <p class="italic text-t-muted/60">No case briefing available.</p>
+            {#if gameState.story}
+              <p class="text-t-bright whitespace-pre-line" data-testid="notebook-story">{gameState.story}</p>
+            {:else}
+              <p class="italic text-t-muted/60">No story yet.</p>
             {/if}
           {:else if active === 'places'}
             {#if places.length > 0}

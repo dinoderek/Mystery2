@@ -16,8 +16,7 @@ const BLUEPRINT = { id: 'mock-blueprint', title: 'Mock Blueprint' };
 
 function state(overrides: Record<string, unknown> = {}): GameState {
 	return {
-		premise: 'The cookies are gone.',
-		mystery_summary: 'Someone took the cookies.',
+		story: 'The cookies are gone.',
 		locations: [{ id: 'loc-kitchen', name: 'Kitchen', summary: null }],
 		characters: [],
 		discovered_clues: [],

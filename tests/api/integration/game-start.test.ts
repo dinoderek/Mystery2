@@ -49,9 +49,11 @@ describe("game-start endpoint", () => {
       sex: "female",
       summary: null,
     });
-    // Notebook reference data is surfaced on the state, not dumped into narration.
-    expect(data.state.premise).toBe(MOCK_PREMISE);
-    expect(data.state.mystery_summary).toContain("The cookies vanished");
+    // The notebook's Story is the opening as just narrated, not the case's own text.
+    expect(data.state.story).toBe(data.narration_events[0].narration_parts[0].text);
+    expect(data.state.story).toBe(`[Mock] ${MOCK_PREMISE}`);
+    expect(data.state).not.toHaveProperty("premise");
+    expect(data.state).not.toHaveProperty("mystery_summary");
     expect(data.state.discovered_clues).toEqual([]);
     expect(data.state.locations).toContainEqual({
       id: "loc-kitchen",

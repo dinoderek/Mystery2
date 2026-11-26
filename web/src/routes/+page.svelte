@@ -25,10 +25,9 @@
 
   async function enterNewGameFlow() {
     view = 'new-game';
-    // Retry after a failed load, not just from `idle`. A failure leaves
-    // `status` at `error`, so gating on `idle` meant nothing ever asked again
-    // and the view stayed empty until the page was reloaded.
-    if (gameSessionStore.blueprints.length === 0 && gameSessionStore.status !== 'loading') {
+    // Asked again on every visit, after a failed load too: each case's line is
+    // narrated at the profile's age as it is now, and nothing caches it.
+    if (gameSessionStore.status !== 'loading') {
       await gameSessionStore.loadBlueprints();
     }
   }
@@ -190,7 +189,11 @@
                   onclick={() => startCase(blueprint.id)}
                 >
                   <span class="block text-xl font-bold text-t-bright">{blueprint.title}</span>
-                  <span class="block text-t-muted/80 mb-2">{blueprint.one_liner}</span>
+                  {#if blueprint.one_liner}
+                    <span class="block text-t-muted/80 mb-2" data-testid={`case-line-${i + 1}`}>{blueprint.one_liner}</span>
+                  {:else if gameSessionStore.oneLinerStatus === 'loading'}
+                    <span class="block text-t-muted/50 mb-2 motion-safe:animate-pulse" data-testid={`case-line-loading-${i + 1}`} aria-label="Loading the case's line">...</span>
+                  {/if}
                 </button>
               </div>
             {/each}

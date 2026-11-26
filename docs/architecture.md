@@ -36,9 +36,10 @@ Case format: the [clue graph](clue-graph.md).
 Signing in names a profile, creating it if missing, which takes a reading age;
 the answer is a cookie holding its id. Every route picks one of two behaviours:
 
-- **Per profile.** The request manages or plays a session. Without a profile it
-  is refused. With one, it gets a context scoped to that profile's sessions and
-  events. Nothing underneath catches a query that forgets the scope.
+- **Per profile.** The request manages or plays a session, or is narrated at
+  the profile's age (the case list). Without a profile it is refused. With one,
+  it gets a context scoped to that profile's sessions and events. Nothing
+  underneath catches a query that forgets the scope.
 - **No profile.** The request reads only content every profile shares. It is
   served to anyone, and its context holds nothing owned.
 

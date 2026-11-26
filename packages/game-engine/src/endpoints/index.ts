@@ -23,7 +23,8 @@
 // separate from another's, not a wall against them. So the question to ask of
 // a new endpoint is only ever "does this touch somebody's sessions?" — if it
 // does not, it is `"catalog"`. A profile's own settings belong to it the same
-// way, so they are `"profile"` too.
+// way, so they are `"profile"` too, and so is the case list, whose lines are
+// narrated at the profile's reading age.
 
 import type { CatalogContext, EngineContext } from "../context.ts";
 
@@ -67,7 +68,7 @@ const GET_OR_POST: readonly EndpointMethod[] = ["GET", "POST"];
 
 export const ENDPOINTS: readonly EndpointDefinition[] = [
   { name: "blueprint-scenes", access: "catalog", methods: GET_ONLY, handle: blueprintScenes.handle },
-  { name: "blueprints-list", access: "catalog", methods: GET_OR_POST, handle: blueprintsList.handle },
+  { name: "blueprints-list", access: "profile", methods: GET_OR_POST, handle: blueprintsList.handle },
   { name: "game-enter", access: "profile", methods: POST_ONLY, handle: gameEnter.handle },
   { name: "game-get", access: "profile", methods: GET_ONLY, handle: gameGet.handle },
   { name: "game-sessions-list", access: "profile", methods: GET_OR_POST, handle: gameSessionsList.handle },

@@ -10,8 +10,7 @@ import { buildView } from '../../../evaluation/playtest/lib/view.ts';
 // The shape `game-get` returns (see packages/game-engine/src/endpoints/game-get.ts).
 function state(overrides: Record<string, unknown> = {}): GameState {
 	return {
-		premise: 'The cookies are gone.',
-		mystery_summary: 'Someone took the cookies this morning.',
+		story: 'The cookies are gone. Someone took them this morning.',
 		locations: [
 			{ id: 'loc-kitchen', name: 'Kitchen', summary: 'Warm and floury.' },
 			{ id: 'loc-living-room', name: 'Living Room', summary: null }
@@ -49,6 +48,7 @@ describe('playtest player view', () => {
 			]
 		});
 
+		expect(view).toContain('== NOTEBOOK: STORY ==\nThe cookies are gone. Someone took them this morning.\n');
 		expect(view).toContain('Location: Kitchen');
 		expect(view).toContain('People here: Alice Smith');
 		expect(view).toContain('Turns left: 7');

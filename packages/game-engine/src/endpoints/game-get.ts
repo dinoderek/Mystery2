@@ -5,7 +5,7 @@ import { createRequestLogger } from "../logging.ts";
 import { readQueryRequest } from "../request.ts";
 import { readNarrationEvent } from "../narration.ts";
 import { buildDiscoveryRecords } from "../clue-discovery.ts";
-import { buildGameState } from "../game-state-view.ts";
+import { buildGameState, storyOf } from "../game-state-view.ts";
 import { sessionCase } from "../session-case.ts";
 import { requestReadingAge } from "../reading-age.ts";
 import { markClues, notebookMarks } from "../clue-graph/notebook-view.ts";
@@ -99,7 +99,13 @@ export async function handle(
     // The leads and what was taken back come from the case's graph.
     const records = buildDiscoveryRecords(blueprint, events ?? []);
     const marks = notebookMarks(blueprint.clue_graph, playedEvents(events ?? []));
-    const gameState = buildGameState(blueprint, {
+    const story = storyOf(narrationEvents);
+    // Every game is saved with its start event, so this is a broken history:
+    // the notebook's Story is left empty, and the game still opens.
+    if (story === null) {
+      logError("request.error", { reason: "start_event_missing", game_id: gameId, events_loaded: narrationEvents.length });
+    }
+    const gameState = buildGameState(blueprint, story, {
       discovered_clues: markClues(blueprint.clue_graph, records, marks),
       leads: marks.leads,
       time_remaining: session.time_remaining,

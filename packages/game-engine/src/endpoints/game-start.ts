@@ -178,15 +178,15 @@ async function openCase(
   }
   logNarrationEventSaved(startEvent, 1);
 
-  return { gameId, narrationParts };
+  return { gameId, narration, narrationParts };
 }
 
 function startResponse(
   blueprint: PlayableCase,
   readingAge: number,
-  opened: { gameId: string; narrationParts: ReturnType<typeof createNarrationPart>[] },
+  opened: { gameId: string; narration: string; narrationParts: ReturnType<typeof createNarrationPart>[] },
 ): Response {
-  const state = buildGameState(blueprint, {
+  const state = buildGameState(blueprint, opened.narration, {
     discovered_clues: [],
     // Before anything is played, every lead is new.
     leads: notebookMarks(blueprint.clue_graph, []).leads,

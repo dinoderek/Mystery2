@@ -58,6 +58,18 @@ export const GameStartRequestSchema = z.object({
 export const GameEnterRequestSchema = GameSessionRequestSchema;
 export const GameGetRequestSchema = GameSessionRequestSchema;
 
+/**
+ * `blueprints-list` answers with the titles alone, at once; asked for
+ * `one_liners` (a JSON `true`, or `"true"` as a query parameter), it also
+ * narrates every listed case's line at the profile's age, in one model call.
+ */
+export const BlueprintsListRequestSchema = z.object({
+  one_liners: z.preprocess(
+    (value) => (value === "true" ? true : value === "false" ? false : value),
+    z.boolean(),
+  ).optional(),
+});
+
 export const NarrationPartSchema = z.object({
   text: z.string().min(1),
   speaker: SpeakerSchema,
@@ -270,10 +282,9 @@ export const CharacterSummarySchema = z.object({
 });
 
 export const GameStateSchema = z.object({
-  // Notebook reference data. Present from game-start/game-get; nullable when the
-  // blueprint has no authored starting knowledge.
-  mystery_summary: z.string().nullable().optional(),
-  premise: z.string().nullable().optional(),
+  // The notebook's Story: the opening narration saved with the game's `start`
+  // event, as it was written then. Null when the game has no start event.
+  story: z.string().nullable(),
   locations: z.array(LocationSummarySchema),
   characters: z.array(CharacterSummarySchema),
   // The notebook's clues, with where each was found.
@@ -306,7 +317,9 @@ export const GameGetResponseSchema = SessionTranscriptResponseSchema.extend({
 export const BlueprintSummarySchema = z.object({
   id: z.string().uuid(),
   title: z.string(),
-  one_liner: z.string(),
+  // Narrated at the profile's age when the list is asked for its lines; null
+  // otherwise, or when the narration failed. Never the case's own text.
+  one_liner: z.string().nullable(),
   blueprint_image_id: z.string().nullable().optional(),
 });
 
@@ -422,6 +435,7 @@ export type GameStartRequest = z.infer<typeof GameStartRequestSchema>;
 export type GameSessionRequest = z.infer<typeof GameSessionRequestSchema>;
 export type GameEnterRequest = z.infer<typeof GameEnterRequestSchema>;
 export type GameGetRequest = z.infer<typeof GameGetRequestSchema>;
+export type BlueprintsListRequest = z.infer<typeof BlueprintsListRequestSchema>;
 export type NarrationPart = z.infer<typeof NarrationPartSchema>;
 export type NarrationEvent = z.infer<typeof NarrationEventSchema>;
 export type GameTurnRequest = z.infer<typeof GameTurnRequestSchema>;

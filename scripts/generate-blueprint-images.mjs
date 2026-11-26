@@ -27,15 +27,16 @@ const MAX_ERROR_BODY_LENGTH = 16_000;
 // OpenRouter serves image models from a dedicated Images API; image models are
 // rejected by /chat/completions with a 404.
 export const OPENROUTER_IMAGES_URL = "https://openrouter.ai/api/v1/images";
-const DEFAULT_IMAGE_MODEL = "openai/gpt-image-2";
-const DEFAULT_OPENROUTER_TIMEOUT_MS = 120_000;
+const DEFAULT_IMAGE_MODEL = "bytedance-seed/seedream-5-5";
+// A cover with half a dozen 2K references can take over two minutes.
+export const DEFAULT_OPENROUTER_TIMEOUT_MS = 300_000;
 // The documented ratio union. Per-model support is a subset and is only
 // discoverable via GET /api/v1/images/models, so this is a syntax check only.
 const SUPPORTED_ASPECT_RATIOS = new Set([
   "1:1", "3:2", "2:3", "4:3", "3:4", "16:9", "9:16", "21:9", "auto",
 ]);
-// gpt-image-1 and gpt-image-2 both advertise input_references 0-16.
-const MAX_INPUT_REFERENCES = 16;
+// The default model advertises input_references 0-10.
+const MAX_INPUT_REFERENCES = 10;
 
 function parseCsv(value) {
   return String(value ?? "")
@@ -154,7 +155,7 @@ Chat packets and --import-images exclude --dry-run and --dry-mode, and each
 other. The config root is $MYSTERY_CONFIG_ROOT, or the repo when unset.
 Environment is read from the shell, then .env.images.local, then
 .env.local in the config root. AI_OPENROUTER_TIMEOUT_MS sets the timeout
-(default 120000).
+(default 300000).
 `;
 
 export function parseGenerateImageArgs(argv, env = process.env) {
@@ -874,6 +875,39 @@ async function exportImageChatPackets({
   };
 }
 
+/**
+ * The portraits and location scenes a case already has on disk, by character
+ * and location id: a reference this run does not make is read from here, so a
+ * cover made on its own still sees the cast. A case's named id is tried first,
+ * then the conventional name.
+ */
+async function existingReferencePaths(graph, caseId, outputDir) {
+  async function existingImage(namedId, targetType, targetKey) {
+    for (const imageId of [namedId, conventionalImageId(caseId, targetType, targetKey)].filter(Boolean)) {
+      const imagePath = path.join(outputDir, imageId);
+      try {
+        await fs.access(imagePath);
+        return imagePath;
+      } catch {
+        // Not filed under this name; try the next.
+      }
+    }
+    return null;
+  }
+
+  const portraitPaths = new Map();
+  const locationPaths = new Map();
+  for (const [id, person] of Object.entries(graph.characters)) {
+    const existing = await existingImage(person.portrait_image_id, "character", id);
+    if (existing) portraitPaths.set(id, existing);
+  }
+  for (const [id, place] of Object.entries(graph.locations)) {
+    const existing = await existingImage(place.location_image_id, "location", id);
+    if (existing) locationPaths.set(id, existing);
+  }
+  return { portraitPaths, locationPaths };
+}
+
 export async function runImageGeneration(rawOptions, dependencies = {}) {
   const options = { ...rawOptions };
   const fetchImpl = dependencies.fetchImpl ?? fetch;
@@ -957,9 +991,8 @@ export async function runImageGeneration(rawOptions, dependencies = {}) {
     return results;
   }
 
-  // Maps populated after each phase and read by subsequent phases' helpers.
-  const portraitPaths = new Map();
-  const locationPaths = new Map();
+  // Seeded from disk, then updated after each phase for the phases after it.
+  const { portraitPaths, locationPaths } = await existingReferencePaths(parsed, blueprint.id, options.outputDir);
 
   async function readPortraitRef(characterId) {
     const portraitPath = portraitPaths.get(characterId);

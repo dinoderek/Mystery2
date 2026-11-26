@@ -33,8 +33,11 @@ export interface LocalContentOptions {
   listFixtures?: boolean;
 }
 
-/** Cases that exist for the suites, not for players. */
-export const FIXTURE_CASE_IDS: ReadonlySet<string> = new Set(["mock-case"]);
+/**
+ * Cases that exist for the suites and the judges, not for players: the mock
+ * case and the two hand-written clue graphs the tests and runtime cases play.
+ */
+export const FIXTURE_CASE_IDS: ReadonlySet<string> = new Set(["mock-case", "dragon-crown", "greenhouse-prizewinner"]);
 
 /** A file's version, as the cache sees it, and what reading it gave. */
 type CachedRead =

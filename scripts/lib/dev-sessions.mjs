@@ -8,6 +8,7 @@
  */
 
 import fs from "node:fs";
+import { createRequire } from "node:module";
 import path from "node:path";
 
 import {
@@ -60,6 +61,13 @@ export function parseSessionsArgs(args) {
       }
       parsed[valueFlags[token]] = value.trim();
       index += 1;
+      if (token === "--since") {
+        try {
+          parseSince(parsed.since);
+        } catch (error) {
+          throw new SessionsUsageError(error.message);
+        }
+      }
     } else {
       throw new SessionsUsageError(`Unexpected argument "${token}"`);
     }
@@ -86,7 +94,7 @@ export function resolveSessionsDatabase(value, { root, env }) {
 function parseSince(text) {
   const instant = Date.parse(/^\d{4}-\d{2}-\d{2}$/.test(text) ? `${text}T00:00:00Z` : text);
   if (Number.isNaN(instant)) {
-    throw new SessionsUsageError(`--since needs a date as YYYY-MM-DD or a full timestamp, not ${JSON.stringify(text)}`);
+    throw new SessionsError(`--since needs a date as YYYY-MM-DD or a full timestamp, not ${JSON.stringify(text)}`);
   }
   return instant;
 }
@@ -97,7 +105,7 @@ function parseSince(text) {
  * @param {string} file path of a `game.db`
  * @param {{ since?: string | null, profile?: string | null }} [filters]
  * @returns {Promise<SessionRow[]>}
- * @throws SessionsError when the file does not exist
+ * @throws SessionsError when the file does not exist or cannot be read
  */
 export async function listSessions(file, { since = null, profile = null } = {}) {
   const sinceInstant = since === null ? null : parseSince(since);
@@ -107,44 +115,73 @@ export async function listSessions(file, { since = null, profile = null } = {}) 
   const { openDatabase } = await import("../../packages/game-engine/src/db/client.ts");
   const { SUMMARY_COLUMNS } = await import("../../packages/game-engine/src/db/sessions.ts");
 
-  const db = openDatabase({ path: file, readonly: true });
+  let db;
   try {
-    const tables = new Set(db.prepare("select name from sqlite_master where type = 'table'").all().map((row) => row.name));
-    if (!tables.has("game_sessions") || !tables.has("players")) return [];
-
-    // A database from before reading ages has no column to read.
-    const hasReadingAge = db.prepare("select 1 from pragma_table_info('game_sessions') where name = 'reading_age'").get();
-    const firstOrLast = (order) =>
-      `(select created_at from game_events e where e.session_id = s.id order by sequence ${order} limit 1)`;
-
-    const rows = db
-      .prepare(
-        `select s.*, p.name as profile_name,
-                (select count(*) from game_events e where e.session_id = s.id and e.event_type <> 'no_turn_line') as turns,
-                ${firstOrLast("asc")} as first_event_at,
-                ${firstOrLast("desc")} as last_event_at
-           from (select ${SUMMARY_COLUMNS}, player_id${hasReadingAge ? ", reading_age" : ""} from game_sessions) s
-           join players p on p.id = s.player_id`,
-      )
-      .all();
-
-    return rows
-      .filter((row) => (profile === null || row.profile_name === profile) && (sinceInstant === null || Date.parse(row.created_at) >= sinceInstant))
-      .map((row) => ({
-        session_id: row.id,
-        profile: row.profile_name,
-        blueprint_id: row.blueprint_id,
-        case_title: row.clue_graph_title ?? null,
-        reading_age: row.reading_age ?? null,
-        turns: Number(row.turns),
-        outcome: row.outcome ?? null,
-        started_at: row.created_at,
-        duration_seconds: row.first_event_at === null ? null : Math.max(0, Math.round((Date.parse(row.last_event_at) - Date.parse(row.first_event_at)) / 1000)),
-      }))
-      .sort((a, b) => Date.parse(b.started_at) - Date.parse(a.started_at) || a.session_id.localeCompare(b.session_id));
+    db = fs.existsSync(`${file}-wal`) || fs.existsSync(`${file}-shm`) ? openDatabase({ path: file, readonly: true }) : openSnapshot(file);
+    return readSessions(db, SUMMARY_COLUMNS, { sinceInstant, profile });
+  } catch (error) {
+    throw new SessionsError(`could not read ${file}: ${error.message}`);
   } finally {
-    db.close();
+    db?.close();
   }
+}
+
+/**
+ * A database nobody is writing (no `-wal` or `-shm` beside it), read from a
+ * copy in memory. A read-only connection to a WAL file would create those two
+ * files and cannot remove them, and fails in a read-only folder; this touches
+ * nothing. The copy's header says rollback journal, since an in-memory
+ * database has no WAL.
+ *
+ * @param {string} file
+ */
+function openSnapshot(file) {
+  const Database = createRequire(import.meta.url)("better-sqlite3");
+  const bytes = fs.readFileSync(file);
+  if (bytes[18] === 2) bytes[18] = 1;
+  if (bytes[19] === 2) bytes[19] = 1;
+  return new Database(bytes);
+}
+
+/**
+ * @param {{ prepare: (sql: string) => { all: () => any[], get: () => any } }} db
+ * @param {string} summaryColumns
+ * @param {{ sinceInstant: number | null, profile: string | null }} filters
+ * @returns {SessionRow[]}
+ */
+function readSessions(db, summaryColumns, { sinceInstant, profile }) {
+  const tables = new Set(db.prepare("select name from sqlite_master where type = 'table'").all().map((row) => row.name));
+  if (!tables.has("game_sessions") || !tables.has("players")) return [];
+
+  // A database from before reading ages has no column to read.
+  const hasReadingAge = db.prepare("select 1 from pragma_table_info('game_sessions') where name = 'reading_age'").get();
+  const firstOrLast = (order) => `(select created_at from game_events e where e.session_id = s.id order by sequence ${order} limit 1)`;
+
+  const rows = db
+    .prepare(
+      `select s.*, p.name as profile_name,
+              (select count(*) from game_events e where e.session_id = s.id and e.event_type <> 'no_turn_line') as turns,
+              ${firstOrLast("asc")} as first_event_at,
+              ${firstOrLast("desc")} as last_event_at
+         from (select ${summaryColumns}, player_id${hasReadingAge ? ", reading_age" : ""} from game_sessions) s
+         join players p on p.id = s.player_id`,
+    )
+    .all();
+
+  return rows
+    .filter((row) => (profile === null || row.profile_name === profile) && (sinceInstant === null || Date.parse(row.created_at) >= sinceInstant))
+    .map((row) => ({
+      session_id: row.id,
+      profile: row.profile_name,
+      blueprint_id: row.blueprint_id,
+      case_title: row.clue_graph_title ?? null,
+      reading_age: row.reading_age ?? null,
+      turns: Number(row.turns),
+      outcome: row.outcome ?? null,
+      started_at: row.created_at,
+      duration_seconds: row.first_event_at === null ? null : Math.max(0, Math.round((Date.parse(row.last_event_at) - Date.parse(row.first_event_at)) / 1000)),
+    }))
+    .sort((a, b) => Date.parse(b.started_at) - Date.parse(a.started_at) || a.session_id.localeCompare(b.session_id));
 }
 
 /** @param {number | null} seconds @returns {string} */

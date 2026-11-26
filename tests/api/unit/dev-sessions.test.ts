@@ -183,6 +183,41 @@ describe("listSessions", () => {
     expect(version()).toEqual(versionBefore);
   });
 
+  it("leaves the folder as it found it: no -wal or -shm, and a read-only folder still lists", async () => {
+    const folder = path.dirname(file);
+    expect(fs.readdirSync(folder)).toEqual(["game.db"]);
+
+    await listSessions(file);
+    expect(fs.readdirSync(folder)).toEqual(["game.db"]);
+
+    fs.chmodSync(folder, 0o555);
+    try {
+      expect(await listSessions(file)).toHaveLength(1);
+    } finally {
+      fs.chmodSync(folder, 0o755);
+    }
+  });
+
+  it("reads a game being played, and leaves its files alone", async () => {
+    const writer = openDatabase({ path: file });
+    try {
+      writer.prepare("insert into game_sessions (id, player_id, blueprint_id, mode, current_location_id, time_remaining, created_at, updated_at) values ('s-live', 'player-1', 'b', 'explore', 'l', 1, '2026-09-01T00:00:00.000Z', '2026-09-01T00:00:00.000Z')").run();
+      const before = fs.readdirSync(path.dirname(file)).sort();
+
+      expect((await listSessions(file)).map((row: Row) => row.session_id)).toContain("s-live");
+      expect(fs.readdirSync(path.dirname(file)).sort()).toEqual(before);
+    } finally {
+      writer.close();
+    }
+  });
+
+  it("names the file when it is not a database", async () => {
+    const notes = path.join(scratch, "notes.db");
+    fs.writeFileSync(notes, "just some notes, not a database at all".repeat(10));
+
+    await expect(listSessions(notes)).rejects.toThrow(new RegExp(`could not read ${notes}`));
+  });
+
   it("lists a database from before reading ages", async () => {
     const old = path.join(scratch, "old.db");
     const db = openDatabase({ path: old });

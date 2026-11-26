@@ -4,8 +4,8 @@
  * written (a game that is being played does not notice).
  *
  * `listSessions` is the part other tools call; its row shape is the `--json`
- * shape. `./dev sessions bundle` is the playtest bundle's
- * (`playtest-recording.mjs`).
+ * shape. `./dev sessions bundle` belongs to the playtest bundle
+ * (`playtest-recording.mjs`), which `dev-cli.mjs` routes to.
  */
 
 import fs from "node:fs";
@@ -240,10 +240,6 @@ export function formatSessionsTable(rows) {
  * @returns {Promise<number>}
  */
 export async function runSessions(args, { root, out, err, env }) {
-  if (args[0] === "bundle") {
-    const { runBundle } = await import("./playtest-recording.mjs");
-    return runBundle(args.slice(1), { root, out, err, env });
-  }
   try {
     const parsed = parseSessionsArgs(args);
     const file = resolveSessionsDatabase(parsed.database, { root, env });

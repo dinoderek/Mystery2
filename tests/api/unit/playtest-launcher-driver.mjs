@@ -4,6 +4,7 @@
 // file, so vitest never collects it.
 
 import path from "node:path";
+import process from "node:process";
 import { fileURLToPath } from "node:url";
 
 import { resolveDatabaseName } from "../../../lib/database-target.mjs";

@@ -4,6 +4,8 @@
 // and exits on with status 7. Not a .test file, so vitest never collects it.
 
 import fs from "node:fs";
+import process from "node:process";
+import { setInterval } from "node:timers";
 
 process.stdout.write(`stand-in stdout FORCE_COLOR=${process.env.FORCE_COLOR}\n`);
 process.stderr.write("stand-in stderr \u001b[31mred\u001b[39m\n");

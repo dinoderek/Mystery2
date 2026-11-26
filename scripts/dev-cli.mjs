@@ -80,6 +80,10 @@ export async function main(
       case "test":
         return exec(buildTestCommand(root, rest));
       case "sessions": {
+        if (rest[0] === "bundle") {
+          const { runBundle } = await import("./lib/playtest-recording.mjs");
+          return await runBundle(rest.slice(1), { root, out, err, env });
+        }
         const { runSessions } = await import("./lib/dev-sessions.mjs");
         return await runSessions(rest, { root, out, err, env });
       }

@@ -46,7 +46,7 @@ the opening location. References not made this run are read from disk.
   fills in any id the case does not name.
 
 For `clue-graph/2`, portraits use appearance facts, locations public facts,
-covers cover facts (else the title) and visual direction; artwork is optional.
+covers cover facts (else the opening's) and visual direction; artwork is optional.
 
 Ratios are checked against OpenRouter’s list; support varies by model.
 

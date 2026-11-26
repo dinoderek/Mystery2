@@ -1,10 +1,11 @@
-import { copyFile, mkdtemp, readdir, readFile, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, mkdtemp, readdir, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  DEFAULT_OPENROUTER_TIMEOUT_MS,
   ImageGenerationError,
   OPENROUTER_IMAGES_URL,
   buildImageGenerationRequest,
@@ -361,6 +362,28 @@ describe("runImageGeneration", () => {
 
     const sent = JSON.parse(fetchMock.mock.calls[0][1].body);
     expect(sent.input_references).toHaveLength(cover.characters.length + cover.locations.length);
+  });
+
+  it("references a portrait by the id a patched case names", async () => {
+    const { blueprintPath, outputDir } = await withBlueprint();
+    const graph = JSON.parse(await readFile(blueprintPath, "utf-8"));
+    for (const person of Object.values(graph.characters) as Array<Record<string, unknown>>) delete person.portrait_image_id;
+    for (const place of Object.values(graph.locations) as Array<Record<string, unknown>>) delete place.location_image_id;
+    graph.characters["char-alice"].portrait_image_id = "alice-from-an-earlier-run.png";
+    await writeFile(blueprintPath, JSON.stringify(graph));
+    await mkdir(outputDir, { recursive: true });
+    await writeFile(path.join(outputDir, "alice-from-an-earlier-run.png"), PNG_BYTES);
+    const fetchMock = vi.fn().mockImplementation(async () => imagesApiResponse());
+
+    await runImageGeneration(parseGenerateImageArgs(["--blueprint-path", blueprintPath, "--output-dir", outputDir, "--blueprint"]), {
+      fetchImpl: fetchMock, apiKey: "test-key", env: {},
+    });
+
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).input_references).toHaveLength(1);
+  });
+
+  it("allows five minutes per image by default, for a cover with many references", () => {
+    expect(DEFAULT_OPENROUTER_TIMEOUT_MS).toBe(300_000);
   });
 
   it("tells a committed case from one outside the repo's blueprints", () => {

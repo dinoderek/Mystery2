@@ -29,7 +29,7 @@ const MAX_ERROR_BODY_LENGTH = 16_000;
 export const OPENROUTER_IMAGES_URL = "https://openrouter.ai/api/v1/images";
 const DEFAULT_IMAGE_MODEL = "bytedance-seed/seedream-5-5";
 // A cover with half a dozen 2K references can take over two minutes.
-const DEFAULT_OPENROUTER_TIMEOUT_MS = 300_000;
+export const DEFAULT_OPENROUTER_TIMEOUT_MS = 300_000;
 // The documented ratio union. Per-model support is a subset and is only
 // discoverable via GET /api/v1/images/models, so this is a syntax check only.
 const SUPPORTED_ASPECT_RATIOS = new Set([

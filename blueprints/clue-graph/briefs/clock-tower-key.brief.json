@@ -2,5 +2,6 @@
   "brief": "On the morning of the town's hundredth birthday fair, the clock in the old clock tower has stopped at ten past six, and its brass winding key is missing from its hook in the tower. Without the key the clock cannot strike noon to open the fair. The fair is being set up across the town square, the tower, the bakery, the bandstand, the library and the river path. Several people had a reason to be near the tower early, more than one of them tells a story that is not true to protect themselves or someone else, and one suspect can be shown to be innocent whatever route the player takes. The culprit acted from a motive a ten-year-old can follow and weigh, and no one is hurt.",
   "size": "large",
   "titleHint": "The Stopped Clock",
-  "mustInclude": ["the time the clock stopped", "a footprint or trace that only fits one person"]
+  "mustInclude": ["the time the clock stopped", "a footprint or trace that only fits one person"],
+  "sizeOverrides": { "time_budget": { "min": 32, "max": 32 } }
 }

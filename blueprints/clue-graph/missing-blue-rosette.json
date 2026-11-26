@@ -3,8 +3,14 @@
   "metadata": {
     "id": "missing-blue-rosette",
     "title": "The Missing Blue Rosette",
-    "time_budget": 8,
-    "size": "small"
+    "time_budget": 16,
+    "size": "small",
+    "size_overrides": {
+      "time_budget": {
+        "min": 16,
+        "max": 16
+      }
+    }
   },
   "opening": {
     "location": "marquee",

@@ -2,15 +2,15 @@ game: clue-graph-lost
 blueprint: greenhouse-clue-graph
 
 steps
-  0  (start)  mode=explore turns=12
-  1  (enter)  mode=explore turns=12
-  2  "talk to Ms. Hale"  mode=talk turns=11 clues=hale_found_locked
-  3  "What about the missing key?"  mode=talk turns=11 clues=clue_hale_key_last_seen
-  4  "bye"  mode=explore turns=11
-  5  "accuse"  mode=accuse turns=11
-  6  "It was Toby"  mode=explore turns=11
-  7  "accuse Toby, because I say so"  mode=explore turns=11
-  8  "accuse Mr. Thorne, I am sure"  mode=ended turns=11 result=lose
+  0  (start)  mode=explore turns=24
+  1  (enter)  mode=explore turns=24
+  2  "talk to Ms. Hale"  mode=talk turns=23 clues=hale_found_locked
+  3  "What about the missing key?"  mode=talk turns=23 clues=clue_hale_key_last_seen
+  4  "bye"  mode=explore turns=23
+  5  "accuse"  mode=accuse turns=23
+  6  "It was Toby"  mode=explore turns=23
+  7  "accuse Toby, because I say so"  mode=explore turns=23
+  8  "accuse Mr. Thorne, I am sure"  mode=ended turns=23 result=lose
 
 pages
   page 0 opening "The Smashed Prize Pumpkin"

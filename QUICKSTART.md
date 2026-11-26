@@ -30,9 +30,8 @@ $MYSTERY_CONFIG_ROOT/
   blueprint-scenes/
 ```
 
-Blueprints and images are shared across worktrees; databases are not. Each
-worktree gets its own, and `npm run prod` opens the persistent `prod` one. See
-`docs/local-infrastructure.md`.
+Blueprints and images are shared across worktrees; databases are not (see
+`docs/local-infrastructure.md`).
 
 **Bootstrap:**
 
@@ -77,12 +76,12 @@ your AIs by name:
 ```
 
 Add a `"key"`, or leave it out and put `OPENROUTER_API_KEY` in `.env.local`.
-`"default"` narrates wherever nothing is chosen, fresh databases included;
-the example's is `haiku`, Claude Haiku over OpenRouter, so a playtest needs
-only the key. `./dev doctor` checks the file and the default.
-To narrate with another AI, choose one on `/settings` (`[ AI SETTINGS ]` on
-the profile picker, reachable before you have picked a profile). The choice is
-stored per database and survives a restart; the picker names the narrator.
+`"default"` narrates wherever nothing is chosen; the example's is `haiku`, Claude
+Haiku over OpenRouter, so a playtest needs only the key.
+
+To narrate with another AI, choose one on `/settings` (`[ AI SETTINGS ]` on the
+profile picker, reachable before a profile is picked). The choice is stored per
+database and survives a restart; the picker names the narrator.
 
 ### Naming an AI for a run
 
@@ -91,8 +90,8 @@ stored per database and survives a restart; the picker names the narrator.
 npm run prod -- --ai claude      # the claude CLI and its login, no key
 ```
 
-The AI named outranks whatever the settings page has chosen, for the life of the
-process, and the page shows a banner saying so.
+The AI named outranks the settings page's choice for the life of the process; the
+page shows a banner.
 
 ### Switching model
 
@@ -182,9 +181,8 @@ Which blueprint fields shape each image: `docs/blueprint-generation-flows.md`.
 
 ## Your data
 
-`npm run db:list` shows every database, each a SQLite file you
-can query while the game runs. `docs/local-infrastructure.md` has the runbook
-and troubleshooting.
+`npm run db:list` shows every database; each is a SQLite file you can query while
+the game runs (`docs/local-infrastructure.md`).
 
 ## Testing
 
@@ -192,5 +190,5 @@ and troubleshooting.
 npm test
 ```
 
-The whole gate; it starts everything it needs against a throwaway database.
+The whole gate, on a throwaway database.
 Suites, focused scripts and how to read the result: `docs/testing.md`.

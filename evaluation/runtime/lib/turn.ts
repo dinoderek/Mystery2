@@ -12,10 +12,11 @@
 import fs from "node:fs/promises";
 
 import { UsageError } from "../../core/errors.ts";
+import { readingAgeOf } from "../../lib/game-events.ts";
 import type { Given, TurnAction } from "./case.ts";
 import type { TurnResponse } from "./transcript.ts";
 
-export const TURN_SCHEMA_VERSION = "0.2";
+export const TURN_SCHEMA_VERSION = "0.3";
 export const TURN_FILE = "turn.json";
 
 export interface StoredTurn {
@@ -31,7 +32,8 @@ export interface StoredTurn {
   /** The model behind the narration: a binding's model with its name, or the profile a server was asked for. */
   model: string;
   blueprint_path: string;
-  target_age: number | null;
+  /** The age the turn was narrated at: its case's, or its event's in a stored game. */
+  reading_age: number;
   given: Given;
   action: TurnAction;
   response: TurnResponse;
@@ -46,7 +48,7 @@ export interface TurnInput {
   narrator: string;
   model: string;
   blueprintPath: string;
-  targetAge: number | null;
+  readingAge: number;
   given: Given;
   action: TurnAction;
   response: TurnResponse;
@@ -64,7 +66,7 @@ export function buildTurn(input: TurnInput): StoredTurn {
     narrator: input.narrator,
     model: input.model,
     blueprint_path: input.blueprintPath,
-    target_age: input.targetAge,
+    reading_age: input.readingAge,
     given: input.given,
     action: input.action,
     response: input.response,
@@ -110,17 +112,20 @@ export interface StoredEvent {
   narration?: string;
   narration_parts?: unknown;
   payload?: Record<string, unknown> | null;
+  model?: string | null;
 }
 
 /**
  * A turn as a played game already holds it. The narration is the event's own,
  * byte for byte, so a judge reads what the player was shown and no narrator is
- * asked again. `gameId` keeps two games' turns apart in one run.
+ * asked again, at the age the event records it was written at. `gameId` keeps
+ * two games' turns apart in one run. An event without its age is refused.
  */
 export function turnFromEvent(
   event: StoredEvent,
-  game: { id: string; targetAge: number | null; blueprintPath: string },
+  game: { id: string; blueprintPath: string },
 ): StoredTurn {
+  const readingAge = readingAgeOf(event);
   const narration = event.narration ?? "";
   const parts = Array.isArray(event.narration_parts) ? (event.narration_parts as TurnResponse["narration_parts"]) : [];
   const playerInput = event.payload?.player_input;
@@ -134,7 +139,7 @@ export function turnFromEvent(
     narrator: STORED_NARRATOR,
     model: STORED_NARRATOR,
     blueprint_path: game.blueprintPath,
-    target_age: game.targetAge,
+    reading_age: readingAge,
     given: {},
     action: { type: event.event_type, ...(typeof playerInput === "string" ? { player_input: playerInput } : {}) },
     response: {

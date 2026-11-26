@@ -102,6 +102,7 @@ export async function narrateForcedEndgame(
       current_talk_character_id: null,
     },
     blueprint: game.blueprint,
+    reading_age: game.reading_age,
     forced_by_timeout: true,
     forced_context: scene.scene_summary,
     conversation_history: game.history,

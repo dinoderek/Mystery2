@@ -67,11 +67,16 @@ export interface CliReplayRequest {
   logDir: string;
 }
 
+/** The role input for the case's action, at the age the case is narrated at. */
+function caseRoleInput(testCase: TurnCase, blueprint: BlueprintLike, history: ReturnType<typeof normalizeHistory>) {
+  const roleInput = getAction(testCase.action.type).roleInput(testCase.given, testCase.action, blueprint, history);
+  return { ...roleInput, reading_age: testCase.reading_age };
+}
+
 /** What the provider sends for each shape of role (see `OpenRouterProvider.generateNarration` and `generateRoleOutput`). */
 async function composeRequest(testCase: TurnCase, blueprint: BlueprintLike) {
-  const action = getAction(testCase.action.type);
   const history = normalizeHistory(testCase.given.history);
-  const roleInput = action.roleInput(testCase.given, testCase.action, blueprint, history);
+  const roleInput = caseRoleInput(testCase, blueprint, history);
   if (NARRATION_ROLES.has(roleInput.role)) {
     const prompt = buildNarrationPrompt(roleInput as unknown as NarrationRoleInput);
     return { request: { ...buildNarrationMessages(prompt), prompt, context: null, role: null }, narration: true } as const;
@@ -141,7 +146,7 @@ async function replayGraphAccusation({ testCase, blueprint, binding, logDir }: C
   const graph = blueprint.clue_graph;
   const action = getAction("accuse");
   const history = normalizeHistory(testCase.given.history);
-  const roleInput = action.roleInput(testCase.given, testCase.action, blueprint, history);
+  const roleInput = caseRoleInput(testCase, blueprint, history);
   if (roleInput.role !== "graph_accusation") throw new Error(`a clue-graph accusation case needs player_reasoning, not the ${roleInput.role} scene`);
   const judge = await buildRoleRequest(roleInput as unknown as TemplateRoleInput);
   const reported = await runModel({

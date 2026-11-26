@@ -2,10 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import { reconstructTrace, revealedClueIdsForEvent } from "../../../evaluation/trace/lib/reconstruct.ts";
 import { runTraceMechanicalChecks } from "../../../evaluation/trace/lib/mechanical.ts";
-import { makeBlueprint, makeEvents, makeMultiStepEvents, makeRawTrace, playedRows, type TraceEventRow } from "./trace-fixtures";
+import { makeBlueprint, makeEvents, makeMultiStepEvents, makeRawTrace, PLAYED_AT, playedRows, type TraceEventRow } from "./trace-fixtures";
 
-function moveEvent(seq: number, locationId: string): TraceEventRow {
-  return { id: `m${seq}`, sequence: seq, event_type: "move", actor: "narrator", payload: { location_id: locationId }, narration: `At ${locationId}.`, narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:00:00Z" };
+function moveEvent(seq: number, locationId: string, readingAge: number | null = PLAYED_AT): TraceEventRow {
+  const payload = readingAge === null ? { location_id: locationId } : { location_id: locationId, reading_age: readingAge };
+  return { id: `m${seq}`, sequence: seq, event_type: "move", actor: "narrator", payload, narration: `At ${locationId}.`, narration_parts: [], clues_revealed: [], model: "mock", created_at: "2026-06-01T10:00:00Z" };
 }
 
 type Turn = {
@@ -21,7 +22,9 @@ type Turn = {
     graph_talk_context?: { character?: { id?: string } } | null;
     graph_accusation_context?: { reply?: { kind?: string } } | null;
     move_context?: { has_visited_before?: boolean } | null;
+    shared_mystery_context?: { reading_age?: number };
   } | null;
+  reading_age: number | null;
 };
 
 function turnBySeq(turns: readonly unknown[], seq: number): Turn {
@@ -163,7 +166,7 @@ describe("reconstructTrace — context mode & revisit fidelity", () => {
     // at runtime, even though the pre-state is still explore.
     const events: TraceEventRow[] = [
       moveEvent(1, "loc-living-room"),
-      { id: "fe", sequence: 2, event_type: "forced_endgame", actor: "narrator", payload: {}, narration: "Time is up — name the culprit.", narration_parts: [], clues_revealed: [], created_at: "2026-06-01T10:01:00Z" },
+      { id: "fe", sequence: 2, event_type: "forced_endgame", actor: "narrator", payload: { reading_age: PLAYED_AT }, narration: "Time is up — name the culprit.", narration_parts: [], clues_revealed: [], model: "mock", created_at: "2026-06-01T10:01:00Z" },
     ];
     const forced = turnBySeq(reconstructTrace(makeRawTrace({ events })).turns, 2);
     expect(forced.pre_state.mode).toBe("explore");
@@ -175,6 +178,21 @@ describe("reconstructTrace — context mode & revisit fidelity", () => {
     const { turns } = reconstructTrace(makeRawTrace({ events }));
     expect(turnBySeq(turns, 1).reconstructed_context?.move_context?.has_visited_before).toBe(false);
     expect(turnBySeq(turns, 2).reconstructed_context?.move_context?.has_visited_before).toBe(true);
+  });
+});
+
+describe("reconstructTrace — the reading age", () => {
+  it("builds each turn at the age its own event records, which may change between turns", () => {
+    const { turns } = reconstructTrace(makeRawTrace({ events: [moveEvent(1, "loc-living-room", 8), moveEvent(2, "loc-kitchen", 6)] }));
+    expect(turnBySeq(turns, 1).reading_age).toBe(8);
+    expect(turnBySeq(turns, 1).reconstructed_context?.shared_mystery_context?.reading_age).toBe(8);
+    expect(turnBySeq(turns, 2).reading_age).toBe(6);
+    expect(turnBySeq(turns, 2).reconstructed_context?.shared_mystery_context?.reading_age).toBe(6);
+  });
+
+  it("refuses an old trace whose narrated event has no reading_age, by name", () => {
+    const events = [moveEvent(1, "loc-living-room"), moveEvent(2, "loc-kitchen", null)];
+    expect(() => reconstructTrace(makeRawTrace({ events }))).toThrow(/event 2 \(move\) has no reading_age/);
   });
 });
 

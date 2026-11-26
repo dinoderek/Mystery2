@@ -32,6 +32,8 @@ afterAll(() => fs.rmSync(scratch, { recursive: true, force: true }));
 
 interface Seen {
   calls: Array<{ endpoint: string; body: Record<string, unknown> }>;
+  /** The reading ages the harness set on its profiles, in order. */
+  ages: unknown[];
   started: number;
   stopped: number;
   servers: ThrowawayServer[];
@@ -63,7 +65,7 @@ function fakeServer(
   /** The log lines each request makes, given its request id, written to `AI_CALL_LOG` when the harness set one. */
   logs: (requestId: string | null) => Array<Record<string, unknown>> = () => [],
 ): { start: StartServer; seen: Seen } {
-  const seen: Seen = { calls: [], started: 0, stopped: 0, servers: [] };
+  const seen: Seen = { calls: [], ages: [], started: 0, stopped: 0, servers: [] };
   const start: StartServer = async ({ port, seed, env }) => {
     const configRoot = fs.mkdtempSync(path.join(scratch, "root-"));
     seed?.(configRoot);
@@ -82,6 +84,12 @@ function fakeServer(
           db.close();
           response.writeHead(200, { "content-type": "application/json", "set-cookie": "mystery-player-id-x=1; Path=/" });
           response.end(JSON.stringify({ player: { id: `id-${body.name}`, name: body.name } }));
+          return;
+        }
+        if (endpoint === "profile-settings") {
+          seen.ages.push(body.reading_age);
+          response.writeHead(200, { "content-type": "application/json" });
+          response.end(JSON.stringify({ reading_age: body.reading_age }));
           return;
         }
         seen.calls.push({ endpoint, body });
@@ -122,6 +130,7 @@ function defaultAnswer(endpoint: string) {
 const askCase: TurnCase = {
   id: "ask-alice",
   blueprint: { path: MOCK_CASE_PATH },
+  reading_age: 8,
   given: {
     mode: "talk",
     location_id: "loc-kitchen",
@@ -161,6 +170,8 @@ describe("replaying through a throwaway server", () => {
     expect(seen.calls).toHaveLength(1);
     expect(seen.calls[0].endpoint).toBe("game-turn");
     expect(seen.calls[0].body.input).toBe("Then why are your hands shaking?");
+    // The game narrates at its profile's age, which the case sets first.
+    expect(seen.ages).toEqual([8]);
 
     const db = openDatabase({ path: seen.servers[0].databaseFile, readonly: true });
     const session = db.prepare("select * from game_sessions").get() as Record<string, unknown>;
@@ -278,9 +289,10 @@ describe("replaying through a throwaway server", () => {
 
   it("seeds nothing for a start action, which creates its own session", async () => {
     const { start, seen } = fakeServer();
-    const startCase: TurnCase = { id: "intro", blueprint: askCase.blueprint, given: {}, action: { type: "start" } };
+    const startCase: TurnCase = { id: "intro", blueprint: askCase.blueprint, reading_age: 6, given: {}, action: { type: "start" } };
     const collected = await narrator(start).replay(request(startCase, "mock"));
     expect(seen.calls[0]).toMatchObject({ endpoint: "game-start", body: { blueprint_id: blueprint.id, ai_profile: "mock" } });
+    expect(seen.ages).toEqual([6]);
     expect(collected.response.narration_text).toBe("Hello there.");
     const db = openDatabase({ path: seen.servers[0].databaseFile, readonly: true });
     expect(db.prepare("select count(*) as n from game_sessions").get()).toEqual({ n: 0 });

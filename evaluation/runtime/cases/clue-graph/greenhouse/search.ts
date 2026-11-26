@@ -11,9 +11,9 @@
 // The greenhouse has no hidden spot, so a hidden spot named before its pointer
 // waits for a story that has one.
 
-import { searchCase, type Step } from "../support/play.ts";
+import { searchCase, type Step, type Story } from "../support/play.ts";
 
-const GREENHOUSE = "blueprints/clue-graph/greenhouse-prizewinner.json";
+const GREENHOUSE: Story = { file: "blueprints/clue-graph/greenhouse-prizewinner.json", reading_age: 10 };
 const search = (steps: Step[], query: string | null, labels: Parameters<typeof searchCase>[3]) => searchCase(GREENHOUSE, steps, query, labels);
 
 export default [

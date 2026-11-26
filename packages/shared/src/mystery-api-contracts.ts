@@ -262,7 +262,7 @@ export const GameStateSchema = z.object({
 export const SessionTranscriptResponseSchema = z.object({
   state: GameStateSchema,
   narration_events: z.array(NarrationEventSchema),
-  /** The age this game is narrated for, saved when it started. */
+  /** The age the game's next narrated line is written at: the profile's, read on this request. */
   reading_age: ReadingAgeSchema,
 });
 
@@ -312,8 +312,9 @@ export const SessionCatalogResponseSchema = z.object({
 // --- Profile settings ---
 
 /**
- * What the playing profile has set. A null `reading_age` means each new game
- * reads at its case's own age; an age means every new game reads at that one.
+ * What the playing profile has set. Its `reading_age` is the age every game of
+ * the profile is written at, read on each request; while it is null, a game
+ * reads at its case's own age.
  */
 export const ProfileSettingsSchema = z.object({
   reading_age: ReadingAgeSchema.nullable(),

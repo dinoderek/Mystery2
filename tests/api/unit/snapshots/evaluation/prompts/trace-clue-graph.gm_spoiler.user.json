@@ -6,7 +6,6 @@
     "metadata": {
       "id": "greenhouse-prizewinner",
       "title": "The Smashed Prize Pumpkin",
-      "target_age": 10,
       "time_budget": 12
     },
     "opening": {
@@ -910,6 +909,7 @@
           "clue_welly_prints": "Small leaf-pattern welly prints in the pumpkin mush. Only Toby and Mia have leaf wellies."
         },
         "narration": "In the pulp you see the print of a welly.",
+        "reading_age": 10,
         "is_accusation_phase": false,
         "prior_revealed_clue_ids": []
       },
@@ -923,6 +923,7 @@
         "search_query": null,
         "revealed_clue_ids": [],
         "narration": "You walk to Mr. Dobbs's workshop.",
+        "reading_age": 10,
         "is_accusation_phase": false,
         "prior_revealed_clue_ids": [
           "clue_welly_prints"
@@ -945,6 +946,7 @@
           "react_dobbs_slippers": "Mr. Dobbs rubbed his neck and glanced at the garden window."
         },
         "narration": "Mr. Dobbs peers over his glasses. \"I saw her whole at eight,\" he says.",
+        "reading_age": 10,
         "is_accusation_phase": false,
         "prior_revealed_clue_ids": [
           "clue_welly_prints"
@@ -965,6 +967,7 @@
           "clue_dobbs_crash_time": "Mr. Dobbs says he heard a big thud from the garden at about ten to nine."
         },
         "narration": "\"A crash near ten,\" says Mr. Dobbs, rubbing his slippers.",
+        "reading_age": 10,
         "is_accusation_phase": false,
         "prior_revealed_clue_ids": [
           "clue_welly_prints",

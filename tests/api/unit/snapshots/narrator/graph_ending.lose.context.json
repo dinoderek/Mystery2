@@ -8,7 +8,7 @@
   "player_input": "It was Mr. Thorne.",
   "conversation_history": [],
   "shared_mystery_context": {
-    "target_age": 10
+    "reading_age": 10
   },
   "move_context": null,
   "talk_context": null,

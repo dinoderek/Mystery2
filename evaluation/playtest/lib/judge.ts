@@ -5,9 +5,9 @@
 // in this process, as a person would run it:
 //   ./dev eval judge game <game>/trace.json --output-root <game>/judge
 // which gives the mechanical checks and the four gm_* judges (one model call
-// each, plus a retry when one fails). Then every narration in the trace is
-// scored by the runtime harness's `flesch` check against the blueprint's
-// target_age, with no model call.
+// each, plus a retry when one fails). Then every narration the narrator wrote
+// is scored by the runtime harness's `flesch` check against the age its event
+// records it was written at, with no model call.
 //
 // The game command exits 2 when a judge fails a game, which is a finding and
 // not a broken run, so only a missing result.json is an error here. Each game
@@ -21,7 +21,7 @@ import { runEval } from "../../core/dispatch.ts";
 import type { EvalContext } from "../../core/dispatch.ts";
 import { readResult } from "../../core/result.ts";
 import type { Result, RunError } from "../../core/result.ts";
-import { playedEvents } from "../../lib/game-events.ts";
+import { isNarrated, playedEvents, readingAgeOf } from "../../lib/game-events.ts";
 import { judge as fleschJudge } from "../../runtime/lib/flesch.ts";
 import { partsToText } from "../../runtime/lib/transcript.ts";
 import { judgeGame } from "../../trace/judge-game.ts";
@@ -38,14 +38,16 @@ interface NarrationGrade {
   grade: number | null;
   words: number | null;
   preview: string | null;
+  /** The age the narration was written at, from its event. */
+  reading_age: number;
   threshold: number | null;
   parts: unknown[];
 }
 
-/** `readability.json`: every narration of a game, scored for reading level. */
+/** `readability.json`: every narration of a game, scored for reading level at its own age. */
 export interface Readability {
-  target_age: number;
-  threshold: number | null;
+  /** Every age the game's narration was written at, in the order they first appear. */
+  reading_ages: number[];
   pass: number;
   total: number;
   mean_grade: number | null;
@@ -63,19 +65,25 @@ export interface Grades {
 }
 
 /** The parts of a trace's event that a reading level is scored from. */
-type ReadableEvent = Pick<RawEvent, "sequence" | "event_type" | "narration" | "narration_parts">;
+type ReadableEvent = Pick<RawEvent, "sequence" | "event_type" | "narration" | "narration_parts" | "payload" | "model">;
 
-/** Every narration in a raw trace, scored for reading level against `targetAge`. */
-export function scoreReadability(trace: { events: ReadableEvent[] }, targetAge: number): Readability {
+/**
+ * Every narration the narrator wrote in a raw trace, scored for reading level
+ * at the age its event records. Engine-written lines are fixed text, not
+ * scored; a narrated event without its age (an old trace) is refused.
+ */
+export function scoreReadability(trace: { events: ReadableEvent[] }): Readability {
   const narrations = playedEvents(trace.events)
+    .filter((event: ReadableEvent) => isNarrated(event))
     .map((event: ReadableEvent) => ({
       event,
       text: partsToText(event.narration_parts as Array<{ text?: unknown }>) || event.narration.trim(),
     }))
     .filter(({ text }: { text: string }) => text.length > 0)
     .map(({ event, text }: { event: ReadableEvent; text: string }): NarrationGrade => {
+      const readingAge = readingAgeOf(event);
       const verdict = fleschJudge({
-        target_age: targetAge,
+        reading_age: readingAge,
         action: { type: event.event_type },
         response: { narration_text: text, narration_parts: event.narration_parts },
       } as unknown as FleschTurn);
@@ -87,14 +95,14 @@ export function scoreReadability(trace: { events: ReadableEvent[] }, targetAge: 
         grade: details.score as number | null,
         words: (details.words as number | undefined) ?? null,
         preview: (details.preview as string | undefined) ?? null,
+        reading_age: readingAge,
         threshold: (details.threshold as number | undefined) ?? null,
         parts: (details.parts as unknown[] | undefined) ?? [],
       };
     });
   const grades = narrations.map((entry: NarrationGrade) => entry.grade).filter((grade: number | null): grade is number => grade !== null);
   return {
-    target_age: targetAge,
-    threshold: narrations[0]?.threshold ?? null,
+    reading_ages: [...new Set(narrations.map((entry: NarrationGrade) => entry.reading_age))],
     pass: narrations.filter((entry: NarrationGrade) => entry.status === "pass").length,
     total: narrations.length,
     mean_grade: grades.length > 0
@@ -222,19 +230,17 @@ export async function judgeTrace({
  */
 export async function gradeGame({
   gameDir,
-  targetAge,
   root,
   env = process.env,
   judgeArgs = [],
 }: {
   gameDir: string;
-  targetAge: number;
   root: string;
   env?: NodeJS.ProcessEnv;
   judgeArgs?: string[];
 }): Promise<{ grades: Grades; result: Result }> {
   const tracePath = path.join(gameDir, "trace.json");
-  const readability = scoreReadability(JSON.parse(fs.readFileSync(tracePath, "utf8")), targetAge);
+  const readability = scoreReadability(JSON.parse(fs.readFileSync(tracePath, "utf8")));
   fs.writeFileSync(path.join(gameDir, "readability.json"), `${JSON.stringify(readability, null, 2)}\n`);
 
   const result = await judgeTrace({ gameDir, root, env, judgeArgs });
@@ -267,8 +273,8 @@ export function renderGrades(grades: Grades | { error: string }): string {
   }
   const reading = grades.readability;
   lines.push(
-    `- flesch: ${reading.pass} of ${reading.total} narrations at or under grade ${reading.threshold}` +
-      ` for age ${reading.target_age} (mean ${reading.mean_grade}, highest ${reading.max_grade})`,
+    `- flesch: ${reading.pass} of ${reading.total} narrations at or under the grade for the age each was written at` +
+      ` (age ${reading.reading_ages.join(", ")}; mean ${reading.mean_grade}, highest ${reading.max_grade})`,
     `- Judge cost: ${grades.judge_cost_usd === null ? "n/a" : `$${grades.judge_cost_usd.toFixed(3)}`}`,
     "",
     "Details: result.json (judges' findings), readability.json (each narration).",

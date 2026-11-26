@@ -1,8 +1,9 @@
 // Deterministic readability check on a turn.
 //
 // Scores each narration part with the Flesch–Kincaid Grade Level formula and
-// compares it to the reading grade implied by the blueprint's target_age. No
-// model, no dependencies — fully reproducible from a stored turn.
+// compares it to the reading grade implied by the age the turn was narrated at
+// (its `reading_age`). No model, no dependencies — fully reproducible from a
+// stored turn.
 //
 // The metric functions live in evaluation/lib/readability.ts and are
 // re-exported here so this module remains the check's entry point.
@@ -61,16 +62,16 @@ function scoreParts(parts: StoredTurn["response"]["narration_parts"], threshold:
  */
 export function judge(turn: StoredTurn, options: JudgeOptions = {}): Verdict {
   const tolerance = Number.isFinite(options.tolerance) ? (options.tolerance as number) : DEFAULT_TOLERANCE;
-  const targetAge = options.targetAge ?? turn.target_age;
-  if (typeof targetAge !== "number" || !Number.isFinite(targetAge)) {
-    return errorVerdict("no target_age available on the turn or in its judge options");
+  const readingAge = options.readingAge ?? turn.reading_age;
+  if (typeof readingAge !== "number" || !Number.isFinite(readingAge)) {
+    return errorVerdict("no reading_age on the turn or in its judge options");
   }
 
-  const expectedGrade = expectedGradeForAge(targetAge) as number;
+  const expectedGrade = expectedGradeForAge(readingAge) as number;
   const threshold = expectedGrade + tolerance;
   const fullText = turn.response?.narration_text ?? "";
   if (fullText.trim().length === 0) {
-    return errorVerdict("response has no narration text to score", { target_age: targetAge });
+    return errorVerdict("response has no narration text to score", { reading_age: readingAge });
   }
 
   const overallGrade = fleschKincaidGrade(fullText) as number | null;
@@ -80,7 +81,7 @@ export function judge(turn: StoredTurn, options: JudgeOptions = {}): Verdict {
     status: overallGrade !== null && overallGrade <= threshold ? "pass" : "fail",
     details: {
       score: overallGrade,
-      target_age: targetAge,
+      reading_age: readingAge,
       expected_grade: expectedGrade,
       tolerance,
       threshold,

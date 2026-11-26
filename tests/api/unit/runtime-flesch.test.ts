@@ -63,13 +63,13 @@ describe("fleschKincaidGrade", () => {
 });
 
 describe("judge", () => {
-  function turn(text: string, targetAge = 10): StoredTurn {
+  function turn(text: string, readingAge = 10): StoredTurn {
     return {
       run_id: "test",
       case_id: "test",
       narrator: "server",
       model: "mock",
-      target_age: targetAge,
+      reading_age: readingAge,
       action: { type: "ask" },
       response: {
         action: "ask",
@@ -79,15 +79,24 @@ describe("judge", () => {
     } as unknown as StoredTurn;
   }
 
-  it("passes when narration is at or below the target reading level", () => {
+  it("passes when narration is at or below the reading level", () => {
     const result = judge(turn("The cat sat on the mat. The dog ran fast and had fun."));
     expect(result.status).toBe("pass");
     expect(result.tier).toBe("mechanical");
-    expect(result.details).toMatchObject({ target_age: 10 });
+    expect(result.details).toMatchObject({ reading_age: 10 });
     expect((result.details as { parts: unknown[] }).parts).toHaveLength(1);
   });
 
-  it("fails when narration reads above the target age + tolerance", () => {
+  it("judges each turn at the age it was narrated at, not the case's", () => {
+    const text = "The quiet detective examined the broken window carefully before speaking softly.";
+    const young = judge(turn(text, 6)).details as { reading_age: number; threshold: number };
+    const old = judge(turn(text, 11)).details as { reading_age: number; threshold: number };
+    expect(young.reading_age).toBe(6);
+    expect(old.reading_age).toBe(11);
+    expect(young.threshold).toBeLessThan(old.threshold);
+  });
+
+  it("fails when narration reads above the reading age + tolerance", () => {
     const hard =
       "The investigation subsequently revealed numerous contradictory testimonies that " +
       "fundamentally undermined the prosecution's elaborate reconstruction of the circumstances " +
@@ -99,14 +108,15 @@ describe("judge", () => {
   });
 
   it("errors when the response has no narration text", () => {
-    const result = judge({ target_age: 10, response: { narration_text: "" } } as never);
+    const result = judge({ reading_age: 10, response: { narration_text: "" } } as never);
     expect(result.status).toBe("error");
     expect(result.reason).toContain("no narration");
   });
 
-  it("errors when no target_age is available", () => {
+  it("errors, naming reading_age, when the turn has no age", () => {
     const result = judge({ response: { narration_text: "Hi there friend." } } as never);
     expect(result.status).toBe("error");
+    expect(result.reason).toContain("reading_age");
   });
 
   it("respects an explicit tolerance override", () => {

@@ -28,6 +28,12 @@ export type TraceEventRow = {
   created_at: string;
 };
 
+/** The age the fixture games were narrated at: every narrated event records it, as the engine saves it. */
+export const PLAYED_AT = 10;
+
+/** A narrated event's payload carries the age it was written at; an engine-written one none. */
+const aged = (payload: Record<string, unknown>, model: string | null) => (model ? { ...payload, reading_age: PLAYED_AT } : payload);
+
 const row = (
   sequence: number,
   event_type: string,
@@ -40,7 +46,7 @@ const row = (
   sequence,
   event_type,
   actor,
-  payload,
+  payload: aged(payload, model),
   narration,
   narration_parts: [],
   clues_revealed: [],
@@ -177,7 +183,7 @@ export function makeClueGraphRawTrace(): RawTrace {
     sequence,
     event_type,
     actor: "system",
-    payload,
+    payload: aged(payload, model),
     narration,
     narration_parts: [],
     clues_revealed: [],

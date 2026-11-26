@@ -142,9 +142,9 @@ tier: 1
 
 ## What this dimension asks
 
-Did the game master play the case faithfully, for a child of
-`blueprint.metadata.target_age`? Each finding names its section as its
-`kind` and one judged turn by its `sequence`.
+Did the game master play the case faithfully, for a child of each turn's
+`reading_age`? Each finding names its section as its `kind` and one judged
+turn by its `sequence`.
 
 Report each problem once, in the one section it fits.
 
@@ -235,8 +235,8 @@ opened, and a reply wording what the engine chose are not findings.
 
 ## `not_age_fit`
 
-Can a child of `blueprint.metadata.target_age` comfortably read the narration
-unaided? The standard is the target age's row:
+Can a child of the turn's `reading_age` read it comfortably unaided? The
+standard is that age's row:
 
 | Age | UK year | Sentence words | New words | Vocabulary |
 |-----|---------|----------------|-----------|------------|
@@ -254,8 +254,8 @@ clauses well past the guidance, idioms a child this age would misread, and
 phrasing where the child cannot tell what they are being told. Judge language
 complexity only.
 
-`major`: a turn that, as a whole, is not comfortable to read at the target
-age. `minor`: an isolated overshoot.
+`major`: a turn that, as a whole, is not comfortable to read at its
+`reading_age`. `minor`: an isolated overshoot.
 
 ## Output
 

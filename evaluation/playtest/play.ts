@@ -370,7 +370,6 @@ async function gradeOne(play: Play, record: PlayedRecord, extractError: string |
     if (extractError) throw new Error(extractError);
     const { grades, result } = await gradeGame({
       gameDir: folder.dir,
-      targetAge: play.blueprint.metadata.target_age as number,
       root: play.root,
       env: play.context.env,
       judgeArgs: play.judgeArgs,

@@ -108,3 +108,21 @@ export function notebookLinesForEvent(event: GameEventLike): Record<string, stri
   const lines = Object.entries(notebook).filter((entry): entry is [string, string] => typeof entry[1] === "string");
   return lines.length > 0 ? Object.fromEntries(lines) : null;
 }
+
+/** Whether the narrator wrote this event: the engine records its model then. */
+export function isNarrated(event: { model?: string | null }): boolean {
+  return typeof event.model === "string" && event.model.length > 0;
+}
+
+// The age a narrated event was written at, as the engine recorded it in its
+// payload. Each turn is judged at its own: the reader's age can change between
+// two turns, and the case has none. A game recorded before events carried it
+// (an old trace) is refused by name rather than judged at a guessed age.
+export function readingAgeOf(event: Pick<GameEventLike, "event_type" | "payload"> & { sequence?: number }): number {
+  const age = event.payload?.reading_age;
+  if (typeof age === "number" && Number.isInteger(age)) return age;
+  const which = event.sequence === undefined ? event.event_type : `${event.sequence} (${event.event_type})`;
+  throw new Error(
+    `event ${which} has no reading_age: it was recorded before narrated events carried the age they were written at, so it cannot be judged`,
+  );
+}

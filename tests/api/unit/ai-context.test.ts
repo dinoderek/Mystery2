@@ -127,13 +127,14 @@ describe("ai-context guardrails", () => {
       game_id: "game-1",
       session,
       blueprint,
+      reading_age: 7,
       character_id: "char-alice",
       location_id: "loc-kitchen",
       conversation_history: [greeting],
     });
 
     expect(context.role_name).toBe("talk_end");
-    expect(context.shared_mystery_context).toEqual({ target_age: 10 });
+    expect(context.shared_mystery_context).toEqual({ reading_age: 7 });
     expect(context.conversation_history.map((event) => event.sequence)).toEqual([2]);
     expect(context.talk_context?.locations.map((location) => location.id)).toEqual(["loc-kitchen", "loc-living-room"]);
     // The roster is identity and looks only.
@@ -190,6 +191,7 @@ describe("ai-context guardrails", () => {
       game_id: "game-1",
       session: { ...session, mode: "explore", current_talk_character_id: null },
       blueprint,
+      reading_age: 7,
       destination_id: "loc-kitchen",
       has_visited_before: true,
       conversation_history: history,
@@ -197,7 +199,7 @@ describe("ai-context guardrails", () => {
 
     const kitchen = blueprint.world.locations.find((location) => location.id === "loc-kitchen")!;
     expect(moveContext.role_name).toBe("ambience");
-    expect(moveContext.shared_mystery_context).toEqual({ target_age: 10 });
+    expect(moveContext.shared_mystery_context).toEqual({ reading_age: 7 });
     expect(moveContext.move_context).toEqual({
       destination_id: "loc-kitchen",
       destination_name: "Kitchen",
@@ -223,6 +225,7 @@ describe("ai-context guardrails", () => {
       game_id: "game-1",
       session: { ...session, mode: "explore", current_talk_character_id: null },
       blueprint,
+      reading_age: 7,
       destination_id: "loc-kitchen",
       has_visited_before: false,
       conversation_history: [greeting],
@@ -242,6 +245,7 @@ describe("ai-context guardrails", () => {
       game_id: "game-1",
       session: { ...session, mode: "explore", current_talk_character_id: null },
       blueprint: empty,
+      reading_age: 7,
       destination_id: "loc-living-room",
       has_visited_before: false,
       conversation_history: [],
@@ -256,6 +260,7 @@ describe("ai-context guardrails", () => {
       game_id: "game-1",
       session: { ...session, mode: "accuse" },
       blueprint,
+      reading_age: 7,
       conversation_history: [greeting],
     });
     expect(startContext.accusation_start_context).toMatchObject({
@@ -277,6 +282,7 @@ describe("ai-context guardrails", () => {
       game_id: "game-1",
       session: { ...session, mode: "accuse" },
       blueprint,
+      reading_age: 7,
       conversation_history: [greeting],
       history_mode: "none",
     });
@@ -288,6 +294,7 @@ describe("ai-context guardrails", () => {
       game_id: "game-1",
       session,
       blueprint,
+      reading_age: 7,
       character_id: "char-alice",
       location_id: "loc-kitchen",
     });
@@ -305,7 +312,7 @@ describe("ai-context guardrails", () => {
       character_id: null,
       player_input: "It was Alice.",
       conversation_history: [],
-      shared_mystery_context: { target_age: 10 },
+      shared_mystery_context: { reading_age: 7 },
       move_context: null,
       talk_context: null,
       accusation_start_context: null,

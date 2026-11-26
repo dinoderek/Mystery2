@@ -14,10 +14,10 @@
 // - accuse-won: the culprit, shown by the clues cited (the closing scene).
 
 import { TAKEN_BACK, WHO_WAS_WHERE } from "../support/details.ts";
-import { accusationCase, type Step } from "../support/play.ts";
+import { accusationCase, type Step, type Story } from "../support/play.ts";
 import { DOBBS_MET, SEARCHED, THORNE_GREETS, TOBY_GREETS, TOBY_SHOWN_GLASS } from "./talk.ts";
 
-const GREENHOUSE = "blueprints/clue-graph/greenhouse-prizewinner.json";
+const GREENHOUSE: Story = { file: "blueprints/clue-graph/greenhouse-prizewinner.json", reading_age: 10 };
 const accuse = (steps: Step[], reasoning: string, labels: Parameters<typeof accusationCase>[3]) => accusationCase(GREENHOUSE, steps, reasoning, labels);
 const SPOILER = { gm_spoiler: "given_away" } as const;
 

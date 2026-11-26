@@ -6,7 +6,6 @@
     "metadata": {
       "id": "greenhouse-prizewinner",
       "title": "The Smashed Prize Pumpkin",
-      "target_age": 10,
       "time_budget": 12
     },
     "opening": {
@@ -942,6 +941,7 @@
         "search_query": null,
         "revealed_clue_ids": [],
         "narration": "You take a slow look around. Nothing new catches your eye just yet.",
+        "reading_age": 10,
         "is_accusation_phase": false,
         "prior_revealed_clue_ids": [
           "toby_alibi",

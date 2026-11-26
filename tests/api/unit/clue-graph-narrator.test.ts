@@ -227,6 +227,7 @@ describe("the clue-graph prompts", () => {
     const request = await buildRoleRequest({
       game_id: "case",
       blueprint,
+      reading_age: 10,
       session: talking,
       location_id: "thorne_garden",
       ...input,

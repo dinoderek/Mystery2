@@ -11,9 +11,9 @@
 // - search-nothing: a spot already searched, the hidden spot before its pointer,
 //   words that mean no spot, or a place the room does not have; no clue.
 
-import { searchCase, type Step } from "../support/play.ts";
+import { searchCase, type Step, type Story } from "../support/play.ts";
 
-const CROWN = "blueprints/clue-graph/dragon-crown.json";
+const CROWN: Story = { file: "blueprints/clue-graph/dragon-crown.json", reading_age: 8 };
 const search = (steps: Step[], query: string | null, labels: Parameters<typeof searchCase>[3]) => searchCase(CROWN, steps, query, labels);
 
 /** Mr. Pike's sighting, which points at the hidden spot, then the art room. */

@@ -1,6 +1,7 @@
 {
-  "target_age": 7,
-  "threshold": 4,
+  "reading_ages": [
+    7
+  ],
   "pass": 1,
   "total": 2,
   "mean_grade": 5,
@@ -13,6 +14,7 @@
       "grade": 2,
       "words": 4,
       "preview": "The cookies are gone.",
+      "reading_age": 7,
       "threshold": 4,
       "parts": []
     },
@@ -23,6 +25,7 @@
       "grade": 8,
       "words": 4,
       "preview": "You find a crumb.",
+      "reading_age": 7,
       "threshold": 4,
       "parts": []
     }

@@ -20,8 +20,13 @@ import {
   type GraphTalkContext,
 } from "./clue-graph/narrator-context.ts";
 
-/** The world view a narrator context is built from: the clue graph's. */
-export type BlueprintContext = ClueGraphWorld;
+/**
+ * The world view a narrator context is built from: the clue graph's, without
+ * the case's own age. The reader's age is every request's own `reading_age`.
+ */
+export type BlueprintContext = Omit<ClueGraphWorld, "metadata"> & {
+  metadata: Omit<ClueGraphWorld["metadata"], "target_age">;
+};
 
 export interface SessionSnapshot {
   mode: "explore" | "talk" | "accuse" | "ended";
@@ -39,7 +44,8 @@ export interface ConversationFragment {
 }
 
 export interface SharedMysteryContext {
-  target_age: number;
+  /** The age the narration is written for: the reader's. */
+  reading_age: number;
 }
 
 // The role a context is built for: an output-contract role; `ambience`,
@@ -151,6 +157,7 @@ interface BuildContextInput {
   session: SessionSnapshot;
   forced_by_timeout?: boolean;
   blueprint: BlueprintContext;
+  reading_age: number;
   location_id?: string | null;
   character_id?: string | null;
   player_input?: string | null;
@@ -296,12 +303,8 @@ function filterLocationHistory(
   });
 }
 
-function buildSharedMysteryContext(
-  blueprint: BlueprintContext,
-): SharedMysteryContext {
-  return {
-    target_age: blueprint.metadata.target_age,
-  };
+function buildSharedMysteryContext(readingAge: number): SharedMysteryContext {
+  return { reading_age: readingAge };
 }
 
 function buildTalkLocationSummaries(
@@ -493,7 +496,7 @@ function buildContext(input: BuildContextInput): AIContext {
     character_id: resolvedCharacterId,
     player_input: input.player_input ?? null,
     conversation_history: selectConversationHistoryForRole(input),
-    shared_mystery_context: buildSharedMysteryContext(input.blueprint),
+    shared_mystery_context: buildSharedMysteryContext(input.reading_age),
     move_context: input.move_context ?? null,
     talk_context: input.talk_context ?? null,
     accusation_start_context: input.accusation_start_context ?? null,
@@ -554,6 +557,7 @@ export function buildTalkEndContext(input: {
   game_id: string;
   session: SessionSnapshot;
   blueprint: BlueprintContext;
+  reading_age: number;
   character_id: string;
   location_id: string;
   conversation_history?: ConversationFragment[];
@@ -563,6 +567,7 @@ export function buildTalkEndContext(input: {
     role_name: "talk_end",
     session: input.session,
     blueprint: input.blueprint,
+    reading_age: input.reading_age,
     location_id: input.location_id,
     character_id: input.character_id,
     conversation_history: input.conversation_history,
@@ -579,6 +584,7 @@ export function buildMoveContext(input: {
   game_id: string;
   session: SessionSnapshot;
   blueprint: BlueprintContext;
+  reading_age: number;
   destination_id: string;
   has_visited_before: boolean;
   conversation_history?: ConversationFragment[];
@@ -593,6 +599,7 @@ export function buildMoveContext(input: {
     role_name: "ambience",
     session: input.session,
     blueprint: input.blueprint,
+    reading_age: input.reading_age,
     location_id: input.destination_id,
     conversation_history: input.conversation_history,
     move_context: {
@@ -613,6 +620,7 @@ export function buildAccusationStartContext(input: {
   game_id: string;
   session: SessionSnapshot;
   blueprint: BlueprintContext;
+  reading_age: number;
   forced_by_timeout?: boolean;
   player_input?: string | null;
   conversation_history?: ConversationFragment[];
@@ -629,6 +637,7 @@ export function buildAccusationStartContext(input: {
     session: input.session,
     forced_by_timeout: input.forced_by_timeout ?? false,
     blueprint: input.blueprint,
+    reading_age: input.reading_age,
     player_input: input.player_input ?? null,
     conversation_history: input.conversation_history,
     accusation_history_mode: input.history_mode ?? "all",
@@ -658,6 +667,7 @@ export function buildGraphAccusationAIContext(input: {
   game_id: string;
   session: SessionSnapshot;
   blueprint: BlueprintContext;
+  reading_age: number;
   player_input: string;
   conversation_history?: ConversationFragment[];
 }): AIContext {
@@ -668,6 +678,7 @@ export function buildGraphAccusationAIContext(input: {
     role_name: "graph_accusation",
     session: input.session,
     blueprint: input.blueprint,
+    reading_age: input.reading_age,
     player_input: input.player_input,
     conversation_history: history,
     graph_accusation_context: accusationContext(graph, playOf(graph, history)),
@@ -683,6 +694,7 @@ export function buildGraphVerdictAIContext(input: {
   game_id: string;
   session: SessionSnapshot;
   blueprint: BlueprintContext;
+  reading_age: number;
   player_input: string;
   verdict: AccusationVerdict;
   /** The held clues the judge found cited in this accusation. */
@@ -699,6 +711,7 @@ export function buildGraphVerdictAIContext(input: {
     role_name: resolved ? "graph_ending" : "graph_accusation_round",
     session: input.session,
     blueprint: input.blueprint,
+    reading_age: input.reading_age,
     player_input: input.player_input,
     conversation_history: history,
     forced_by_timeout: turnsSpent,
@@ -715,6 +728,7 @@ export function buildGraphTalkAIContext(input: {
   game_id: string;
   session: SessionSnapshot;
   blueprint: BlueprintContext;
+  reading_age: number;
   character_id: string;
   location_id: string;
   player_input: string | null;
@@ -727,6 +741,7 @@ export function buildGraphTalkAIContext(input: {
     role_name: "graph_talk",
     session: input.session,
     blueprint: input.blueprint,
+    reading_age: input.reading_age,
     location_id: input.location_id,
     character_id: input.character_id,
     player_input: input.player_input,
@@ -740,6 +755,7 @@ export function buildGraphSearchAIContext(input: {
   game_id: string;
   session: SessionSnapshot;
   blueprint: BlueprintContext;
+  reading_age: number;
   location_id: string;
   search_query: string | null;
   conversation_history?: ConversationFragment[];
@@ -751,6 +767,7 @@ export function buildGraphSearchAIContext(input: {
     role_name: "search",
     session: input.session,
     blueprint: input.blueprint,
+    reading_age: input.reading_age,
     location_id: input.location_id,
     conversation_history: history,
     graph_search_context: buildGraphSearchContext(graph, playOf(graph, history), input.search_query),

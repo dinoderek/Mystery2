@@ -3,10 +3,10 @@
 // narrator words. The groups are the greenhouse's (`../greenhouse/accusation.ts`).
 
 import { PHYSICAL_FINDING, TAKEN_BACK } from "../support/details.ts";
-import { accusationCase, type Step } from "../support/play.ts";
+import { accusationCase, type Step, type Story } from "../support/play.ts";
 import { ABARA_GREETS, CARDS, GOLD_STEPS, LEO_GREETS, NINA_GREETS, PIKE_GREETS, PIKE_MET } from "./talk.ts";
 
-const DRAGON = "blueprints/clue-graph/dragon-crown.json";
+const DRAGON: Story = { file: "blueprints/clue-graph/dragon-crown.json", reading_age: 8 };
 const accuse = (steps: Step[], reasoning: string, labels: Parameters<typeof accusationCase>[3]) => accusationCase(DRAGON, steps, reasoning, labels);
 const SPOILER = { gm_spoiler: "given_away" } as const;
 

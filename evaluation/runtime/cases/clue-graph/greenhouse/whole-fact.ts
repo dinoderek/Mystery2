@@ -6,10 +6,10 @@
 // the fact. Chosen for the facts most crowded with details: times, days and
 // people together.
 
-import { lineCase, searchCase, type Step } from "../support/play.ts";
+import { lineCase, searchCase, type Step, type Story } from "../support/play.ts";
 import { DOBBS_MET, HALE_GREETS, SEARCHED, THORNE_MET, TOBY_AFTER_THORNE, TOBY_SHOWN_CAKE, TOBY_SHOWN_GLASS, TOBY_SHOWN_WELLIES } from "./talk.ts";
 
-const GREENHOUSE = "blueprints/clue-graph/greenhouse-prizewinner.json";
+const GREENHOUSE: Story = { file: "blueprints/clue-graph/greenhouse-prizewinner.json", reading_age: 10 };
 type Labels = Parameters<typeof lineCase>[3];
 const line = (steps: Step[], say: string, labels: Labels) => lineCase(GREENHOUSE, steps, say, labels);
 const search = (steps: Step[], query: string | null, labels: Labels) => searchCase(GREENHOUSE, steps, query, labels);

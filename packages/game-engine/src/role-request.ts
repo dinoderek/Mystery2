@@ -1,19 +1,18 @@
 /**
  * Prompt assembly — the single place a narrator request is built.
  *
- * A game's blueprint carries the game's reading age as its `target_age`
- * (`atReadingAge`, applied by `sessionCase` and at game start), so the age read
- * here is always the game's, never the case's when the two differ.
+ * Every request carries the reader's age as its own `reading_age`, read from
+ * the profile on that request; the case has no say in it.
  *
  * WHY THIS EXISTS
  *
  * Assembling a narrator request means three things: pick the role, build its
- * context, and render its prompt with the blueprint's `target_age`. That used to be inlined in every endpoint handler AND
+ * context, and render its prompt at the request's `reading_age`. That used to be inlined in every endpoint handler AND
  * re-implemented by the runtime eval harness, so there were two independent
  * assembly paths. They drifted: the harness called
  * `loadPromptTemplate(role)` with no age and no style, so `clampTargetAge`
  * silently fell back to age 6 and every evaluated prompt was built for the
- * wrong reader while being graded against the blueprint's real age.
+ * wrong reader while being graded against another age.
  *
  * One assembly path removes that class of bug by construction. Transport —
  * an HTTP call to the server, or a local CLI replay — becomes a detail
@@ -105,6 +104,8 @@ export interface RoleRequest {
 interface CommonInput {
   game_id: string;
   blueprint: BlueprintContext;
+  /** The age the narration is written for: the reader's, on this request. */
+  reading_age: number;
   conversation_history?: ConversationFragment[];
 }
 
@@ -142,9 +143,9 @@ export type RoleRequestInput =
 
 type InputFor<R extends RoleRequestName> = Extract<RoleRequestInput, { role: R }>;
 
-/** How long a notebook line runs at the game's age: the age's length for a clue. */
-function notebookWords(blueprint: BlueprintContext): number {
-  return authoredFieldBudget("clue_text", blueprint.metadata.target_age);
+/** How long a notebook line runs at the reader's age: the age's length for a clue. */
+function notebookWords(readingAge: number): number {
+  return authoredFieldBudget("clue_text", readingAge);
 }
 
 function locationNameFor(blueprint: BlueprintContext, locationId: string | null | undefined): string {
@@ -187,7 +188,7 @@ const REGISTRY: Record<RoleRequestName, any> = {
     prompt: (input: InputFor<"intro">) =>
       // The opening words the case's public facts.
       buildGameStartPrompt({
-        target_age: input.blueprint.metadata.target_age,
+        reading_age: input.reading_age,
         facts: input.blueprint.clue_graph.opening.facts,
       }),
   } satisfies NarrationRoleSpec<"intro">,
@@ -208,7 +209,7 @@ const REGISTRY: Record<RoleRequestName, any> = {
         .filter((sl) => shown.has(sl.name))
         .map((sl) => ({ name: sl.name }));
       return buildGameMovePrompt({
-        target_age: input.blueprint.metadata.target_age,
+        reading_age: input.reading_age,
         destination_name: destination.name,
         has_visited_before: selectLocationConversationHistory(history, destination.id).length > 0,
         last_arrival_narration: lastArrival,
@@ -229,6 +230,7 @@ const REGISTRY: Record<RoleRequestName, any> = {
         game_id: input.game_id,
         session: input.session,
         blueprint: input.blueprint,
+        reading_age: input.reading_age,
         character_id: input.character_id,
         location_id: input.location_id,
         conversation_history: input.conversation_history,
@@ -236,7 +238,6 @@ const REGISTRY: Record<RoleRequestName, any> = {
     vars: (input: InputFor<"talk_end">) => ({
       character_name: characterNameFor(input.blueprint, input.character_id),
       location_name: locationNameFor(input.blueprint, input.location_id),
-      target_age: input.blueprint.metadata.target_age,
     }),
   } satisfies TemplateRoleSpec<"talk_end">,
 
@@ -247,6 +248,7 @@ const REGISTRY: Record<RoleRequestName, any> = {
         game_id: input.game_id,
         session: input.session,
         blueprint: input.blueprint,
+        reading_age: input.reading_age,
         character_id: input.character_id,
         location_id: input.location_id,
         player_input: input.player_input,
@@ -268,7 +270,7 @@ const REGISTRY: Record<RoleRequestName, any> = {
         ...names,
         location_name: locationNameFor(input.blueprint, input.location_id),
         turn: renderPrompt(input.player_input === null ? GRAPH_TALK_GREETING_TURN : GRAPH_TALK_LINE_TURN, names),
-        notebook_words: notebookWords(input.blueprint),
+        notebook_words: notebookWords(input.reading_age),
       };
     },
     interaction: (input: InputFor<"graph_talk">) =>
@@ -282,6 +284,7 @@ const REGISTRY: Record<RoleRequestName, any> = {
         game_id: input.game_id,
         session: input.session,
         blueprint: input.blueprint,
+        reading_age: input.reading_age,
         location_id: input.location_id,
         search_query: input.search_query,
         conversation_history: input.conversation_history,
@@ -289,7 +292,7 @@ const REGISTRY: Record<RoleRequestName, any> = {
     vars: (input: InputFor<"graph_search">) => ({
       location_name: locationNameFor(input.blueprint, input.location_id),
       search_target: input.search_query ? `: "${input.search_query}"` : "",
-      notebook_words: notebookWords(input.blueprint),
+      notebook_words: notebookWords(input.reading_age),
     }),
     // A known outcome has one budget; a judged one states both.
     interaction: (input: InputFor<"graph_search">) => {
@@ -306,13 +309,13 @@ const REGISTRY: Record<RoleRequestName, any> = {
         game_id: input.game_id,
         session: input.session,
         blueprint: input.blueprint,
+        reading_age: input.reading_age,
         forced_by_timeout: input.forced_by_timeout,
         conversation_history: input.conversation_history,
         history_mode: input.history_mode,
       }),
     vars: (input: InputFor<"accusation_start">) => ({
       forced_context: input.forced_context ?? "",
-      target_age: input.blueprint.metadata.target_age,
     }),
   } satisfies TemplateRoleSpec<"accusation_start">,
 
@@ -360,8 +363,8 @@ function specFor(role: RoleRequestName): RoleSpec {
 
 /**
  * Build the prompt for a narration role (`intro`, `ambience`) — the outputs
- * that are plain text rather than a role-output contract. Applies the
- * blueprint's `target_age` via the code-built prompt builders.
+ * that are plain text rather than a role-output contract, at the request's
+ * `reading_age`.
  */
 export function buildNarrationPrompt(input: NarrationRoleInput): string {
   const spec = specFor(input.role);
@@ -373,8 +376,8 @@ export function buildNarrationPrompt(input: NarrationRoleInput): string {
 
 /**
  * Assemble prompt + context for a role-output request. This and
- * `buildNarrationPrompt` are the ONLY places `target_age` is applied, so a
- * caller cannot build a prompt for the wrong reader.
+ * `buildNarrationPrompt` are the ONLY places the reading age is applied, so a
+ * caller cannot build a prompt without naming its reader.
  */
 export async function buildRoleRequest(input: TemplateRoleInput): Promise<RoleRequest> {
   const spec = specFor(input.role);
@@ -383,7 +386,7 @@ export async function buildRoleRequest(input: TemplateRoleInput): Promise<RoleRe
   }
 
   const context = spec.context(input as never);
-  const template = await loadPromptTemplate(input.role, input.blueprint.metadata.target_age, {
+  const template = await loadPromptTemplate(input.role, input.reading_age, {
     interaction: spec.interaction?.(input as never),
   });
 

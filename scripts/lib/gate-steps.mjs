@@ -49,6 +49,7 @@ function vitestStep({ name, phase, roots, workspace }) {
 
 export const INTEGRATION_ROOTS = ["tests/api/integration"];
 export const E2E_API_ROOTS = ["tests/api/e2e"];
+const LAUNCHER_ROOTS = ["tests/api/launcher"];
 
 export const GATE_STEPS = [
   // Phase 1: independent, run in parallel
@@ -91,6 +92,16 @@ export const GATE_STEPS = [
     roots: E2E_API_ROOTS,
     files: VITEST_FILES,
     args: ["run", "test:e2e"],
+  },
+  // The real launcher (`scripts/dev.mjs --db prod`) under the mock narrator, on
+  // a temporary config root: a recorded playtest from start to judged bundle.
+  // Its own server, so no suite build; no coverage, so the unit reports stand.
+  {
+    name: "e2e-launcher",
+    phase: 2,
+    roots: LAUNCHER_ROOTS,
+    files: VITEST_FILES,
+    args: ["exec", "--", "vitest", "run", ...LAUNCHER_ROOTS],
   },
   {
     name: "e2e-browser",

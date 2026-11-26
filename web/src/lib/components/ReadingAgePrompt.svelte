@@ -4,11 +4,17 @@
 	on with what was refused: the game starts, reopens or plays the line again.
 -->
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import AgePicker from '$lib/components/AgePicker.svelte';
 	import { gameSessionStore } from '$lib/domain/store.svelte';
 	import { profileSettingsStore } from '$lib/domain/profile-settings-store.svelte';
+
+	/** Moves focus into the prompt when it opens, as a modal does. */
+	function focusFirstAge(node: HTMLElement) {
+		void tick().then(() => node.querySelector<HTMLButtonElement>('button')?.focus());
+	}
 
 	async function choose(age: number) {
 		const took = await gameSessionStore.chooseReadingAge(age);
@@ -21,6 +27,7 @@
 
 {#if gameSessionStore.needsReadingAge}
 	<div
+		use:focusFirstAge
 		class="fixed inset-0 z-[60] flex items-center justify-center bg-t-bg/90 p-4"
 		role="dialog"
 		aria-modal="true"

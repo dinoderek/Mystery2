@@ -138,7 +138,7 @@ describe("the reading age", () => {
     ]);
   });
 
-  it("writes a profile that never chose an age at the age it was created with, never its case's", async () => {
+  it("writes a profile at the age it was created with, never its case's", async () => {
     expect(await (await request(ada, "profile-settings")).json()).toEqual({ reading_age: 8 });
 
     const game = await start(ada);

@@ -48,7 +48,7 @@ control is at least 44 px in its smaller side. Full-height
 screens use `dvh`, never `h-screen` or `vh`. Below `lg:` art stacks above text.
 The session screen follows the visual viewport (`domain/viewport.ts`), so the
 input and latest narration stay visible with the keyboard up: art
-gives up height first, goes under 96 px, and below 480 px the header and
+gives up height first, vanishes under 96 px, and below 480 px the header and
 character row go too.
 
 Two rules are easy to break:

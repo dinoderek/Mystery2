@@ -421,6 +421,7 @@ export class GameSessionStore {
   }
 
   private askReadingAge(carryOn: () => Promise<void>) {
+    profileSettingsStore.error = null;
     this.needsReadingAge = true;
     this.afterReadingAge = carryOn;
   }

@@ -63,7 +63,8 @@ fit to the brief. Its judges, `cg_soundness`, `cg_truth_agreement`,
 `cg_character_grounding` and `cg_step_sense`, fail on a major finding and are told what the validator checks, so they judge only what
 the facts mean. Step sense also reads the player's view
 (`evaluation/blueprint/player-view.ts`): what can be held when, and what leads
-to each step. A judge is trusted once it passes both hand-written stories and
+to each step, for the youngest reader (`MIN_READING_AGE`, 6), since a case has
+no age and any reader may play it. A judge is trusted once it passes both hand-written stories and
 fails a broken copy of each, which breaks one thing per judge
 (`evaluation/blueprint/clue-graph-breaks.ts`).
 

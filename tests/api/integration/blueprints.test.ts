@@ -34,7 +34,7 @@ describe("blueprints-list endpoint", () => {
     const mockCase = (await list()).find((b) => b.id === MOCK_BLUEPRINT_ID);
 
     expect(mockCase).toMatchObject({
-      title: "Mock Case — clue graph",
+      title: "Mock Case",
       one_liner: null,
       blueprint_image_id: "mock-case.blueprint.png",
     });

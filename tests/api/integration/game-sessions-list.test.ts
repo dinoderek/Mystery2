@@ -145,7 +145,7 @@ describe('game-sessions-list endpoint', () => {
     const res = await fetch(`${API_URL}/game-sessions-list`, { method: 'GET', headers: auth.headers });
     expect(res.status).toBe(200);
     const row = (await res.json()).in_progress.find((entry: { game_id: string }) => entry.game_id === gameId);
-    expect(row).toMatchObject({ mystery_title: 'Mock Case — clue graph', mystery_available: true });
+    expect(row).toMatchObject({ mystery_title: 'Mock Case', mystery_available: true });
   });
 
   // A session without a saved case reads its title from the catalog.

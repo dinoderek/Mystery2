@@ -41,7 +41,7 @@ describe("the clue-graph world view", () => {
     expect(world.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-8[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
     expect(clueGraphCaseId("another-case")).not.toBe(world.id);
     expect(world.clue_graph).toBe(graph);
-    expect(world.metadata.title).toBe("The Smashed Prize Pumpkin — clue graph");
+    expect(world.metadata.title).toBe("The Smashed Prize Pumpkin");
     expect(world.world.characters.map((person) => [person.first_name, person.sex, person.is_culprit])).toEqual([
       ["Ms. Hale", "female", false],
       ["Toby", "male", true],

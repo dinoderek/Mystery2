@@ -52,7 +52,7 @@ describe("selectable clue-graph case", () => {
   it("lists the greenhouse as its own case", async () => {
     const auth = await setupApiTestAuth("clue-graph-list");
     const entries = (await (await fetch(`${API_URL}/blueprints-list`, { headers: auth.headers })).json()).blueprints as Array<{ id: string; title: string }>;
-    expect(entries.find((entry) => entry.id === GREENHOUSE)?.title).toBe("The Smashed Prize Pumpkin — clue graph");
+    expect(entries.find((entry) => entry.id === GREENHOUSE)?.title).toBe("The Smashed Prize Pumpkin");
   });
 
   it("starts, resumes and plays without artwork, from its snapshot after the file on disk changes", async () => {

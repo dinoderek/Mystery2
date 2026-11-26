@@ -5,7 +5,7 @@ export { ageUnchangedNote, READING_AGES, ReadingAgeSchema } from "./reading-age.
 export type { PlayableCase } from "./playable-case.ts";
 export { ClueGraphCaseSchema, type ClueGraphCase } from "./clue-graph-schema.ts";
 export { validateClueGraph } from "./clue-graph-validator.ts";
-export { buildClueGraphWorld, clueGraphCaseId, CLUE_GRAPH_TITLE_SUFFIX, type ClueGraphWorld } from "./clue-graph-case.ts";
+export { buildClueGraphWorld, clueGraphCaseId, type ClueGraphWorld } from "./clue-graph-case.ts";
 export { reachClues, type ReachedClue } from "./clue-graph-reach.ts";
 export { cheapestRoute } from "./clue-graph-route.ts";
 export { culpritRoutes, measureCase, type CulpritRoute } from "./clue-graph-story.ts";

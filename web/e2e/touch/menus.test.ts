@@ -33,6 +33,10 @@ test('a player starts, resumes and reviews a game by tapping only', async ({ pag
   // The new-game list, and back from it.
   await page.getByTestId('menu-row-1').tap();
   await expect(page.getByTestId('case-card-1')).toBeVisible();
+  // The footer is one row: `[ BACK ]` on one line, and no key hint on touch.
+  expect((await page.getByTestId('back-button').boundingBox())?.height).toBeLessThanOrEqual(48);
+  await expect(page.getByText(/PRESS A NUMBER/)).toBeHidden();
+  await expect(page.getByText('Select your adventure')).toBeVisible();
   await page.getByTestId('back-button').tap();
   await expect(page.getByTestId('menu-row-1')).toBeVisible();
 

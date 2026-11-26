@@ -21,7 +21,7 @@ test('the menu shows the titles, then the narrated lines, and the Story is the o
   await expect(page.getByText('1. Start a new game', { exact: true })).toBeVisible();
   await page.keyboard.press('1');
 
-  const card = page.locator('[data-testid^="case-card-"]').filter({ hasText: 'Mock Case — clue graph' });
+  const card = page.locator('[data-testid^="case-card-"]').filter({ hasText: 'Mock Case' });
   await expect(card).toBeVisible();
   const number = (await card.getAttribute('data-testid'))!.replace('case-card-', '');
   await expect(page.getByTestId(`case-line-loading-${number}`)).toBeVisible();

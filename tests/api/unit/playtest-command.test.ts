@@ -345,11 +345,11 @@ describe('report on a committed run folder', () => {
 		expect(output).toContain('report.html');
 
 		const { html, data } = pageData(runDir);
-		expect(html).toContain('<title>Mock Case — clue graph Playtest</title>');
+		expect(html).toContain('<title>Mock Case Playtest</title>');
 		expect(html).not.toContain('__REPORT_');
 		// Nothing a judge quoted can close the script the data sits in.
 		expect(html).not.toContain('</script><b>');
-		expect(data).toMatchObject({ title: 'Mock Case — clue graph', persona: 'detective', narratorModel: 'mock', investigatorModel: 'stub-model' });
+		expect(data).toMatchObject({ title: 'Mock Case', persona: 'detective', narratorModel: 'mock', investigatorModel: 'stub-model' });
 		// The ages come from the games' graded narration, never the case.
 		expect(data.readingAges).toEqual([7]);
 

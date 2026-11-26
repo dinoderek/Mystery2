@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
+  import ListFooter from '$lib/components/ListFooter.svelte';
   import { gameSessionStore } from '$lib/domain/store.svelte';
   import { playerStore } from '$lib/domain/player-store.svelte';
   import TerminalSpinner from '$lib/components/TerminalSpinner.svelte';
@@ -122,7 +123,7 @@
       {#if view === 'menu'}
         <p class="text-t-muted/70 border-b border-t-muted/30 pb-4">Select where to continue</p>
       {:else}
-        <p class="text-t-muted/70 border-b border-t-muted/30 pb-4">Select a case blueprint to begin investigation</p>
+        <p class="text-t-muted/70 border-b border-t-muted/30 pb-4">Select your adventure</p>
       {/if}
     </div>
 
@@ -202,21 +203,10 @@
       {/if}
     </div>
 
-    <!-- Fixed footer -->
-    <div class="mt-4 flex items-center justify-center gap-4 text-t-muted/60">
-      {#if view === 'menu'}
-        <span class="animate-pulse">[ TAP A ROW OR PRESS 1, 2, OR 3 ]</span>
-      {:else}
-        <button
-          type="button"
-          data-testid="back-button"
-          class="min-h-11 border border-t-muted/40 px-3 hover:border-t-primary hover:text-t-primary"
-          onclick={backToMenu}
-        >
-          [ BACK ]
-        </button>
-        <span class="animate-pulse">[ TAP A CASE OR PRESS ITS NUMBER · B GOES BACK ]</span>
-      {/if}
-    </div>
+    {#if view === 'menu'}
+      <ListFooter hint="PRESS 1, 2 OR 3" />
+    {:else}
+      <ListFooter hint="PRESS A NUMBER · B GOES BACK" onback={backToMenu} />
+    {/if}
   {/if}
 </main>

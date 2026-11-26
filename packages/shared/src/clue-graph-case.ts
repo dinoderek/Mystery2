@@ -1,8 +1,5 @@
 import { CLUE_GRAPH_FORMAT, type ClueGraphCase } from "./clue-graph-schema.ts";
 
-/** What the catalog adds to a clue-graph case's title. */
-export const CLUE_GRAPH_TITLE_SUFFIX = " — clue graph";
-
 function fnv1a(text: string): number {
   let hash = 0x811c9dc5;
   for (let index = 0; index < text.length; index++) {
@@ -155,7 +152,7 @@ export function buildClueGraphWorld(graph: ClueGraphCase): ClueGraphWorld {
     representation_note:
       "This case is a clue graph: clue_graph is authoritative for clues, gates, retractions and the AND/OR conclusions. The world is a projection for commands and artwork; legacy reasoning-path arrays are deliberately empty. A statement is what a character said, true or false; one taken back no longer stands.",
     metadata: {
-      title: `${graph.metadata.title}${CLUE_GRAPH_TITLE_SUFFIX}`,
+      title: graph.metadata.title,
       one_liner: graph.opening.facts[0],
       ...(graph.metadata.image_id ? { image_id: graph.metadata.image_id } : {}),
       time_budget: graph.metadata.time_budget,

@@ -10,7 +10,7 @@ steps
   5  "accuse Bob, I am sure"  mode=ended turns=10 result=lose
 
 pages
-  page 0 opening "Mock Case — clue graph"
+  page 0 opening "Mock Case"
     step 0 | Narrator (narrator): "[Mock] The cookies vanished from the kitchen at noon. Alice baked the cookies this morning. Bob is a weekend guest who spent the morning in the living room."
     step 0 | Narrator (narrator): "Tip: type \"notebook\" (or \"n\") to open your case notebook. It holds what you know, who you have met, and every clue you have found. You have 3 accusations. Each one you try uses one up. Type \"accuse\" when you are ready, and \"back\" if you change your mind: that is free. Type \"help\" to see what else you can do."
   page 1 location "Kitchen"

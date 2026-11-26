@@ -15,7 +15,7 @@ import {
   resolveImageFile,
 } from "../../../packages/game-engine/src/content.ts";
 import type { LogWriter } from "../../../packages/game-engine/src/logging.ts";
-import { CLUE_GRAPH_TITLE_SUFFIX, clueGraphCaseId } from "../../../packages/shared/src/clue-graph-case.ts";
+import { clueGraphCaseId } from "../../../packages/shared/src/clue-graph-case.ts";
 import { MOCK_CASE_ID, readMockCase, readMockCaseGraph } from "../../testkit/src/mock-case.ts";
 import { createProceduralScene, createSceneManifest } from "../../testkit/src/fixtures.ts";
 
@@ -222,7 +222,7 @@ describe("listBlueprints", () => {
     const entries = await store().listBlueprints();
 
     expect(entries).toHaveLength(1);
-    expect(entries[0].blueprint.metadata.title).toBe(`From the config root${CLUE_GRAPH_TITLE_SUFFIX}`);
+    expect(entries[0].blueprint.metadata.title).toBe("From the config root");
   });
 
   it("returns a stable, name-ascending order", async () => {
@@ -260,7 +260,7 @@ describe("loadBlueprint", () => {
     writeBlueprint(primaryDir, "the-missing-cookies.json");
 
     const blueprint = await store().loadBlueprint(BLUEPRINT_ID, recordingLogger());
-    expect(blueprint?.metadata.title).toBe(`${CASE_FILE.metadata.title}${CLUE_GRAPH_TITLE_SUFFIX}`);
+    expect(blueprint?.metadata.title).toBe(CASE_FILE.metadata.title);
   });
 
   it("returns null for an unknown id, and for one that tries to escape the directory", async () => {
@@ -276,7 +276,7 @@ describe("loadBlueprint", () => {
     const content = store();
 
     expect((await content.loadBlueprint(BLUEPRINT_ID, recordingLogger()))?.metadata.title)
-      .toBe(`${CASE_FILE.metadata.title}${CLUE_GRAPH_TITLE_SUFFIX}`);
+      .toBe(CASE_FILE.metadata.title);
 
     writeBlueprint(primaryDir, `${BLUEPRINT_ID}.json`, {
       metadata: { ...CASE_FILE.metadata, title: "Edited In Place" },
@@ -284,7 +284,7 @@ describe("loadBlueprint", () => {
     // The cache is keyed on the file's mtime and size, and mtime has
     // millisecond resolution — make sure the size differs too.
     expect((await content.loadBlueprint(BLUEPRINT_ID, recordingLogger()))?.metadata.title)
-      .toBe(`Edited In Place${CLUE_GRAPH_TITLE_SUFFIX}`);
+      .toBe("Edited In Place");
   });
 });
 

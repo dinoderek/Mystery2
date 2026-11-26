@@ -108,7 +108,7 @@ describe('play on stub bindings', () => {
 		const inputs = ['search the smashed pumpkin', 'go to the workshop', 'talk to Mr. Dobbs', 'What about the noise last night?', 'bye', 'go to the garden', 'talk to Mr. Thorne', 'bye', 'accuse', 'It was Toby.', 'accuse Toby did it: his welly prints are in the pumpkin.'];
 		const caseId = '9afa1ef4-b543-81b5-a50f-4a366ec7e2ef';
 		fs.writeFileSync(script, JSON.stringify({ blueprint_id: caseId, persona: 'kid-7', inputs }));
-		for (const query of ['blueprints/clue-graph/greenhouse-prizewinner.json', caseId, 'The Smashed Prize Pumpkin — clue graph']) {
+		for (const query of ['blueprints/clue-graph/greenhouse-prizewinner.json', caseId, 'The Smashed Prize Pumpkin']) {
 			const played = await play(['--replay', script, '--blueprint', query, '--narrator', 'mock', '--judge']);
 			expect(played.code, played.output).toBe(0);
 			const [game] = gameDirs(played.runDir as string);
@@ -197,7 +197,7 @@ describe('play on stub bindings', () => {
 		expect(fs.readFileSync(path.join(gameDir, 'transcript.md'), 'utf8')).toContain('## Grades');
 		expect(fs.existsSync(path.join(gameDir, 'trace.json'))).toBe(true);
 		expect(fs.existsSync(path.join(runDir, 'game.db'))).toBe(true);
-		expect(fs.readFileSync(path.join(runDir, 'report.html'), 'utf8')).toContain('Mock Case — clue graph Playtest');
+		expect(fs.readFileSync(path.join(runDir, 'report.html'), 'utf8')).toContain('Mock Case Playtest');
 		expect(readRunIndex(runDir).exit_code).toBe(0);
 
 		// The server was the command's own, on a temporary database, and is gone.

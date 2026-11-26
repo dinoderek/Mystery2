@@ -28,24 +28,25 @@ Three phases keep images consistent:
 
 | Phase | Image | Blueprint input | References | Patched into |
 |---|---|---|---|---|
-| 1 | Character portrait | `visual_direction` (or legacy `art_style`), the character's `first_name`, `appearance`, `personality` | none | `portrait_image_id` |
+| 1 | Character portrait | `visual_direction`, the character's `first_name`, `appearance`, `personality` | none | `portrait_image_id` |
 | 2 | Location scene | `visual_direction`, the location's `name` and `description` | portraits of characters there | `location_image_id` |
-| 3 | Cover | `cover_image.description`, `visual_direction`, `metadata.title` | portraits and scenes for `cover_image.character_ids` and `location_ids` | `metadata.image_id` |
+| 3 | Cover | the case's `cover` facts, `visual_direction`, `metadata.title` | portraits and scenes for the `cover`'s characters and locations | `metadata.image_id` |
+
+A missing `cover` field defaults to the opening's facts, every character and
+the opening location. References not made this run are read from disk.
 
 - A portrait's backdrop is `visual_direction.portrait_background` when set,
   otherwise a built-in bokeh wash, and never depicts a mystery location.
-- References use `input_references[]` in the prompt legend’s order. At most 16 are sent; beyond that the first 16, with a warning.
-- `--chat-packets` writes the same prompts, with the references to upload in
-  the same order, for pasting into a chat.
-- A case committed under `blueprints/` is never patched, so the tracked file
-  and the untracked images cannot disagree. Its images are written under
-  fixed names, `<case id>.blueprint.png`, `<case id>.character-<id>.png` and
-  `<case id>.location-<id>.png` (`packages/shared/src/image-ids.ts`),
-  replacing the last ones, and the engine fills in any image id a case does not
-  name from a file under that name.
+- References use `input_references[]` in the prompt legend’s order; beyond the default model's limit of 10, the first 10 are sent, with a warning.
+- `--chat-packets` writes the same prompts and references for pasting into a
+  chat.
+- A case committed under `blueprints/` is never patched, so tracked file and
+  untracked images cannot disagree: its images get fixed names
+  (`packages/shared/src/image-ids.ts`), replacing the last ones, and the engine
+  fills in any id the case does not name.
 
 For `clue-graph/2`, portraits use appearance facts, locations public facts,
-covers cover facts (else the title) and visual direction; artwork is optional.
+covers cover facts (else the opening's) and visual direction; artwork is optional.
 
 Ratios are checked against OpenRouter’s list; support varies by model.
 

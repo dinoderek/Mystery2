@@ -79,23 +79,26 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <main
-  class="group fixed inset-x-0 top-0 flex h-dvh flex-col overflow-hidden bg-t-bg font-mono text-t-primary lg:flex-row"
+  class="group fixed inset-x-0 top-0 flex h-dvh flex-col overflow-hidden bg-t-bg font-mono text-t-primary"
   data-compact={compact}
   style:top={visible ? `${visible.top}px` : undefined}
   style:height={visible ? `${visible.height}px` : undefined}
   style:--art-height={visible ? `${artPaneHeight(visible.height)}px` : '32dvh'}
 >
-  <section class="order-2 flex min-h-0 min-w-0 flex-1 flex-col p-4 group-data-[compact=true]:p-2 lg:order-1 lg:h-full lg:basis-1/3">
-    <Header />
-    <PageNavigator />
-    <PageNarration />
-    <StatusBar />
-    <InputBox />
-  </section>
+  <Header />
 
-  <aside class="order-1 h-[var(--art-height)] shrink-0 overflow-hidden lg:order-2 lg:h-full lg:basis-2/3">
-    <ScenePane />
-  </aside>
+  <div class="flex min-h-0 flex-1 flex-col lg:flex-row">
+    <section class="order-2 flex min-h-0 min-w-0 flex-1 flex-col px-2 pb-2 sm:px-4 lg:order-1 lg:h-full lg:basis-1/3 lg:pt-2">
+      <PageNavigator />
+      <PageNarration />
+      <StatusBar />
+      <InputBox />
+    </section>
+
+    <aside class="order-1 h-[var(--art-height)] shrink-0 overflow-hidden lg:order-2 lg:h-full lg:basis-2/3">
+      <ScenePane />
+    </aside>
+  </div>
 
   <HelpModal />
   <NotebookPanel />

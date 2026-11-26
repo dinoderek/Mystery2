@@ -84,7 +84,7 @@
 
 </script>
 
-<div class="mt-4 border-t border-t-muted/30 pt-4 group-data-[compact=true]:mt-2 group-data-[compact=true]:pt-2">
+<div class="mt-2 pt-2">
   {#if showReadOnlyPrompt}
     <div class="space-y-2 text-sm" data-testid="accusation-end-state">
       {#if gameSessionStore.accusationOutcome === "win"}
@@ -123,7 +123,7 @@
       class="min-h-11 w-full animate-pulse border border-t-muted/40 px-3 text-sm text-t-bright hover:border-t-primary hover:text-t-primary"
       onclick={() => beginInvestigation(gameSessionStore)}
     >
-      [ TAP OR PRESS ANY KEY TO BEGIN THE INVESTIGATION ]
+      [ <span class="pointer-fine:hidden">TAP</span><span class="hidden pointer-fine:inline">PRESS ANY KEY</span> TO BEGIN ]
     </button>
   {:else}
     {#if gameSessionStore.isRetrying}

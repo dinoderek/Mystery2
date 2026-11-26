@@ -49,7 +49,7 @@ test.describe('US2 - Status Bar', () => {
         await expect(page).toHaveURL(/.*\/session/);
 
         // Verify header/status elements
-        await expect(page.locator('text=LOCATION: kitchen')).toBeVisible();
+        await expect(page.getByTestId('status-line')).toContainText(/^kitchen · /);
         await expect(page.locator('text=TIME: 8')).toBeVisible();
         // Labelled for what it counts, so it cannot be misread as a page or
         // turn number sitting next to TIME.

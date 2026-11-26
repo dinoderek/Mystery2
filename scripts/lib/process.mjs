@@ -49,17 +49,29 @@ export function runCommand(command, args, env, allowFailure = false) {
 export function startServer({ command, args, cwd, env, stdin = "inherit", serverLog = null }) {
   // Opened first: a log that cannot be opened must not leave a server running
   // that nothing reads or signals.
-  const logFd = serverLog ? fs.openSync(serverLog, "a") : null;
+  let logFd = serverLog ? fs.openSync(serverLog, "a") : null;
+  const closeLog = () => {
+    if (logFd !== null) fs.closeSync(logFd);
+    logFd = null;
+  };
   const output = logFd === null ? "inherit" : "pipe";
   const child = spawn(command, args, { cwd, env, stdio: [stdin, output, output] });
 
-  if (logFd !== null) {
+  if (output === "pipe") {
     const tee = (stream, target) => {
       // Decoded across chunks, so a character split between two stays whole.
       stream.setEncoding("utf8");
       stream.on("data", (text) => {
         target.write(text);
-        fs.writeSync(logFd, stripVTControlCharacters(text));
+        if (logFd === null) return;
+        try {
+          fs.writeSync(logFd, stripVTControlCharacters(text));
+        } catch (error) {
+          // The terminal keeps the output and the server keeps running; only
+          // the log stops, said once.
+          console.error(`Could not write ${serverLog}, so it stops here: ${error.message}`);
+          closeLog();
+        }
       });
     };
     tee(child.stdout, process.stdout);
@@ -70,13 +82,18 @@ export function startServer({ command, args, cwd, env, stdin = "inherit", server
   const stopped = () => {
     if (exited) return false;
     exited = true;
-    if (logFd !== null) fs.closeSync(logFd);
+    closeLog();
     return true;
   };
   const exit = new Promise((resolve, reject) => {
-    // Only a child that never started ends here; a failed kill leaves it running.
     child.on("error", (error) => {
-      if (child.pid === undefined && stopped()) reject(error);
+      // A child that never started ends here. Any other error (a failed kill)
+      // leaves it running, so it is reported and the wait goes on.
+      if (child.pid === undefined) {
+        if (stopped()) reject(error);
+      } else {
+        console.error(`Server process ${child.pid} (${command}): ${error.message}`);
+      }
     });
     // `close`, not `exit`: it waits for the piped streams to end, so the log
     // holds the server's last words.

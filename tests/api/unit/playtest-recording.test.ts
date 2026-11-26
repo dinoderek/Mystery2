@@ -73,7 +73,7 @@ describe("whether a run records", () => {
   });
 
   it("records nothing on any other database", () => {
-    for (const databaseName of ["main", "test", "task-Mystery2-530", "prod-copy"]) {
+    for (const databaseName of ["main", "test", "feature-x", "prod-copy"]) {
       expect(planRecording({ root: REPO_ROOT, env, databaseName, date: DATE }), databaseName).toBeNull();
     }
   });

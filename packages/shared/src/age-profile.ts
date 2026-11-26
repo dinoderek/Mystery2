@@ -27,7 +27,7 @@
 
 /** Complexity profile for a single age. */
 export interface AgeProfile {
-  /** Target age of the investigator (6–11). */
+  /** Reading age of the investigator (6–11). */
   age: number;
   /** Approximate UK school year for context, e.g. "Year 3". */
   ukYear: string;
@@ -155,7 +155,7 @@ export function clampReadingAge(age: number): number {
   return rounded;
 }
 
-/** Get the age profile for a target age, clamped to the supported range. */
+/** Get the age profile for a reading age, clamped to the supported range. */
 export function getAgeProfile(age: number): AgeProfile {
   return PROFILES[clampReadingAge(age)];
 }

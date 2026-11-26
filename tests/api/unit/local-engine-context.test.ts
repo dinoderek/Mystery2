@@ -49,7 +49,7 @@ describe("createLocalEngine", () => {
   it("serves a full turn's worth of context for one player", async () => {
     const local = engine();
     try {
-      const player = local.players.ensure("Ada");
+      const player = local.players.ensure("Ada", 8);
       const ctx = local.contextFor({ id: player.id });
 
       const profile = await ctx.aiProfiles.getById("default");
@@ -99,8 +99,8 @@ describe("createLocalEngine", () => {
   it("keeps two local profiles apart", async () => {
     const local = engine();
     try {
-      const ada = local.players.ensure("Ada");
-      const grace = local.players.ensure("Grace");
+      const ada = local.players.ensure("Ada", 8);
+      const grace = local.players.ensure("Grace", 8);
 
       const adaCtx = local.contextFor({ id: ada.id });
       const graceCtx = local.contextFor({ id: grace.id });

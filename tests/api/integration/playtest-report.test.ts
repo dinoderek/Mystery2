@@ -62,7 +62,7 @@ describe('playtest report', () => {
 	it('lays out a run folder as turns, with grades beside the turns they cite', async () => {
 		scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'mystery-playtest-report-'));
 		const game = await playGame({
-			api: await signIn(BASE_URL, 'playtest-report'),
+			api: await signIn(BASE_URL, 'playtest-report', 8),
 			blueprint: { id: MOCK_BLUEPRINT_ID, title: MOCK_BLUEPRINT.metadata.title },
 			investigator: scriptedInvestigator(INPUTS)
 		});

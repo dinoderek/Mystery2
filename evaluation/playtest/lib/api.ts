@@ -22,11 +22,11 @@ export interface GameApi {
   post<T>(endpoint: string, body?: unknown, requestId?: string): Promise<ApiResponse<T>>;
 }
 
-export async function signIn(baseUrl: string, name: string): Promise<GameApi> {
+export async function signIn(baseUrl: string, name: string, readingAge: number): Promise<GameApi> {
   const response = await fetch(`${baseUrl}/api/player`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name, reading_age: readingAge }),
   });
   if (!response.ok) {
     throw new Error(`Sign-in as "${name}" failed: ${response.status} ${await response.text()}`);

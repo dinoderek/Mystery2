@@ -1,6 +1,8 @@
 export interface InvokeFailure {
   message?: string | null;
   status?: number;
+  /** The server's `details.code`, when it named one. */
+  code?: string;
 }
 
 export type RetryClassification = 'transient' | 'permanent';
@@ -63,7 +65,7 @@ export type AttemptResult<T> = { ok: true; data: T } | { ok: false; failure: Att
 
 interface CallResult<T> {
   data: T | null;
-  error: { message: string; status?: number } | null;
+  error: { message: string; status?: number; code?: string } | null;
 }
 
 /**
@@ -101,7 +103,7 @@ async function attemptOnce<T>(
     if (!error) {
       return { data: data as T };
     }
-    const failure = { message: error.message, status: error.status };
+    const failure = { message: error.message, status: error.status, code: error.code };
     return { failure, transient: isTransientFailure(failure) };
   } catch (thrown) {
     const failure = { message: thrown instanceof Error ? thrown.message : String(thrown) };

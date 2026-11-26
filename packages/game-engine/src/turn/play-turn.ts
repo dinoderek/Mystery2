@@ -110,7 +110,7 @@ async function loadGame(ctx: EngineContext, gameId: string, logger: LogWriter): 
     game_id: gameId,
     session,
     blueprint,
-    reading_age: await requestReadingAge(ctx.profile, blueprint),
+    reading_age: await requestReadingAge(ctx.profile),
     history: playedEvents(history),
     next_sequence: nextSequence,
   };

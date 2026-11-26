@@ -5,6 +5,7 @@ import {
   GameGetResponseSchema,
   GameStartResponseSchema,
   GameTurnResponseSchema,
+  READING_AGE_REQUIRED,
   SessionCatalogResponseSchema,
   type GameEnterResponse,
   type GameTurnResponse,
@@ -21,6 +22,7 @@ import type {
   Speaker,
 } from '../types/game';
 import { readAnswer, readContract, type ContractSchema } from './contract';
+import { profileSettingsStore } from './profile-settings-store.svelte';
 import { EMPTY_CATALOG, toGameState, toSessionCatalog } from './game-state';
 import { INVESTIGATOR_SPEAKER, SYSTEM_SPEAKER } from './speaker';
 import { callWithRetry, type AttemptFailure } from './store.retry';
@@ -56,6 +58,13 @@ export class GameSessionStore {
   retryCount = $state(0);
   lastFailedInput = $state<string | null>(null);
   accusationOutcome = $state<'win' | 'lose' | null>(null);
+  /**
+   * The engine refused to start or play a game because the profile has no
+   * reading age (an older local database). The page asks for one, and
+   * `chooseReadingAge` then carries on with what was refused.
+   */
+  needsReadingAge = $state(false);
+  private afterReadingAge: (() => Promise<void>) | null = null;
   awaitingReturnToList = $state(false);
   sessionCatalog = $state<SessionCatalog>(EMPTY_CATALOG);
   sessionCatalogStatus = $state<'idle' | 'loading' | 'ready' | 'error'>('idle');
@@ -222,11 +231,13 @@ export class GameSessionStore {
   async startGame(blueprintId: string) {
     this.status = 'loading';
     this.error = null;
-    const answer = readAnswer(
-      await callApi('game-start', { blueprint_id: blueprintId }),
-      GameStartResponseSchema,
-      'game-start',
-    );
+    const result = await callApi('game-start', { blueprint_id: blueprintId });
+    if (result.error?.code === READING_AGE_REQUIRED) {
+      this.status = 'idle';
+      this.askReadingAge(() => this.startGame(blueprintId));
+      return;
+    }
+    const answer = readAnswer(result, GameStartResponseSchema, 'game-start');
     if (!answer.ok) {
       this.error = answer.message;
       this.status = 'error';
@@ -252,6 +263,11 @@ export class GameSessionStore {
     this.error = null;
 
     const response = await callApiGet('game-get', { game_id: gameId });
+    if (response.error?.code === READING_AGE_REQUIRED) {
+      this.status = 'idle';
+      this.askReadingAge(() => this.resumeSession(gameId));
+      return;
+    }
     const answer = readAnswer(response, GameGetResponseSchema, 'game-get');
     if (!answer.ok) {
       this.error = response.error ? describeLookupFailure(answer.message, response.data) : answer.message;
@@ -323,6 +339,9 @@ export class GameSessionStore {
     );
     if (answer && this.state) {
       this.showAnswer(answer, playedIn, echo);
+    } else if (this.needsReadingAge) {
+      // The line is typed again once an age is chosen.
+      this.removeEvent(echo);
     }
   }
 
@@ -378,6 +397,10 @@ export class GameSessionStore {
     this.status = 'active';
 
     if (!result.ok) {
+      if (result.failure.code === READING_AGE_REQUIRED) {
+        this.askReadingAge(() => (input === null ? this.enterStartingLocation() : this.submitInput(input)));
+        return null;
+      }
       this.showFailure(result.failure, input);
       return null;
     }
@@ -395,6 +418,25 @@ export class GameSessionStore {
     this.error = null;
     this.lastFailedInput = null;
     return answer.value;
+  }
+
+  private askReadingAge(carryOn: () => Promise<void>) {
+    this.needsReadingAge = true;
+    this.afterReadingAge = carryOn;
+  }
+
+  /**
+   * Saves the age the player chose and carries on with what the engine
+   * refused. Returns whether the engine took the age; a refusal is shown by
+   * `profileSettingsStore.error` and the question stays open.
+   */
+  async chooseReadingAge(age: number): Promise<boolean> {
+    if (!(await profileSettingsStore.setReadingAge(age))) return false;
+    const carryOn = this.afterReadingAge;
+    this.needsReadingAge = false;
+    this.afterReadingAge = null;
+    await carryOn?.();
+    return true;
   }
 
   private showFailure(failure: AttemptFailure, input: string | null) {
@@ -600,6 +642,8 @@ export class GameSessionStore {
     this.retryCount = 0;
     this.lastFailedInput = null;
     this.accusationOutcome = null;
+    this.needsReadingAge = false;
+    this.afterReadingAge = null;
     this.awaitingReturnToList = false;
     this.viewerMode = 'interactive';
     this.activePageIndex = null;

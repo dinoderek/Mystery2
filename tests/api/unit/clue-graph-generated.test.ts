@@ -45,7 +45,7 @@ describe.each(STORIES)("the generated story $file", ({ file, brief }) => {
   beforeAll(() => {
     scratch = fs.mkdtempSync(path.join(os.tmpdir(), "clue-graph-generated-"));
     local = createLocalEngine({ repoRoot: ROOT, env: { MYSTERY_CONFIG_ROOT: scratch }, databasePath: path.join(scratch, "test.db") });
-    ctx = local.contextFor({ id: local.players.ensure("Generated investigator").id });
+    ctx = local.contextFor({ id: local.players.ensure("Generated investigator", 8).id });
   });
   afterAll(() => {
     local.close();

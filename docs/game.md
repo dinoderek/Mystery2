@@ -12,10 +12,10 @@ contract; prompts: `docs/ai-runtime.md`, screens: `docs/ui.md`.
 - **The blueprint** is the case: who did what, why, and where the clues are
   ([clue graph](clue-graph.md)).
 - **The turn budget** (`metadata.time_budget`) bounds the investigation.
-- **The reading age** narration is written for is the profile's (settings
-  page), read on every request, so a change reaches the game's next line;
-  each narrated event records its age. A profile with none reads at the case's
-  `metadata.target_age`.
+- **The reading age** narration is written for is the profile's: chosen at
+  creation, changed on the settings page, read on every request, so a change
+  reaches the next line; each narrated event records it. A profile from before
+  it was required is asked for one before its next game.
 
 ## Starting a case
 
@@ -87,7 +87,7 @@ discovers — the two stay separate.
 
 ## The notebook
 
-A full-screen overlay, free and available in every mode, with four sections:
+A full-screen overlay, free in every mode, with four sections:
 **Story** (premise and what happened), **Places** (where everyone is),
 **People** (everyone met), and **Clues** (everything discovered, a statement
 taken back marked so), with leads on what to do next.

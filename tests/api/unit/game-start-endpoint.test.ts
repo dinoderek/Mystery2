@@ -27,7 +27,7 @@ function open(aiConfig?: unknown): void {
     env: { MYSTERY_CONFIG_ROOT: dir },
     databasePath: path.join(dir, "database", "test", "game.db"),
   });
-  ctx = local.contextFor({ id: local.players.ensure("Ada").id });
+  ctx = local.contextFor({ id: local.players.ensure("Ada", 8).id });
 }
 
 function start(body: Record<string, unknown> = {}): Promise<Response> {

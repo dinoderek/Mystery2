@@ -1,20 +1,25 @@
 <script lang="ts">
+	import AgePicker from '$lib/components/AgePicker.svelte';
 	import { playerStore } from '$lib/domain/player-store.svelte';
 
 	let name = $state('');
+	let readingAge = $state<number | null>(null);
 	let submitting = $state(false);
 
-	async function signInAs(profileName: string) {
+	async function signInAs(profileName: string, age: number | null = null) {
 		submitting = true;
-		await playerStore.signIn(profileName);
+		const signedIn = await playerStore.signIn(profileName, age);
 		submitting = false;
+		return signedIn;
 	}
 
 	async function handleSubmit(event: Event) {
 		event.preventDefault();
 		if (submitting) return;
-		await signInAs(name);
-		name = '';
+		if (await signInAs(name, readingAge)) {
+			name = '';
+			readingAge = null;
+		}
 	}
 </script>
 
@@ -54,6 +59,11 @@
 				focus:border-t-primary focus:outline-none disabled:opacity-50"
 			placeholder="detective"
 		/>
+	</div>
+
+	<div>
+		<p class="block text-t-muted text-sm mb-1">&gt; READING AGE (A NEW PROFILE NEEDS ONE)</p>
+		<AgePicker selected={readingAge} disabled={submitting} onchoose={(age) => (readingAge = age)} />
 	</div>
 
 	<button

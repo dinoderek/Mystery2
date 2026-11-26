@@ -7,6 +7,7 @@
 	import { gameSessionStore } from '$lib/domain/store.svelte';
 	import { playerStore } from '$lib/domain/player-store.svelte';
 	import TerminalSpinner from '$lib/components/TerminalSpinner.svelte';
+	import ReadingAgePrompt from '$lib/components/ReadingAgePrompt.svelte';
 
 	let { children } = $props();
 
@@ -59,4 +60,5 @@
 	</main>
 {:else if playerStore.player || PUBLIC_PATHS.includes($page.url.pathname)}
 	{@render children()}
+	<ReadingAgePrompt />
 {/if}

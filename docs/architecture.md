@@ -33,8 +33,8 @@ Case format: the [clue graph](clue-graph.md).
 
 ## Identity and access
 
-Signing in names a profile, creating it if missing; the answer is a cookie
-holding its id. Every route picks one of two behaviours:
+Signing in names a profile, creating it if missing, which takes a reading age;
+the answer is a cookie holding its id. Every route picks one of two behaviours:
 
 - **Per profile.** The request manages or plays a session. Without a profile it
   is refused. With one, it gets a context scoped to that profile's sessions and

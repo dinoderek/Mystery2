@@ -114,7 +114,7 @@ describe("clue-graph sessions and turns", () => {
     scratch = fs.mkdtempSync(path.join(os.tmpdir(), "clue-graph-play-"));
     databasePath = path.join(scratch, "test.db");
     local = createLocalEngine({ repoRoot: ROOT, env: { MYSTERY_CONFIG_ROOT: scratch }, databasePath });
-    ctx = local.contextFor({ id: local.players.ensure("Graph investigator").id });
+    ctx = local.contextFor({ id: local.players.ensure("Graph investigator", 8).id });
   });
   afterEach(() => {
     vi.restoreAllMocks();

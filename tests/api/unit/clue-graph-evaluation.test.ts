@@ -73,7 +73,7 @@ describe("a clue-graph game, extracted and judged", () => {
     scratch = fs.mkdtempSync(path.join(os.tmpdir(), "clue-graph-eval-"));
     databasePath = path.join(scratch, "test.db");
     local = createLocalEngine({ repoRoot: ROOT, env: { MYSTERY_CONFIG_ROOT: scratch }, databasePath });
-    ctx = local.contextFor({ id: local.players.ensure("Graph evaluator").id });
+    ctx = local.contextFor({ id: local.players.ensure("Graph evaluator", 8).id });
   });
   afterEach(() => {
     local.close();
@@ -124,7 +124,7 @@ describe("a clue-graph game, extracted and judged", () => {
   it.each(GM)("sends %s the played case itself, with no case age, and each turn at the age it was narrated at", async (id) => {
     await ctx.profile.setReadingAge(7);
     const gameId = await playOnMock(WIN.slice(0, 1));
-    await ctx.profile.setReadingAge(null);
+    await ctx.profile.setReadingAge(9);
     const run = prepareGameJudging(await extract(gameId));
     const sent = buildGameJudgeUserMessage(id, null, run);
     const message = JSON.parse(sent);
@@ -174,7 +174,7 @@ describe("a clue-graph game, extracted and judged", () => {
       const recorded = (turnCase.given.history ?? []).filter((row) => row.payload?.clue_graph !== undefined);
       expect(recorded.length, turnCase.id).toBeGreaterThan(0);
       const action = getAction(turnCase.action.type);
-      expect(turnCase.reading_age, turnCase.id).toBe(10);
+      expect(turnCase.reading_age, turnCase.id).toBe(8);
       const input = { ...action.roleInput(turnCase.given, turnCase.action, trace.blueprint as never, normalizeHistory(turnCase.given.history)), reading_age: turnCase.reading_age };
       expect(input.role).toBe("graph_talk");
       await expect(buildRoleRequest(input as never)).resolves.toMatchObject({ context: { role_name: "graph_talk" } });

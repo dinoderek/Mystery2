@@ -4,6 +4,7 @@
 // browser carries the id in a cookie, and the session/event repositories scope
 // every query to it. That scoping is the whole of the access model.
 
+import { ReadingAgeSchema } from "../../../shared/src/reading-age.ts";
 import type { Db } from "./client.ts";
 
 export interface PlayerRecord {
@@ -20,10 +21,13 @@ export interface PlayerStore {
   getByName(name: string): PlayerRecord | null;
   /** Every profile, oldest first — the profile picker's list. */
   list(): PlayerRecord[];
-  /** Creates a profile. Throws when the name is already taken. */
-  create(name: string): PlayerRecord;
-  /** The profile with this name, created if it does not exist yet. */
-  ensure(name: string): PlayerRecord;
+  /**
+   * Creates a profile reading at `readingAge`. Throws when the name is already
+   * taken or the age is not one the narrator writes for.
+   */
+  create(name: string, readingAge: number): PlayerRecord;
+  /** The profile with this name, created at `readingAge` if it does not exist yet. */
+  ensure(name: string, readingAge: number): PlayerRecord;
 }
 
 function toRecord(row: Record<string, unknown>): PlayerRecord {
@@ -58,9 +62,10 @@ export function createPlayerStore(db: Db): PlayerStore {
         .map(toRecord);
     },
 
-    create(name) {
+    create(name, readingAge) {
       const trimmed = name.trim();
       if (!trimmed) throw new Error("Player name must not be empty");
+      const age = ReadingAgeSchema.parse(readingAge);
 
       const now = new Date().toISOString();
       const record: PlayerRecord = {
@@ -71,20 +76,20 @@ export function createPlayerStore(db: Db): PlayerStore {
       };
 
       db.prepare(
-        "insert into players (id, name, created_at, updated_at) values (?, ?, ?, ?)",
-      ).run(record.id, record.name, record.created_at, record.updated_at);
+        "insert into players (id, name, reading_age, created_at, updated_at) values (?, ?, ?, ?, ?)",
+      ).run(record.id, record.name, age, record.created_at, record.updated_at);
 
       return record;
     },
 
-    ensure(name) {
+    ensure(name, readingAge) {
       // Racing callers both see "no such profile" and one insert loses to the
       // unique index; re-reading turns that into the row the other one wrote.
       const existing = store.getByName(name);
       if (existing) return existing;
 
       try {
-        return store.create(name);
+        return store.create(name, readingAge);
       } catch (error) {
         const winner = store.getByName(name);
         if (winner) return winner;

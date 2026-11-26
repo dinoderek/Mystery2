@@ -136,12 +136,7 @@ export async function handle(
       destination_id: location.id,
       conversation_history: [],
     });
-    const aiMetadata = createAIRequestMetadata(req, {
-      request_id: requestId,
-      endpoint: "game-enter",
-      action: "enter",
-      game_id: gameId,
-    });
+    const aiMetadata = createAIRequestMetadata(req, { request_id: requestId, endpoint: "game-enter", action: "enter", game_id: gameId });
     const narration = await aiProvider.generateNarration(aiPrompt, aiMetadata);
 
     const narrationParts = [
@@ -186,6 +181,7 @@ export async function handle(
     await ctx.sessions.saveTurn({
       game_id: gameId,
       expected_sequence: sequence,
+      request_id: requestId,
       events: [buildNarrationEvent(enterEvent, sequence)],
     });
     logNarrationEventSaved(enterEvent, sequence);

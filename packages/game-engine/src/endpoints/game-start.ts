@@ -146,6 +146,7 @@ async function openCase(
     await ctx.sessions.saveTurn({
       game_id: gameId,
       expected_sequence: 1,
+      request_id: logger.requestId,
       start: {
         player_id: ctx.player.id,
         blueprint_id: blueprint.id,

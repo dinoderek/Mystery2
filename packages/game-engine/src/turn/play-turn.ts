@@ -183,6 +183,7 @@ async function answerAndKeep(
   await ctx.sessions.saveTurn({
     game_id: game.game_id,
     expected_sequence: game.next_sequence,
+    request_id: options.request_id,
     events: [event],
   });
   logNarrationEventSaved(
@@ -270,6 +271,7 @@ export async function playTurn(
   await ctx.sessions.saveTurn({
     game_id: request.game_id,
     expected_sequence: expectedSequence,
+    request_id: options.request_id,
     patch: effect.patch,
     events: effect.events.map((planned) => planned.event),
   });

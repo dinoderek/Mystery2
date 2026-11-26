@@ -26,6 +26,7 @@ export const USAGE = `Usage: ./dev <verb> [args]
   run --lan [--ai <n>] [--db <n>]  serve the game to other devices on WiFi and Tailscale (prod database by default)
   sessions [--since <d>] [--profile <n>] [--database <name|file>] [--json]
                                    list the games in a database
+  sessions bundle [<date>]         snapshot prod into that day's playtest folder (for a killed server)
   test [step ...]                  run the gate (what \`npm test\` does), or only the named steps
   generate [args]                 generate a mystery blueprint (no images)
   gen-images [args]               generate artwork for a blueprint
@@ -79,6 +80,10 @@ export async function main(
       case "test":
         return exec(buildTestCommand(root, rest));
       case "sessions": {
+        if (rest[0] === "bundle") {
+          const { runBundle } = await import("./lib/playtest-recording.mjs");
+          return await runBundle(rest.slice(1), { root, out, err, env });
+        }
         const { runSessions } = await import("./lib/dev-sessions.mjs");
         return await runSessions(rest, { root, out, err, env });
       }

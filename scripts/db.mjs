@@ -19,12 +19,11 @@ import fs from "node:fs";
 import process from "node:process";
 
 import { SCHEMA_VERSION, openDatabase } from "../packages/game-engine/src/db/client.ts";
+import { databaseFiles, snapshotDatabase } from "./lib/database-snapshot.mjs";
 import {
-  DATABASE_SIDECAR_SUFFIXES,
   PROD_DATABASE,
   isValidDatabaseName,
   listDatabases,
-  resolveDatabaseDir,
   resolveDatabaseFile,
   resolveDatabaseName,
 } from "../lib/database-target.mjs";
@@ -49,11 +48,6 @@ Commands:
 function fail(message) {
   console.error(message);
   process.exit(1);
-}
-
-/** Every file SQLite spreads one database over. */
-function databaseFiles(file) {
-  return [file, ...DATABASE_SIDECAR_SUFFIXES.map((suffix) => `${file}${suffix}`)];
 }
 
 function totalSizeBytes(file) {
@@ -210,20 +204,7 @@ async function commandCopy(from, to, force) {
     fail(`${to} already exists (${destination}). Re-run with --force to overwrite it.`);
   }
 
-  // Overwriting leaves the destination's sidecars pointing at bytes that are
-  // about to be replaced, so they go first.
-  for (const candidate of databaseFiles(destination)) {
-    fs.rmSync(candidate, { force: true });
-  }
-  fs.mkdirSync(resolveDatabaseDir(to, ROOT_DIR, process.env), { recursive: true });
-
-  // Read-only, so a copy can never be what migrates the source.
-  const db = openDatabase({ path: source, readonly: true });
-  try {
-    await db.backup(destination);
-  } finally {
-    db.close();
-  }
+  await snapshotDatabase(source, destination);
 
   console.log(`Copied ${from} to ${to}: ${destination}`);
   console.log(`  ${describe(destination)}`);

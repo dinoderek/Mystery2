@@ -52,8 +52,9 @@ settings (`apiKeyHelper`, Bedrock, Vertex) fails.
 `AI_CALL_LOG=<file>` appends one JSON line per AI call: full prompt, context,
 output, latency, and tokens and cost (claude CLI and OpenRouter). Its
 `request_id` equals the one saved on the `game_events` rows that request played.
-The accusation judge's context includes the solution, so keep the file
-gitignored.
+Serving `prod` sets it to the day's playtest folder unless already set
+([`docs/local-infrastructure.md`](local-infrastructure.md)). The accusation
+judge's context includes the solution, so keep the file gitignored.
 
 ## Tests and harnesses
 

@@ -4,7 +4,8 @@
 
 Unit tests cover logic; integration, against the built server under the mock
 provider, covers endpoints, ownership, profiles, schema and content; E2E covers
-journeys, over HTTP (`tests/api/e2e`) and in the browser (`web/e2e`). Prefer
+journeys, over HTTP (`tests/api/e2e`), through the launcher on `prod`
+(`tests/api/launcher`) and in the browser (`web/e2e`). Prefer
 integration for backend behaviour; Playwright is for browser journeys. A change updates every suite it affects. Helpers: `tests/testkit`.
 
 **Browser projects.** `chromium` is Desktop Chrome and runs everything except
@@ -20,13 +21,13 @@ runs only those named.
 **Every step runs everywhere.** The gate needs nothing beyond this repo. No
 suite may be reported skipped; one that cannot start is a bug.
 
-Integration and API E2E run against a production build (each test server's own,
+Integration and API E2E run against a production build (each server's own,
 in `web/.test-builds/`), so a bundling failure shows; the build fails if it opens a database.
 
 **Every test file runs in the gate.** Each step names its `roots` and `files`
 pattern; keep them in step with the runner's include (and the `e2e-browser`
-root with `testDir` in `web/playwright.config.ts`). `gate-coverage` fails, by
-name, on any test file no step collects, untracked ones included.
+root with `testDir` in `web/playwright.config.ts`). `gate-coverage` fails on any
+test file no step collects, untracked ones included.
 
 **Baselines only shrink.** `quality-baseline.json` and `imports-baseline.json`
 hold today's offenders against the `quality` limits and
@@ -54,7 +55,7 @@ by hand; the code suites are optional locally.
 
 ## Running
 
-Integration, API E2E and browser E2E share the worktree's port: run one at a
+Integration and the E2E suites share the worktree's port: run one at a
 time per checkout ([`docs/local-infrastructure.md`](local-infrastructure.md)).
 
 Live AI runs (the `test:*:live` scripts) are opt-in, never a gate substitute,

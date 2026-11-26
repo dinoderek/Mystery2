@@ -684,5 +684,31 @@
         ]
       }
     }
+  },
+  "visual_direction": {
+    "art_style": "Soft watercolour picture-book illustration with gentle ink outlines",
+    "color_palette": "Warm creams and honey browns with deep navy blue and touches of purple",
+    "mood": "Cosy and curious, a puzzle rather than a fright",
+    "lighting": "Early morning sunlight through tall museum windows",
+    "texture": "Visible watercolour paper grain",
+    "portrait_background": "A soft blur of warm golden museum lights"
+  },
+  "cover": {
+    "facts": [
+      "It is early morning in the Railway Room after the museum sleepover.",
+      "Mr. Dunmore holds his big silver torch beside the empty glass case, with the little railway track inside and no train on it.",
+      "Maisie, Jack and Oscar, still in their pyjamas, peer at the empty case, shown from the waist up.",
+      "Ms. Okafor stands behind the children with her clipboard."
+    ],
+    "characters": [
+      "dunmore",
+      "maisie",
+      "jack",
+      "oscar",
+      "okafor"
+    ],
+    "locations": [
+      "railway_room"
+    ]
   }
 }

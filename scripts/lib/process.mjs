@@ -47,17 +47,23 @@ export function runCommand(command, args, env, allowFailure = false) {
  *   `exit` resolves to the child's exit status
  */
 export function startServer({ command, args, cwd, env, stdin = "inherit", serverLog = null }) {
-  const output = serverLog ? "pipe" : "inherit";
-  const child = spawn(command, args, { cwd, env, stdio: [stdin, output, output] });
+  // Opened first: a log that cannot be opened must not leave a server running
+  // that nothing reads or signals.
   const logFd = serverLog ? fs.openSync(serverLog, "a") : null;
+  const output = logFd === null ? "inherit" : "pipe";
+  const child = spawn(command, args, { cwd, env, stdio: [stdin, output, output] });
 
   if (logFd !== null) {
-    const tee = (target) => (chunk) => {
-      target.write(chunk);
-      fs.writeSync(logFd, stripVTControlCharacters(chunk.toString("utf8")));
+    const tee = (stream, target) => {
+      // Decoded across chunks, so a character split between two stays whole.
+      stream.setEncoding("utf8");
+      stream.on("data", (text) => {
+        target.write(text);
+        fs.writeSync(logFd, stripVTControlCharacters(text));
+      });
     };
-    child.stdout.on("data", tee(process.stdout));
-    child.stderr.on("data", tee(process.stderr));
+    tee(child.stdout, process.stdout);
+    tee(child.stderr, process.stderr);
   }
 
   let exited = false;

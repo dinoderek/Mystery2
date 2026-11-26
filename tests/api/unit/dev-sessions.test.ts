@@ -280,7 +280,7 @@ describe("the table and --json", () => {
     expect(await runSessions(["--since"], context)).toBe(2);
     expect(await runSessions(["--since", "last week"], context)).toBe(2);
     expect(err.at(-1)).toContain("Usage: ./dev sessions");
-    expect(await runSessions(["bundle"], context)).toBe(2);
+    expect(await runSessions(["--json", "bundle"], context)).toBe(2);
   });
 
   it("runs from the executable with no server", () => {

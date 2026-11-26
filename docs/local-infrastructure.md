@@ -10,6 +10,7 @@ One Node 24 process on loopback (`npm run dev`). AIs and keys:
 | Databases | `$MYSTERY_CONFIG_ROOT/database/<name>/game.db` |
 | Blueprints | `$MYSTERY_CONFIG_ROOT/blueprints/`, then the repo's `blueprints/` |
 | Scenes and images | `$MYSTERY_CONFIG_ROOT/blueprint-scenes/`, `blueprint-images/` |
+| Playtests | `$MYSTERY_CONFIG_ROOT/playtests/<date>/` |
 
 `MYSTERY_CONFIG_ROOT` (absolute) moves all of it outside the repo, so clones and
 worktrees share content. `.local` files are machine-specific and gitignored.
@@ -29,6 +30,15 @@ this checkout's database; `prod` needs `--force` to reset or overwrite.
 
 `./dev sessions` lists a database's games (`--since <date>`, `--profile <name>`,
 `--database <name or file>`, `--json`) read-only, with no server running.
+
+## Playtests
+
+Serving `prod` (`npm run prod`, `./dev run --lan`) records into
+`playtests/<date>/`: `ai-calls.jsonl` (unless `AI_CALL_LOG` is set) and
+`server.log`, appended; when the server stops, `game.db` (a snapshot) and
+`notes.md`, a heading per game. `./dev sessions bundle [<date>]` redoes the
+last two after a `kill -9`. Other databases record nothing. A bundle holds the
+solution and everything typed: set `MYSTERY_CONFIG_ROOT` to keep it outside the repo.
 
 ## One port per worktree
 

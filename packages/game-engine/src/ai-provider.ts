@@ -79,7 +79,7 @@ export interface AIProvider {
     metadata?: AIRequestMetadata,
   ): Promise<string>;
   generateRoleOutput<T>(request: AIRoleOutputRequest<T>): Promise<T>;
-  /** Usage of the most recent call; only the claude CLI reports it. */
+  /** Usage of the most recent call; the claude CLI and OpenRouter report it, the mock does not. */
   readonly lastUsage?: AICallUsage | null;
 }
 
@@ -452,12 +452,28 @@ class MockAIProvider implements AIProvider {
   }
 }
 
+/**
+ * What an OpenRouter response says the call used: tokens from `usage`, and the
+ * cost where it reports one. Null when the response carries no token counts.
+ */
+export function readOpenRouterUsage(payload: unknown, attempts: number): AICallUsage | null {
+  const usage = (payload as { usage?: Record<string, unknown> } | null)?.usage;
+  if (typeof usage !== "object" || usage === null) return null;
+  const count = (value: unknown): number | null =>
+    typeof value === "number" && Number.isFinite(value) ? value : null;
+  const input = count(usage.prompt_tokens);
+  const output = count(usage.completion_tokens);
+  if (input === null && output === null) return null;
+  return { input_tokens: input ?? 0, output_tokens: output ?? 0, cost_usd: count(usage.cost), attempts };
+}
+
 class OpenRouterProvider implements AIProvider {
   readonly profile: AIRuntimeProfile;
   readonly #apiKey: string;
   readonly #baseUrl: string;
   readonly #runtimeConfig: OpenRouterRuntimeConfig;
   #resolvedModel: string;
+  #lastUsage: AICallUsage | null = null;
 
   constructor(
     profile: AIRuntimeProfile,
@@ -478,6 +494,10 @@ class OpenRouterProvider implements AIProvider {
 
   get resolvedModel(): string {
     return this.#resolvedModel;
+  }
+
+  get lastUsage(): AICallUsage | null {
+    return this.#lastUsage;
   }
 
   async generateNarration(
@@ -530,6 +550,8 @@ class OpenRouterProvider implements AIProvider {
     metadata?: AIRequestMetadata,
     role = "narration",
   ): Promise<string> {
+    // Cleared first, so a call that fails never reports the one before it.
+    this.#lastUsage = null;
     const baseLogData: Record<string, unknown> = {
       request_id: metadata?.request_id ?? "untracked",
       endpoint: metadata?.endpoint ?? "unknown",
@@ -543,7 +565,8 @@ class OpenRouterProvider implements AIProvider {
     for (let attempt = 1; attempt <= this.#runtimeConfig.max_attempts; attempt += 1) {
       const startedAt = Date.now();
       try {
-        const content = await this.callOpenRouterOnce(messages, responseFormat);
+        const { content, payload } = await this.callOpenRouterOnce(messages, responseFormat);
+        this.#lastUsage = readOpenRouterUsage(payload, attempt);
         this.logStructured({
           ...baseLogData,
           outcome: "success",
@@ -592,7 +615,7 @@ class OpenRouterProvider implements AIProvider {
   private async callOpenRouterOnce(
     messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
     responseFormat?: { type: "json_object" },
-  ): Promise<string> {
+  ): Promise<{ content: string; payload: unknown }> {
     const controller = new AbortController();
     const timeout = setTimeout(
       () => controller.abort(),
@@ -645,13 +668,14 @@ class OpenRouterProvider implements AIProvider {
       const content = payload?.choices?.[0]?.message?.content;
 
       if (typeof content === "string") {
-        return content;
+        return { content, payload };
       }
 
       if (Array.isArray(content)) {
-        return content
-          .map((part) => (typeof part?.text === "string" ? part.text : ""))
-          .join("");
+        return {
+          content: content.map((part) => (typeof part?.text === "string" ? part.text : "")).join(""),
+          payload,
+        };
       }
 
       throw new Error("OpenRouter response missing assistant content");

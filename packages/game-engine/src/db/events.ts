@@ -48,8 +48,8 @@ export function insertEventRow(db: Db, event: NewGameEvent): void {
   db.prepare(
     `insert into game_events (
        id, session_id, sequence, event_type, actor,
-       payload, narration, narration_parts, model, created_at
-     ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       payload, narration, narration_parts, model, created_at, request_id
+     ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     crypto.randomUUID(),
     event.session_id,
@@ -61,6 +61,7 @@ export function insertEventRow(db: Db, event: NewGameEvent): void {
     JSON.stringify(event.narration_parts),
     event.model ?? null,
     new Date().toISOString(),
+    event.request_id ?? null,
   );
 }
 

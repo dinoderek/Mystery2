@@ -33,6 +33,8 @@ export interface RawEvent {
   /** Model that produced the narration; null for non-AI events. */
   model: string | null;
   created_at: string | null;
+  /** The request that played the event, which joins it to the AI call log; absent on events saved before it was kept. */
+  request_id?: string;
 }
 
 export interface RawSession {
@@ -120,6 +122,7 @@ function normalizeEvent(row: Record<string, unknown>): RawEvent {
     // events.
     model: typeof row.model === "string" ? row.model : null,
     created_at: (row.created_at as string | undefined) ?? null,
+    ...(typeof row.request_id === "string" ? { request_id: row.request_id } : {}),
   };
 }
 

@@ -81,7 +81,10 @@ create table game_events (
                            and json_type(narration_parts) = 'array'
                            and json_array_length(narration_parts) > 0),
     model           text,
-    created_at      text not null
+    created_at      text not null,
+    -- The request that played the event: what joins it to the AI call log.
+    -- Null for events saved before the column existed.
+    request_id      text
 );
 
 create unique index game_events_session_sequence_idx

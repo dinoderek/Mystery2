@@ -67,7 +67,7 @@ export interface Db {
  * always the current end state, and the steps below only exist to carry files
  * that already exist up to it.
  */
-export const SCHEMA_VERSION = 7;
+export const SCHEMA_VERSION = 8;
 
 /**
  * The oldest schema a database is brought forward from. Nothing reads or
@@ -92,7 +92,9 @@ export interface Migration {
  * stamping a version nothing produced. A step comes with a test that an
  * upgraded database has the same shape as a fresh one: nothing else runs it.
  */
-export const MIGRATIONS: ReadonlyArray<Migration> = [];
+export const MIGRATIONS: ReadonlyArray<Migration> = [
+  { to: 8, sql: "alter table game_events add column request_id text" },
+];
 
 /** A database older than `OLDEST_UPGRADABLE_VERSION`: it is deleted and started again. */
 export class DatabaseTooOldError extends Error {

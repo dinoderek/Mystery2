@@ -83,9 +83,8 @@ export function createLocalTraceSource({
     async fetchEvents(sessionId) {
       return db
         .prepare(
-          `select id, sequence, event_type, actor, payload, narration,
-                  narration_parts, model, created_at
-             from game_events where session_id = ? order by sequence asc`,
+          // Every column, so a copy from before `request_id` existed reads as it is.
+          "select * from game_events where session_id = ? order by sequence asc",
         )
         .all(sessionId)
         .map((row) => ({

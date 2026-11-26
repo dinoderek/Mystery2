@@ -25,7 +25,7 @@ How they connect:
 
 Trace, runtime and playtest load clue-graph cases only; a case of any other format is refused by name.
 
-Played-game readers skip `no_turn_line` events (`playedEvents`, `evaluation/lib/game-events.ts`).
+Played-game readers skip `no_turn_line` and `age_change` events (`playedEvents`, `evaluation/lib/game-events.ts`).
 
 ## Why the blueprint pipeline is shaped this way
 

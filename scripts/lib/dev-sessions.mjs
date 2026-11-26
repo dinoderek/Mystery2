@@ -44,7 +44,7 @@ export class SessionsError extends Error {}
  * @property {string} blueprint_id
  * @property {string | null} case_title the title in the game's saved case
  * @property {number | null} reading_age the age the game's latest narrated event was written at
- * @property {number} turns events other than `no_turn_line`
+ * @property {number} turns events other than `no_turn_line` and `age_change`
  * @property {string | null} outcome null while the game is unfinished
  * @property {string} started_at ISO timestamp
  * @property {number | null} duration_seconds first event to last, null with no events
@@ -171,7 +171,7 @@ function readSessions(db, summaryColumns, { sinceInstant, profile }) {
   const rows = db
     .prepare(
       `select s.*, p.name as profile_name,
-              (select count(*) from game_events e where e.session_id = s.id and e.event_type <> 'no_turn_line') as turns,
+              (select count(*) from game_events e where e.session_id = s.id and e.event_type not in ('no_turn_line', 'age_change')) as turns,
               ${firstOrLast("asc")} as first_event_at,
               ${firstOrLast("desc")} as last_event_at,
               ${latestAge} as reading_age

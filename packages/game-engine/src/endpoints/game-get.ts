@@ -11,6 +11,7 @@ import { requestReadingAge } from "../reading-age.ts";
 import { markClues, notebookMarks } from "../clue-graph/notebook-view.ts";
 import { playedEvents } from "../turn/no-turn.ts";
 import { accusationsLeft } from "../accusations.ts";
+import { recordAgeOnOpen } from "../turn/age-change.ts";
 
 export async function handle(
   req: Request,
@@ -64,7 +65,9 @@ export async function handle(
       return internalError("Original blueprint no longer available");
     }
 
-    // Fetch events for history
+    // Fetch events for history. The age the next line is written at is the
+    // profile's, now; a change since the game last recorded one is saved first.
+    const readingAge = await requestReadingAge(ctx.profile);
     let events;
     try {
       events = await ctx.events.listBySession(gameId);
@@ -72,6 +75,12 @@ export async function handle(
       logError("request.error", { reason: "events_fetch_failed", game_id: gameId });
       return internalError("Failed to fetch game events");
     }
+    const recorded = await recordAgeOnOpen(
+      ctx,
+      { game_id: gameId, events, reading_age: readingAge },
+      { request_id: logger.requestId, logger },
+    );
+    if (recorded) events = await ctx.events.listBySession(gameId);
 
     const narrationEvents = (events ?? []).map((event) => readNarrationEvent(event));
     if (narrationEvents.some((event) => event.narration_parts.length === 0)) {
@@ -104,8 +113,7 @@ export async function handle(
       blueprint_id: session.blueprint_id,
       state: gameState,
       narration_events: narrationEvents,
-      // The age the next narrated line is written at: the profile's, now.
-      reading_age: await requestReadingAge(ctx.profile),
+      reading_age: readingAge,
     }), {
       headers: { "Content-Type": "application/json" },
     });

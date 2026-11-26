@@ -105,10 +105,12 @@ export interface NewGameEvent {
   narration: string;
   narration_parts: NarrationPart[];
   model: string | null;
+  /** The request that played it, as the AI call log names it; null outside a request. */
+  request_id?: string | null;
 }
 
 /** An event to save: the save assigns its session and sequence. */
-export type SaveEvent = Omit<NewGameEvent, "session_id" | "sequence">;
+export type SaveEvent = Omit<NewGameEvent, "session_id" | "sequence" | "request_id">;
 
 /** One turn's whole write: the session change and the events it produced. */
 export interface TurnSave {
@@ -118,6 +120,8 @@ export interface TurnSave {
    * event it read. Events take consecutive numbers from here.
    */
   expected_sequence: number;
+  /** The request playing the turn: stored on every event, to join them to the AI call log. */
+  request_id?: string;
   /** Inserts the session, under `game_id`, before the events: a game's first save. */
   start?: NewGameSession;
   patch?: GameSessionPatch;

@@ -90,7 +90,7 @@ describe("local database client", () => {
   });
 
   it("creates a fresh database at the current version, holding the AI choice as one value", () => {
-    expect(SCHEMA_VERSION).toBe(7);
+    expect(SCHEMA_VERSION).toBe(8);
     expect(db.prepare("pragma user_version").get()).toEqual({ user_version: SCHEMA_VERSION });
     expect(
       db.prepare("pragma table_info(app_settings)").all().map((column) => column.name),
@@ -112,9 +112,9 @@ describe("local database client", () => {
     expect(createPlayerStore(db).list().map((p) => p.name)).toEqual(["Ada"]);
   });
 
-  it("keeps no MSF snapshot on a session, and has no migrations to run", () => {
+  it("keeps no MSF snapshot on a session, and one migration to run", () => {
     expect(db.prepare("pragma table_info(game_sessions)").all().map((column) => column.name)).not.toContain("msf_snapshot");
-    expect(MIGRATIONS).toEqual([]);
+    expect(MIGRATIONS.map((migration) => migration.to)).toEqual([8]);
   });
 
   it("applies the connection pragmas the schema depends on", () => {
@@ -279,6 +279,80 @@ describe("planMigrations", () => {
 
   it("refuses an empty chain when there is any gap at all", () => {
     expect(() => planMigrations(1, 2, [])).toThrow(/No migration to schema version 2/);
+  });
+});
+
+/** The columns and indexes of every table, which is the shape a database has however it got there. */
+function shapeOf(database: Db): unknown {
+  const tables = database
+    .prepare("select name from sqlite_master where type = 'table' order by name")
+    .all()
+    .map((row) => String(row.name));
+  return tables.map((table) => ({
+    table,
+    columns: database.prepare(`pragma table_info(${table})`).all(),
+    indexes: database.prepare(`pragma index_list(${table})`).all().map((index) => ({ name: index.name, unique: index.unique })),
+  }));
+}
+
+describe("the step to schema version 8", () => {
+  /** A database as version 7 left it: the current one without the event's request id. */
+  function versionSeven(): string {
+    const file = path.join(tempDir, "v7", "game.db");
+    const earlier = openDatabase({ path: file });
+    earlier.exec("alter table game_events drop column request_id; pragma user_version = 7;");
+    earlier.close();
+    return file;
+  }
+
+  it("adds the request id column to events already saved, leaving theirs null", () => {
+    const file = versionSeven();
+    const raw = new (createRequire(import.meta.url)("better-sqlite3"))(file);
+    raw.exec(`
+      insert into players (id, name, created_at, updated_at) values ('p1', 'Ada', 'now', 'now');
+      insert into game_sessions (id, player_id, blueprint_id, mode, current_location_id, time_remaining, created_at, updated_at)
+        values ('s1', 'p1', 'b', 'explore', 'loc', 5, 'now', 'now');
+      insert into game_events (id, session_id, sequence, event_type, actor, narration, narration_parts, created_at)
+        values ('e1', 's1', 1, 'start', 'system', 'Hello', '[{"text":"Hello"}]', 'now');`);
+    raw.close();
+
+    const upgraded = openDatabase({ path: file });
+    try {
+      expect(upgraded.prepare("pragma user_version").get()).toEqual({ user_version: SCHEMA_VERSION });
+      expect(upgraded.prepare("select request_id from game_events where id = 'e1'").get()).toEqual({ request_id: null });
+    } finally {
+      upgraded.close();
+    }
+  });
+
+  it("leaves an upgraded database the shape of a fresh one", () => {
+    const upgraded = openDatabase({ path: versionSeven() });
+    try {
+      expect(shapeOf(upgraded)).toEqual(shapeOf(db));
+    } finally {
+      upgraded.close();
+    }
+  });
+});
+
+describe("event request ids", () => {
+  it("are stored from the turn's save, and read as null for an event with none", async () => {
+    const player = createPlayerStore(db).create("Ada");
+    const sessions = createSessionStore(db, player.id);
+    const gameId = await sessions.create(newSession(player.id));
+    const { session_id, sequence, ...event } = newEvent(gameId, 1);
+    expect([session_id, sequence]).toEqual([gameId, 1]);
+
+    await sessions.saveTurn({ game_id: gameId, expected_sequence: 1, request_id: "req-1", events: [event, event] });
+    await sessions.saveTurn({ game_id: gameId, expected_sequence: 3, events: [event] });
+
+    expect(
+      db.prepare("select sequence, request_id from game_events where session_id = ? order by sequence").all(gameId),
+    ).toEqual([
+      { sequence: 1, request_id: "req-1" },
+      { sequence: 2, request_id: "req-1" },
+      { sequence: 3, request_id: null },
+    ]);
   });
 });
 

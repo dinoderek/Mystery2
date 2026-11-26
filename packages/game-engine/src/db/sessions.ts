@@ -215,6 +215,7 @@ export function createSessionStore(db: Db, playerId: string): SessionStore {
         save.events.forEach((event, index) => {
           insertEventRow(db, {
             ...event,
+            request_id: save.request_id ?? null,
             session_id: save.game_id,
             sequence: save.expected_sequence + index,
           });

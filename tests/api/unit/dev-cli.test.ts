@@ -101,9 +101,28 @@ describe("./dev usage", () => {
     expect(status).toBe(0);
     expect(executed).toEqual([]);
     expect(fs.readdirSync(sandbox)).toEqual(before);
-    for (const verb of ["doctor", "run", "test", "generate", "gen-images", "worktree create", "worktree release"]) {
+    for (const verb of ["doctor", "run", "sessions", "test", "generate", "gen-images", "worktree create", "worktree release"]) {
       expect(out.join("\n")).toContain(verb);
     }
+  });
+
+  it("routes sessions to the listing, which runs no command", async () => {
+    const out: string[] = [];
+    const executed: unknown[] = [];
+    const file = path.join(sandbox, "absent", "game.db");
+
+    const err: string[] = [];
+    const status = await main(["sessions", "--database", file], {
+      root: clone,
+      out: (text: string) => out.push(text),
+      err: (text: string) => err.push(text),
+      env: {},
+      execute: (command: unknown) => (executed.push(command), 0),
+    });
+
+    expect(status).toBe(1);
+    expect(executed).toEqual([]);
+    expect(err.join("\n")).toContain(file);
   });
 
   it("is what the executable prints on stdout, with exit 0", () => {

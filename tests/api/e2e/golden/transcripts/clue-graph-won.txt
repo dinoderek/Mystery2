@@ -2,22 +2,22 @@ game: clue-graph-won
 blueprint: greenhouse-clue-graph
 
 steps
-  0  (start)  mode=explore turns=12
-  1  (enter)  mode=explore turns=12
-  2  "search"  mode=explore turns=11 clues=clue_boot_prints
-  3  "search the smashed pumpkin"  mode=explore turns=10 clues=clue_welly_prints
-  4  "go to the workshop"  mode=explore turns=9
-  5  "talk to Mr. Dobbs"  mode=talk turns=8 clues=dobbs_rounds,react_dobbs_slippers
-  6  "What about the noise last night?"  mode=talk turns=8 clues=clue_dobbs_crash_time
-  7  "bye"  mode=explore turns=8
-  8  "go to the garden"  mode=explore turns=7
-  9  "talk to Mr. Thorne"  mode=talk turns=6 clues=thorne_alibi,clue_thorne_mia_cake,thorne_never_set_foot,react_thorne_boot
-  10  "Look at these: clue_boot_prints"  mode=talk turns=6 clues=clue_thorne_measured
-  11  "bye"  mode=explore turns=6
-  12  "notebook"  mode=explore turns=6 opens=notebook
-  13  "accuse"  mode=accuse turns=6
-  14  "It was Toby."  mode=explore turns=6
-  15  "accuse Toby did it: his welly prints are in the pumpkin, and Mia was at the cake tent."  mode=ended turns=6 result=win
+  0  (start)  mode=explore turns=24
+  1  (enter)  mode=explore turns=24
+  2  "search"  mode=explore turns=23 clues=clue_boot_prints
+  3  "search the smashed pumpkin"  mode=explore turns=22 clues=clue_welly_prints
+  4  "go to the workshop"  mode=explore turns=21
+  5  "talk to Mr. Dobbs"  mode=talk turns=20 clues=dobbs_rounds,react_dobbs_slippers
+  6  "What about the noise last night?"  mode=talk turns=20 clues=clue_dobbs_crash_time
+  7  "bye"  mode=explore turns=20
+  8  "go to the garden"  mode=explore turns=19
+  9  "talk to Mr. Thorne"  mode=talk turns=18 clues=thorne_alibi,clue_thorne_mia_cake,thorne_never_set_foot,react_thorne_boot
+  10  "Look at these: clue_boot_prints"  mode=talk turns=18 clues=clue_thorne_measured
+  11  "bye"  mode=explore turns=18
+  12  "notebook"  mode=explore turns=18 opens=notebook
+  13  "accuse"  mode=accuse turns=18
+  14  "It was Toby."  mode=explore turns=18
+  15  "accuse Toby did it: his welly prints are in the pumpkin, and Mia was at the cake tent."  mode=ended turns=18 result=win
 
 pages
   page 0 opening "The Smashed Prize Pumpkin — clue graph"

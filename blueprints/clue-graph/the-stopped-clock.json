@@ -3,8 +3,14 @@
   "metadata": {
     "id": "the-stopped-clock",
     "title": "The Stopped Clock",
-    "time_budget": 16,
-    "size": "large"
+    "time_budget": 32,
+    "size": "large",
+    "size_overrides": {
+      "time_budget": {
+        "min": 32,
+        "max": 32
+      }
+    }
   },
   "opening": {
     "location": "town_square",

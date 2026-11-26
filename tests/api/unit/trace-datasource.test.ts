@@ -14,7 +14,7 @@ import {
   createLocalTraceSource,
   extractSessionTrace,
 } from "../../../evaluation/trace/lib/datasource.ts";
-import { createGameDatabase } from "./trace-database-fixture.ts";
+import { createGameDatabase, REQUEST_ID } from "./trace-database-fixture.ts";
 
 let scratch = "";
 
@@ -105,6 +105,25 @@ describe("extraction from a database the test made", () => {
 
     expect(trace.events).toHaveLength(2);
     expect({ bytes: sha256(game.databasePath), ...inspect(game.databasePath) }).toEqual(before);
+  });
+
+  it("keeps the request that played an event, and nothing on an event with none", async () => {
+    const trace = await extract(createGameDatabase(makeScratch()));
+
+    expect(trace.events[1].request_id).toBe(REQUEST_ID);
+    expect(trace.events[0]).not.toHaveProperty("request_id");
+  });
+
+  it("reads a copy saved before events kept a request id", async () => {
+    const game = createGameDatabase(makeScratch());
+    const db = openDatabase({ path: game.databasePath });
+    db.exec("alter table game_events drop column request_id");
+    db.close();
+
+    const trace = await extract(game);
+
+    expect(trace.events).toHaveLength(2);
+    expect(trace.events.some((event) => "request_id" in event)).toBe(false);
   });
 
   it("records the model the events carry, whatever the session's AI name and the current settings say", async () => {

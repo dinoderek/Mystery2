@@ -22,6 +22,9 @@ export interface GameDatabase {
 const SESSION_ID = "session-under-test";
 const NOW = "2026-06-02T00:00:00Z";
 
+/** The request that played the session's search event. */
+export const REQUEST_ID = "request-under-test";
+
 function parts(text: string): string {
   return JSON.stringify([{ text, speaker: { kind: "narrator" } }]);
 }
@@ -53,10 +56,10 @@ export function createGameDatabase(dir: string, { profileId = "mock", eventModel
        values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(SESSION_ID, "player-1", blueprintId, profileId, "explore", "loc-kitchen", 9, "[]", null, NOW, NOW, snapshot);
     const insertEvent = db.prepare(
-      `insert into game_events (id, session_id, sequence, event_type, actor, payload, narration, narration_parts, model, created_at)
-       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `insert into game_events (id, session_id, sequence, event_type, actor, payload, narration, narration_parts, model, created_at, request_id)
+       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
-    insertEvent.run("event-1", SESSION_ID, 1, "start", "system", null, "You arrive in the kitchen.", parts("You arrive in the kitchen."), null, NOW);
+    insertEvent.run("event-1", SESSION_ID, 1, "start", "system", null, "You arrive in the kitchen.", parts("You arrive in the kitchen."), null, NOW, null);
     insertEvent.run(
       "event-2",
       SESSION_ID,
@@ -68,6 +71,7 @@ export function createGameDatabase(dir: string, { profileId = "mock", eventModel
       parts("You look over the pantry shelf and find an empty jar."),
       eventModel,
       NOW,
+      REQUEST_ID,
     );
   } finally {
     db.close();

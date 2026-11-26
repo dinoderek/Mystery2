@@ -49,8 +49,10 @@ settings (`apiKeyHelper`, Bedrock, Vertex) fails.
 
 ## The call log
 
-`AI_CALL_LOG=<file>` appends one JSON line per AI call: full prompt, context and
-output. The accusation judge's context includes the solution, so keep the file
+`AI_CALL_LOG=<file>` appends one JSON line per AI call: full prompt, context,
+output, latency, and tokens and cost (claude CLI and OpenRouter). Its
+`request_id` equals the one saved on the `game_events` rows that request played.
+The accusation judge's context includes the solution, so keep the file
 gitignored.
 
 ## Tests and harnesses

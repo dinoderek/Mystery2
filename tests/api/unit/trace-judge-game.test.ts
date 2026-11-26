@@ -534,6 +534,28 @@ describe("judge game on a batch", () => {
     expect(Object.values(results).map((result) => statuses(result).gm_fabrication)).toEqual(["fail", "fail"]);
   });
 
+  it("reports a call log it cannot read once, on the result of each game, and still judges them", async () => {
+    const bundle = makeBundle();
+    fs.writeFileSync(path.join(bundle.folder, "ai-calls.jsonl"), '{"half":\n');
+    const { code, results } = await runBatch(["--bundle", bundle.folder, "--config", withJudge()], "pass", scratch);
+
+    expect(code).toBe(1);
+    for (const id of bundle.ids) {
+      expect(results[id].run_error).toMatchObject({ stage: "model_calls" });
+      expect(results[id].run_error?.message).toMatch(/ai-calls\.jsonl line 1 is not JSON/);
+      expect(statuses(results[id]).gm_spoiler).toBe("pass");
+      expect(errors.filter((text) => text.includes(`[${id}] error`))).toHaveLength(1);
+    }
+  });
+
+  it("reports judges that all error on every game, exiting 2", async () => {
+    const bundle = makeBundle();
+    const { code, results } = await runBatch(["--bundle", bundle.folder, "--config", withJudge()], "crash", scratch);
+
+    expect(code).toBe(2);
+    for (const id of bundle.ids) expect(statuses(results[id]).gm_spoiler).toBe("error");
+  });
+
   it("judges several trace files, and a single id still writes no parent", async () => {
     const first = writeTrace();
     const second = path.join(scratch, "second-trace.json");

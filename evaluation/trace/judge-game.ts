@@ -438,7 +438,7 @@ function batchSubjects(picked: PickedGames | null, positionals: readonly string[
  * themselves, kept beside the game's trace as `ai-calls.jsonl`. A log that
  * cannot be read costs the game its calls, not its verdicts.
  */
-function joinCalls(callLog: string | null, trace: RawTrace | null, folder: SubjectFolder, context: EvalContext, id: string): { calls: ModelCall[]; error: RunError | null } {
+function joinCalls(callLog: string | null, trace: RawTrace | null, folder: SubjectFolder): { calls: ModelCall[]; error: RunError | null } {
   if (callLog === null || trace === null) return { calls: [], error: null };
   try {
     const lines = readAICallLog(callLog, joinedTo(trace.events));
@@ -447,10 +447,51 @@ function joinCalls(callLog: string | null, trace: RawTrace | null, folder: Subje
     }
     return { calls: lines.map((line) => modelCallFromLine(line)), error: null };
   } catch (error) {
-    const broke = brokeWith("model_calls", error);
-    context.err(`${TAG}[${id}] error: ${broke.message}`);
-    return { calls: [], error: broke };
+    return { calls: [], error: brokeWith("model_calls", error) };
   }
+}
+
+/** What one game of a batch came to: its child run's result, the calls joined to it, and what broke, most serious first. */
+interface BatchGame {
+  child: Result | null;
+  calls: ModelCall[];
+  errors: RunError[];
+}
+
+/**
+ * Runs the child `judge game` on one game's stored trace and joins its calls.
+ * Whatever goes wrong with this game is returned as an error, never thrown, so
+ * the other games finish.
+ */
+async function judgeBatchGame(
+  game: Acquired,
+  folder: SubjectFolder,
+  { childArgs, callLog, context }: { childArgs: string[]; callLog: string | null; context: EvalContext },
+): Promise<BatchGame> {
+  const errors: RunError[] = game.error ? [game.error] : [];
+  let child: Result | null = null;
+  try {
+    if (game.trace) {
+      const logFile = path.join(folder.dir, "judge.log");
+      const write = (text: string) => fs.appendFileSync(logFile, `${text}\n`);
+      fs.writeFileSync(path.join(folder.dir, STORED_TRACE), `${JSON.stringify(game.trace, null, 2)}\n`);
+      const judgeRoot = path.join(folder.dir, "judge");
+      const exitCode = await runEval(
+        ["judge", "game", path.join(folder.dir, STORED_TRACE), "--output-root", judgeRoot, "--quiet", ...childArgs],
+        { root: context.root, env: context.env, out: write, err: write },
+        [judgeGame],
+      );
+      const resultFile = findChildResult(judgeRoot);
+      child = resultFile ? await readResult(resultFile) : null;
+      if (!child) errors.push({ stage: "judge", message: `judge game exited ${exitCode} and wrote no result.json; see ${logFile}` });
+      else if (child.run_error) errors.push(child.run_error);
+    }
+  } catch (error) {
+    errors.push(brokeWith("judge", error));
+  }
+  const joined = joinCalls(callLog, game.trace, folder);
+  if (joined.error) errors.push(joined.error);
+  return { child, calls: joined.calls, errors };
 }
 
 /**
@@ -506,41 +547,26 @@ async function runJudgeBatch(
 
   await mapPool(acquired, concurrency, async (game, index) => {
     const folder = folders[index];
-    const logFile = path.join(folder.dir, "judge.log");
-    const write = (text: string) => fs.appendFileSync(logFile, `${text}\n`);
     const startedAt = performance.now();
-    let child: Result | null = null;
-    let runError = game.error;
-    if (game.trace) {
-      fs.writeFileSync(path.join(folder.dir, STORED_TRACE), `${JSON.stringify(game.trace, null, 2)}\n`);
-      const judgeRoot = path.join(folder.dir, "judge");
-      const exitCode = await runEval(
-        ["judge", "game", path.join(folder.dir, STORED_TRACE), "--output-root", judgeRoot, "--quiet", ...childArgs],
-        { root: context.root, env: context.env, out: write, err: write },
-        [judgeGame],
-      );
-      const resultFile = findChildResult(judgeRoot);
-      child = resultFile ? await readResult(resultFile) : null;
-      if (!child) runError = { stage: "judge", message: `judge game exited ${exitCode} and wrote no result.json; see ${logFile}` };
-    }
-    const joined = joinCalls(picked?.callLog ?? null, game.trace, folder, context, game.id);
-    runError = child?.run_error ?? runError ?? joined.error;
-    const verdicts = child?.verdicts ?? [];
+    const judged = await judgeBatchGame(game, folder, { childArgs, callLog: picked?.callLog ?? null, context });
+    const verdicts = judged.child?.verdicts ?? [];
+    // A result holds one run error: the game's own, else the call log's. Each is reported once.
+    const runError = judged.errors[0] ?? null;
+    for (const error of judged.errors) context.err(`${TAG}[${game.id}] error: ${error.message}`);
     await writeResult(folder.resultFile, {
       schema_version: RESULT_SCHEMA_VERSION,
       run: run.info(),
       subject: { kind: "game", id: game.id, path: game.trace ? STORED_TRACE : null },
-      production: joined.calls.length > 0 ? { calls: joined.calls } : null,
+      production: judged.calls.length > 0 ? { calls: judged.calls } : null,
       verdicts,
       summary: summarize(verdicts, runError),
       run_error: runError,
-      timing: child?.timing ?? null,
+      timing: judged.child?.timing ?? null,
     });
-    if (runError) context.err(`${TAG}[${game.id}] error: ${runError.message}`);
     const { counts } = summarize(verdicts, runError);
     context.out(
       `${TAG}[${game.id}] ${counts.pass} pass, ${counts.fail} fail, ${counts.error} error, ${counts.skipped} skipped` +
-        `, ${joined.calls.length} model call(s) (${formatDuration(Math.round(performance.now() - startedAt))})`,
+        `, ${judged.calls.length} model call(s) (${formatDuration(Math.round(performance.now() - startedAt))})`,
     );
   });
 

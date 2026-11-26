@@ -4,7 +4,8 @@
  * written (a game that is being played does not notice).
  *
  * `listSessions` is the part other tools call; its row shape is the `--json`
- * shape.
+ * shape. `./dev sessions bundle` belongs to the playtest bundle
+ * (`playtest-recording.mjs`), which `dev-cli.mjs` routes to.
  */
 
 import fs from "node:fs";
@@ -18,12 +19,16 @@ import {
 } from "../../lib/database-target.mjs";
 
 export const SESSIONS_USAGE = `Usage: ./dev sessions [--since <date>] [--profile <name>] [--database <name or file>] [--json]
+       ./dev sessions bundle [<date>]
 
   --since <date>          only games started on or after YYYY-MM-DD (UTC), or a full timestamp
   --profile <name>        only that profile's games
   --database <name|file>  a database name (as --db) or the path of a game.db file;
                           default: this checkout's database
   --json                  print the rows as JSON
+
+  bundle [<date>]         snapshot prod and its notes into that day's playtest
+                          folder (today when omitted), for a killed server
 `;
 
 /** A usage mistake: reported with the usage text, exit status 2. */

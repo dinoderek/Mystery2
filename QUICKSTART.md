@@ -28,6 +28,7 @@ $MYSTERY_CONFIG_ROOT/
   blueprints/
   blueprint-images/
   blueprint-scenes/
+  playtests/<date>/
 ```
 
 Blueprints and images are shared across worktrees; databases are not (see
@@ -111,6 +112,9 @@ See [`docs/ai-configuration.md`](docs/ai-configuration.md).
 Serves WiFi and Tailscale, printing the addresses. Play by tap and the on-screen
 keyboard, dictation included. On a Mac, allow `node` incoming connections when
 the firewall asks. Rules: `docs/local-infrastructure.md`.
+
+Playing on `prod` records each day's games, model calls and server output in
+`$MYSTERY_CONFIG_ROOT/playtests/<date>/`, with a `notes.md` to fill in.
 
 ## Profiles
 

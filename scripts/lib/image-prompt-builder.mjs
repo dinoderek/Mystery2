@@ -35,19 +35,11 @@ function styleBlock(blueprint) {
     return lines.join("\n");
   }
 
-  // Legacy fallback for blueprints without visual_direction.
-  const artStyle =
-    blueprint?.metadata?.art_style?.trim() ||
-    "storybook illustration, warm lighting, playful detective mood";
-  return [`Style: ${artStyle}`, AUDIENCE_CUE].join("\n");
-}
-
-function startingLocation(blueprint) {
-  const startId = blueprint?.world?.starting_location_id;
-  if (!startId) return null;
-  return (blueprint?.world?.locations ?? []).find(
-    (location) => location.id === startId,
-  );
+  // A case's visual_direction is optional; without it, one house style.
+  return [
+    "Style: storybook illustration, warm lighting, playful detective mood",
+    AUDIENCE_CUE,
+  ].join("\n");
 }
 
 function charactersAtLocation(blueprint, locationId) {
@@ -56,8 +48,7 @@ function charactersAtLocation(blueprint, locationId) {
   );
 }
 
-// Used when the blueprint does not author
-// metadata.visual_direction.portrait_background.
+// Used when the case does not author visual_direction.portrait_background.
 const PORTRAIT_BACKGROUND_DEFAULT = [
   "Heavily blurred, out-of-focus wash of warm and cool tones",
   "as if photographed with a very wide aperture. Soft bokeh circles of light in amber",
@@ -73,79 +64,42 @@ function portraitBackgroundHint(blueprint) {
 
 function targetBlock(blueprint, target) {
   if (target.targetType === "blueprint") {
-    const coverImage = blueprint.cover_image;
-    if (coverImage?.description) {
-      const lines = [
-        "Target: Mystery cover image.",
-        `Title: ${blueprint.metadata?.title ?? "Untitled mystery"}.`,
-        `Creative direction: ${coverImage.description}`,
-      ];
-
-      const locationIds = coverImage.location_ids ?? [];
-      if (locationIds.length > 0) {
-        const locationHints = locationIds
-          .map((locId) => {
-            const loc = (blueprint.world?.locations ?? []).find((l) => l.id === locId);
-            return loc ? `${loc.name} — ${loc.description}` : locId;
-          })
-          .join("; ");
-        lines.push(`Featured location(s): ${locationHints}`);
-      }
-
-      const characterIds = coverImage.character_ids ?? [];
-      if (characterIds.length > 0) {
-        const charHints = characterIds
-          .map((charId) => {
-            const ch = (blueprint.world?.characters ?? []).find((c) => c.id === charId);
-            return ch ? `${ch.first_name} ${ch.last_name ?? ""} (${ch.appearance})` : charId;
-          })
-          .join("; ");
-        lines.push(`Characters featured: ${charHints}`);
-      }
-
-      return lines.filter(Boolean).join(" ");
-    }
-
-    // Fallback for blueprints without cover_image (legacy).
-    const start = startingLocation(blueprint);
-    const settingHint = start
-      ? `Setting: ${start.name} — ${start.description}`
-      : "";
-    return [
+    const { description, location_ids, character_ids } = blueprint.cover_image;
+    const lines = [
       "Target: Mystery cover image.",
-      `Title: ${blueprint.metadata?.title ?? "Untitled mystery"}.`,
-      `Premise: ${blueprint.narrative?.premise ?? ""}.`,
-      `One-liner: ${blueprint.metadata?.one_liner ?? ""}.`,
-      settingHint,
-    ]
-      .filter(Boolean)
-      .join(" ");
+      `Title: ${blueprint.metadata.title}.`,
+      `Creative direction: ${description}`,
+    ];
+    if (location_ids.length > 0) {
+      const locationHints = location_ids
+        .map((locId) => {
+          const loc = blueprint.world.locations.find((l) => l.id === locId);
+          return loc ? `${loc.name} — ${loc.description}` : locId;
+        })
+        .join("; ");
+      lines.push(`Featured location(s): ${locationHints}`);
+    }
+    if (character_ids.length > 0) {
+      const charHints = character_ids
+        .map((charId) => {
+          const ch = blueprint.world.characters.find((c) => c.id === charId);
+          return ch ? `${ch.first_name} (${ch.appearance})` : charId;
+        })
+        .join("; ");
+      lines.push(`Characters featured: ${charHints}`);
+    }
+    return lines.join(" ");
   }
 
   if (target.targetType === "character") {
-    const character = (blueprint.world?.characters ?? []).find(
+    const character = blueprint.world.characters.find(
       (entry) => entry.id === target.targetKey,
     );
-    const displayName = character
-      ? `${character.first_name} ${character.last_name ?? ""}`.trim()
-      : target.targetKey ?? "Unknown character";
-
-    const sexCue = character?.sex ? `Sex: ${character.sex}.` : "";
-    const attitudeCue = character?.initial_attitude_towards_investigator
-      ? `Expression/body language cue: ${character.initial_attitude_towards_investigator}.`
-      : "";
-    // Character backstory, not the visual backdrop — see portraitBackgroundHint.
-    const backgroundCue = character?.background
-      ? `Background context: ${character.background}`
-      : "";
-
     return [
       "Target: Character portrait, head-and-shoulders framing.",
-      `Name: ${displayName}.`,
-      sexCue,
+      `Name: ${character?.first_name ?? target.targetKey ?? "Unknown character"}.`,
+      character?.sex ? `Sex: ${character.sex}.` : "",
       `Appearance: ${character?.appearance ?? ""}.`,
-      attitudeCue,
-      backgroundCue,
       `Personality cue: ${character?.personality ?? ""}.`,
       portraitBackgroundHint(blueprint),
     ]
@@ -168,14 +122,6 @@ function targetBlock(blueprint, target) {
           .join("; ")}.`
       : "";
 
-  const environmentalDetails = (location?.clues ?? [])
-    .slice(0, 2)
-    .map((clue) => clue.text)
-    .join(" ");
-  const detailHint = environmentalDetails
-    ? `Environmental details to subtly include: ${environmentalDetails}`
-    : "";
-
   const isStart =
     location?.id === blueprint?.world?.starting_location_id;
   const perspectiveHint = isStart
@@ -187,7 +133,6 @@ function targetBlock(blueprint, target) {
     `Location: ${location?.name ?? target.targetKey ?? "Unknown location"}.`,
     `Description: ${location?.description ?? ""}.`,
     characterHints,
-    detailHint,
     perspectiveHint,
   ]
     .filter(Boolean)

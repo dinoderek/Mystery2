@@ -1000,7 +1000,7 @@ export async function runImageGeneration(rawOptions, dependencies = {}) {
     const character = (blueprint.world?.characters ?? []).find((c) => c.id === characterId);
     try {
       return {
-        label: `Portrait of ${character?.first_name ?? ""} ${character?.last_name ?? ""} (${character?.appearance ?? ""})`.trim(),
+        label: `Portrait of ${character?.first_name ?? characterId} (${character?.appearance ?? ""})`,
         buffer: await fs.readFile(portraitPath),
       };
     } catch {

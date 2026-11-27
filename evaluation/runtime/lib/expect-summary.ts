@@ -17,6 +17,8 @@ import { z } from "zod";
 import { InputError } from "../../core/errors.ts";
 import type { RunInfo, Verdict } from "../../core/result.ts";
 import { table } from "./table.ts";
+import { BaselineInputsSchema } from "./baseline-inputs.ts";
+import type { BaselineInputs } from "./baseline-inputs.ts";
 import type { Direction, UseOutcome } from "./expect.ts";
 
 export const EXPECT_FILE = "expect.json";
@@ -75,6 +77,7 @@ export const ExpectSummarySchema = z
         commit: z.string().nullable(),
         tree_clean: z.boolean().nullable(),
         argv: z.array(z.string()),
+        inputs: BaselineInputsSchema.optional(),
       })
       .strict(),
     complete: z.boolean(),
@@ -147,7 +150,7 @@ function narratorSummary(narrator: string, model: string, samples: readonly Samp
 }
 
 /** Sums a run's samples, in the order they come, per narrator and model. */
-export function summarizeSamples(samples: readonly Sample[], perCase: number, run: RunInfo): ExpectSummary {
+export function summarizeSamples(samples: readonly Sample[], perCase: number, run: RunInfo, inputs?: BaselineInputs): ExpectSummary {
   const byNarrator = new Map<string, Sample[]>();
   for (const sample of samples) {
     const key = `${sample.narrator}\u0000${sample.model}`;
@@ -156,7 +159,7 @@ export function summarizeSamples(samples: readonly Sample[], perCase: number, ru
   const narrators = [...byNarrator.values()].map((list) => narratorSummary(list[0].narrator, list[0].model, list, perCase));
   return {
     schema_version: EXPECT_SUMMARY_VERSION,
-    run: { id: run.id, started_at: run.started_at, commit: run.commit, tree_clean: run.tree_clean, argv: run.argv },
+    run: { id: run.id, started_at: run.started_at, commit: run.commit, tree_clean: run.tree_clean, argv: run.argv, ...(inputs ? { inputs } : {}) },
     complete: narrators.every((entry) => entry.complete),
     narrators,
   };
@@ -262,6 +265,24 @@ function onlyLines(onlyBefore: string[], onlyAfter: string[], noun: string): str
   ];
 }
 
+/** A selective rerun compares a group's scores over the same graded cases on both sides. */
+function matchedGroups(before: NarratorSummary, after: NarratorSummary) {
+  const oldCases = new Map(before.cases.map((item) => [item.id, item]));
+  const oldGroups = new Map<string, Tally>();
+  const newGroups = new Map<string, Tally>();
+  for (const item of after.cases) {
+    const old = oldCases.get(item.id);
+    if (!old || old.group !== item.group || old.ungraded || item.ungraded) continue;
+    const oldGroup = oldGroups.get(item.group) ?? emptyTally();
+    const newGroup = newGroups.get(item.group) ?? emptyTally();
+    addTally(oldGroup, old);
+    addTally(newGroup, item);
+    oldGroups.set(item.group, oldGroup);
+    newGroups.set(item.group, newGroup);
+  }
+  return [oldGroups, newGroups].map((groups) => new Map([...groups].map(([group, tally]) => [group, withShare(tally)])));
+}
+
 function compareNarrator(before: NarratorSummary, after: NarratorSummary): string[] {
   const lines = [`${after.model} (${after.narrator}): ${before.samples_per_case} samples per case in the baseline, ${after.samples_per_case} in the run`];
   const cases = pairRows(
@@ -270,13 +291,12 @@ function compareNarrator(before: NarratorSummary, after: NarratorSummary): strin
     (key, item) => [key, item.ungraded ? `${item.group} (ungraded)` : item.group],
   );
   lines.push(...table(["case", "group", "baseline", "run", "change"], cases.rows), ...onlyLines(cases.onlyBefore, cases.onlyAfter, "cases"));
-  const groups = pairRows(
-    new Map(before.groups.map((item) => [item.group, item])),
-    new Map(after.groups.map((item) => [item.group, item])),
-    (key) => [key],
-  );
-  if (groups.rows.length > 0) lines.push("", ...table(["group", "baseline", "run", "change"], groups.rows));
-  lines.push(...onlyLines(groups.onlyBefore, groups.onlyAfter, "groups"));
+  const [oldGroups, newGroups] = matchedGroups(before, after);
+  const groups = pairRows(oldGroups, newGroups, (key) => [key]);
+  if (groups.rows.length > 0) lines.push("", ...table(["group (matched cases)", "baseline", "run", "change"], groups.rows));
+  const missingBefore = new Set(before.groups.map((item) => item.group));
+  const missingAfter = new Set(after.groups.map((item) => item.group));
+  lines.push(...onlyLines([...missingBefore].filter((group) => !missingAfter.has(group)), [...missingAfter].filter((group) => !missingBefore.has(group)), "groups"));
   return lines;
 }
 

@@ -409,9 +409,18 @@ describe("comparing a run with a baseline", () => {
     const text = formatComparison(baseline, run).join("\n");
     expect(text).toContain("baseline 2026-11-20/10-00-00-judge-turn at 0123456789ab; run 2026-11-21/10-00-00-judge-turn at fedcba987654");
     expect(text).toMatch(/a\s+should\s+50%\s+100%\s+\+50 pts/);
-    expect(text).toMatch(/should\s+75%\s+75%\s+0/);
+    expect(text).toMatch(/should\s+50%\s+100%\s+\+50 pts/);
     expect(text).toContain("cases only in the baseline: gone");
     expect(text).toContain("cases only in the run: new");
+  });
+
+  it("compares group scores over matching cases in a selective rerun", () => {
+    const baseline = summarizeSamples([...samples("one", "same", [pass]), ...samples("two", "same", [withheldUnseen])], 1, RUN);
+    const run = summarizeSamples(samples("one", "same", [pass]), 1, RUN);
+    const text = formatComparison(baseline, run).join("\n");
+    expect(text).toMatch(/group \(matched cases\)/);
+    expect(text).toMatch(/same\s+100%\s+100%\s+0/);
+    expect(text).toContain("cases only in the baseline: two");
   });
 
   it("pairs only the same narrator and model, and flags an incomplete side", () => {

@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # `baseline status` reads each baseline's run commit, a PR-branch commit.
+          # The baseline report compares the PR base and HEAD.
           fetch-depth: 0
 
       - uses: actions/setup-node@v4
@@ -33,15 +33,17 @@ jobs:
 
       - run: npm ci
 
-      # Report only: it prints which stored eval baselines the code has moved past
-      # and can never fail the job. Squash merges drop the run commits from main, so
-      # the PR heads are fetched too; a commit still missing is reported as unknown.
       - name: Eval baseline status
         continue-on-error: true
         timeout-minutes: 2
+        env:
+          EVAL_BASE: ${{ github.event.pull_request.base.sha }}
         run: |
-          git fetch --quiet origin '+refs/pull/*/head:refs/remotes/origin/pr/*' || echo "could not fetch the PR heads"
-          ./dev eval baseline status
+          if [[ -n "$EVAL_BASE" ]]; then
+            ./dev eval baseline status --base "$EVAL_BASE"
+          else
+            ./dev eval baseline status
+          fi
 
       - name: Cache Playwright browsers
         id: playwright-cache

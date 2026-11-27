@@ -33,6 +33,7 @@ describe("committed baselines", () => {
     expect(summary.complete).toBe(true);
     expect(summary.run.tree_clean).toBe(true);
     expect(summary.run.commit).toMatch(/^[0-9a-f]{40}$/);
+    expect(summary.run.inputs).toMatchObject({ version: 1, scope: { external_inputs: false, case_paths: [summary.run.argv[0]] } });
     expect(summary.narrators.length).toBeGreaterThan(0);
   });
 

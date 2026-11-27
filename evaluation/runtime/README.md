@@ -89,22 +89,21 @@ withheld on a case expecting a use went **unseen** or was **refused**.
 right; `ungraded: true` keeps a case out of its group. A sample that did not run
 or be graded counts neither way: the run is INCOMPLETE.
 
-`./dev eval baseline save <run> <file>` retains a complete run's summary
-(Haiku's: a `perf baseline narration-loop` run); `baseline compare <baseline>
-<run>` prints changes; `baseline status` marks
-each baseline current or stale against `HEAD`, listing commits since its
-run touching what runs read (`READ_PATHS` in `evaluation/core/baseline-status.ts`). It compares content (squash merges leave a run's commit off
-`main`), exits 0, prints in CI.
+`./dev eval baseline save <run> <file>` stores a complete `expect.json` with
+its run date, source commit and input fingerprints. The Haiku scores come from
+the narration-loop suite. `baseline status` reports changes against `HEAD`
+by narrator prompt family, selected judge, case files, blueprint and shared
+code. It checks repository files, including the harness and dependencies.
+`--details` shows changed files and available commits. `--base <ref>`
+separates existing drift from changes introduced since that ref. The report
+also runs in CI, calls no model and is advisory.
 
-### Baseline policy
-
-- A baseline is evidence only for its own commit.
-- Anyone may change a brief, prompt or engine code: the gate forces the version
-  entry and snapshots, and `baseline status` shows the baselines stale.
-- Others need only `npm test`.
-- A stale baseline is refreshed on demand, before a comparison uses it; a
-  live rebaseline explains each difference by commits listed.
-- Batched commits are replayed at their boundaries to attribute them.
+`baseline compare <baseline> <run>` shows input differences beside score deltas. Group deltas use matching cases.
+The scores describe the inputs measured on their run date. Use them with drift
+disclosed, and rerun selected cases with matched controls when the uncertainty
+matters. Preserve spot checks as separate runs with their own dates and
+fingerprints. A change in common code can have broad or uncertain impact.
+Older summaries can have incomplete provenance.
 
 ## Running
 

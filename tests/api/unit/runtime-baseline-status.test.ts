@@ -11,6 +11,9 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { COMMANDS } from "../../../evaluation/commands.ts";
 import { runEval } from "../../../evaluation/core/dispatch.ts";
 import { baselineStatus, READ_PATHSPEC } from "../../../evaluation/core/baseline-status.ts";
+import { revisionSources } from "../../../evaluation/core/baseline-sources.ts";
+import { baselineSourceGroups } from "../../../evaluation/runtime/lib/baseline-inputs.ts";
+import type { BaselineScope } from "../../../evaluation/runtime/lib/baseline-inputs.ts";
 
 const REPO_ROOT = process.cwd();
 const REAL_BASELINE = "evaluation/runtime/cases/clue-graph/greenhouse/baselines/haiku.json";
@@ -43,13 +46,14 @@ function commit(subject: string, files: Record<string, string>): string {
 function baselineAt(run: string | null): string {
   const summary = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, REAL_BASELINE), "utf8"));
   summary.run.commit = run;
+  delete summary.run.inputs;
   return JSON.stringify(summary);
 }
 
-async function status(): Promise<{ code: number; output: string }> {
+async function status(args: string[] = []): Promise<{ code: number; output: string }> {
   const lines: string[] = [];
   const out = (text: string) => lines.push(text);
-  const code = await runEval(["baseline", "status"], { root: repo, out, err: out, env: process.env }, COMMANDS);
+  const code = await runEval(["baseline", "status", ...args], { root: repo, out, err: out, env: process.env }, COMMANDS);
   return { code, output: lines.join("\n") };
 }
 
@@ -143,6 +147,100 @@ describe("baseline status", () => {
     const report = await status();
     expect(report.code).toBe(1);
     expect(report.output).toContain("cannot read a graded summary");
+  });
+
+  it("reports prompt and blueprint drift with the source commit missing and separates PR changes", async () => {
+    const prompt = "packages/game-engine/src/clue-graph/prompts.ts";
+    const accusation = "packages/game-engine/src/clue-graph/judge-guidance.ts";
+    const blueprint = "blueprints/clue-graph/test-story.json";
+    const files = Object.fromEntries([prompt, accusation, ENGINE].map((file) => [file, fs.readFileSync(path.join(REPO_ROOT, file), "utf8")]));
+    files[blueprint] = '{"time_budget":10}';
+    const base = commit("inputs as run", files);
+    const scope: BaselineScope = {
+      case_paths: [], blueprints: [blueprint], judges: [], prompts: ["talk", "search"], external_inputs: false, server: false,
+    };
+    const unavailable = "0".repeat(40);
+    const stored = JSON.parse(baselineAt(unavailable));
+    stored.run.inputs = {
+      version: 1, scope, sources: baselineSourceGroups(revisionSources(repo, base), scope), cases: [],
+      settings: { narrator_models: [], judge_models: [], samples: null, concurrency: null, ai_profile: null },
+    };
+    commit("baseline metadata only", { [BASELINE]: JSON.stringify(stored) });
+    const current = await status();
+    expect(current.output).toContain("1 current, 0 stale, 0 unknown");
+
+    const prior = commit("older blueprint change", { [blueprint]: '{"time_budget":20}' });
+    commit("change only talk", { [prompt]: files[prompt].replace("has just turned", "has just walked up") });
+    const report = await status(["--base", prior, "--details"]);
+    expect(report.code).toBe(0);
+    expect(report.output).toContain("0 current, 1 stale, 0 unknown");
+    const [previous, proposal] = report.output.split("PR base → HEAD");
+    expect(previous).toContain("Blueprints: test-story.json");
+    expect(previous).not.toContain("Narrator prompts: talk");
+    expect(proposal).toContain("Narrator prompts: talk");
+    expect(proposal).toContain("change only talk");
+    expect(proposal).not.toContain("Shared code:");
+    expect(proposal).not.toContain("Narrator prompts: search");
+  });
+
+  it("checks relative case-module imports for a selective run", async () => {
+    const caseFile = "evaluation/runtime/cases/story/selected.ts";
+    const supportingCase = "evaluation/runtime/cases/story/other.ts";
+    const base = commit("select a case that imports another", {
+      [caseFile]: 'import { fact } from "./other.ts"; export default { fact };',
+      [supportingCase]: 'export const fact = "first";',
+    });
+    const scope: BaselineScope = {
+      case_paths: [caseFile], blueprints: [], judges: [], prompts: [], external_inputs: false, server: false,
+    };
+    const stored = JSON.parse(baselineAt("0".repeat(40)));
+    stored.run.inputs = {
+      version: 1, scope, sources: baselineSourceGroups(revisionSources(repo, base), scope), cases: [],
+      settings: { narrator_models: [], judge_models: [], samples: null, concurrency: null, ai_profile: null },
+    };
+    commit("save selective baseline", { [BASELINE]: JSON.stringify(stored) });
+    commit("change the imported fact", { [supportingCase]: 'export const fact = "second";' });
+    const report = await status(["--details"]);
+    expect(report.output).toContain("Cases: selected.ts");
+    expect(report.output).toContain(`changed: ${supportingCase}`);
+    expect(report.output).toContain("0 current, 1 stale, 0 unknown");
+  });
+
+  it("attributes judge wiring changes to the ref that introduces them", async () => {
+    const registry = "evaluation/core/registry.ts";
+    const oldBrief = "evaluation/judges/older-brief.md";
+    const base = commit("judge on the recorded brief", { [registry]: "old judge wiring", [oldBrief]: "an older brief" });
+    const scope: BaselineScope = {
+      case_paths: [], blueprints: [], judges: ["gm_fabrication"], prompts: [], external_inputs: false, server: false,
+    };
+    const checkout = revisionSources(repo, base);
+    const stored = JSON.parse(baselineAt("0".repeat(40)));
+    const sources = baselineSourceGroups(checkout, scope, [
+      { category: "Judges", name: "gm_fabrication", files: { [oldBrief]: checkout.digest(oldBrief) } },
+    ]);
+    stored.run.inputs = {
+      version: 1, scope, sources, cases: [],
+      settings: { narrator_models: [], judge_models: [], samples: null, concurrency: null, ai_profile: null },
+    };
+    commit("store recorded judge paths", { [BASELINE]: JSON.stringify(stored) });
+    commit("redirect the judge", { [registry]: "new judge wiring" });
+    const { output } = await status(["--base", base, "--details"]);
+    const [previous, proposal] = output.split("PR base → HEAD");
+    expect(previous).toContain("Recorded repository inputs match.");
+    expect(proposal).toContain("Judges: shared selection and wiring");
+    expect(proposal).toContain(`changed: ${registry}`);
+  });
+
+  it("includes the web adapter and AI seeding code for server runs", () => {
+    const engine = "web/src/lib/server/engine.ts";
+    const seed = "scripts/lib/ai-seed.mjs";
+    const base = commit("server inputs", { [engine]: "web engine", [seed]: "AI seeding" });
+    const scope: BaselineScope = {
+      case_paths: [], blueprints: [], judges: [], prompts: [], external_inputs: false, server: true,
+    };
+    const before = baselineSourceGroups(revisionSources(repo, base), scope);
+    const harness = before.find((group) => group.name === "evaluation harness and dependencies");
+    expect(harness?.files).toEqual(expect.objectContaining({ [engine]: expect.any(String), [seed]: expect.any(String) }));
   });
 
   it("runs in this repo and exits 0, whatever the baselines read as", async () => {

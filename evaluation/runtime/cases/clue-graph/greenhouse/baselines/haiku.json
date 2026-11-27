@@ -15,7 +15,862 @@
       "5",
       "--concurrency",
       "4"
-    ]
+    ],
+    "inputs": {
+      "version": 1,
+      "history_anchor": "941e4932d6c63f4b936516fd1e27651a481b7f38",
+      "scope": {
+        "case_paths": [
+          "evaluation/runtime/cases/clue-graph/greenhouse"
+        ],
+        "blueprints": [
+          "blueprints/clue-graph/greenhouse-prizewinner.json"
+        ],
+        "judges": [
+          "gm_clue_discipline",
+          "gm_fabrication",
+          "gm_spoiler"
+        ],
+        "prompts": [
+          "accusation",
+          "talk",
+          "search"
+        ],
+        "external_inputs": false,
+        "server": false
+      },
+      "sources": [
+        {
+          "category": "Narrator prompts",
+          "name": "talk",
+          "files": {
+            "packages/game-engine/src/clue-graph/prompts.ts": "7fb2caeb9f6d",
+            "packages/game-engine/src/ai-prompts.ts": "301733a26357"
+          }
+        },
+        {
+          "category": "Narrator prompts",
+          "name": "search",
+          "files": {
+            "packages/game-engine/src/clue-graph/prompts.ts": "d34572fba73e"
+          }
+        },
+        {
+          "category": "Narrator prompts",
+          "name": "accusation",
+          "files": {
+            "packages/game-engine/src/clue-graph/judge-guidance.ts": "c713948b928b",
+            "packages/game-engine/src/ai-prompts.ts": "6ba277b01aab"
+          }
+        },
+        {
+          "category": "Narrator prompts",
+          "name": "shared wording and assembly",
+          "files": {
+            "packages/game-engine/src/ai-prompts.ts": "7c676acf9757",
+            "packages/game-engine/src/clue-graph/judge-guidance.ts": "d681ea9b4c78",
+            "packages/game-engine/src/clue-graph/prompts.ts": "ca7e1ce31d45",
+            "packages/game-engine/src/role-request.ts": "ef879b8999f7fedd040a7f34d17834c69b35d97e",
+            "packages/shared/src/age-profile.ts": "b0030c46580d2a70e60887d3bbe93e1021a619c9"
+          }
+        },
+        {
+          "category": "Judges",
+          "name": "gm_clue_discipline",
+          "files": {
+            "evaluation/judges/gm-clue-discipline.md": "021b1445b1f6100d11e1be22d5f3cdd3256dfa47",
+            "evaluation/judges/gm-clue-discipline.schema.ts": "bed849597d4e2f1ee2ed65c9dd23cc73f9fde9ae",
+            "evaluation/judges/prompts/judge-system.md": "b28224b75205e5287e0a7bdc1daf08e420f62e04"
+          }
+        },
+        {
+          "category": "Judges",
+          "name": "gm_fabrication",
+          "files": {
+            "evaluation/judges/gm-fabrication.md": "3718e9d6bb59b7850a408470d17df3e79bd40aeb",
+            "evaluation/judges/gm-fabrication.schema.ts": "50c86431e3da4633df4f46d0db3f8c5986b6e675",
+            "evaluation/judges/prompts/judge-system.md": "b28224b75205e5287e0a7bdc1daf08e420f62e04"
+          }
+        },
+        {
+          "category": "Judges",
+          "name": "gm_spoiler",
+          "files": {
+            "evaluation/judges/gm-spoiler.md": "a840cb78801eb855fd85f9488cea45601deea5f4",
+            "evaluation/judges/gm-spoiler.schema.ts": "73ec27d4c39ea3bd1d7afe284b3e6ce8a9a85ba7",
+            "evaluation/judges/prompts/judge-system.md": "b28224b75205e5287e0a7bdc1daf08e420f62e04"
+          }
+        },
+        {
+          "category": "Judges",
+          "name": "shared selection and wiring",
+          "files": {
+            "evaluation/core/registry.ts": "0f986420dabaad7a42aeaa665b66ccedc6c1dc3b"
+          }
+        },
+        {
+          "category": "Cases",
+          "name": "evaluation/runtime/cases/clue-graph/greenhouse",
+          "files": {
+            "evaluation/runtime/cases/clue-graph/greenhouse/accusation.ts": "719c50a99c80a63476a6a8332d513e4563be3907",
+            "evaluation/runtime/cases/clue-graph/greenhouse/either-route.ts": "a7a8ac10a0d9c80f84b3513974527182a01ec24b",
+            "evaluation/runtime/cases/clue-graph/greenhouse/invention.ts": "6e0a1e6a344ab410620f1569eec6a8571d5592cc",
+            "evaluation/runtime/cases/clue-graph/greenhouse/plain-unknown.ts": "694e5daeca42edfa26cef8ee91b1810dd40ed922",
+            "evaluation/runtime/cases/clue-graph/greenhouse/search.ts": "682dc2c42267cfaf0b29010a0512e1e6eedf0ae7",
+            "evaluation/runtime/cases/clue-graph/greenhouse/talk.ts": "4fef448bab358ab4039b497f9766e2789e1dc3c0",
+            "evaluation/runtime/cases/clue-graph/greenhouse/whole-fact.ts": "9a82a4639bf1f03b3787a799de8ffbdd53b19f2e"
+          }
+        },
+        {
+          "category": "Blueprints",
+          "name": "blueprints/clue-graph/greenhouse-prizewinner.json",
+          "files": {
+            "blueprints/clue-graph/greenhouse-prizewinner.json": "77becb93c29167c30c46b7a5a535c33cc3c2755e"
+          }
+        },
+        {
+          "category": "Shared code",
+          "name": "engine",
+          "files": {
+            "packages/game-engine/package.json": "37f169bf6144b5c76bf7ee3cecbd6f3ca1cc5e55",
+            "packages/game-engine/src/accusations.ts": "8f4784076aa0dd97f5cfc690c2fb280d6072c407",
+            "packages/game-engine/src/ai-call-log.ts": "84b8b187a378b7b543788bb30dcc01c672848098",
+            "packages/game-engine/src/ai-choice.ts": "edabb40d61a2795ac0d8d88f41f15cbdacf58f07",
+            "packages/game-engine/src/ai-config.ts": "77bf7944e39190f10699ed491e91a8fb212fccff",
+            "packages/game-engine/src/ai-context.ts": "eb5c67a88b41970473aa986a979f039e99f82ecd",
+            "packages/game-engine/src/ai-contracts.ts": "cbaec1b37393cf68865de78d4b00fd7f21b05c36",
+            "packages/game-engine/src/ai-provider-claude-cli.ts": "85063fba0313903798829c5f427e91236af6dfe8",
+            "packages/game-engine/src/ai-provider.ts": "657b35ef4d2bf4184d010f788ad97b2c16439383",
+            "packages/game-engine/src/clue-discovery.ts": "d5cb3914c9b10fb1e3c37b54bc08d0df788eb73c",
+            "packages/game-engine/src/clue-graph/accusation.ts": "49318eacb862de8ca8d750f2b26f20c64be0a708",
+            "packages/game-engine/src/clue-graph/history.ts": "872ee6247277de92b2904da8b16664e6e8a1f08f",
+            "packages/game-engine/src/clue-graph/leads.ts": "4c785c1642303c08d9b7de955b7db0a34dd3b5c9",
+            "packages/game-engine/src/clue-graph/narrator-context.ts": "f52c5db767b2962d69183a5def28a424106a0a7f",
+            "packages/game-engine/src/clue-graph/notebook-view.ts": "2a442dd6ed5aab8e8dc7c3efb8e2d3b7e4d02fb1",
+            "packages/game-engine/src/clue-graph/play.ts": "edda4fb9164b517671c9f27bcb44d7dfc92b2853",
+            "packages/game-engine/src/clue-graph/talk-state.ts": "aaae73989b262e14e33f343de9425989967edb29",
+            "packages/game-engine/src/clues.ts": "9a1d96640cb66df356c356cc4162f4d707f26025",
+            "packages/game-engine/src/command-grammar.ts": "a3986eb1b24a8afb73e5f844a946c0a58d9ddbd5",
+            "packages/game-engine/src/content.ts": "9f656046da5ad91613e7dd928719a5284c908e19",
+            "packages/game-engine/src/context-local.ts": "6b638ca6177795d9a977855b0ab8fa3b4e11bc2c",
+            "packages/game-engine/src/context.ts": "8215bc612971157a37a44f389eec9d44b4d52035",
+            "packages/game-engine/src/db/ai-settings.ts": "90822683ff36c61dbf62e38098dfdf22fadeb5b7",
+            "packages/game-engine/src/db/client.ts": "dcc13590e8b9fba25ee2c7c643c12562f656de14",
+            "packages/game-engine/src/db/events.ts": "89f84f51626a6d735f11fc5ac5804923195d3bad",
+            "packages/game-engine/src/db/players.ts": "63ed0057c4883542c65e85aa392d93f97a6c355f",
+            "packages/game-engine/src/db/profile.ts": "2d929cc51e5b39ae54aa766d030d35a402fffe8e",
+            "packages/game-engine/src/db/schema.ts": "ec72b756968d49b4a0f8a9292508bbff6320db48",
+            "packages/game-engine/src/db/sessions.ts": "9f07e4b54f228ac0c58eea51968b8d8bc5744043",
+            "packages/game-engine/src/endpoints/blueprint-scenes.ts": "c75e0b61d034f607d4dc06273bca581f2b25da60",
+            "packages/game-engine/src/endpoints/blueprints-list.ts": "5b7daf4a4fd60199766640697adf52c79a9abfa6",
+            "packages/game-engine/src/endpoints/game-enter.ts": "577c100e03c89811a0d1b4f56aa3ff3b46cc54f5",
+            "packages/game-engine/src/endpoints/game-get.ts": "0e5ff0d4cb040dc5c4deaf98e4c12770c195b207",
+            "packages/game-engine/src/endpoints/game-sessions-list.ts": "29ccb6f73d03a8a16019003051e256cc8249a102",
+            "packages/game-engine/src/endpoints/game-start.ts": "d9f7d4353c1070ca095067c52c3fa13bd7d1f305",
+            "packages/game-engine/src/endpoints/game-turn.ts": "9cf5a0a89e877d2f8e822b5b1bf26e9a91aa8a0a",
+            "packages/game-engine/src/endpoints/index.ts": "a9d6234999c8fa1f8c6d6a7010810d04baf585e5",
+            "packages/game-engine/src/endpoints/profile-settings.ts": "0c1197b56bd578f2b4bd3855badae5cf6425378e",
+            "packages/game-engine/src/env-file.ts": "b7ce75d11df45dde0b91f1813e6709e38ed3489a",
+            "packages/game-engine/src/errors.ts": "6a6e5eaefdf55403c9458088889f1e6ea43336ee",
+            "packages/game-engine/src/forced-endgame.ts": "1c3654f2c4f59e387ae41b97e3ec7ee230259502",
+            "packages/game-engine/src/game-state-view.ts": "e27c9254b3c15573fb6cc4f67da317866b87d845",
+            "packages/game-engine/src/images.ts": "c75cb20c0d475f9d19a7d1a47e2e8397518c1a5a",
+            "packages/game-engine/src/index.ts": "14eedda9c4c2f9272a804a9704fd6607113d2488",
+            "packages/game-engine/src/logging.ts": "81822db59d29b71f30fa16370cc8a69496547700",
+            "packages/game-engine/src/narration.ts": "001dbc6dc5693137d3e6eeac9641417ed2e31aad",
+            "packages/game-engine/src/paths.ts": "bbb108d91a95ffe54b29de2e049abb40ce530f7c",
+            "packages/game-engine/src/player-cookie.ts": "4de6d2c7e1584a2aba70511a9cdb2eacf5fa6a6d",
+            "packages/game-engine/src/request.ts": "1faabe349d83c7517932a536337be83118f6f081",
+            "packages/game-engine/src/search-target.ts": "0560bb9529723dcfae70285a4d0cffcfc573150e",
+            "packages/game-engine/src/session-case.ts": "b40690a972502b40309abe0dacaceaac8e754cee",
+            "packages/game-engine/src/speaker.ts": "332521c0ae674df55f33ea8c558f5ba90e645de8",
+            "packages/game-engine/src/state-machine.ts": "f54d7f3f0a132820f311f261bb4ee8aec65b0f1e",
+            "packages/game-engine/src/turn/effect.ts": "e475b4fba3b9f946e4baec5b78283b5a8cd8df39",
+            "packages/game-engine/src/turn/narrator.ts": "67eeedf8f57fa815597adbe080187a2dd43ef73c",
+            "packages/game-engine/src/turn/no-turn.ts": "8165b67bef942e97cc69dd27af15f993677f7e56",
+            "packages/game-engine/src/turn/plan.ts": "04c8799c8879e06802a13fcac3bc04ed010b7c4f",
+            "packages/game-engine/src/turn/play-turn.ts": "c3254855b9403e9026088b41112144ff26b30adb",
+            "packages/game-engine/src/turn/resolve-accuse.ts": "f78b5f3861784613fa3958311dd2ccfd73b552da",
+            "packages/game-engine/src/turn/resolve-clue-graph.ts": "f32396e57718a723ab09f8da097034c781f68d99",
+            "packages/game-engine/src/turn/resolve-move.ts": "ff79e8452c5b63789d9407d437ea7e013c92c676",
+            "packages/game-engine/src/turn/resolve-talk.ts": "cc67cfdff71f9e8460d3321dfb51dc8d198f1b00",
+            "packages/game-engine/src/turn/types.ts": "24eda5d9a8cc3d5216bced1cf107ea84dfb7d584",
+            "packages/shared/package.json": "be15f499c428a0614c2e471a1c6be87ab0877481",
+            "packages/shared/src/clue-graph-case.ts": "70a661044191cf3be7f689f7f14696d293135159",
+            "packages/shared/src/clue-graph-reach.ts": "9958e014d9e3de8e8a7d16fa9b13bfce39fbd70c",
+            "packages/shared/src/clue-graph-route.ts": "e4a9d4a6613c164b9dd8b245850d8ebb65e019fe",
+            "packages/shared/src/clue-graph-schema.ts": "63bc37015f703ca0dbf2a1661ba10e777393717a",
+            "packages/shared/src/clue-graph-sizes.ts": "2812a702421308eb4a2d93df6c8c550280c0d6af",
+            "packages/shared/src/clue-graph-story.ts": "a4b7c08d5e4f337c950248dfb20929356d3c3a2c",
+            "packages/shared/src/clue-graph-trails.ts": "f65cce487bc15b27eca96493f15b95ab53119c0e",
+            "packages/shared/src/clue-graph-validator.ts": "5ecf7f759dde388902cb721b165a57d28fa0adb7",
+            "packages/shared/src/mystery-api-contracts.ts": "0ec4a64b506c8b5ba4f615af365cb0b16db6e534",
+            "packages/shared/src/playable-case.ts": "7706014f7afcf26e20163339f973e67340f21c81",
+            "packages/shared/src/reading-age.ts": "66876b8f4755d6b6a923108de822a2e4477f4d13",
+            "packages/shared/src/scene-schema.ts": "32eff6218cbf3b65b65436a8f062e9b6cbe42e8f"
+          }
+        },
+        {
+          "category": "Shared code",
+          "name": "evaluation harness and dependencies",
+          "files": {
+            "evaluation/blueprint/player-view.ts": "86b2e5a560019048889b19e82df91a616ff7870e",
+            "evaluation/config.example.json": "be7d5966b1cad4f4446b9e7c50f4accff305aefa",
+            "evaluation/core/args.ts": "d1119456c9119c163675123cc4c600a577dea270",
+            "evaluation/core/baseline-status.ts": "3360b3a6f7e78497240ffe0b3e05ddedcd75617c",
+            "evaluation/core/config.ts": "0d45fb64213e46a1f66041af90458f1fde10b061",
+            "evaluation/core/dispatch.ts": "0facfc81bc1f86ea3578b8a103b1f8f892461d09",
+            "evaluation/core/errors.ts": "5f5d89dac8e6fc9b60c567fa69ee8d1c401c632e",
+            "evaluation/core/judge-id-checks.ts": "6af679baadb8500ff587fd3de664a6117027663f",
+            "evaluation/core/judge-loader.ts": "ef372f5da90d1020f51d805a4d08d79ebed630d4",
+            "evaluation/core/judge-output.ts": "132bcdf279ff85653fa39624d45cafdebe3a547d",
+            "evaluation/core/judge-version.ts": "10a897e363c4b4aeabcdbcc64e4cb2ed57e663d2",
+            "evaluation/core/judge-versions.json": "bb9af85cb70ccc24bc3f73426b003bfda9297cc0",
+            "evaluation/core/pool.ts": "e03e527ebd5d3dded455d9820fb8ef4ff8fa5f30",
+            "evaluation/core/progress.ts": "51ec3a01f1cb4443f578c0de61ee695e386482ee",
+            "evaluation/core/result.ts": "9ab52cfb241483dbc9ae86097dd9e9d1441289ef",
+            "evaluation/core/run-folder.ts": "28e5d710ce0845c7b75a7fa7520adaf1601e989c",
+            "evaluation/core/runner.ts": "f6fafb1f1f6b6b8107e50341107cbb7ae1bc851e",
+            "evaluation/core/timing.ts": "502935d940fa2a89375595ec8b69ce86d32d15fc",
+            "evaluation/core/usage-limit.ts": "6dcbe650e98df0ec5a243453fdf9eb91b476c8d8",
+            "evaluation/judges/index.ts": "6c00e3bdabeaee5d256ecac28e34a87f17a40b8c",
+            "evaluation/judges/subject.ts": "c56de57117d3505415872fba03b2e353703e345f",
+            "evaluation/lib/game-events.ts": "4c7a448d5056b12ed92714de42f3967140a5ca96",
+            "evaluation/runtime/baseline.ts": "c573c73578a15bef992c7d79949f27380060c663",
+            "evaluation/runtime/cases.ts": "ae346a917c90b35e13bf18e8291c38095ad31c5e",
+            "evaluation/runtime/cases/clue-graph/support/details.ts": "34b87c7d14833d8e27455a727acb99a44ae0a477",
+            "evaluation/runtime/cases/clue-graph/support/play.ts": "7898ac0d0a489232e15ee937cdb6b9fec83e2ec5",
+            "evaluation/runtime/config/wrappers/claude-runtime.sh": "7d2bc241f7a781a1c8137419cbda647a2034ee01",
+            "evaluation/runtime/config/wrappers/openai-runtime.sh": "15d544eaba1305bfce2843ee8436e1ccdcd9100b",
+            "evaluation/runtime/config/wrappers/openrouter-runtime.sh": "ddf9dcdf5a02b6c67bf3566c7894bb00c6be7e54",
+            "evaluation/runtime/config/wrappers/openrouter-runtime.ts": "a15f4f47a83c4fe367a6fa21e6b5fd7001c08fef",
+            "evaluation/runtime/config/wrappers/stub-judge.sh": "125ef35fc5b409520f43e8932ca216892c46a436",
+            "evaluation/runtime/config/wrappers/stub-runtime.sh": "c9b30a76c4f83b4752e632fcad07c6c030ff30b5",
+            "evaluation/runtime/judge-turn.ts": "922d5c8d33405a3b8c42cf885e9e9d86096ab0f6",
+            "evaluation/runtime/lib/case.ts": "8e59b71d2885f70f1e5d9cabde98c5783fca5985",
+            "evaluation/runtime/lib/expect-summary.ts": "89296d72f5183fcfb8e87ede69cd503ddd7114de",
+            "evaluation/runtime/lib/expect.ts": "9bafa6ec629db52cb9435edf1d516851ce0dd182",
+            "evaluation/runtime/lib/flesch.ts": "fc5218fa45ed793d708c7a910614836403a846e5",
+            "evaluation/runtime/lib/judges.ts": "69b15cdd8e65650f78c0077d2200ea45e0140677",
+            "evaluation/runtime/lib/model-json.ts": "65a2eda049107ec95bf0ed794958b235d673c8e3",
+            "evaluation/runtime/lib/prompt-build.ts": "4874b2aed9b5d8dc0e40b394551f81c6f46e0d87",
+            "evaluation/runtime/lib/replay-cli.ts": "d1e0cfe7b07a0c28c45b35c97d29519b1c06dc85",
+            "evaluation/runtime/lib/replay-server.ts": "7f324b7738bbf14825b3809b906bc990d55f21e5",
+            "evaluation/runtime/lib/roles.ts": "aa9143bc0a6f03d32e37f267fcc84a3650e9d753",
+            "evaluation/runtime/lib/seed.ts": "458a431832f86361013bfc758a8879e9d80a64f5",
+            "evaluation/runtime/lib/table.ts": "a8b6d8545c6e1ee497d4afab21b0cd42f3bfdddd",
+            "evaluation/runtime/lib/transcript.ts": "e2c50f25b2ea13701188e9123263a3cc3d10e07f",
+            "evaluation/runtime/lib/turn.ts": "46fec5b4be4be99e22b080d1cf0a874f0096735a",
+            "package-lock.json": "84c2c05e6db7637a13170ec3938ed4e6e3328661",
+            "package.json": "266cc7fe4dd2dd35ea5cf4e2303037eec18190f4",
+            "scripts/lib/ai-seed.mjs": "ba38eb22e6588acf8cd44bfa4b6810ec750ecaba",
+            "scripts/local-config.mjs": "8e495bd225c5651024068492f20126198fbd60e7"
+          }
+        }
+      ],
+      "cases": [
+        {
+          "id": "accuse-mia-cleared",
+          "action": "accuse",
+          "case_hash": "a0c678dcb835",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": [
+            "gm_spoiler"
+          ]
+        },
+        {
+          "id": "accuse-hale-alternative",
+          "action": "accuse",
+          "case_hash": "7f02c2ccbd41",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": [
+            "gm_spoiler"
+          ]
+        },
+        {
+          "id": "accuse-dobbs-nothing-cited",
+          "action": "accuse",
+          "case_hash": "8ccf572eb8e2",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": [
+            "gm_spoiler"
+          ]
+        },
+        {
+          "id": "accuse-toby-unsupported",
+          "action": "accuse",
+          "case_hash": "c953cd52dff5",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": [
+            "gm_spoiler"
+          ]
+        },
+        {
+          "id": "accuse-thorne-retracted",
+          "action": "accuse",
+          "case_hash": "ba92a7306256",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": [
+            "gm_spoiler"
+          ]
+        },
+        {
+          "id": "accuse-toby-won",
+          "action": "accuse",
+          "case_hash": "704e8a812910",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "hale-either-bench-alone",
+          "action": "ask",
+          "case_hash": "24c09d4e99a3",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "hale-either-line-alone",
+          "action": "ask",
+          "case_hash": "354d28cd2ae5",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "hale-either-neither",
+          "action": "ask",
+          "case_hash": "78de90f87a7b",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "invent-nothing-key-hooks",
+          "action": "search",
+          "case_hash": "f8aeadc4c7bb",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": [
+            "gm_fabrication"
+          ]
+        },
+        {
+          "id": "invent-nothing-welly-pegs",
+          "action": "search",
+          "case_hash": "33315f7ea8d1",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": [
+            "gm_fabrication"
+          ]
+        },
+        {
+          "id": "invent-kept-dobbs-cat",
+          "action": "ask",
+          "case_hash": "2ffb45c09eb6",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": [
+            "gm_fabrication"
+          ]
+        },
+        {
+          "id": "invent-kept-greenhouse-revisit",
+          "action": "search",
+          "case_hash": "96bc86fa338d",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": [
+            "gm_fabrication"
+          ]
+        },
+        {
+          "id": "unknown-dobbs-who",
+          "action": "ask",
+          "case_hash": "e6768fb0ef8c",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": [
+            "gm_fabrication"
+          ]
+        },
+        {
+          "id": "unknown-mia-toby-friday",
+          "action": "ask",
+          "case_hash": "bcc52197a2e5",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": [
+            "gm_fabrication"
+          ]
+        },
+        {
+          "id": "unknown-thorne-key",
+          "action": "ask",
+          "case_hash": "50412601a8bf",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": [
+            "gm_fabrication"
+          ]
+        },
+        {
+          "id": "unknown-hale-friday",
+          "action": "ask",
+          "case_hash": "8299aa79054d",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": [
+            "gm_fabrication"
+          ]
+        },
+        {
+          "id": "exact-rota-on-door",
+          "action": "search",
+          "case_hash": "1592ee1c5619",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "inventive-squashed-mess",
+          "action": "search",
+          "case_hash": "c16964ca920b",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "evidence-stolen-key",
+          "action": "search",
+          "case_hash": "0c4a63e7b199",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "loose-fallen-bench",
+          "action": "search",
+          "case_hash": "ea4db5b20cbd",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "plain-greenhouse",
+          "action": "search",
+          "case_hash": "9224ba824f0d",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "plain-potting-shed",
+          "action": "search",
+          "case_hash": "7416dca75f42",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "again-ladder-by-fence",
+          "action": "search",
+          "case_hash": "9b22c7c5a7d3",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "vague-look-around",
+          "action": "search",
+          "case_hash": "7ef83fec3abb",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "no-such-floorboards",
+          "action": "search",
+          "case_hash": "54d771155005",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "thorne-boots-by-implication",
+          "action": "ask",
+          "case_hash": "32dd3a7d42e3",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "toby-shown-glass-outside",
+          "action": "ask",
+          "case_hash": "2bbaeb95c2fa",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "toby-shown-welly-prints",
+          "action": "ask",
+          "case_hash": "21ecda385111",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "thorne-shown-what-toby-said",
+          "action": "ask",
+          "case_hash": "777563599abf",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "hale-shown-snapped-bench",
+          "action": "ask",
+          "case_hash": "32f516818144",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "hale-shown-purple-rota",
+          "action": "ask",
+          "case_hash": "0ac6ca11f729",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "mia-shown-what-toby-said",
+          "action": "ask",
+          "case_hash": "d7c3614f8181",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "toby-shown-cake-alibi",
+          "action": "ask",
+          "case_hash": "5f10b51728e1",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "toby-glass-follow-up",
+          "action": "ask",
+          "case_hash": "15ba453a10f6",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "thorne-boots-follow-up",
+          "action": "ask",
+          "case_hash": "7bfcb0367cf6",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "toby-bluffed-rota",
+          "action": "ask",
+          "case_hash": "91ea03b5c90c",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "thorne-bluffed-boot-prints",
+          "action": "ask",
+          "case_hash": "48e59d728656",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "hale-bluffed-rota",
+          "action": "ask",
+          "case_hash": "cb5b1aadff08",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "hale-promise-fair",
+          "action": "ask",
+          "case_hash": "718e82dedf45",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "hale-suggests-accident",
+          "action": "ask",
+          "case_hash": "1136c0f04fc7",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "dobbs-asked-noise",
+          "action": "ask",
+          "case_hash": "6c5b33cfbf8e",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "toby-asked-key",
+          "action": "ask",
+          "case_hash": "98b4fd7a16f7",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "hale-asked-key",
+          "action": "ask",
+          "case_hash": "5308b817f001",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "mia-asked-thorne-friday",
+          "action": "ask",
+          "case_hash": "b75d264351dc",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "toby-cornered-what-happened",
+          "action": "ask",
+          "case_hash": "32b746ed10af",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "toby-pushed-just-tell-me",
+          "action": "ask",
+          "case_hash": "3d597dd1bd79",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "toby-shaken-it-was-you",
+          "action": "ask",
+          "case_hash": "4c64330bd531",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "thorne-pushed-accused",
+          "action": "ask",
+          "case_hash": "b7ac4d8fac3d",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "hale-pushed-accuse-toby",
+          "action": "ask",
+          "case_hash": "0629e3ac1cab",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "thorne-asked-about-ladder",
+          "action": "ask",
+          "case_hash": "23b629f06d2c",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "toby-asked-window-word",
+          "action": "ask",
+          "case_hash": "80daedc7c08d",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "dobbs-small-talk",
+          "action": "ask",
+          "case_hash": "84a6a9235f2e",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "mia-small-talk",
+          "action": "ask",
+          "case_hash": "e1697909e9ba",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "toby-holds-glass-asks-friday",
+          "action": "ask",
+          "case_hash": "632372d98e8a",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "thorne-asked-gibberish",
+          "action": "ask",
+          "case_hash": "374086777556",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": []
+        },
+        {
+          "id": "whole-key-book",
+          "action": "search",
+          "case_hash": "535db78ea71d",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": [
+            "gm_clue_discipline"
+          ]
+        },
+        {
+          "id": "whole-dobbs-crash",
+          "action": "ask",
+          "case_hash": "9786c7154a7c",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": [
+            "gm_clue_discipline"
+          ]
+        },
+        {
+          "id": "whole-hale-key",
+          "action": "ask",
+          "case_hash": "bebe69f3acba",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": [
+            "gm_clue_discipline"
+          ]
+        },
+        {
+          "id": "whole-thorne-measured",
+          "action": "ask",
+          "case_hash": "bb2b8b2207b2",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": [
+            "gm_clue_discipline"
+          ]
+        },
+        {
+          "id": "whole-toby-confession",
+          "action": "ask",
+          "case_hash": "e61226ac78d1",
+          "blueprints": [
+            "blueprints/clue-graph/greenhouse-prizewinner.json"
+          ],
+          "judges": [
+            "gm_clue_discipline"
+          ]
+        }
+      ],
+      "settings": {
+        "narrator_models": [
+          "narrator-claude:haiku"
+        ],
+        "judge_models": [
+          "turn-judge:sonnet"
+        ],
+        "samples": 5,
+        "concurrency": 4,
+        "ai_profile": null,
+        "bindings": {
+          "narrator-claude": "12f06699699d",
+          "turn-judge": "12f06699699d"
+        }
+      }
+    }
   },
   "complete": true,
   "narrators": [

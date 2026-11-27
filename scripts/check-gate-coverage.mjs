@@ -30,7 +30,7 @@ function main() {
   );
 
   if (report === null) {
-    process.stdout.write(`OK: ${files.length} test file(s), each under a gate step\n`);
+    process.stdout.write(`OK: ${files.length} test file(s), each under a gate step or an opt-in suite\n`);
     return;
   }
   process.stderr.write(`error: ${report}\n`);

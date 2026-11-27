@@ -6,7 +6,7 @@ Unit tests cover logic; integration, against the built server under the mock
 provider, covers endpoints, ownership, profiles, schema, content; E2E covers
 journeys, over HTTP (`tests/api/e2e`), through the launcher on `prod`
 (`tests/api/launcher`) and in the browser (`web/e2e`). Prefer
-integration for backend behaviour. A change updates every suite it affects. Helpers: `tests/testkit`.
+integration for backend behaviour; Playwright is for browser journeys. A change updates every suite it affects. Helpers: `tests/testkit`.
 
 **Browser projects.** `chromium` is Desktop Chrome and runs everything except
 `web/e2e/touch/`. `phone` and `tablet` are Chromium with touch emulation
@@ -22,7 +22,7 @@ runs only those named.
 suite may be reported skipped; one that cannot start is a bug.
 
 Integration and API E2E run against a production build (each server's own,
-in `web/.test-builds/`), so a bundling failure shows; the build must not open a database.
+in `web/.test-builds/`), so a bundling failure shows; the build fails if it opens a database.
 
 **Every test file runs in the gate, or is declared opt-in.** Each step names
 its `roots` and `files` pattern; keep them in step with the runner's include
@@ -47,7 +47,7 @@ path, untracked included, names a retired case format.
   paths and harness templates are skipped.
 - `check:word-budgets` fails when a Markdown file is over its row in
   `docs/word-budgets.tsv`, has no row, or a row names a missing file. Every
-  `.md` counts, including files not yet added to git, as `wc -w` counts it.
+  `.md` counts, untracked too, by `wc -w`.
   Symlinks such as `CLAUDE.md` answer to their target's row. Budgets sit at
   each count rounded up to 50. Raising one is the operator's decision: trim the
   doc, or ask.
@@ -87,7 +87,8 @@ components read 0%; act on a low file only when its boundary is unit. Every `./d
 `eval-snapshots.test.ts` runs each evaluation harness with its model CLI
 swapped for a stub that keeps what it is sent, and compares every prompt and
 the verdicts on fixed stub answers with
-`tests/api/unit/snapshots/evaluation/`. Re-record with `npm run test:snapshots:record` and read the diff; judge
+`tests/api/unit/snapshots/evaluation/`. Moving code changes no snapshot.
+Re-record with `npm run test:snapshots:record` and read the diff; judge
 content is the operator's call.
 
 ## Golden transcripts
@@ -95,8 +96,8 @@ content is the operator's call.
 `tests/api/e2e/golden-transcripts.test.ts` plays fixed games over HTTP under
 the mock narrator, comparing what the player sees with
 `tests/api/e2e/golden/transcripts/`. Only `tests/testkit/src/golden/driver.ts`
-knows how a line becomes requests. The mock narrates from the case and the
-context it is given, so changing either moves the transcripts. Re-record with
+knows how a line becomes requests. The mock narrates from the case and its
+context, so changing either moves the transcripts. Re-record with
 `npm run test:golden:record` and review the diff.
 
 ## Writing tests

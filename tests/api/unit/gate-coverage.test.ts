@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
   excludeArgs,
+  formatOptInSuites,
   GATE_STEPS,
   OPT_IN_SUITES,
 } from "../../../scripts/lib/gate-steps.mjs";
@@ -121,13 +122,19 @@ describe("the gate's real steps", () => {
     expect(findUncoveredTestFiles(files, GATE_STEPS)).toEqual(files);
   });
 
-  it("pass each excluded root to Vitest as an exclude glob", () => {
-    const integration = GATE_STEPS.find(
-      (s: { name: string }) => s.name === "integration",
-    )!;
-    expect(excludeArgs(integration)).toEqual([
-      "--exclude",
-      "tests/api/integration/live-ai/**",
+  it.each([
+    ["integration", "tests/api/integration/live-ai/**"],
+    ["e2e-api", "tests/api/e2e/live-ai/**"],
+  ])("pass %s's live-AI root to Vitest as an exclude glob", (name, glob) => {
+    const step = GATE_STEPS.find((s: { name: string }) => s.name === name)!;
+    expect(excludeArgs(step)).toEqual(["--exclude", glob]);
+  });
+
+  it("list each opt-in suite with the command that runs it", () => {
+    expect(formatOptInSuites()).toEqual([
+      "Opt-in, not run by the gate (each calls the AI named in ai.json):",
+      "live-integration npm run test:integration:live -- <ai>",
+      "live-e2e         npm run test:e2e:live -- <ai>",
     ]);
   });
 });

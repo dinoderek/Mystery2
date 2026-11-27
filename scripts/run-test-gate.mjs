@@ -26,7 +26,7 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { GATE_STEPS, OPT_IN_SUITES, selectSteps } from "./lib/gate-steps.mjs";
+import { GATE_STEPS, formatOptInSuites, selectSteps } from "./lib/gate-steps.mjs";
 import { npmBin } from "./lib/process.mjs";
 import {
   clearCoverageReports,
@@ -230,8 +230,7 @@ const lines = [
   "─".repeat(40),
   `${"Total".padEnd(16)} ${(totalMs / 1000).toFixed(1).padStart(7)}s  ${overallPass ? "PASS" : "FAIL"}`,
   "",
-  "Opt-in, not run by the gate (each calls the AI named in ai.json):",
-  ...OPT_IN_SUITES.map((suite) => `${suite.name.padEnd(16)} ${suite.command}`),
+  ...formatOptInSuites(),
   "",
 ];
 

@@ -143,6 +143,14 @@ export const OPT_IN_SUITES = [
   },
 ];
 
+/** The lines `summary.log` prints after the verdict: each opt-in suite and its command. */
+export function formatOptInSuites(suites = OPT_IN_SUITES) {
+  return [
+    "Opt-in, not run by the gate (each calls the AI named in ai.json):",
+    ...suites.map((suite) => `${suite.name.padEnd(16)} ${suite.command}`),
+  ];
+}
+
 /** Vitest `--exclude` globs for a step's excluded roots. */
 export function excludeArgs(step) {
   return (step.exclude ?? []).flatMap((root) => ["--exclude", `${root}/**`]);

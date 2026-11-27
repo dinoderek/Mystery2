@@ -109,7 +109,6 @@ export function characterSpeaker(name: string): Speaker {
 type CharacterWithLocationName = {
   id: string;
   first_name: string;
-  last_name: string;
   location_id: string;
   location_name: string;
   sex: "male" | "female";
@@ -125,15 +124,13 @@ export const CHARACTERS: readonly CharacterWithLocationName[] = [
   {
     id: "char-rosie",
     first_name: "Rosie",
-    last_name: "Jones",
     location_id: "loc-kitchen",
     location_name: "Kitchen",
     sex: "female" as const,
   },
   {
     id: "char-mayor",
-    first_name: "Mayor",
-    last_name: "Fox",
+    first_name: "Mayor Fox",
     location_id: "loc-kitchen",
     location_name: "Kitchen",
     sex: "male" as const,
@@ -141,7 +138,6 @@ export const CHARACTERS: readonly CharacterWithLocationName[] = [
   {
     id: "char-bob",
     first_name: "Bob",
-    last_name: "Smith",
     location_id: "loc-garden",
     location_name: "Garden",
     sex: "male" as const,
@@ -150,8 +146,8 @@ export const CHARACTERS: readonly CharacterWithLocationName[] = [
 
 // Validate each character satisfies the schema (location_name is extra, harmless)
 CHARACTERS.forEach((c) => {
-  const { id, first_name, last_name, location_id, sex } = c;
-  GameStateSchema.shape.characters.element.parse({ id, first_name, last_name, location_id, sex });
+  const { id, first_name, location_id, sex } = c;
+  GameStateSchema.shape.characters.element.parse({ id, first_name, location_id, sex });
 });
 
 // ---------------------------------------------------------------------------
@@ -169,7 +165,6 @@ export function createGameState(
     characters: CHARACTERS.map((c) => ({
       id: c.id,
       first_name: c.first_name,
-      last_name: c.last_name,
       location_id: c.location_id,
       location_name: c.location_name,
       sex: c.sex,

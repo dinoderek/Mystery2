@@ -105,10 +105,10 @@ describe("the notebook", () => {
 
   it("accepts an arrival where someone has one name, as a clue-graph case writes them", () => {
     const entered = createGameEnterResponse({
-      visible_characters: [{ first_name: "Mr. Thorne", last_name: "", sex: "male" }],
+      visible_characters: [{ first_name: "Mr. Thorne", sex: "male" }],
     });
     expect(GameEnterResponseSchema.parse(entered).visible_characters).toEqual([
-      { first_name: "Mr. Thorne", last_name: "", sex: "male" },
+      { first_name: "Mr. Thorne", sex: "male" },
     ]);
   });
 
@@ -260,7 +260,7 @@ describe("shared mystery API contracts", () => {
       }],
       current_location: "Kitchen",
       visible_characters: [
-        { first_name: "Alice", last_name: "Smith", sex: "female" },
+        { first_name: "Alice", sex: "female" },
       ],
       time_remaining: 8,
     });

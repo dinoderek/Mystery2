@@ -107,7 +107,6 @@ export const GameEnterResponseSchema = TurnResponseBaseSchema.extend({
   visible_characters: z.array(
     z.object({
       first_name: z.string().min(1),
-      last_name: z.string(),
       sex: CharacterSexSchema,
     }),
   ),
@@ -274,7 +273,6 @@ export const LocationSummarySchema = z.object({
 export const CharacterSummarySchema = z.object({
   id: z.string().min(1),
   first_name: z.string(),
-  last_name: z.string(),
   location_id: z.string(),
   sex: CharacterSexSchema,
   // Player-facing one-liner for the notebook; null when not authored.

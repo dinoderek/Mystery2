@@ -11,7 +11,7 @@ const START = {
     { id: "loc-a", name: "Attic" },
     { id: "loc-b", name: "Barn" },
   ],
-  characters: [{ id: "c-1", first_name: "Cleo", last_name: "Park", location_id: "loc-a" }],
+  characters: [{ id: "c-1", first_name: "Cleo", location_id: "loc-a" }],
   location: "loc-a",
   mode: "explore" as const,
   time_remaining: 5,

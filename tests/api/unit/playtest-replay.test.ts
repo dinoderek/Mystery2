@@ -26,8 +26,8 @@ function state(overrides: Record<string, unknown> = {}): GameState {
 			{ id: 'loc-living-room', name: 'Living Room' }
 		],
 		characters: [
-			{ id: 'char-alice', first_name: 'Alice', last_name: 'Smith', location_id: 'loc-kitchen', sex: 'female' },
-			{ id: 'char-bob', first_name: 'Bob', last_name: 'Jones', location_id: 'loc-living-room', sex: 'male' }
+			{ id: 'char-alice', first_name: 'Alice', location_id: 'loc-kitchen', sex: 'female' },
+			{ id: 'char-bob', first_name: 'Bob', location_id: 'loc-living-room', sex: 'male' }
 		],
 		discovered_clues: [{ id: 'clue-crumb', text: 'A crumb.', source: 'search' }],
 		time_remaining: 7,
@@ -51,7 +51,7 @@ describe('playtest checkpoints', () => {
 			mode: 'explore',
 			location: 'loc-kitchen',
 			talk_character: null,
-			people_here: ['Alice Smith'],
+			people_here: ['Alice'],
 			clues: ['clue-crumb']
 		});
 		expect(checkpointOf(state({ mode: 'talk', current_talk_character: 'char-alice' }))).toMatchObject({
@@ -67,7 +67,7 @@ describe('playtest checkpoints', () => {
 		expect(compareCheckpoints(recorded, checkpointOf(state({ location: 'loc-living-room' })))).toEqual({
 			blocking: {
 				location: { expected: 'loc-kitchen', actual: 'loc-living-room' },
-				people_here: { expected: ['Alice Smith'], actual: ['Bob Jones'] }
+				people_here: { expected: ['Alice'], actual: ['Bob'] }
 			},
 			clues: null
 		});

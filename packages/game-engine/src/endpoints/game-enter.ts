@@ -50,8 +50,6 @@ function visibleCharacters(blueprint: PlayableCase, locationId: string) {
     .map((c) => ({
       id: c.id,
       first_name: c.first_name,
-      // A clue-graph character goes by one name.
-      last_name: "",
       sex: c.sex,
     }));
 }

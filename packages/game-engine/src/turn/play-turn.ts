@@ -67,8 +67,6 @@ export function grammarStateOf(session: GameSessionRow, blueprint: PlayableCase)
     characters: blueprint.world.characters.map((character) => ({
       id: character.id,
       first_name: character.first_name,
-      // A clue-graph character goes by one name.
-      last_name: "",
       location_name: character.location_id,
     })),
   };

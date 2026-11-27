@@ -26,7 +26,6 @@ export function toGameState(state: WireGameState, history: WireNarrationEvent[])
     characters: state.characters.map((character) => ({
       id: character.id,
       first_name: character.first_name,
-      last_name: character.last_name,
       location_name: character.location_id,
       sex: character.sex,
       summary: character.summary,

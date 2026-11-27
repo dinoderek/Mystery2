@@ -10,14 +10,14 @@
  *
  * A clue-graph accusation is three steps, chained as the game chains them
  * (`resolve-accuse.ts`): the narrator reports who was named and what was cited,
- * the engine decides from the graph, and the narrator words the reply the
- * engine chose, or the closing scene. Both calls go through the binding.
+ * the engine decides from the graph (`judgeReport`, which the game shares), and
+ * the narrator words the reply the engine chose, or the closing scene. Both
+ * calls go through the binding.
  */
 
 import { runModel } from "../../core/runner.ts";
-import { accusationRole, replyKindOf, resolves, settleAccusation } from "../../../packages/game-engine/src/clue-graph/accusation.ts";
-import { playOf } from "../../../packages/game-engine/src/clue-graph/history.ts";
-import { roleOutputJsonSchema, parseRoleOutput, parseGraphAccusationOutput, parseGraphAccusationRoundOutput, parseGraphEndingOutput } from "../../../packages/game-engine/src/ai-contracts.ts";
+import { judgeReport, replyKindOf } from "../../../packages/game-engine/src/clue-graph/accusation.ts";
+import { roleOutputJsonSchema, parseRoleOutput, parseGraphAccusationOutput } from "../../../packages/game-engine/src/ai-contracts.ts";
 import type { ResolvedBinding } from "../../core/config.ts";
 import type { ModelCall } from "../../core/result.ts";
 import type {
@@ -162,18 +162,15 @@ async function replayGraphAccusation({ testCase, blueprint, binding, logDir }: C
   if (!reported.ok) failedCall(`narrator accuse report failed: ${reported.error}`, [reported.call]);
   const report = reported.value as unknown as ReturnType<typeof parseGraphAccusationOutput>;
 
-  if (report.accused_character_id !== null && !Object.hasOwn(graph.characters, report.accused_character_id)) {
+  const judged = judgeReport(graph, history, report);
+  if (!judged) {
     throw new NarratorReplayError(`accused_character_id "${report.accused_character_id}" is not in the case`, [reported.call], "admissibility");
   }
-  const { saved } = settleAccusation(graph, playOf(graph, history), history, { accused: report.accused_character_id, cited: report.cited_clue_ids });
-  const ended = resolves(saved.verdict);
-  const role = accusationRole(saved.verdict);
+  const { saved, result, reply: fields, parse } = judged;
+  const { role } = fields;
   const reply = await buildRoleRequest({
     ...(roleInput as unknown as Extract<TemplateRoleInput, { role: "graph_accusation" }>),
-    role,
-    verdict: saved.verdict,
-    accused: saved.accused,
-    cited: saved.cited,
+    ...fields,
   } as TemplateRoleInput);
   const worded = await runModel({
     binding,
@@ -183,18 +180,18 @@ async function replayGraphAccusation({ testCase, blueprint, binding, logDir }: C
     logDir,
     output: "json",
     answerSchema: roleOutputJsonSchema(role),
-    parse: (answer) => (ended ? parseGraphEndingOutput : parseGraphAccusationRoundOutput)(JSON.parse(answer)) as unknown as Record<string, unknown>,
+    parse: (answer) => parse(JSON.parse(answer)) as unknown as Record<string, unknown>,
   });
   if (!worded.ok) failedCall(`narrator accuse reply failed: ${worded.error}`, [reported.call, worded.call]);
 
   const narration = String(worded.value!.narration);
-  const replyKind = ended ? null : replyKindOf(reply.context as { graph_accusation_context?: unknown });
+  const replyKind = result ? null : replyKindOf(reply.context as { graph_accusation_context?: unknown });
   const response = makeResponse({
     action: "accuse",
     request: { ...testCase.action },
     parts: [{ text: narration, speaker: action.speaker(testCase.given, testCase.action, blueprint) }],
     prompt: `${judge.prompt}\n\n${reply.prompt}`,
-    raw: { role, narration, report, clue_graph_accusation: saved, ...(ended ? {} : { reply_kind: replyKind }) },
+    raw: { role, narration, report, clue_graph_accusation: saved, ...(result ? {} : { reply_kind: replyKind }) },
     outputRole: role,
   });
   return { response, model: modelLabel(binding), calls: [reported.call, worded.call] };

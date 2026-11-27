@@ -4,12 +4,7 @@
 // failure spends one and returns to exploring, or, out of turns, asks again.
 // The engine decides each accusation from the case's graph.
 
-import {
-  parseAccusationStartOutput,
-  parseGraphAccusationOutput,
-  parseGraphAccusationRoundOutput,
-  parseGraphEndingOutput,
-} from "../ai-contracts.ts";
+import { parseAccusationStartOutput, parseGraphAccusationOutput } from "../ai-contracts.ts";
 import {
   ACCUSE_BACK,
   ACCUSE_FAILED,
@@ -17,8 +12,7 @@ import {
   accusationRuleLine,
   accusationsLeft,
 } from "../accusations.ts";
-import { accusationRole, replyKindOf, resolves, settleAccusation } from "../clue-graph/accusation.ts";
-import { playOf } from "../clue-graph/history.ts";
+import { judgeReport, replyKindOf } from "../clue-graph/accusation.ts";
 import { createNarrationPart } from "../narration.ts";
 import { buildRoleRequest } from "../role-request.ts";
 import type { GameMode } from "../state-machine.ts";
@@ -142,9 +136,7 @@ function judgedOutcome(
  * the player does not hold is dropped.
  */
 export async function resolveAccusation(game: TurnGame, runtime: TurnRuntime, reasoning: string): Promise<ActionOutcome> {
-  const graph = game.blueprint.clue_graph;
   const session = accusing(game);
-  const play = playOf(graph, game.history);
   const judge = await buildRoleRequest({
     role: "graph_accusation",
     game_id: game.game_id,
@@ -160,45 +152,35 @@ export async function resolveAccusation(game: TurnGame, runtime: TurnRuntime, re
     context: judge.context,
     parse: parseGraphAccusationOutput,
   });
-  const accused = report.accused_character_id;
-  if (accused !== null && !Object.hasOwn(graph.characters, accused)) {
-    rejectOutput(runtime, "accuse_reasoning", "Clue-graph accusation named someone the case does not hold", { accused });
+  const judged = judgeReport(game.blueprint.clue_graph, game.history, report);
+  if (!judged) {
+    rejectOutput(runtime, "accuse_reasoning", "Clue-graph accusation named someone the case does not hold", {
+      accused: report.accused_character_id,
+    });
   }
   // A clue the player does not hold cannot be cited: it is dropped, as a restated reveal is.
-  const { saved, notHeld } = settleAccusation(graph, play, game.history, { accused, cited: report.cited_clue_ids });
-  if (notHeld.length > 0) {
-    runtime.logger.log("accusation.cited_not_held", { game_id: game.game_id, clue_ids: notHeld });
+  if (judged.notHeld.length > 0) {
+    runtime.logger.log("accusation.cited_not_held", { game_id: game.game_id, clue_ids: judged.notHeld });
   }
-  const { cited } = saved;
-  const ended = resolves(saved.verdict);
-  const role = accusationRole(saved.verdict);
+  const { saved, result, reply, parse } = judged;
   const { prompt, context } = await buildRoleRequest({
-    role,
+    ...reply,
     game_id: game.game_id,
     session,
     blueprint: game.blueprint,
     reading_age: game.reading_age,
     player_input: reasoning,
-    verdict: saved.verdict,
-    accused,
-    cited,
     conversation_history: game.history,
   });
-  const output = await askRole(runtime, "accuse_reasoning", {
-    role,
-    prompt,
-    context,
-    parse: ended ? parseGraphEndingOutput : parseGraphAccusationRoundOutput,
-  });
-  const result = ended ? (saved.verdict as "win" | "lose") : null;
+  const output = await askRole(runtime, "accuse_reasoning", { role: reply.role, prompt, context, parse });
 
   return judgedOutcome(game, result, {
     payload: {
-      role,
+      role: reply.role,
       player_reasoning: reasoning,
       judge_result: result ?? "continue",
       clue_graph_accusation: saved,
-      ...(!ended ? { reply_kind: replyKindOf(context) } : {}),
+      ...(result ? {} : { reply_kind: replyKindOf(context) }),
       speaker: NARRATOR_SPEAKER,
     },
     narration_parts: [createNarrationPart(output.narration, NARRATOR_SPEAKER)],

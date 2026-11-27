@@ -22,7 +22,7 @@ function buildCharacterReferenceLabel(blueprint, characterId) {
     return `Character portrait reference for ${characterId}`;
   }
 
-  return `Portrait of ${character.first_name} ${character.last_name ?? ""} (${character.appearance})`;
+  return `Portrait of ${character.first_name} (${character.appearance})`;
 }
 
 function buildLocationReferenceLabel(blueprint, locationId) {

@@ -13,7 +13,7 @@ const LISTED = readMockCase();
 const SECOND = {
   ...readMockCase(),
   id: "second-id",
-  metadata: { ...LISTED.metadata, title: "The Second Case", one_liner: "The bell rang twice." },
+  metadata: { ...LISTED.metadata, title: "The Second Case" },
   clue_graph: { ...LISTED.clue_graph, opening: { ...LISTED.clue_graph.opening, facts: ["The bell rang twice."] } },
 };
 const FIXTURE = { ...readMockCase(), id: "fixture-id" };
@@ -106,7 +106,7 @@ describe("blueprints-list", () => {
       [LISTED.metadata.title, null],
       ["The Second Case", null],
     ]);
-    for (const authored of [LISTED.metadata.one_liner, SECOND.metadata.one_liner]) {
+    for (const authored of [LISTED.clue_graph.opening.facts[0], SECOND.clue_graph.opening.facts[0]]) {
       expect(JSON.stringify(blueprints)).not.toContain(authored);
     }
     const failures = errors.map((line) => JSON.parse(line)).filter((entry) => entry.reason === "one_liner_failed");

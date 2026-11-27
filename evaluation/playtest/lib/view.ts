@@ -42,7 +42,7 @@ export function normalizeState(state: GameState): NotebookState {
 
 function nameOfCharacter(state: NotebookState, id: string | null): string {
   const character = state.characters.find((entry) => entry.id === id);
-  return character ? `${character.first_name} ${character.last_name}`.trim() : String(id);
+  return character ? character.first_name : String(id);
 }
 
 function modeLine(state: NotebookState): string {

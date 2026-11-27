@@ -250,7 +250,7 @@ describe("typed lines for structured actions", () => {
     mode,
     location,
     locations: blueprint.world.locations,
-    characters: blueprint.world.characters.map((c) => ({ ...c, last_name: "", location_name: c.location_id })),
+    characters: blueprint.world.characters.map((c) => ({ ...c, location_name: c.location_id })),
   });
   const lineFor = (given: Record<string, unknown>, action: Record<string, unknown>) =>
     ACTIONS[action.type as keyof typeof ACTIONS].line?.(given as never, action as never, blueprint) ?? "";

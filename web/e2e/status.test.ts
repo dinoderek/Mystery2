@@ -26,8 +26,8 @@ test.describe('US2 - Status Bar', () => {
                     state: createGameState({
                         locations: [{ id: 'loc-kitchen', name: 'kitchen' }, { id: 'loc-garden', name: 'garden' }],
                         characters: [
-                            { id: 'char-bob', first_name: 'Bob', last_name: 'Smith', location_id: 'loc-kitchen', location_name: 'kitchen', sex: 'male' },
-                            { id: 'char-alice', first_name: 'Alice', last_name: 'Brown', location_id: 'loc-garden', location_name: 'garden', sex: 'female' },
+                            { id: 'char-bob', first_name: 'Bob', location_id: 'loc-kitchen', location_name: 'kitchen', sex: 'male' },
+                            { id: 'char-alice', first_name: 'Alice', location_id: 'loc-garden', location_name: 'garden', sex: 'female' },
                         ],
                         time_remaining: 8,
                         location: 'loc-kitchen',
@@ -55,8 +55,8 @@ test.describe('US2 - Status Bar', () => {
         // turn number sitting next to TIME.
         await expect(page.locator('text=CLUES: 0')).toBeVisible();
         // Only characters in the current location should be shown.
-        await expect(page.locator('text=Bob Smith')).toBeVisible();
-        await expect(page.locator('text=Alice Brown')).toHaveCount(0);
+        await expect(page.getByTestId('status-line')).toContainText(' · Bob · ');
+        await expect(page.getByTestId('status-line')).not.toContainText('Alice');
     });
 
     test('shows accusations left in every mode, and one fewer after a failed accusation', async ({ page }) => {

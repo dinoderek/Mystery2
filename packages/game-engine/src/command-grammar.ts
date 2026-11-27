@@ -19,7 +19,6 @@ export interface GrammarState {
   characters: Array<{
     id: string;
     first_name: string;
-    last_name: string;
     location_name: string;
   }>;
 }
@@ -113,10 +112,6 @@ function normalizeTargetForMatch(target: string): string {
   return normalizeInput(target).replace(/^the\s+/, "").trim();
 }
 
-function displayNameOf(character: Character): string {
-  return `${character.first_name} ${character.last_name}`.trim();
-}
-
 function charactersHere(state: GrammarState): Character[] {
   const current = normalizeInput(state.location);
   return state.characters.filter(
@@ -140,11 +135,11 @@ function uniqueNames(values: string[]): string[] {
 
 function movementSuggestions(state: GrammarState): string[] {
   const places = state.locations.map((location) => location.name);
-  return uniqueNames([...places, ...charactersHere(state).map(displayNameOf)]);
+  return uniqueNames([...places, ...charactersHere(state).map((character) => character.first_name)]);
 }
 
 function talkSuggestions(state: GrammarState): string[] {
-  return uniqueNames(charactersHere(state).map(displayNameOf));
+  return uniqueNames(charactersHere(state).map((character) => character.first_name));
 }
 
 function resolveLocation(target: string, state: GrammarState): string | null {
@@ -169,12 +164,7 @@ function resolveLocation(target: string, state: GrammarState): string | null {
 function resolveSceneCharacter(target: string, state: GrammarState): string | null {
   const wanted = normalizeInput(target);
   for (const character of charactersHere(state)) {
-    const names = [
-      normalizeInput(character.first_name),
-      normalizeInput(character.last_name),
-      normalizeInput(displayNameOf(character)),
-    ];
-    if (names.includes(wanted)) {
+    if (normalizeInput(character.first_name) === wanted) {
       return character.id;
     }
   }

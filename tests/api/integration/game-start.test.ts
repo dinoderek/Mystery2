@@ -44,7 +44,6 @@ describe("game-start endpoint", () => {
     expect(data.state.characters).toContainEqual({
       id: "char-alice",
       first_name: "Alice",
-      last_name: "",
       location_id: "loc-kitchen",
       sex: "female",
       summary: null,

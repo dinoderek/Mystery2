@@ -110,7 +110,7 @@ test.describe('Command Input', () => {
     await stubTurns(page, () =>
       createTurnRefusedResponse({
         reason: 'missing-target',
-        hint: 'Where to? Try: Kitchen, Garden, Barn, Rosie Jones, Mayor Fox.',
+        hint: 'Where to? Try: Kitchen, Garden, Barn, Rosie, Mayor Fox.',
       }),
     );
 
@@ -130,7 +130,7 @@ test.describe('Command Input', () => {
     await stubTurns(page, () =>
       createTurnRefusedResponse({
         reason: 'invalid-target',
-        hint: '"zyx" is not a valid destination. Try: Kitchen, Garden, Barn, Rosie Jones, Mayor Fox.',
+        hint: '"zyx" is not a valid destination. Try: Kitchen, Garden, Barn, Rosie, Mayor Fox.',
       }),
     );
 
@@ -141,7 +141,7 @@ test.describe('Command Input', () => {
     await input.press('Enter');
 
     await expect(
-      page.getByText(/"zyx" is not a valid destination\. Try: Kitchen, Garden, Barn, Rosie Jones, Mayor Fox\./),
+      page.getByText(/"zyx" is not a valid destination\. Try: Kitchen, Garden, Barn, Rosie, Mayor Fox\./),
     ).toBeVisible();
     await expect(page.locator('[data-speaker-kind="system"]').last()).toContainText('System:');
   });
@@ -166,7 +166,7 @@ test.describe('Command Input', () => {
     // Everything the retired inline list printed is still here.
     const notebook = page.getByRole('dialog');
     await expect(notebook.getByText('[ you are here ]')).toBeVisible();
-    await expect(notebook.getByText('With: Rosie Jones, Mayor Fox')).toBeVisible();
+    await expect(notebook.getByText('With: Rosie, Mayor Fox')).toBeVisible();
     await expect(notebook.getByText('No one here right now')).toBeVisible();
 
     await page.keyboard.press('Escape');
@@ -176,7 +176,7 @@ test.describe('Command Input', () => {
       'aria-selected',
       'true',
     );
-    await expect(notebook.getByText('Rosie Jones')).toBeVisible();
+    await expect(notebook.getByText('Rosie', { exact: true })).toBeVisible();
     await expect(notebook.getByText('At the Garden')).toBeVisible();
   });
 

@@ -16,8 +16,8 @@ function state(overrides: Record<string, unknown> = {}): GameState {
 			{ id: 'loc-living-room', name: 'Living Room', summary: null }
 		],
 		characters: [
-			{ id: 'char-alice', first_name: 'Alice', last_name: 'Smith', location_id: 'loc-kitchen', sex: 'female', summary: 'The baker.' },
-			{ id: 'char-bob', first_name: 'Bob', last_name: 'Jones', location_id: 'loc-living-room', sex: 'male', summary: null }
+			{ id: 'char-alice', first_name: 'Alice', location_id: 'loc-kitchen', sex: 'female', summary: 'The baker.' },
+			{ id: 'char-bob', first_name: 'Bob', location_id: 'loc-living-room', sex: 'male', summary: null }
 		],
 		discovered_clues: [
 			{
@@ -50,11 +50,11 @@ describe('playtest player view', () => {
 
 		expect(view).toContain('== NOTEBOOK: STORY ==\nThe cookies are gone. Someone took them this morning.\n');
 		expect(view).toContain('Location: Kitchen');
-		expect(view).toContain('People here: Alice Smith');
+		expect(view).toContain('People here: Alice');
 		expect(view).toContain('Turns left: 7');
 		expect(view).toContain('Accusations left: 3 of 3');
-		expect(view).toContain('- Kitchen (you are here) — Alice Smith: Warm and floury.');
-		expect(view).toContain('- Bob Jones (at Living Room)');
+		expect(view).toContain('- Kitchen (you are here) — Alice: Warm and floury.');
+		expect(view).toContain('- Bob (at Living Room)');
 		expect(view).toContain('FOUND AT PLACES — Kitchen:\n- A crumb on the floor.');
 		expect(view).toContain('Narrator: You arrive in the kitchen.\n> serch\n[game] Commands: ...');
 		// The investigator's own plan is not part of what the player sees.
@@ -82,7 +82,7 @@ describe('playtest player view', () => {
 			state: state({ mode: 'talk', current_talk_character: 'char-alice' }),
 			transcript: []
 		});
-		expect(view).toContain('Mode: Talking with Alice Smith');
+		expect(view).toContain('Mode: Talking with Alice');
 	});
 
 	it('shows a clue-graph case its leads and marks, as the notebook does', () => {
@@ -90,15 +90,15 @@ describe('playtest player view', () => {
 			id,
 			text,
 			source: 'talk',
-			origin: { kind: 'character', character_id: 'char-alice', character_name: 'Alice Smith' },
+			origin: { kind: 'character', character_id: 'char-alice', character_name: 'Alice' },
 			...extra
 		});
 		const view = buildView({
 			title: 'Mock Blueprint',
 			state: state({
 				leads: [
-					{ key: 'talk:char-bob', text: 'Bob Jones may know more.', new: true },
-					{ key: 'meet:char-alice', text: 'You have not talked to Alice Smith yet.', new: false }
+					{ key: 'talk:char-bob', text: 'Bob may know more.', new: true },
+					{ key: 'meet:char-alice', text: 'You have not talked to Alice yet.', new: false }
 				],
 				discovered_clues: [
 					clue('alibi', 'I was baking all morning.', { kind: 'statement', taken_back: true }),
@@ -110,7 +110,7 @@ describe('playtest player view', () => {
 		});
 
 		expect(view).toContain(
-			'== NOTEBOOK: WHAT TO DO NEXT ==\n- Bob Jones may know more. [NEW]\n- You have not talked to Alice Smith yet.\n\n== NOTEBOOK: CLUES =='
+			'== NOTEBOOK: WHAT TO DO NEXT ==\n- Bob may know more. [NEW]\n- You have not talked to Alice yet.\n\n== NOTEBOOK: CLUES =='
 		);
 		expect(view).toContain('- I was baking all morning. (taken back)');
 		expect(view).toContain('- Alice brushes flour off her sleeve. (noticed)');

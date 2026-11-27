@@ -35,7 +35,6 @@ function createStore(mode: 'explore' | 'talk' | 'accuse' = 'explore') {
     characters: CHARACTERS.map((character) => ({
       id: character.id,
       first_name: character.first_name,
-      last_name: character.last_name,
       location_name: character.location_id,
       sex: character.sex,
     })),

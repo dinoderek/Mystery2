@@ -187,7 +187,6 @@ describe('session catalog helpers', () => {
           characters: [{
             id: 'char-alice',
             first_name: 'Alice',
-            last_name: 'Smith',
             location_id: 'loc-kitchen',
             location_name: 'Kitchen',
             sex: 'female' as const,

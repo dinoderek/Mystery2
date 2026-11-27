@@ -30,7 +30,7 @@
   const statusLine = $derived(
     [
       currentLocationName,
-      visibleCharacters.map((char) => `${char.first_name} ${char.last_name}`.trim()).join(", "),
+      visibleCharacters.map((char) => char.first_name).join(", "),
       `TIME: ${gameSessionStore.state?.time_remaining || 0}`,
       `ACCUSATIONS: ${gameSessionStore.state?.accusations_left ?? 0}`,
     ]

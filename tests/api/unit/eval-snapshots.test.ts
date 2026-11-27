@@ -449,8 +449,8 @@ async function composeInvestigatorPrompts() {
           { id: "hallway", name: "Hallway", summary: null },
         ],
         characters: [
-          { id: "alice", first_name: "Alice", last_name: "Smith", location_id: "kitchen", sex: "female", summary: "Helped bake." },
-          { id: "bob", first_name: "Bob", last_name: "Jones", location_id: "hallway", sex: "male", summary: null },
+          { id: "alice", first_name: "Alice", location_id: "kitchen", sex: "female", summary: "Helped bake." },
+          { id: "bob", first_name: "Bob", location_id: "hallway", sex: "male", summary: null },
         ],
         discovered_clues: [
           {

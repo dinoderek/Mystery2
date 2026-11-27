@@ -152,7 +152,7 @@ describe("interpretLine - target validation and views", () => {
     expect(interpret("go")).toEqual({
       kind: "refused",
       reason: "missing-target",
-      hint: "Where to? Try: Kitchen, Garden, Barn, Rosie Jones, Mayor Fox.",
+      hint: "Where to? Try: Kitchen, Garden, Barn, Rosie, Mayor Fox.",
     });
   });
 
@@ -160,7 +160,7 @@ describe("interpretLine - target validation and views", () => {
     expect(interpret("talk to")).toEqual({
       kind: "refused",
       reason: "missing-target",
-      hint: "Who do you want to talk to? Try: Rosie Jones, Mayor Fox.",
+      hint: "Who do you want to talk to? Try: Rosie, Mayor Fox.",
     });
   });
 
@@ -168,7 +168,7 @@ describe("interpretLine - target validation and views", () => {
     expect(interpret("go to zyx")).toEqual({
       kind: "refused",
       reason: "invalid-target",
-      hint: '"zyx" is not a valid destination. Try: Kitchen, Garden, Barn, Rosie Jones, Mayor Fox.',
+      hint: '"zyx" is not a valid destination. Try: Kitchen, Garden, Barn, Rosie, Mayor Fox.',
     });
   });
 
@@ -176,7 +176,7 @@ describe("interpretLine - target validation and views", () => {
     expect(interpret("talk to zyx")).toEqual({
       kind: "refused",
       reason: "invalid-target",
-      hint: '"zyx" is not a valid character. Try: Rosie Jones, Mayor Fox.',
+      hint: '"zyx" is not a valid character. Try: Rosie, Mayor Fox.',
     });
   });
 
@@ -203,15 +203,15 @@ describe("interpretLine - target validation and views", () => {
     }
   });
 
-  it("resolves a character by first name, last name or full name", () => {
+  it("resolves a character by their one name, whatever its case or length", () => {
     expect(interpret("talk to rosie")).toEqual(
       action({ type: "talk", character_id: "char-rosie" }),
     );
-    expect(interpret("talk to fox")).toEqual(
-      action({ type: "talk", character_id: "char-mayor" }),
-    );
-    expect(interpret("talk to Rosie Jones")).toEqual(
+    expect(interpret("talk to ROSIE")).toEqual(
       action({ type: "talk", character_id: "char-rosie" }),
+    );
+    expect(interpret("talk to Mayor Fox")).toEqual(
+      action({ type: "talk", character_id: "char-mayor" }),
     );
   });
 
@@ -303,7 +303,6 @@ describe("interpretLine - location resolution for the move command", () => {
       {
         id: "char-alice",
         first_name: "Alice",
-        last_name: "Smith",
         location_name: "loc-grand-library",
       },
     ],

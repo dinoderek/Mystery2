@@ -531,7 +531,7 @@ describe("the clue graph/2 case file", () => {
           .filter(([, clue]) => clue.kind !== "evidence" && clue.source.character === person.id)
           .map(([id]) => id),
       );
-      for (const stub of ["last_name", "background", "stated_alibi", "motive", "flavor_knowledge", "actual_actions", "agendas", "tells"])
+      for (const stub of ["background", "stated_alibi", "motive", "flavor_knowledge", "actual_actions", "agendas", "tells"])
         expect(person).not.toHaveProperty(stub);
     }
     for (const stub of ["solution_paths", "red_herrings", "suspect_elimination_paths", "representation_note", "cover_image"]) expect(view).not.toHaveProperty(stub);

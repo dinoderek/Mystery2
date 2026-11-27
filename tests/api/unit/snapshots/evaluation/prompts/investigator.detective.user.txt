@@ -3,7 +3,7 @@ CASE: The Missing Cookies
 == STATUS ==
 Mode: Exploring
 Location: Kitchen
-People here: Alice Smith
+People here: Alice
 Turns left: 7
 Accusations left: 3 of 3
 
@@ -11,12 +11,12 @@ Accusations left: 3 of 3
 The cookie plate is empty and snack time is almost here. The cookies disappeared from the kitchen sometime around 10 AM.
 
 == NOTEBOOK: PLACES ==
-- Kitchen (you are here) — Alice Smith: Where the cookies were set out.
-- Hallway — Bob Jones
+- Kitchen (you are here) — Alice: Where the cookies were set out.
+- Hallway — Bob
 
 == NOTEBOOK: PEOPLE ==
-- Alice Smith (at Kitchen): Helped bake.
-- Bob Jones (at Hallway)
+- Alice (at Kitchen): Helped bake.
+- Bob (at Hallway)
 
 == NOTEBOOK: CLUES ==
 FOUND AT PLACES — Kitchen:

@@ -23,7 +23,6 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
       {
         id: 'char-rosie',
         first_name: 'Rosie',
-        last_name: 'Jones',
         location_name: 'Kitchen',
         sex: 'female',
         summary: 'The baker.',
@@ -31,7 +30,6 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
       {
         id: 'char-bob',
         first_name: 'Bob',
-        last_name: 'Smith',
         location_name: 'loc-garden',
         sex: 'male',
       },
@@ -137,9 +135,9 @@ describe('buildPlacesView', () => {
 
   it('lists who is at each place regardless of how location_name is spelled', () => {
     const places = buildPlacesView(makeState());
-    expect(places.find((place) => place.id === 'loc-kitchen')?.people).toEqual(['Rosie Jones']);
+    expect(places.find((place) => place.id === 'loc-kitchen')?.people).toEqual(['Rosie']);
     // Bob's location_name is an id rather than a name.
-    expect(places.find((place) => place.id === 'loc-garden')?.people).toEqual(['Bob Smith']);
+    expect(places.find((place) => place.id === 'loc-garden')?.people).toEqual(['Bob']);
   });
 
   it('reports an empty roster for a place with no one in it', () => {
@@ -205,13 +203,13 @@ describe('groupCluesByOrigin', () => {
 
   it('puts places before people and groups by origin entity', () => {
     const buckets = groupCluesByOrigin([
-      characterClue('c1', 'She saw a shadow.', 'char-rosie', 'Rosie Jones'),
+      characterClue('c1', 'She saw a shadow.', 'char-rosie', 'Rosie'),
       locationClue('c2', 'Crumbs lead to the pantry.', 'loc-kitchen', 'Kitchen'),
     ]);
 
     expect(buckets.map((bucket) => bucket.label)).toEqual(['FOUND AT PLACES', 'TOLD BY PEOPLE']);
     expect(buckets[0].groups[0].label).toBe('Kitchen');
-    expect(buckets[1].groups[0].label).toBe('Rosie Jones');
+    expect(buckets[1].groups[0].label).toBe('Rosie');
   });
 
   it('orders groups by first discovery and clues by discovery within a group', () => {

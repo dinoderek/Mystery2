@@ -103,7 +103,7 @@ describe("the world view", () => {
     }
     expect(Object.keys(world.narrative.starting_knowledge)).toEqual(["mystery_summary"]);
     for (const character of world.world.characters) {
-      for (const key of ["last_name", "background", "stated_alibi", "motive", "flavor_knowledge", "actual_actions", "agendas", "tells"]) {
+      for (const key of ["background", "stated_alibi", "motive", "flavor_knowledge", "actual_actions", "agendas", "tells"]) {
         expect(character, `${character.id}.${key}`).not.toHaveProperty(key);
       }
     }

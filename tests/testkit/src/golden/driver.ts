@@ -53,7 +53,7 @@ export interface GameDriver {
 /** What `game-start` tells the browser about the case. */
 export interface StartState {
   locations: Array<{ id: string; name: string }>;
-  characters: Array<{ id: string; first_name: string; last_name: string; location_id: string }>;
+  characters: Array<{ id: string; first_name: string; location_id: string }>;
   location: string;
   mode: GameMode;
   time_remaining: number;

@@ -28,7 +28,6 @@ describe("buildGameState", () => {
     expect(state.characters.find((c) => c.id === "char-alice")).toEqual({
       id: "char-alice",
       first_name: "Alice",
-      last_name: "",
       location_id: "loc-kitchen",
       sex: expect.any(String),
       summary: null,

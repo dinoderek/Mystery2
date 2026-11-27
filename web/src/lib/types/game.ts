@@ -53,7 +53,6 @@ export interface GameState {
   characters: {
     id: string;
     first_name: string;
-    last_name: string;
     location_name: string;
     sex: 'male' | 'female' | null;
     summary?: string | null;

@@ -26,8 +26,6 @@ export function buildGameState(blueprint: StateWorld, story: string | null, stan
     characters: blueprint.world.characters.map((c) => ({
       id: c.id,
       first_name: c.first_name,
-      // A clue-graph character goes by one name.
-      last_name: "",
       location_id: c.location_id,
       sex: c.sex,
       summary: null,

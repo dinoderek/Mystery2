@@ -54,10 +54,6 @@ export interface PlaceEntry {
   people: string[];
 }
 
-function displayNameOf(character: GameState['characters'][number]): string {
-  return `${character.first_name} ${character.last_name}`.trim();
-}
-
 /**
  * Reproduces both halves of the retired `locations` command output — every
  * place and who is standing at it — plus a marker for where the player is now.
@@ -74,7 +70,7 @@ export function buildPlacesView(state: GameState | null): PlaceEntry[] {
     isCurrent: matchesLocation(state.location, location),
     people: state.characters
       .filter((character) => matchesLocation(character.location_name, location))
-      .map(displayNameOf),
+      .map((character) => character.first_name),
   }));
 }
 
@@ -103,7 +99,7 @@ export function buildPeopleView(state: GameState | null): PersonEntry[] {
 
     return {
       id: character.id,
-      displayName: displayNameOf(character),
+      displayName: character.first_name,
       summary: character.summary ?? null,
       // Fall back to the raw value so a character parked somewhere the state
       // does not list still reports a location instead of vanishing.

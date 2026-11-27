@@ -1000,7 +1000,7 @@ export async function runImageGeneration(rawOptions, dependencies = {}) {
     const character = (blueprint.world?.characters ?? []).find((c) => c.id === characterId);
     try {
       return {
-        label: `Portrait of ${character?.first_name ?? ""} ${character?.last_name ?? ""} (${character?.appearance ?? ""})`.trim(),
+        label: `Portrait of ${character?.name ?? characterId} (${character?.appearance ?? ""})`,
         buffer: await fs.readFile(portraitPath),
       };
     } catch {
@@ -1067,12 +1067,12 @@ export async function runImageGeneration(rawOptions, dependencies = {}) {
     const refs = [];
 
     // Add portrait references from cover_image.character_ids.
-    for (const charId of coverImage?.character_ids ?? []) {
+    for (const charId of coverImage.character_ids) {
       const ref = await readPortraitRef(charId);
       if (ref) refs.push(ref);
     }
     // Add location scene references from cover_image.location_ids.
-    for (const locId of coverImage?.location_ids ?? []) {
+    for (const locId of coverImage.location_ids) {
       const ref = await readLocationRef(locId);
       if (ref) refs.push(ref);
     }

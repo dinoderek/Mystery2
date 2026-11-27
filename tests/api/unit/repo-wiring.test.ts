@@ -49,12 +49,11 @@ describe("repo wiring", () => {
     ]);
   });
 
-  it("has a Workflow section in AGENTS.md and states the gate duration as about 20 seconds", () => {
+  it("points agents to the workflow and test gate", () => {
     const agents = read("AGENTS.md");
     expect(agents).toMatch(/^## Workflow$/m);
-    expect(agents).not.toContain("about a minute");
-    expect(agents).toContain("about 20 seconds");
-    expect(agents.split(/\s+/).filter(Boolean).length).toBeLessThan(1000);
+    expect(agents).toMatch(/^## The gate$/m);
+    expect(agents).toContain("`npm test`");
   });
 
   describe("gitignore keeps .claude/settings.json and ignores the rest of .claude/", () => {

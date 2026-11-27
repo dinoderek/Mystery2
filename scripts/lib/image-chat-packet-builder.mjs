@@ -22,7 +22,7 @@ function buildCharacterReferenceLabel(blueprint, characterId) {
     return `Character portrait reference for ${characterId}`;
   }
 
-  return `Portrait of ${character.first_name} ${character.last_name ?? ""} (${character.appearance})`;
+  return `Portrait of ${character.name} (${character.appearance})`;
 }
 
 function buildLocationReferenceLabel(blueprint, locationId) {
@@ -49,7 +49,7 @@ export function buildImageReferenceManifest(blueprint, target) {
 
   const references = [];
 
-  for (const characterId of blueprint?.cover_image?.character_ids ?? []) {
+  for (const characterId of blueprint.cover_image.character_ids) {
     references.push({
       id: characterId,
       kind: "character_portrait",
@@ -57,7 +57,7 @@ export function buildImageReferenceManifest(blueprint, target) {
     });
   }
 
-  for (const locationId of blueprint?.cover_image?.location_ids ?? []) {
+  for (const locationId of blueprint.cover_image.location_ids) {
     references.push({
       id: locationId,
       kind: "location_scene",

@@ -9,15 +9,13 @@
  */
 export function projectClueGraphArtwork(graph) {
   return {
-    format: graph.format,
     id: graph.metadata.id,
-    metadata: { ...graph.metadata, visual_direction: graph.visual_direction },
-    narrative: { premise: graph.opening.facts.join(" ") },
+    metadata: { title: graph.metadata.title, visual_direction: graph.visual_direction },
     world: {
       starting_location_id: graph.opening.location,
       characters: Object.entries(graph.characters).map(([id, person]) => ({
         id,
-        first_name: person.name,
+        name: person.name,
         sex: person.sex,
         location_id: person.location,
         appearance: person.appearance.join(" "),

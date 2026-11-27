@@ -362,6 +362,23 @@ describe("runImageGeneration", () => {
 
     const sent = JSON.parse(fetchMock.mock.calls[0][1].body);
     expect(sent.input_references).toHaveLength(cover.characters.length + cover.locations.length);
+    expect(sent.prompt).toContain("Portrait of Alice (");
+  });
+
+  it("uses the opening and cast when a case has no authored cover", async () => {
+    const { blueprintPath, outputDir } = await withBlueprint();
+    const graph = JSON.parse(await readFile(blueprintPath, "utf-8"));
+    delete graph.cover;
+    await writeFile(blueprintPath, JSON.stringify(graph));
+    const fetchMock = vi.fn().mockResolvedValue(imagesApiResponse());
+    const options = parseGenerateImageArgs(["--blueprint-path", blueprintPath, "--output-dir", outputDir, "--blueprint"]);
+
+    await runImageGeneration(options, { fetchImpl: fetchMock, apiKey: "test-key", env: {} });
+
+    const { prompt } = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(prompt).toContain(`Creative direction: ${graph.opening.facts.join(" ")}`);
+    expect(prompt).toContain("Featured location(s): Kitchen");
+    expect(prompt).toMatch(/Characters featured: Alice .*; Bob /);
   });
 
   it("references a portrait by the id a patched case names", async () => {

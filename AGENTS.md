@@ -6,8 +6,9 @@
 2. Practice using AI to generate blueprints and run the game: agents in
    production, and evaluation infrastructure, hence the size of `evaluation/`.
 
-Any rewrite keeps the blueprint/narrator split, model calls as pluggable CLI
-subprocess wrappers, the evaluators' direction, and replay and self-play.
+Any rewrite keeps the blueprint/narrator split, pluggable narrator providers
+(OpenRouter HTTP and Claude CLI), evaluation CLI bindings, the evaluators'
+direction, and replay and self-play.
 
 ## Architecture
 
@@ -51,9 +52,8 @@ clue graph (`docs/clue-graph.md`). Detail: `docs/architecture.md`.
 
 ## The gate
 
-Any non-documentation change finishes with `npm test`; rerun it after any later
-edit. It takes about 20 seconds. Run it in the background into a log named
-after the worktree (a shared name gets overwritten), and read it on completion:
+Any non-documentation change finishes with `npm test`. Rerun it after later
+edits. Write the log to a worktree-specific path and read it on completion:
 
 ```bash
 ( npm test; echo "GATE_EXIT=$?" ) > "/tmp/gate-$(basename "$PWD").log" 2>&1
@@ -65,8 +65,8 @@ Never block on `tail -f` or a `while sleep` loop. Two traps:
   `tail` masks it too.
 - **Check the `Total` line**, not the last line. `Total ... FAIL` is the verdict.
 
-Every step runs everywhere, no suite is skipped, and coverage floors hold.
-Final summaries state which gates ran, and why anything was skipped.
+Every gate step runs everywhere and coverage floors hold. Live AI tests are
+opt-in. Final summaries report validation and any skips.
 
 ## Documentation
 

@@ -110,11 +110,39 @@ describe("judge turn on a case with expect", () => {
     expect(result.verdicts.map((verdict) => [verdict.id, verdict.status])).toEqual([["expect", "fail"]]);
 
     const summary = readSummary(runDir);
+    expect(summary.run.inputs).toMatchObject({
+      scope: { prompts: ["search"], blueprints: [MOCK_CASE_PATH], external_inputs: true },
+      cases: [{ id: "search-pantry", action: "search", case_hash: expect.stringMatching(/^[a-f0-9]{12}$/) }],
+      settings: { narrator_models: ["narrator-stub"], samples: 4 },
+    });
     expect(summary.complete).toBe(true);
     expect(summary.narrators[0]).toMatchObject({ narrator: "narrator-stub", model: "narrator-stub", samples_per_case: 4 });
     expect(summary.narrators[0].cases[0]).toMatchObject({ id: "search-pantry", right: 2, graded: 4, share: 0.5, withheld: 2, given_away: 1 });
     expect(summary.narrators[0].groups[0]).toMatchObject({ group: "should-reveal", cases: 1, share: 0.5 });
     expect(output).toMatch(/search-pantry\s+should-reveal\s+2\/4\s+50%\s+2\s+1/);
+  });
+
+  it("discloses zero overlap when comparing two different case selections", async () => {
+    const args = ["--narrator", "narrator-stub", "--samples", "1"];
+    const baseline = await judgeTurn([searchOnly(), ...args], [found("clue_jar")]);
+    const candidate = await judgeTurn([searchOnly({ id: "other-search" }), ...args], [found("clue_jar")]);
+    const result = await evalCommand(["baseline", "compare", baseline.runDir, candidate.runDir]);
+    expect(result.output).toContain("Case coverage: 0 shared (1 baseline, 1 run).");
+    expect(result.output).toContain("There are no shared cases to compare.");
+    expect(result.output).not.toContain("Recorded inputs for the shared cases match.");
+  });
+
+  it("reports a change to the effective narrator binding with the same model", async () => {
+    const args = [searchOnly(), "--narrator", "narrator-stub", "--samples", "1"];
+    const baseline = await judgeTurn(args, [found("clue_jar")]);
+    const changedFile = path.join(scratch, "changed-binding.json");
+    const config = JSON.parse(fs.readFileSync(configFile, "utf8"));
+    config["narrator-stub"].timeout_ms += 5000;
+    fs.writeFileSync(changedFile, JSON.stringify(config));
+    const candidate = await judgeTurn(args, [found("clue_jar")], changedFile);
+    const result = await evalCommand(["baseline", "compare", baseline.runDir, candidate.runDir]);
+    expect(result.output).toContain("Case coverage: 1 shared (1 baseline, 1 run).");
+    expect(result.output).toContain("Run settings: narrator-stub (binding changed)");
   });
 
   it("takes 5 samples by default", async () => {

@@ -33,6 +33,7 @@ import path from "node:path";
 
 import { formatHelp, parseCommandArgs } from "../core/args.ts";
 import type { OptionValue } from "../core/args.ts";
+import { baselinePath, checkoutSources } from "../core/baseline-sources.ts";
 import { loadConfig, resolveBinding } from "../core/config.ts";
 import type { ResolvedBinding } from "../core/config.ts";
 import type { EvalCommand, EvalContext } from "../core/dispatch.ts";
@@ -49,6 +50,9 @@ import type { CommandAttributes } from "../core/suite-attributes.ts";
 import { pickAIs } from "../../scripts/lib/ai-seed.mjs";
 import { assertCaseCharacters, loadCasesFrom, readBlueprint, validateCase } from "./lib/case.ts";
 import type { JudgeOptions, TurnCase } from "./lib/case.ts";
+import { baselineSettings, baselineSourceGroups, sortedUnique } from "./lib/baseline-inputs.ts";
+import type { BaselineCaseInput, BaselineInputs, BaselineScope } from "./lib/baseline-inputs.ts";
+import { promptFamily, PROMPT_FAMILIES } from "./lib/baseline-prompts.ts";
 import { EXPECT_VERDICT, expectJudges, gradeExpect, validateExpect, type ComesWith } from "./lib/expect.ts";
 import { EXPECT_FILE, formatSummary, summarizeSamples, writeSummary } from "./lib/expect-summary.ts";
 import type { Sample } from "./lib/expect-summary.ts";
@@ -461,6 +465,48 @@ async function turnAttributes(
   };
 }
 
+function captureBaselineInputs(
+  context: EvalContext, positionals: readonly string[], items: readonly WorkItem[], settings: BaselineInputs["settings"],
+): BaselineInputs | undefined {
+  const graded = items.filter((item) => item.sample === 1 && item.input.kind === "case");
+  if (graded.length === 0) return undefined;
+  let externalInputs = false;
+  const filePaths = (paths: readonly string[], relativeTo: string): string[] => sortedUnique(paths.flatMap((file) => {
+    const local = baselinePath(context.root, path.resolve(relativeTo, file));
+    if (local) return [local];
+    externalInputs = true;
+    return [];
+  }));
+  const cases = [...new Map(graded.map((item) => {
+    const { testCase } = item.input as Extract<Input, { kind: "case" }>;
+    const judges = sortedUnique(item.judges);
+    const overrides = judges.flatMap((id) => testCase.judgeConfig?.[id]?.blueprintPath ?? []);
+    const record: BaselineCaseInput = {
+      id: testCase.id, action: testCase.action.type, case_hash: contentHash(testCase),
+      blueprints: filePaths([testCase.blueprint.path, ...overrides], context.root), judges,
+    };
+    return [testCase.id, record] as const;
+  })).values()];
+  const server = graded.some((item) => item.narrator === SERVER_NARRATOR);
+  const scope: BaselineScope = {
+    case_paths: filePaths(positionals, process.cwd()),
+    blueprints: sortedUnique(cases.flatMap((item) => item.blueprints)),
+    judges: sortedUnique(cases.flatMap((item) => item.judges)),
+    prompts: server ? PROMPT_FAMILIES : [...new Set(cases.flatMap((item) => promptFamily(item.action) ?? []))],
+    external_inputs: externalInputs,
+    server,
+  };
+  try {
+    return {
+      version: 1, scope, sources: baselineSourceGroups(checkoutSources(context.root, scope.case_paths), scope),
+      cases, settings,
+    };
+  } catch (error) {
+    context.err(`[judge turn] cannot record baseline inputs: ${(error as Error).message}`);
+    return undefined;
+  }
+}
+
 export interface JudgeTurnDeps {
   /** Starts the throwaway server; replaced in tests. */
   startServer?: StartServer;
@@ -520,14 +566,17 @@ export function createJudgeTurnCommand({ startServer = startThrowawayServer }: J
         throw error;
       }
 
+      const attributes = await turnAttributes(items, inputs, { narrators: narratorBindings, judge: judgeBinding }, { samples, concurrency, aiProfile, asked, context });
+      const bindings = [...narratorBindings.values(), ...(judgeBinding ? [judgeBinding] : [])];
+      const baselineInputs = captureBaselineInputs(context, positionals, items, baselineSettings(attributes, aiProfile, bindings));
       const folder = createRunFolder({
         outputRoot: resolveOutputRoot(common.outputRoot, context.env),
         command: "judge turn",
         argv,
         root: context.root,
         identity: runIdentity(common, context.root),
-        bindings: [...narratorBindings.values(), ...(judgeBinding ? [judgeBinding] : [])],
-        attributes: await turnAttributes(items, inputs, { narrators: narratorBindings, judge: judgeBinding }, { samples, concurrency, aiProfile, asked, context }),
+        bindings,
+        attributes,
       });
       // Its calls come back as the turns' model calls; the log itself stays in the run's folder.
       server.logCallsTo(path.join(folder.dir, "ai-calls.jsonl"));
@@ -547,7 +596,7 @@ export function createJudgeTurnCommand({ startServer = startThrowawayServer }: J
       const index = await folder.finish();
       const graded = gradedSamples(items, results, runtime);
       if (graded.length > 0) {
-        const summary = summarizeSamples(graded, samples, index.run);
+        const summary = summarizeSamples(graded, samples, index.run, baselineInputs);
         writeSummary(path.join(folder.dir, EXPECT_FILE), summary);
         for (const line of formatSummary(summary)) context.out(line ? `[judge turn] ${line}` : "");
         context.out(`[judge turn] wrote ${path.join(folder.dir, EXPECT_FILE)}`);

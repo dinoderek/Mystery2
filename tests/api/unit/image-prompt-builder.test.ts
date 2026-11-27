@@ -14,16 +14,12 @@ const visualDirection = {
   texture: "matte paper with subtle grain",
 };
 
-// The fields of a case these image-prompt-builder tests depend on: the art
-// style fallback value and a single-location, single-character world, for
-// assertion clarity. The builder reads the artwork view of a case, and reads
-// a character's last name and background, and a location's clues, when given.
+// The artwork view of a case (`projectClueGraphArtwork`), cut to one location
+// and one character for assertion clarity.
 const blueprint = {
   id: "123e4567-e89b-12d3-a456-426614174000",
   metadata: {
     title: "Mock Blueprint",
-    one_liner: "A simple test mystery.",
-    art_style: "storybook watercolor",
     visual_direction: visualDirection,
   },
   narrative: { premise: "The cookie plate is empty and snack time is almost here." },
@@ -34,22 +30,16 @@ const blueprint = {
         id: "loc_kitchen",
         name: "Kitchen",
         description: "A messy kitchen.",
-        clues: [
-          { id: "clue_crumbs", text: "Cookie crumbs on the counter." },
-        ],
       },
     ],
     characters: [
       {
         id: "char_alice",
         first_name: "Alice",
-        last_name: "Smith",
         location_id: "loc_kitchen",
         sex: "female",
         appearance: "Red hair",
-        background: "The head baker who runs the kitchen.",
         personality: "Nervous but kind.",
-        initial_attitude_towards_investigator: "Guarded and evasive",
       },
     ],
   },
@@ -76,7 +66,7 @@ describe("image prompt builder", () => {
     expect(coverPrompt).toContain("Creative direction:");
     expect(coverPrompt).toContain("mysterious kitchen with cookie crumbs");
     expect(coverPrompt).toContain("Featured location(s): Kitchen");
-    expect(coverPrompt).toContain("Characters featured: Alice Smith (Red hair)");
+    expect(coverPrompt).toContain("Characters featured: Alice (Red hair)");
   });
 
   it("builds character portrait prompt with bokeh background and no location", () => {
@@ -85,10 +75,9 @@ describe("image prompt builder", () => {
       targetKey: "char_alice",
     });
     expect(characterPrompt).toContain("Target: Character portrait, head-and-shoulders framing");
-    expect(characterPrompt).toContain("Alice Smith");
+    expect(characterPrompt).toContain("Name: Alice.");
     expect(characterPrompt).toContain("Sex: female");
-    expect(characterPrompt).toContain("Guarded and evasive");
-    expect(characterPrompt).toContain("head baker");
+    expect(characterPrompt).toContain("Personality cue: Nervous but kind.");
     expect(characterPrompt).toContain("bokeh");
     expect(characterPrompt).toContain("blurred");
     expect(characterPrompt).not.toContain("Environment: Kitchen");
@@ -138,7 +127,7 @@ describe("image prompt builder", () => {
     }
   });
 
-  it("builds location scene prompt with characters and clue details", () => {
+  it("builds location scene prompt with the characters present", () => {
     const locationPrompt = buildImagePrompt(blueprint, {
       targetType: "location",
       targetKey: "loc_kitchen",
@@ -147,7 +136,6 @@ describe("image prompt builder", () => {
     expect(locationPrompt).toContain("Kitchen");
     expect(locationPrompt).toContain("Alice");
     expect(locationPrompt).toContain("Red hair");
-    expect(locationPrompt).toContain("Cookie crumbs");
     expect(locationPrompt).toContain("arriving");
   });
 
@@ -172,34 +160,17 @@ describe("image prompt builder", () => {
     expect(buildReferenceLegend(undefined)).toBe("");
   });
 
-  it("falls back to legacy art_style when visual_direction is absent", () => {
-    const legacyBlueprint = {
-      ...blueprint,
-      metadata: { ...blueprint.metadata, visual_direction: undefined },
-    };
-    const prompt = buildImagePrompt(legacyBlueprint, {
-      targetType: "blueprint",
-      targetKey: null,
-    });
-    expect(prompt).toContain("Style: storybook watercolor");
-    expect(prompt).not.toContain("Art style:");
-    expect(prompt).not.toContain("Color palette:");
-  });
-
-  it("falls back to default style when both visual_direction and art_style are absent", () => {
+  it("falls back to the house style when the case has no visual_direction", () => {
     const bareBlueprint = {
       ...blueprint,
-      metadata: {
-        ...blueprint.metadata,
-        visual_direction: undefined,
-        art_style: undefined,
-      },
+      metadata: { ...blueprint.metadata, visual_direction: undefined },
     };
     const prompt = buildImagePrompt(bareBlueprint, {
       targetType: "blueprint",
       targetKey: null,
     });
     expect(prompt).toContain("Style: storybook illustration, warm lighting, playful detective mood");
+    expect(prompt).not.toContain("Art style:");
   });
 
   it("omits texture line when texture is not provided", () => {

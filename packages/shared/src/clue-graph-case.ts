@@ -66,7 +66,7 @@ export interface ClueGraphWorldCharacter {
 }
 
 /**
- * The world view the commands, arrivals, notebook and artwork read, built from
+ * The world view the commands, arrivals and notebook read, built from
  * a validated clue-graph case. It carries no rules: talk, search and the judge
  * read `clue_graph`, which stays authoritative.
  */
@@ -74,13 +74,10 @@ export interface ClueGraphWorld {
   schema_version: typeof CLUE_GRAPH_FORMAT;
   id: string;
   clue_graph: ClueGraphCase;
-  representation_note: string;
   metadata: {
     title: string;
-    one_liner: string;
     image_id?: string;
     time_budget: number;
-    visual_direction?: ClueGraphCase["visual_direction"];
   };
   narrative: { premise: string; starting_knowledge: { mystery_summary: string } };
   world: {
@@ -88,7 +85,6 @@ export interface ClueGraphWorld {
     locations: ClueGraphWorldLocation[];
     characters: ClueGraphWorldCharacter[];
   };
-  cover_image: { description: string; location_ids: string[]; character_ids: string[] };
   ground_truth: { what_happened: string; why_it_happened: string; timeline: string[] };
 }
 
@@ -149,25 +145,16 @@ export function buildClueGraphWorld(graph: ClueGraphCase): ClueGraphWorld {
     schema_version: CLUE_GRAPH_FORMAT,
     id: clueGraphCaseId(graph.metadata.id),
     clue_graph: graph,
-    representation_note:
-      "This case is a clue graph: clue_graph is authoritative for clues, gates, retractions and the AND/OR conclusions. The world is a projection for commands and artwork; legacy reasoning-path arrays are deliberately empty. A statement is what a character said, true or false; one taken back no longer stands.",
     metadata: {
       title: graph.metadata.title,
-      one_liner: graph.opening.facts[0],
       ...(graph.metadata.image_id ? { image_id: graph.metadata.image_id } : {}),
       time_budget: graph.metadata.time_budget,
-      ...(graph.visual_direction ? { visual_direction: graph.visual_direction } : {}),
     },
     narrative: {
       premise: graph.opening.facts.join(" "),
       starting_knowledge: { mystery_summary: graph.opening.facts[0] },
     },
     world: { starting_location_id: graph.opening.location, locations, characters },
-    cover_image: {
-      description: graph.cover?.facts.join(" ") ?? graph.metadata.title,
-      location_ids: graph.cover?.locations ?? [],
-      character_ids: graph.cover?.characters ?? [],
-    },
     ground_truth: {
       what_happened: timeline.join("\n"),
       why_it_happened: graph.truth.motive,

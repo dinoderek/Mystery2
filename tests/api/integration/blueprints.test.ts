@@ -53,7 +53,7 @@ describe("blueprints-list endpoint", () => {
     // The case's own line is its first opening fact, which the mock also words,
     // so only the prefix tells them apart here; that each line is told from the
     // first fact, at the profile's age, is `unit/blueprints-list.test.ts`.
-    const authored = readMockCase().metadata.one_liner;
+    const authored = readMockCase().clue_graph.opening.facts[0];
 
     expect(listed.find((b) => b.id === MOCK_BLUEPRINT_ID)?.one_liner).toBe(`[Mock] ${authored}`);
     for (const entry of listed) {

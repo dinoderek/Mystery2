@@ -472,7 +472,7 @@ describe("the clue graph/2 case file", () => {
     ]);
   });
 
-  it("gives the world view its facts, appearance, motive and artwork", () => {
+  it("gives the world view its facts, appearance and motive, and leaves artwork to the artwork view", () => {
     const view = buildClueGraphWorld(validateClueGraph({ ...greenhouse(), ...artwork }));
     expect(view.schema_version).toBe("clue-graph/2");
     expect(view.world.locations.find((place) => place.id === "workshop")?.description).toBe(
@@ -482,13 +482,8 @@ describe("the clue graph/2 case file", () => {
       "Mr. Dobbs is an old man in brown overalls. He wears slippers indoors.",
     );
     expect(view.ground_truth.why_it_happened).toBe(committed.truth.motive);
-    expect(view.metadata.visual_direction).toEqual(artwork.visual_direction);
-    expect(view.cover_image).toEqual({
-      description: "Big Bertha lies smashed in the greenhouse.",
-      location_ids: ["greenhouse"],
-      character_ids: ["toby", "hale"],
-    });
-    expect(buildClueGraphWorld(committed).cover_image.description).toBe(committed.metadata.title);
+    expect(view).not.toHaveProperty("cover_image");
+    expect(view.metadata).not.toHaveProperty("visual_direction");
   });
 
   it("refuses a case that still carries a reading age, naming the field", () => {
@@ -502,7 +497,7 @@ describe("the clue graph/2 case file", () => {
     .filter((name) => name.endsWith(".json"))
     .map((name) => [name, validateClueGraph(JSON.parse(fs.readFileSync(`blueprints/clue-graph/${name}`, "utf8")))] as const);
 
-  it.each(cases)("builds %s a world view of exactly its places, spots, people and artwork", (_name, graph) => {
+  it.each(cases)("builds %s a world view of exactly its places, spots and people", (_name, graph) => {
     const view = buildClueGraphWorld(graph);
     const evidenceAt = (location: string, spot?: string) =>
       Object.entries(graph.clues)
@@ -539,7 +534,7 @@ describe("the clue graph/2 case file", () => {
       for (const stub of ["last_name", "background", "stated_alibi", "motive", "flavor_knowledge", "actual_actions", "agendas", "tells"])
         expect(person).not.toHaveProperty(stub);
     }
-    for (const stub of ["solution_paths", "red_herrings", "suspect_elimination_paths"]) expect(view).not.toHaveProperty(stub);
+    for (const stub of ["solution_paths", "red_herrings", "suspect_elimination_paths", "representation_note", "cover_image"]) expect(view).not.toHaveProperty(stub);
     expect(view.narrative.starting_knowledge).toEqual({ mystery_summary: graph.opening.facts[0] });
   });
 });

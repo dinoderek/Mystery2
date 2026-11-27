@@ -231,8 +231,9 @@ describe.each(STORIES)("the clue-graph $name accusation cases", async (story) =>
       const judged = judgeReport(graph, history, { accused_character_id: report.accused, cited_clue_ids: report.cited })!;
       expect(judged.saved.verdict, turnCase.id).toBe(turnCase.expect!.verdict);
       expect(judged.notHeld, turnCase.id).toEqual([]);
-      const ended = judged.result !== null;
-      expect(judged.result, turnCase.id).toBe(ended ? judged.saved.verdict : null);
+      const expected = turnCase.expect!.verdict;
+      const ended = expected === "win" || expected === "lose";
+      expect(judged.result, turnCase.id).toBe(ended ? expected : null);
       expect(judged.reply.role, turnCase.id).toBe(ended ? "graph_ending" : "graph_accusation_round");
       expect(judged.parse, turnCase.id).toBe(ended ? parseGraphEndingOutput : parseGraphAccusationRoundOutput);
       const input = getAction("accuse").roleInput(turnCase.given, turnCase.action, blueprint as never, history);
@@ -259,7 +260,8 @@ describe.each(STORIES)("the clue-graph $name accusation cases", async (story) =>
   it("refuses a report naming someone the case does not hold, and drops a cited clue not held", () => {
     const history = normalizeHistory(accusations[0].given.history);
     expect(judgeReport(graph, history, { accused_character_id: "nobody_in_the_case", cited_clue_ids: [] })).toBeNull();
-    const notHeld = Object.keys(graph.clues).find((id) => !playOf(graph, history).held.includes(id))!;
+    const notHeld = Object.keys(graph.clues).find((id) => !playOf(graph, history).held.includes(id));
+    if (notHeld === undefined) throw new Error("the first accusation case holds every clue");
     const judged = judgeReport(graph, history, { accused_character_id: null, cited_clue_ids: [notHeld] })!;
     expect(judged.notHeld).toEqual([notHeld]);
     expect(judged.saved.cited).toEqual([]);

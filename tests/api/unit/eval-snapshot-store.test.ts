@@ -14,18 +14,24 @@ const CASE = { suspects: ["leo", "nina"] };
 
 describe("promptSnapshot", () => {
   it("keeps a field every judge of a family is sent alike once, in the family's file", () => {
-    const { own, shared } = promptSnapshot(
-      new Map([
-        ["fam.a", judge("a", { context: null, case: CASE })],
-        ["fam.b", judge("b", { context: null, case: CASE, extra: { b: 1 } })],
-      ]),
-    );
+    const sent = new Map([
+      ["fam.a", judge("a", { context: null, case: CASE })],
+      ["fam.b", judge("b", { context: null, case: CASE, extra: { b: 1 } })],
+    ]);
+    const { own, shared } = promptSnapshot(sent);
 
     expect(Object.keys(shared)).toEqual(["prompts/fam.shared.json"]);
     expect(JSON.parse(shared["prompts/fam.shared.json"])).toEqual({ case: CASE });
     expect(JSON.parse(own.get("fam.a")!["prompts/fam.a.user.json"])).toEqual({ dimension_id: "a", context: null, case: SHARED });
     // The judge's own fields stay where they were sent, after the shared one.
     expect(Object.keys(JSON.parse(own.get("fam.b")!["prompts/fam.b.user.json"]))).toEqual(["dimension_id", "context", "case", "extra"]);
+    // Putting the shared fields back gives the bytes that were sent.
+    const common = JSON.parse(shared["prompts/fam.shared.json"]);
+    for (const [id, parts] of sent) {
+      const kept = JSON.parse(own.get(id)![`prompts/${id}.user.json`]) as Record<string, unknown>;
+      const rebuilt = Object.fromEntries(Object.entries(kept).map(([key, value]) => [key, value === SHARED ? common[key] : value]));
+      expect(JSON.stringify(rebuilt)).toBe(parts.user);
+    }
   });
 
   it("keeps a field one judge is sent differently in every judge's own file", () => {

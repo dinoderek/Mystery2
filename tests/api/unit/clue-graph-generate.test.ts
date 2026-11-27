@@ -14,7 +14,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { buildClueGraphGenerationChatInput, ClueGraphBriefSchema } from "../../../packages/blueprint-generator/src/index.ts";
 import { validateClueGraph } from "../../../packages/shared/src/clue-graph-validator.ts";
-import { MAX_READING_AGE, MIN_READING_AGE, renderGenerationGuidance } from "../../../packages/shared/src/age-profile.ts";
+import { MAX_READING_AGE, MIN_READING_AGE, renderComplexityGuidance } from "../../../packages/shared/src/age-profile.ts";
 import { readResult } from "../../../evaluation/core/result.ts";
 import type { Result } from "../../../evaluation/core/result.ts";
 import { judgesFor } from "../../../evaluation/core/registry.ts";
@@ -444,11 +444,10 @@ describe("the clue-graph generator prompt", () => {
     const { systemPrompt } = await buildClueGraphGenerationChatInput(brief as never);
     expect(countWords(systemPrompt)).toBeLessThanOrEqual(1500);
     for (let age = MIN_READING_AGE; age <= MAX_READING_AGE; age += 1) {
-      for (const line of renderGenerationGuidance(age).split("\n").filter((each) => each.trim().length > 20)) {
+      for (const line of renderComplexityGuidance(age).split("\n").filter((each) => each.trim().length > 20)) {
         expect(systemPrompt).not.toContain(line.trim());
       }
     }
-    expect(systemPrompt).not.toContain("Age-appropriate writing");
   });
 });
 

@@ -13,7 +13,7 @@ import { buildClueGraphWorld, validateClueGraph, type ClueGraphWorld } from "@my
 import { readMockCase } from "../../testkit/src/mock-case.ts";
 import {
   allInteractions,
-  authoredFieldBudget,
+  lineBudget,
   renderComplexityGuidance,
   renderGuidance,
 } from "../../../packages/shared/src/age-profile.ts";
@@ -208,7 +208,7 @@ describe("one case's prompts at two ages", () => {
 
   /** A line with the notebook line's size at `age` written as N, the one age-sized number inside a task line. */
   const sizeless = (line: string, age: number) =>
-    line.replaceAll(`about ${authoredFieldBudget("clue_text", age)} words`, "about N words");
+    line.replaceAll(`about ${lineBudget("notebook_line", age)} words`, "about N words");
 
   /** Every key but the age and the size it sets, at any depth. */
   function ageless(value: unknown): unknown {

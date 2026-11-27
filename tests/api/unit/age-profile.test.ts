@@ -2,15 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import {
   allAgeProfiles,
-  allAuthoredFields,
+  allLines,
   allInteractions,
-  authoredFieldBudget,
+  lineBudget,
   clampReadingAge,
   getAgeProfile,
   getInteraction,
   MAX_READING_AGE,
   MIN_READING_AGE,
-  renderGenerationGuidance,
   renderGuidance,
   renderLengthGuidance,
   renderOutcomeLengthGuidance,
@@ -118,22 +117,6 @@ describe("guidance rendering", () => {
     expect(() => renderGuidance("accusation_verdict", 50)).not.toThrow();
   });
 
-  it("generation guidance carries the age and a brevity reminder", () => {
-    const g = renderGenerationGuidance(8);
-    expect(g).toContain("8 years old");
-    expect(g.toLowerCase()).toContain("wall of text");
-    expect(g.toLowerCase()).toContain("player-facing");
-  });
-
-  it("generation guidance states an explicit budget for every authored field", () => {
-    const g = renderGenerationGuidance(8);
-    for (const id of allAuthoredFields()) {
-      expect(g).toContain(`about ${authoredFieldBudget(id, 8)} words`);
-    }
-    expect(g).toContain("`narrative.premise`");
-    expect(g).toContain("every clue `text`");
-  });
-
   it("outcome length guidance names both budgets and their conditions", () => {
     const g = renderOutcomeLengthGuidance(10, [
       { id: "search_find", when: "if you reveal a clue" },
@@ -145,35 +128,18 @@ describe("guidance rendering", () => {
   });
 });
 
-describe("authored field budgets (generation length dial)", () => {
-  it("covers every authored field at every age", () => {
-    for (const id of allAuthoredFields()) {
+describe("line budgets (menu and notebook lines)", () => {
+  it("covers every line at every age, rising with age", () => {
+    for (const id of allLines()) {
       for (let age = MIN_READING_AGE; age <= MAX_READING_AGE; age++) {
-        expect(authoredFieldBudget(id, age)).toBeGreaterThan(0);
-      }
-    }
-  });
-
-  it("budgets rise with age for every authored field", () => {
-    for (const id of allAuthoredFields()) {
-      for (let age = MIN_READING_AGE + 1; age <= MAX_READING_AGE; age++) {
-        expect(authoredFieldBudget(id, age)).toBeGreaterThanOrEqual(
-          authoredFieldBudget(id, age - 1),
-        );
+        expect(lineBudget(id, age)).toBeGreaterThan(0);
+        if (age > MIN_READING_AGE) expect(lineBudget(id, age)).toBeGreaterThanOrEqual(lineBudget(id, age - 1));
       }
     }
   });
 
   it("clamps the age before reading a budget", () => {
-    expect(authoredFieldBudget("premise", 2)).toBe(
-      authoredFieldBudget("premise", MIN_READING_AGE),
-    );
-    expect(authoredFieldBudget("premise", 50)).toBe(
-      authoredFieldBudget("premise", MAX_READING_AGE),
-    );
-  });
-
-  it("excludes names, which do not scale with reading age", () => {
-    expect(allAuthoredFields()).not.toContain("title");
+    expect(lineBudget("menu_line", 2)).toBe(lineBudget("menu_line", MIN_READING_AGE));
+    expect(lineBudget("menu_line", 50)).toBe(lineBudget("menu_line", MAX_READING_AGE));
   });
 });

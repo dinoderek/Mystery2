@@ -22,7 +22,7 @@ export function createImageId(blueprintName, targetType, targetKey = null) {
 const AUDIENCE_CUE = "Audience: children aged 6 to 11. Visual complexity should be age-appropriate.";
 
 function styleBlock(blueprint) {
-  const vd = blueprint?.metadata?.visual_direction;
+  const vd = blueprint.metadata.visual_direction;
   if (vd) {
     const lines = [
       `Art style: ${vd.art_style}`,
@@ -43,7 +43,7 @@ function styleBlock(blueprint) {
 }
 
 function charactersAtLocation(blueprint, locationId) {
-  return (blueprint?.world?.characters ?? []).filter(
+  return blueprint.world.characters.filter(
     (character) => character.location_id === locationId,
   );
 }
@@ -58,7 +58,7 @@ const PORTRAIT_BACKGROUND_DEFAULT = [
 
 function portraitBackgroundHint(blueprint) {
   const custom =
-    blueprint?.metadata?.visual_direction?.portrait_background?.trim();
+    blueprint.metadata.visual_direction?.portrait_background?.trim();
   return `Portrait background: ${custom || PORTRAIT_BACKGROUND_DEFAULT}`;
 }
 
@@ -107,7 +107,7 @@ function targetBlock(blueprint, target) {
       .join(" ");
   }
 
-  const location = (blueprint.world?.locations ?? []).find(
+  const location = blueprint.world.locations.find(
     (entry) => entry.id === target.targetKey,
   );
 
@@ -123,7 +123,7 @@ function targetBlock(blueprint, target) {
       : "";
 
   const isStart =
-    location?.id === blueprint?.world?.starting_location_id;
+    location?.id === blueprint.world.starting_location_id;
   const perspectiveHint = isStart
     ? "Perspective: show this location as if the viewer is arriving for the first time."
     : "";

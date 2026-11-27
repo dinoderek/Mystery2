@@ -939,7 +939,7 @@ export async function runImageGeneration(rawOptions, dependencies = {}) {
     locationKeys: options.locationKeys,
   });
 
-  const blueprintName = blueprint.metadata?.title ?? blueprint.id;
+  const blueprintName = blueprint.metadata.title;
 
   if (options.importImages) {
     return importGeneratedImages({
@@ -997,7 +997,7 @@ export async function runImageGeneration(rawOptions, dependencies = {}) {
   async function readPortraitRef(characterId) {
     const portraitPath = portraitPaths.get(characterId);
     if (!portraitPath) return null;
-    const character = (blueprint.world?.characters ?? []).find((c) => c.id === characterId);
+    const character = blueprint.world.characters.find((c) => c.id === characterId);
     try {
       return {
         label: `Portrait of ${character?.first_name ?? characterId} (${character?.appearance ?? ""})`,
@@ -1011,7 +1011,7 @@ export async function runImageGeneration(rawOptions, dependencies = {}) {
   async function readLocationRef(locationId) {
     const locationPath = locationPaths.get(locationId);
     if (!locationPath) return null;
-    const location = (blueprint.world?.locations ?? []).find((l) => l.id === locationId);
+    const location = blueprint.world.locations.find((l) => l.id === locationId);
     try {
       return {
         label: `Location scene — ${location?.name ?? locationId}`,
@@ -1067,12 +1067,12 @@ export async function runImageGeneration(rawOptions, dependencies = {}) {
     const refs = [];
 
     // Add portrait references from cover_image.character_ids.
-    for (const charId of coverImage?.character_ids ?? []) {
+    for (const charId of coverImage.character_ids) {
       const ref = await readPortraitRef(charId);
       if (ref) refs.push(ref);
     }
     // Add location scene references from cover_image.location_ids.
-    for (const locId of coverImage?.location_ids ?? []) {
+    for (const locId of coverImage.location_ids) {
       const ref = await readLocationRef(locId);
       if (ref) refs.push(ref);
     }

@@ -141,8 +141,8 @@ describe("image prompt builder", () => {
 
   it("includes indexed reference legend when referenceImages are provided", () => {
     const refs = [
-      { label: "Portrait of Alice Smith (Red hair)", buffer: Buffer.from([1]) },
-      { label: "Portrait of Bob Jones (Short with glasses)", buffer: Buffer.from([2]) },
+      { label: "Portrait of Alice (Red hair)", buffer: Buffer.from([1]) },
+      { label: "Portrait of Bob (Short with glasses)", buffer: Buffer.from([2]) },
     ];
     const locationPrompt = buildImagePrompt(
       blueprint,
@@ -150,8 +150,8 @@ describe("image prompt builder", () => {
       { referenceImages: refs },
     );
     expect(locationPrompt).toContain("Reference images (attached below in order):");
-    expect(locationPrompt).toContain("- Image 1: Portrait of Alice Smith (Red hair)");
-    expect(locationPrompt).toContain("- Image 2: Portrait of Bob Jones (Short with glasses)");
+    expect(locationPrompt).toContain("- Image 1: Portrait of Alice (Red hair)");
+    expect(locationPrompt).toContain("- Image 2: Portrait of Bob (Short with glasses)");
     expect(locationPrompt).toContain("Preserve the appearance");
   });
 

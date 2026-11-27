@@ -34,9 +34,9 @@ import {
   logNarrationEventSaved,
 } from "../narration.ts";
 
-// Shown once at the start of every case. The mystery facts, people, places, and
-// discovered clues that used to be dumped here now live in the in-game notebook
-// (see the `state` payload below), so the opening only needs to point there.
+// Shown once at the start of every case. The facts, people, places and clues
+// live in the in-game notebook (see the `state` payload below), so the opening
+// only points there.
 // One fixed text for every reader, whatever their reading age: engine-written
 // lines are not age-parameterised. It is the first prose in every case, so it
 // is pitched at the youngest reader (6): one idea per sentence, everyday words.

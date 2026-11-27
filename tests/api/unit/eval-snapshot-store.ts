@@ -29,32 +29,93 @@ export interface PromptParts {
   args?: string[];
 }
 
-/**
- * The files that hold one prompt, by path under SNAPSHOT_ROOT.
- *
- * A user message that is compact JSON is kept indented, one field to a line,
- * so a change reads as a diff; reading it back as compact JSON gives the bytes
- * that were sent. Any other message is kept as it is.
- */
-export function promptFiles(id: string, parts: PromptParts): Record<string, string> {
-  const files: Record<string, string> = {
-    [`prompts/${id}.system.txt`]: parts.system,
-  };
-  if (isCompactJson(parts.user)) {
-    files[`prompts/${id}.user.json`] = `${JSON.stringify(JSON.parse(parts.user), null, 2)}\n`;
-  } else {
-    files[`prompts/${id}.user.txt`] = parts.user;
-  }
-  if (parts.args) files[`prompts/${id}.args.json`] = `${JSON.stringify(parts.args, null, 2)}\n`;
-  return files;
+/** What stands, in a judge's own file, for a field its family's shared file holds. */
+export const SHARED = "<shared>";
+
+/** The files that hold every prompt, by path under SNAPSHOT_ROOT. */
+export interface PromptSnapshot {
+  /** Each prompt's own files, by prompt id. */
+  own: Map<string, Record<string, string>>;
+  /** Each judge family's shared payload, one file per family. */
+  shared: Record<string, string>;
 }
 
-function isCompactJson(text: string): boolean {
-  try {
-    return JSON.stringify(JSON.parse(text)) === text;
-  } catch {
-    return false;
+/**
+ * The files that hold the prompts, by path under SNAPSHOT_ROOT.
+ *
+ * A user message that is compact JSON is kept indented, one field to a line,
+ * so a change reads as a diff; any other message is kept as it is.
+ *
+ * A judge's message names its `dimension_id`, which must be the last part of
+ * its prompt id (`<family>.<dimension>`). The judges of one family are sent
+ * the same case, so an object field every one of them is sent unchanged is
+ * kept once, in `<family>.shared.json`, and stands as `"<shared>"` in each
+ * judge's own file. Putting the shared fields back and reading the result as
+ * compact JSON gives the bytes that were sent.
+ */
+export function promptSnapshot(prompts: ReadonlyMap<string, PromptParts>): PromptSnapshot {
+  const families = new Map<string, string[]>();
+  for (const [id, parts] of prompts) {
+    const message = compactJson(parts.user);
+    if (!isObject(message) || !Object.hasOwn(message, "dimension_id")) continue;
+    const family = id.slice(0, id.lastIndexOf("."));
+    const dimension = id.slice(family.length + 1);
+    if (message.dimension_id !== dimension) {
+      throw new Error(`${id} was sent dimension_id ${JSON.stringify(message.dimension_id)}, not "${dimension}"`);
+    }
+    families.set(family, [...(families.get(family) ?? []), id]);
   }
+
+  const sharedKeys = new Map<string, string[]>();
+  const shared: Record<string, string> = {};
+  for (const [family, ids] of families) {
+    if (ids.length < 2) continue;
+    const [first, ...rest] = ids.map((id) => compactJson(prompts.get(id)!.user) as Record<string, unknown>);
+    const keys = Object.keys(first).filter(
+      (key) =>
+        isObject(first[key]) &&
+        rest.every((message) => Object.hasOwn(message, key) && JSON.stringify(message[key]) === JSON.stringify(first[key])),
+    );
+    if (keys.length === 0) continue;
+    shared[`prompts/${family}.shared.json`] = indented(Object.fromEntries(keys.map((key) => [key, first[key]])));
+    for (const id of ids) sharedKeys.set(id, keys);
+  }
+
+  const own = new Map<string, Record<string, string>>();
+  for (const [id, parts] of prompts) {
+    const files: Record<string, string> = { [`prompts/${id}.system.txt`]: parts.system };
+    const message = compactJson(parts.user);
+    if (message === undefined) {
+      files[`prompts/${id}.user.txt`] = parts.user;
+    } else {
+      const keys = sharedKeys.get(id) ?? [];
+      const kept = isObject(message)
+        ? Object.fromEntries(Object.entries(message).map(([key, value]) => [key, keys.includes(key) ? SHARED : value]))
+        : message;
+      files[`prompts/${id}.user.json`] = indented(kept);
+    }
+    if (parts.args) files[`prompts/${id}.args.json`] = indented(parts.args);
+    own.set(id, files);
+  }
+  return { own, shared };
+}
+
+/** The message's value when it is compact JSON, else undefined. */
+function compactJson(text: string): unknown {
+  try {
+    const value = JSON.parse(text);
+    return JSON.stringify(value) === text ? value : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function indented(value: unknown): string {
+  return `${JSON.stringify(value, null, 2)}\n`;
 }
 
 /** Where the verdicts one harness reached are kept. */

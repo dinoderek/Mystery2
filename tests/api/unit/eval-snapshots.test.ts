@@ -34,10 +34,11 @@ import { buildView } from "../../../evaluation/playtest/lib/view.ts";
 import {
   clearForRecording,
   expectStored,
-  promptFiles,
+  promptSnapshot,
   storedFiles,
   verdictFile,
   type PromptParts,
+  type PromptSnapshot,
 } from "./eval-snapshot-store.ts";
 import { EVERY_RULE, PROMPT_RULES, RETIRED, RULES } from "./judge-prompt-rules.ts";
 import { makeClueGraphRawTrace } from "./trace-fixtures.ts";
@@ -73,6 +74,7 @@ const VERDICT_NAMES = ["trace-clue-graph", "runtime-clue-graph", "playtest-judgi
 type Json = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 const prompts = new Map<string, PromptParts>();
+let snapshot: PromptSnapshot = { own: new Map(), shared: {} };
 const verdicts = new Map<string, unknown>();
 let scratch = "";
 
@@ -510,6 +512,7 @@ beforeAll(async () => {
     runClueGraphBlueprint(answersFile),
   ]);
   await composeInvestigatorPrompts();
+  snapshot = promptSnapshot(prompts);
   clearForRecording();
 }, 180_000);
 
@@ -526,9 +529,16 @@ function withoutScratch(value: unknown): string {
 
 describe("evaluation prompt snapshots", () => {
   it.each(PROMPT_IDS)("%s is sent the stored prompt", (id) => {
-    const parts = prompts.get(id);
-    if (!parts) throw new Error(`${id} was not composed`);
-    for (const [file, content] of Object.entries(promptFiles(id, parts))) expectStored(file, content);
+    const files = snapshot.own.get(id);
+    if (!files) throw new Error(`${id} was not composed`);
+    for (const [file, content] of Object.entries(files)) expectStored(file, content);
+  });
+
+  it("sends each judge family one shared case, stored once", () => {
+    expect(Object.keys(snapshot.shared).sort()).toEqual(
+      ["blueprint", "runtime-clue-graph", "trace-clue-graph"].map((family) => `prompts/${family}.shared.json`),
+    );
+    for (const [file, content] of Object.entries(snapshot.shared)) expectStored(file, content);
   });
 
   it("sends the investigator the arguments the claude CLI is called with", () => {
@@ -600,7 +610,8 @@ describe("what the game-master judges are sent", () => {
 describe("evaluation snapshot files", () => {
   it("has one for every prompt and verdict set, and none left over", () => {
     const expected = [
-      ...PROMPT_IDS.flatMap((id) => Object.keys(promptFiles(id, prompts.get(id) ?? { system: "", user: "" }))),
+      ...PROMPT_IDS.flatMap((id) => Object.keys(snapshot.own.get(id) ?? {})),
+      ...Object.keys(snapshot.shared),
       ...VERDICT_NAMES.map(verdictFile),
     ].sort();
     expect(storedFiles()).toEqual(expected);

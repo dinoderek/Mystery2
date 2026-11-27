@@ -20,7 +20,8 @@ import { loadCasesFrom, readBlueprint, type TurnCase } from "../../../evaluation
 import { validateExpect } from "../../../evaluation/runtime/lib/expect.ts";
 import { getAction, normalizeHistory } from "../../../evaluation/runtime/lib/roles.ts";
 import { played, readGraph } from "../../../evaluation/runtime/cases/clue-graph/support/play.ts";
-import { resolves, settleAccusation, type AccusationReport, type GraphVerdictContext } from "../../../packages/game-engine/src/clue-graph/accusation.ts";
+import { judgeReport, type AccusationReport, type GraphVerdictContext } from "../../../packages/game-engine/src/clue-graph/accusation.ts";
+import { parseGraphAccusationRoundOutput, parseGraphEndingOutput } from "../../../packages/game-engine/src/ai-contracts.ts";
 import { playOf } from "../../../packages/game-engine/src/clue-graph/history.ts";
 import { PHYSICAL_FINDING, TAKEN_BACK, WHO_WAS_WHERE } from "../../../evaluation/runtime/cases/clue-graph/support/details.ts";
 import { gradeExpect } from "../../../evaluation/runtime/lib/expect.ts";
@@ -227,11 +228,15 @@ describe.each(STORIES)("the clue-graph $name accusation cases", async (story) =>
       const history = normalizeHistory(turnCase.given.history);
       const play = playOf(graph, history);
       for (const id of report.cited) expect(play.held, `${turnCase.id}: ${id}`).toContain(id);
-      const { saved } = settleAccusation(graph, play, history, report);
-      expect(saved.verdict, turnCase.id).toBe(turnCase.expect!.verdict);
-      const ended = resolves(saved.verdict);
+      const judged = judgeReport(graph, history, { accused_character_id: report.accused, cited_clue_ids: report.cited })!;
+      expect(judged.saved.verdict, turnCase.id).toBe(turnCase.expect!.verdict);
+      expect(judged.notHeld, turnCase.id).toEqual([]);
+      const ended = judged.result !== null;
+      expect(judged.result, turnCase.id).toBe(ended ? judged.saved.verdict : null);
+      expect(judged.reply.role, turnCase.id).toBe(ended ? "graph_ending" : "graph_accusation_round");
+      expect(judged.parse, turnCase.id).toBe(ended ? parseGraphEndingOutput : parseGraphAccusationRoundOutput);
       const input = getAction("accuse").roleInput(turnCase.given, turnCase.action, blueprint as never, history);
-      const { context } = await buildRoleRequest({ ...input, role: ended ? "graph_ending" : "graph_accusation_round", verdict: saved.verdict, accused: saved.accused, cited: saved.cited } as never);
+      const { context } = await buildRoleRequest({ ...input, ...judged.reply } as never);
       const verdictContext = context.graph_accusation_context as GraphVerdictContext;
       // A failure is judged for spoilers; the closing scene cannot spoil.
       if (ended) {
@@ -249,6 +254,15 @@ describe.each(STORIES)("the clue-graph $name accusation cases", async (story) =>
         expect(spellings.some((spelling) => handed.includes(spelling.toLowerCase())), `${turnCase.id}: ${spellings[0]} is not handed`).toBe(true);
       }
     }
+  });
+
+  it("refuses a report naming someone the case does not hold, and drops a cited clue not held", () => {
+    const history = normalizeHistory(accusations[0].given.history);
+    expect(judgeReport(graph, history, { accused_character_id: "nobody_in_the_case", cited_clue_ids: [] })).toBeNull();
+    const notHeld = Object.keys(graph.clues).find((id) => !playOf(graph, history).held.includes(id))!;
+    const judged = judgeReport(graph, history, { accused_character_id: null, cited_clue_ids: [notHeld] })!;
+    expect(judged.notHeld).toEqual([notHeld]);
+    expect(judged.saved.cited).toEqual([]);
   });
 });
 

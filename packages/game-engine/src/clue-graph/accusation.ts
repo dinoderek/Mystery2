@@ -360,7 +360,7 @@ export function resolves(verdict: AccusationVerdict): verdict is "win" | "lose" 
 }
 
 /** The role that words a decided accusation: the closing scene, or the failure's reply. */
-export function accusationRole(verdict: AccusationVerdict): "graph_ending" | "graph_accusation_round" {
+function accusationRole(verdict: AccusationVerdict): "graph_ending" | "graph_accusation_round" {
   return resolves(verdict) ? "graph_ending" : "graph_accusation_round";
 }
 

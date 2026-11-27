@@ -57,7 +57,7 @@ describe("the server runner's plan", () => {
 
   it("runs the end-to-end suite and takes the test timeout from the environment", () => {
     const plan = planServerRun({ repoRoot: root, env: env({ AI_LIVE_TEST_TIMEOUT_MS: "1000" }), argv: ["e2e", "claude"] });
-    expect(plan.vitestTarget).toBe("tests/api/e2e/live-ai-flow.test.ts");
+    expect(plan.vitestTarget).toBe("tests/api/e2e/live-ai");
     expect(plan.suiteEnv).toMatchObject({ AI_LIVE_AI: "claude", AI_LIVE_TEST_TIMEOUT_MS: "1000" });
   });
 

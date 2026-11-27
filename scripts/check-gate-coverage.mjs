@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /**
- * Fails, naming each one, on a test file that no gate step runs. Part of phase
- * 1 of the gate (`npm run check:gate-coverage`). It checks against every gate
- * step, not only the ones a run selected, so running it alone gives the same
- * verdict as the full gate.
+ * Fails, naming each one, on a test file that no gate step runs and no opt-in
+ * suite declares, or that is declared opt-in and run by a gate step too. Part
+ * of phase 1 of the gate (`npm run check:gate-coverage`). It checks against
+ * every gate step, not only the ones a run selected, so running it alone gives
+ * the same verdict as the full gate.
  */
 
 import path from "node:path";
@@ -12,19 +13,24 @@ import url from "node:url";
 
 import {
   describeUncovered,
+  findOptInFilesTheGateRuns,
   findUncoveredTestFiles,
   listTestFiles,
 } from "./lib/gate-coverage.mjs";
-import { GATE_STEPS } from "./lib/gate-steps.mjs";
+import { GATE_STEPS, OPT_IN_SUITES } from "./lib/gate-steps.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), "..");
 
 function main() {
   const files = listTestFiles(REPO_ROOT);
-  const report = describeUncovered(findUncoveredTestFiles(files, GATE_STEPS), GATE_STEPS);
+  const report = describeUncovered(
+    findUncoveredTestFiles(files, [...GATE_STEPS, ...OPT_IN_SUITES]),
+    GATE_STEPS,
+    findOptInFilesTheGateRuns(files, GATE_STEPS, OPT_IN_SUITES),
+  );
 
   if (report === null) {
-    process.stdout.write(`OK: ${files.length} test file(s), each under a gate step\n`);
+    process.stdout.write(`OK: ${files.length} test file(s), each under a gate step or an opt-in suite\n`);
     return;
   }
   process.stderr.write(`error: ${report}\n`);

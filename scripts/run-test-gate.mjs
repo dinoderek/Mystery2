@@ -12,7 +12,9 @@
  *
  * Phase 2 builds the game and runs it against a throwaway database. It needs
  * nothing installed beyond this repo, so every step runs everywhere: there is
- * no environment in which a suite may be skipped or waived.
+ * no environment in which a suite may be skipped or waived. Suites that call a
+ * real model are opt-in (`OPT_IN_SUITES`): the gate collects none of their
+ * files, and lists them below the verdict with the command that runs them.
  *
  * The two unit steps run with coverage on, and the summary carries what they
  * measured: totals per project, and the files thin enough to be worth naming.
@@ -24,7 +26,7 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { GATE_STEPS, selectSteps } from "./lib/gate-steps.mjs";
+import { GATE_STEPS, formatOptInSuites, selectSteps } from "./lib/gate-steps.mjs";
 import { npmBin } from "./lib/process.mjs";
 import {
   clearCoverageReports,
@@ -227,6 +229,8 @@ const lines = [
   }),
   "─".repeat(40),
   `${"Total".padEnd(16)} ${(totalMs / 1000).toFixed(1).padStart(7)}s  ${overallPass ? "PASS" : "FAIL"}`,
+  "",
+  ...formatOptInSuites(),
   "",
 ];
 

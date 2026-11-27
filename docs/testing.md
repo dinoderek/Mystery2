@@ -3,7 +3,7 @@
 ## Layers
 
 Unit tests cover logic; integration, against the built server under the mock
-provider, covers endpoints, ownership, profiles, schema and content; E2E covers
+provider, covers endpoints, ownership, profiles, schema, content; E2E covers
 journeys, over HTTP (`tests/api/e2e`), through the launcher on `prod`
 (`tests/api/launcher`) and in the browser (`web/e2e`). Prefer
 integration for backend behaviour; Playwright is for browser journeys. A change updates every suite it affects. Helpers: `tests/testkit`.
@@ -24,10 +24,12 @@ suite may be reported skipped; one that cannot start is a bug.
 Integration and API E2E run against a production build (each server's own,
 in `web/.test-builds/`), so a bundling failure shows; the build fails if it opens a database.
 
-**Every test file runs in the gate.** Each step names its `roots` and `files`
-pattern; keep them in step with the runner's include (and the `e2e-browser`
-root with `testDir` in `web/playwright.config.ts`). `gate-coverage` fails on any
-test file no step collects, untracked ones included.
+**Every test file runs in the gate, or is declared opt-in.** Each step names
+its `roots` and `files` pattern; keep them in step with the runner's include
+(and the `e2e-browser` root with `testDir` in `web/playwright.config.ts`).
+Real-model suites sit in `live-ai/` folders, declared in `OPT_IN_SUITES` and
+listed after the verdict. `gate-coverage` fails on a test file (untracked too)
+nothing collects, or a step and `OPT_IN_SUITES` both do.
 
 **Baselines only shrink.** `quality-baseline.json` and `imports-baseline.json`
 hold today's offenders against the `quality` limits and
@@ -45,7 +47,7 @@ file or path, untracked included, names a retired case format.
   paths and harness templates are skipped.
 - `check:word-budgets` fails when a Markdown file is over its row in
   `docs/word-budgets.tsv`, has no row, or a row names a missing file. Every
-  `.md` counts, including files not yet added to git, as `wc -w` counts it.
+  `.md` counts, untracked too, by `wc -w`.
   Symlinks such as `CLAUDE.md` answer to their target's row. Budgets sit at
   each count rounded up to 50. Raising one is the operator's decision: trim the
   doc, or ask.
@@ -55,8 +57,8 @@ by hand; the code suites are optional locally.
 
 ## Running
 
-Integration and the E2E suites share the worktree's port: run one at a
-time per checkout ([`docs/local-infrastructure.md`](local-infrastructure.md)).
+Integration and E2E suites share the worktree's port: run one at a
+time ([`docs/local-infrastructure.md`](local-infrastructure.md)).
 
 Live AI runs (the `test:*:live` scripts) are opt-in, never a gate substitute,
 and call only an AI they are named, from `ai.json`
@@ -92,16 +94,16 @@ content is the operator's call.
 ## Golden transcripts
 
 `tests/api/e2e/golden-transcripts.test.ts` plays fixed games over HTTP under
-the mock narrator and compares what the player would see with
+the mock narrator, comparing what the player sees with
 `tests/api/e2e/golden/transcripts/`. Only `tests/testkit/src/golden/driver.ts`
-knows how a line becomes requests. The mock narrates from the case and the
-context it is given, so changing either moves the transcripts. Re-record with
+knows how a line becomes requests. The mock narrates from the case and its
+context, so changing either moves the transcripts. Re-record with
 `npm run test:golden:record` and review the diff.
 
 ## Writing tests
 
-- **Isolation.** Each API run gets a temporary config root and database, and
-  never touches your play database. Each test creates its own profile with
+- **Isolation.** Each API run gets a temporary config root and database,
+  never your play database. Each test creates its own profile with
   `setupApiTestAuth(tag)` and scopes assertions to its own identifiers, with no
   unscoped global counts. Anything that opens a database gets an explicit path,
   never `resolveDatabasePath()`, which names your play database.
@@ -111,7 +113,7 @@ context it is given, so changing either moves the transcripts. Re-record with
   test config root, since `blueprint-scenes/` ships none.
   Use the factories in `tests/testkit/src/fixtures.ts`; never
   hand-write an object for a shape with a Zod schema in `packages/shared/src/`.
-  Factories parse at creation: pass only the overrides that differ. A new
+  Factories parse at creation: pass only differing overrides. A new
   response type needs its factory. For a TypeScript-only shape, annotate the
   mock so `typecheck` catches drift.
 - **Boundaries that stay proven** (`session-ownership.test.ts`,
@@ -125,8 +127,8 @@ context it is given, so changing either moves the transcripts. Re-record with
   - image bytes are served only for images the blueprint references;
   - a missing or wrong field answers `400` naming it; a name outside the registry
     answers `404`.
-- **No real model.** Integration and E2E run the mock provider, so assert
-  persisted side effects.
+- **No real model.** Integration and E2E run the mock: assert persisted side
+  effects.
 - **Mock by absence.** Mock narrates when the config root has no `ai.json`,
   the runners clear `AI_PROFILE`, and nothing is chosen. A live choice switches
   every test sharing the server, so make one only in the unit suites or on a

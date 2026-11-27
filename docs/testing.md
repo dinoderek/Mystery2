@@ -29,7 +29,7 @@ its `roots` and `files` pattern; keep them in step with the runner's include
 (and the `e2e-browser` root with `testDir` in `web/playwright.config.ts`).
 Real-model suites sit in `live-ai/` folders, declared in `OPT_IN_SUITES` and
 listed after the verdict. `gate-coverage` fails on a test file (untracked too)
-nothing collects, or both do.
+nothing collects, or a step and `OPT_IN_SUITES` both do.
 
 **Baselines only shrink.** `quality-baseline.json` and `imports-baseline.json`
 hold today's offenders against the `quality` limits and
@@ -37,7 +37,7 @@ hold today's offenders against the `quality` limits and
 `npm run check:imports -- --prune`.
 
 **One case format.** `tests/api/unit/one-case-format.test.ts` fails when any
-path, untracked included, names a retired case format.
+file or path, untracked included, names a retired case format.
 
 **Doc checks** fail the gate:
 
@@ -57,8 +57,8 @@ by hand; the code suites are optional locally.
 
 ## Running
 
-Integration and the E2E suites share the worktree's port: run one at a
-time per checkout ([`docs/local-infrastructure.md`](local-infrastructure.md)).
+Integration and E2E suites share the worktree's port: run one at a
+time ([`docs/local-infrastructure.md`](local-infrastructure.md)).
 
 Live AI runs (the `test:*:live` scripts) are opt-in, never a gate substitute,
 and call only an AI they are named, from `ai.json`
@@ -68,7 +68,7 @@ and call only an AI they are named, from `ai.json`
 
 Each `npm test` writes `test-results/<timestamp>/`: a log per step,
 `summary.log` and `coverage.log`. The `Total` line in `summary.log` is the
-verdict. For a failure, read the server's stdout, `readStoredSession()`,
+verdict. For a failure, also read the server's stdout, `readStoredSession()`,
 `readStoredEvents()` (`tests/api/integration/helpers.ts`) and Playwright's report.
 
 ## Coverage
@@ -102,8 +102,8 @@ context, so changing either moves the transcripts. Re-record with
 
 ## Writing tests
 
-- **Isolation.** Each API run gets a temporary config root and database, and
-  never touches your play database. Each test creates its own profile with
+- **Isolation.** Each API run gets a temporary config root and database,
+  never your play database. Each test creates its own profile with
   `setupApiTestAuth(tag)` and scopes assertions to its own identifiers, with no
   unscoped global counts. Anything that opens a database gets an explicit path,
   never `resolveDatabasePath()`, which names your play database.

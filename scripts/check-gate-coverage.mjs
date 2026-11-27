@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
  * Fails, naming each one, on a test file that no gate step runs and no opt-in
- * suite declares, or that is declared opt-in and run by a gate step too. Part of phase
- * 1 of the gate (`npm run check:gate-coverage`). It checks against every gate
- * step, not only the ones a run selected, so running it alone gives the same
- * verdict as the full gate.
+ * suite declares, or that is declared opt-in and run by a gate step too. Part
+ * of phase 1 of the gate (`npm run check:gate-coverage`). It checks against
+ * every gate step, not only the ones a run selected, so running it alone gives
+ * the same verdict as the full gate.
  */
 
 import path from "node:path";

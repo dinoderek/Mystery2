@@ -14,19 +14,13 @@ const visualDirection = {
   texture: "matte paper with subtle grain",
 };
 
-// The fields of a case these image-prompt-builder tests depend on: the art
-// style fallback value and a single-location, single-character world, for
-// assertion clarity. The builder reads the artwork view of a case, and reads
-// a character's last name and background, and a location's clues, when given.
+// A projected artwork view with one location and one character.
 const blueprint = {
   id: "123e4567-e89b-12d3-a456-426614174000",
   metadata: {
     title: "Mock Blueprint",
-    one_liner: "A simple test mystery.",
-    art_style: "storybook watercolor",
     visual_direction: visualDirection,
   },
-  narrative: { premise: "The cookie plate is empty and snack time is almost here." },
   world: {
     starting_location_id: "loc_kitchen",
     locations: [
@@ -34,22 +28,16 @@ const blueprint = {
         id: "loc_kitchen",
         name: "Kitchen",
         description: "A messy kitchen.",
-        clues: [
-          { id: "clue_crumbs", text: "Cookie crumbs on the counter." },
-        ],
       },
     ],
     characters: [
       {
         id: "char_alice",
-        first_name: "Alice",
-        last_name: "Smith",
+        name: "Alice Smith",
         location_id: "loc_kitchen",
         sex: "female",
         appearance: "Red hair",
-        background: "The head baker who runs the kitchen.",
         personality: "Nervous but kind.",
-        initial_attitude_towards_investigator: "Guarded and evasive",
       },
     ],
   },
@@ -87,11 +75,10 @@ describe("image prompt builder", () => {
     expect(characterPrompt).toContain("Target: Character portrait, head-and-shoulders framing");
     expect(characterPrompt).toContain("Alice Smith");
     expect(characterPrompt).toContain("Sex: female");
-    expect(characterPrompt).toContain("Guarded and evasive");
-    expect(characterPrompt).toContain("head baker");
+    expect(characterPrompt).toContain("Personality cue: Nervous but kind");
     expect(characterPrompt).toContain("bokeh");
     expect(characterPrompt).toContain("blurred");
-    expect(characterPrompt).not.toContain("Environment: Kitchen");
+    expect(characterPrompt).not.toContain("Kitchen");
   });
 
   it("uses the blueprint-provided portrait background when set", () => {
@@ -138,16 +125,16 @@ describe("image prompt builder", () => {
     }
   });
 
-  it("builds location scene prompt with characters and clue details", () => {
+  it("builds a location scene from public facts and the characters there", () => {
     const locationPrompt = buildImagePrompt(blueprint, {
       targetType: "location",
       targetKey: "loc_kitchen",
     });
     expect(locationPrompt).toContain("Target: Location scene image");
     expect(locationPrompt).toContain("Kitchen");
-    expect(locationPrompt).toContain("Alice");
+    expect(locationPrompt).toContain("Alice Smith");
     expect(locationPrompt).toContain("Red hair");
-    expect(locationPrompt).toContain("Cookie crumbs");
+    expect(locationPrompt).toContain("A messy kitchen");
     expect(locationPrompt).toContain("arriving");
   });
 
@@ -172,27 +159,12 @@ describe("image prompt builder", () => {
     expect(buildReferenceLegend(undefined)).toBe("");
   });
 
-  it("falls back to legacy art_style when visual_direction is absent", () => {
-    const legacyBlueprint = {
-      ...blueprint,
-      metadata: { ...blueprint.metadata, visual_direction: undefined },
-    };
-    const prompt = buildImagePrompt(legacyBlueprint, {
-      targetType: "blueprint",
-      targetKey: null,
-    });
-    expect(prompt).toContain("Style: storybook watercolor");
-    expect(prompt).not.toContain("Art style:");
-    expect(prompt).not.toContain("Color palette:");
-  });
-
-  it("falls back to default style when both visual_direction and art_style are absent", () => {
+  it("uses the default style when visual direction is absent", () => {
     const bareBlueprint = {
       ...blueprint,
       metadata: {
         ...blueprint.metadata,
         visual_direction: undefined,
-        art_style: undefined,
       },
     };
     const prompt = buildImagePrompt(bareBlueprint, {

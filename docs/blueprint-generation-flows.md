@@ -28,8 +28,8 @@ Three phases keep images consistent:
 
 | Phase | Image | Blueprint input | References | Patched into |
 |---|---|---|---|---|
-| 1 | Character portrait | `visual_direction`, the character's `first_name`, `appearance`, `personality` | none | `portrait_image_id` |
-| 2 | Location scene | `visual_direction`, the location's `name` and `description` | portraits of characters there | `location_image_id` |
+| 1 | Character portrait | `visual_direction`, the character's `name`, `appearance`, `personality` | none | `portrait_image_id` |
+| 2 | Location scene | `visual_direction`, the location's `name` and `facts` | portraits of characters there | `location_image_id` |
 | 3 | Cover | the case's `cover` facts, `visual_direction`, `metadata.title` | portraits and scenes for the `cover`'s characters and locations | `metadata.image_id` |
 
 A missing `cover` field defaults to the opening's facts, every character and

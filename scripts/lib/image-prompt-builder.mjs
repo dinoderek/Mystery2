@@ -35,19 +35,10 @@ function styleBlock(blueprint) {
     return lines.join("\n");
   }
 
-  // Legacy fallback for blueprints without visual_direction.
-  const artStyle =
-    blueprint?.metadata?.art_style?.trim() ||
-    "storybook illustration, warm lighting, playful detective mood";
-  return [`Style: ${artStyle}`, AUDIENCE_CUE].join("\n");
-}
-
-function startingLocation(blueprint) {
-  const startId = blueprint?.world?.starting_location_id;
-  if (!startId) return null;
-  return (blueprint?.world?.locations ?? []).find(
-    (location) => location.id === startId,
-  );
+  return [
+    "Style: storybook illustration, warm lighting, playful detective mood",
+    AUDIENCE_CUE,
+  ].join("\n");
 }
 
 function charactersAtLocation(blueprint, locationId) {
@@ -74,78 +65,43 @@ function portraitBackgroundHint(blueprint) {
 function targetBlock(blueprint, target) {
   if (target.targetType === "blueprint") {
     const coverImage = blueprint.cover_image;
-    if (coverImage?.description) {
-      const lines = [
-        "Target: Mystery cover image.",
-        `Title: ${blueprint.metadata?.title ?? "Untitled mystery"}.`,
-        `Creative direction: ${coverImage.description}`,
-      ];
+    const lines = [
+      "Target: Mystery cover image.",
+      `Title: ${blueprint.metadata.title}.`,
+      `Creative direction: ${coverImage.description}`,
+    ];
 
-      const locationIds = coverImage.location_ids ?? [];
-      if (locationIds.length > 0) {
-        const locationHints = locationIds
-          .map((locId) => {
-            const loc = (blueprint.world?.locations ?? []).find((l) => l.id === locId);
-            return loc ? `${loc.name} — ${loc.description}` : locId;
-          })
-          .join("; ");
-        lines.push(`Featured location(s): ${locationHints}`);
-      }
-
-      const characterIds = coverImage.character_ids ?? [];
-      if (characterIds.length > 0) {
-        const charHints = characterIds
-          .map((charId) => {
-            const ch = (blueprint.world?.characters ?? []).find((c) => c.id === charId);
-            return ch ? `${ch.first_name} ${ch.last_name ?? ""} (${ch.appearance})` : charId;
-          })
-          .join("; ");
-        lines.push(`Characters featured: ${charHints}`);
-      }
-
-      return lines.filter(Boolean).join(" ");
+    if (coverImage.location_ids.length > 0) {
+      const locationHints = coverImage.location_ids.map((id) => {
+        const location = blueprint.world.locations.find((entry) => entry.id === id);
+        return location ? `${location.name} — ${location.description}` : id;
+      });
+      lines.push(`Featured location(s): ${locationHints.join("; ")}`);
     }
 
-    // Fallback for blueprints without cover_image (legacy).
-    const start = startingLocation(blueprint);
-    const settingHint = start
-      ? `Setting: ${start.name} — ${start.description}`
-      : "";
-    return [
-      "Target: Mystery cover image.",
-      `Title: ${blueprint.metadata?.title ?? "Untitled mystery"}.`,
-      `Premise: ${blueprint.narrative?.premise ?? ""}.`,
-      `One-liner: ${blueprint.metadata?.one_liner ?? ""}.`,
-      settingHint,
-    ]
-      .filter(Boolean)
-      .join(" ");
+    if (coverImage.character_ids.length > 0) {
+      const characterHints = coverImage.character_ids.map((id) => {
+        const character = blueprint.world.characters.find((entry) => entry.id === id);
+        return character ? `${character.name} (${character.appearance})` : id;
+      });
+      lines.push(`Characters featured: ${characterHints.join("; ")}`);
+    }
+
+    return lines.join(" ");
   }
 
   if (target.targetType === "character") {
     const character = (blueprint.world?.characters ?? []).find(
       (entry) => entry.id === target.targetKey,
     );
-    const displayName = character
-      ? `${character.first_name} ${character.last_name ?? ""}`.trim()
-      : target.targetKey ?? "Unknown character";
-
+    const displayName = character?.name ?? target.targetKey ?? "Unknown character";
     const sexCue = character?.sex ? `Sex: ${character.sex}.` : "";
-    const attitudeCue = character?.initial_attitude_towards_investigator
-      ? `Expression/body language cue: ${character.initial_attitude_towards_investigator}.`
-      : "";
-    // Character backstory, not the visual backdrop — see portraitBackgroundHint.
-    const backgroundCue = character?.background
-      ? `Background context: ${character.background}`
-      : "";
 
     return [
       "Target: Character portrait, head-and-shoulders framing.",
       `Name: ${displayName}.`,
       sexCue,
       `Appearance: ${character?.appearance ?? ""}.`,
-      attitudeCue,
-      backgroundCue,
       `Personality cue: ${character?.personality ?? ""}.`,
       portraitBackgroundHint(blueprint),
     ]
@@ -164,17 +120,9 @@ function targetBlock(blueprint, target) {
   const characterHints =
     present.length > 0
       ? `Characters present: ${present
-          .map((c) => `${c.first_name} (${c.appearance})`)
+          .map((c) => `${c.name} (${c.appearance})`)
           .join("; ")}.`
       : "";
-
-  const environmentalDetails = (location?.clues ?? [])
-    .slice(0, 2)
-    .map((clue) => clue.text)
-    .join(" ");
-  const detailHint = environmentalDetails
-    ? `Environmental details to subtly include: ${environmentalDetails}`
-    : "";
 
   const isStart =
     location?.id === blueprint?.world?.starting_location_id;
@@ -187,7 +135,6 @@ function targetBlock(blueprint, target) {
     `Location: ${location?.name ?? target.targetKey ?? "Unknown location"}.`,
     `Description: ${location?.description ?? ""}.`,
     characterHints,
-    detailHint,
     perspectiveHint,
   ]
     .filter(Boolean)

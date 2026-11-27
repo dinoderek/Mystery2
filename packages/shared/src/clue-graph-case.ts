@@ -74,7 +74,6 @@ export interface ClueGraphWorld {
   schema_version: typeof CLUE_GRAPH_FORMAT;
   id: string;
   clue_graph: ClueGraphCase;
-  representation_note: string;
   metadata: {
     title: string;
     one_liner: string;
@@ -149,8 +148,6 @@ export function buildClueGraphWorld(graph: ClueGraphCase): ClueGraphWorld {
     schema_version: CLUE_GRAPH_FORMAT,
     id: clueGraphCaseId(graph.metadata.id),
     clue_graph: graph,
-    representation_note:
-      "This case is a clue graph: clue_graph is authoritative for clues, gates, retractions and the AND/OR conclusions. The world is a projection for commands and artwork; legacy reasoning-path arrays are deliberately empty. A statement is what a character said, true or false; one taken back no longer stands.",
     metadata: {
       title: graph.metadata.title,
       one_liner: graph.opening.facts[0],

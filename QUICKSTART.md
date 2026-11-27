@@ -176,9 +176,9 @@ shared design, then the per-pipeline runbooks:
 Copy `.env.images.example` to `.env.images.local` and set `OPENROUTER_API_KEY`.
 
 ```bash
-./dev gen-images --blueprint-path spring-treats-6yo.json --all
-./dev gen-images --blueprint-path spring-treats-6yo.json --characters <character-id>
-./dev gen-images --blueprint-path spring-treats-6yo.json --all --chat-packets  # no key needed
+./dev gen-images --blueprint-path blueprints/clue-graph/the-stopped-clock.json --all
+./dev gen-images --blueprint-path blueprints/clue-graph/the-stopped-clock.json --characters hobbs
+./dev gen-images --blueprint-path blueprints/clue-graph/the-stopped-clock.json --all --chat-packets  # no key needed
 ```
 
 Every flag, default and file location: `./dev gen-images --help`.

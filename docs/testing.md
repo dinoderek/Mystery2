@@ -18,8 +18,8 @@ never `click` or press a key.
 `npm test` runs the steps in `scripts/lib/gate-steps.mjs`; `./dev test <step>...`
 runs only those named.
 
-**Every step runs everywhere.** The gate needs nothing beyond this repo. No
-suite may be reported skipped; one that cannot start is a bug.
+**Every gate step runs everywhere.** The default gate uses the mock provider.
+A required suite that cannot start is a bug.
 
 Integration and API E2E run against a production build (each server's own,
 in `web/.test-builds/`), so a bundling failure shows; the build fails if it opens a database.

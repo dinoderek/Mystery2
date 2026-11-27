@@ -1,6 +1,7 @@
 /**
- * The gate-coverage check: every test file in the repo sits under the roots of
- * a gate step and matches that step's `files` pattern, or the gate fails naming it.
+ * The gate-coverage check: every test file in the repo is run by a gate step
+ * (under its roots, matching its `files` pattern, outside its `exclude`) or
+ * declared by an opt-in suite, and never both, or the gate fails naming it.
  *
  * Without it a test file placed anywhere else passes when run by hand and is
  * never run by the gate, which is the worst kind of green.

@@ -130,6 +130,14 @@ describe("the gate's real steps", () => {
     expect(excludeArgs(step)).toEqual(["--exclude", glob]);
   });
 
+  it("name opt-in commands that are real npm scripts", () => {
+    const scripts = JSON.parse(fs.readFileSync("package.json", "utf8")).scripts;
+    for (const suite of OPT_IN_SUITES as { command: string }[]) {
+      const script = suite.command.match(/^npm run (\S+)/)?.[1];
+      expect(script && scripts[script], suite.command).toBeTruthy();
+    }
+  });
+
   it("list each opt-in suite with the command that runs it", () => {
     expect(formatOptInSuites()).toEqual([
       "Opt-in, not run by the gate (each calls the AI named in ai.json):",

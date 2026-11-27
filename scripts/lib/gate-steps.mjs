@@ -10,7 +10,7 @@
  * runner collects, because a file under a root that the runner would not pick
  * up never runs. The Vitest steps build their command from the roots, so adding
  * a suite is one entry here. `gate-coverage.mjs` fails the gate on any test
- * file that no step runs.
+ * file that no step runs and no opt-in suite declares.
  *
  * `integration` and `e2e-api` hand their roots and `exclude` to
  * `scripts/run-mock-tests.mjs`, which imports them from here. `e2e-browser`'s

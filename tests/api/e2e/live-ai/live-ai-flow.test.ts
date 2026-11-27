@@ -6,14 +6,14 @@ import {
   isLiveAIEnabled,
   LiveAIRetriableExhaustedError,
   requireLiveAIName,
-} from "../../testkit/src/live-ai.ts";
+} from "../../../testkit/src/live-ai.ts";
 import {
   API_URL,
   setupApiTestAuth,
   type ApiAuthContext,
-} from "../integration/helpers.ts";
-import type { GameTurnResponse } from "../../../packages/shared/src/mystery-api-contracts.ts";
-import { investigatorScript } from "./live-ai/investigator-script.ts";
+} from "../../integration/helpers.ts";
+import type { GameTurnResponse } from "../../../../packages/shared/src/mystery-api-contracts.ts";
+import { investigatorScript } from "./investigator-script.ts";
 const runLive = isLiveAIEnabled() ? describe : describe.skip;
 
 runLive(getLiveSuiteTitle("live-ai e2e investigator flow"), () => {

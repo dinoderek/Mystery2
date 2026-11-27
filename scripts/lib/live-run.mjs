@@ -10,6 +10,7 @@
  */
 
 import { seedAIs } from "./ai-seed.mjs";
+import { LIVE_AI_ROOTS } from "./gate-steps.mjs";
 
 /** The variable the live suites read their AI's name from. */
 export const LIVE_AI_ENV = "AI_LIVE_AI";
@@ -24,10 +25,7 @@ export class LiveRunError extends Error {
   }
 }
 
-export const SERVER_SUITES = {
-  integration: "tests/api/integration/live-ai",
-  e2e: "tests/api/e2e/live-ai-flow.test.ts",
-};
+export const SERVER_SUITES = LIVE_AI_ROOTS;
 
 export const LIVE_USAGE = {
   server: "Usage: node scripts/run-live-ai.mjs <integration|e2e> <ai>  (an AI named in ai.json)",

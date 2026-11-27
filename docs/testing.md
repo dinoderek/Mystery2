@@ -3,10 +3,10 @@
 ## Layers
 
 Unit tests cover logic; integration, against the built server under the mock
-provider, covers endpoints, ownership, profiles, schema and content; E2E covers
+provider, covers endpoints, ownership, profiles, schema, content; E2E covers
 journeys, over HTTP (`tests/api/e2e`), through the launcher on `prod`
 (`tests/api/launcher`) and in the browser (`web/e2e`). Prefer
-integration for backend behaviour; Playwright is for browser journeys. A change updates every suite it affects. Helpers: `tests/testkit`.
+integration for backend behaviour. A change updates every suite it affects. Helpers: `tests/testkit`.
 
 **Browser projects.** `chromium` is Desktop Chrome and runs everything except
 `web/e2e/touch/`. `phone` and `tablet` are Chromium with touch emulation
@@ -22,12 +22,14 @@ runs only those named.
 suite may be reported skipped; one that cannot start is a bug.
 
 Integration and API E2E run against a production build (each server's own,
-in `web/.test-builds/`), so a bundling failure shows; the build fails if it opens a database.
+in `web/.test-builds/`), so a bundling failure shows; the build must not open a database.
 
-**Every test file runs in the gate.** Each step names its `roots` and `files`
-pattern; keep them in step with the runner's include (and the `e2e-browser`
-root with `testDir` in `web/playwright.config.ts`). `gate-coverage` fails on any
-test file no step collects, untracked ones included.
+**Every test file runs in the gate, or is declared opt-in.** Each step names
+its `roots` and `files` pattern; keep them in step with the runner's include
+(and the `e2e-browser` root with `testDir` in `web/playwright.config.ts`).
+Real-model suites sit in `live-ai/` folders, declared in `OPT_IN_SUITES` and
+listed after the verdict. `gate-coverage` fails on a test file (untracked too)
+nothing collects, or both do.
 
 **Baselines only shrink.** `quality-baseline.json` and `imports-baseline.json`
 hold today's offenders against the `quality` limits and
@@ -35,7 +37,7 @@ hold today's offenders against the `quality` limits and
 `npm run check:imports -- --prune`.
 
 **One case format.** `tests/api/unit/one-case-format.test.ts` fails when any
-file or path, untracked included, names a retired case format.
+path, untracked included, names a retired case format.
 
 **Doc checks** fail the gate:
 
@@ -66,7 +68,7 @@ and call only an AI they are named, from `ai.json`
 
 Each `npm test` writes `test-results/<timestamp>/`: a log per step,
 `summary.log` and `coverage.log`. The `Total` line in `summary.log` is the
-verdict. For a failure, also read the server's stdout, `readStoredSession()`,
+verdict. For a failure, read the server's stdout, `readStoredSession()`,
 `readStoredEvents()` (`tests/api/integration/helpers.ts`) and Playwright's report.
 
 ## Coverage
@@ -85,14 +87,13 @@ components read 0%; act on a low file only when its boundary is unit. Every `./d
 `eval-snapshots.test.ts` runs each evaluation harness with its model CLI
 swapped for a stub that keeps what it is sent, and compares every prompt and
 the verdicts on fixed stub answers with
-`tests/api/unit/snapshots/evaluation/`. Moving code changes no snapshot.
-Re-record with `npm run test:snapshots:record` and read the diff; judge
+`tests/api/unit/snapshots/evaluation/`. Re-record with `npm run test:snapshots:record` and read the diff; judge
 content is the operator's call.
 
 ## Golden transcripts
 
 `tests/api/e2e/golden-transcripts.test.ts` plays fixed games over HTTP under
-the mock narrator and compares what the player would see with
+the mock narrator, comparing what the player sees with
 `tests/api/e2e/golden/transcripts/`. Only `tests/testkit/src/golden/driver.ts`
 knows how a line becomes requests. The mock narrates from the case and the
 context it is given, so changing either moves the transcripts. Re-record with
@@ -111,7 +112,7 @@ context it is given, so changing either moves the transcripts. Re-record with
   test config root, since `blueprint-scenes/` ships none.
   Use the factories in `tests/testkit/src/fixtures.ts`; never
   hand-write an object for a shape with a Zod schema in `packages/shared/src/`.
-  Factories parse at creation: pass only the overrides that differ. A new
+  Factories parse at creation: pass only differing overrides. A new
   response type needs its factory. For a TypeScript-only shape, annotate the
   mock so `typecheck` catches drift.
 - **Boundaries that stay proven** (`session-ownership.test.ts`,
@@ -125,8 +126,8 @@ context it is given, so changing either moves the transcripts. Re-record with
   - image bytes are served only for images the blueprint references;
   - a missing or wrong field answers `400` naming it; a name outside the registry
     answers `404`.
-- **No real model.** Integration and E2E run the mock provider, so assert
-  persisted side effects.
+- **No real model.** Integration and E2E run the mock: assert persisted side
+  effects.
 - **Mock by absence.** Mock narrates when the config root has no `ai.json`,
   the runners clear `AI_PROFILE`, and nothing is chosen. A live choice switches
   every test sharing the server, so make one only in the unit suites or on a

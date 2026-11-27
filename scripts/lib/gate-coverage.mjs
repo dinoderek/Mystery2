@@ -29,28 +29,61 @@ export function listTestFiles(repoRoot) {
     .sort();
 }
 
+const under = (file, root) => file.startsWith(`${root.replace(/\/+$/, "")}/`);
+
 /**
- * The test files in `files` that no step runs: a step runs a file when it is
- * under one of the step's roots and matches the step's `files` pattern.
+ * Whether `step` runs `file`: under one of its roots, matching its `files`
+ * pattern, and under none of the roots it `exclude`s.
  */
+function runs(step, file) {
+  return (
+    Boolean(step.files?.test(path.posix.basename(file))) &&
+    (step.roots ?? []).some((root) => under(file, root)) &&
+    !(step.exclude ?? []).some((root) => under(file, root))
+  );
+}
+
+/** The test files in `files` that no step in `steps` runs. */
 export function findUncoveredTestFiles(files, steps) {
-  const runs = (step, file) =>
-    step.files?.test(path.posix.basename(file)) &&
-    (step.roots ?? []).some((root) =>
-      file.startsWith(`${root.replace(/\/+$/, "")}/`),
-    );
   return files.filter(
     (file) => TEST_FILE.test(file) && !steps.some((step) => runs(step, file)),
   );
 }
 
-/** Failure text for the gate log, or null when every test file is covered. */
-export function describeUncovered(uncovered, steps) {
-  if (uncovered.length === 0) return null;
-  const roots = steps.flatMap((step) => step.roots ?? []);
-  return [
-    `${uncovered.length} test file${uncovered.length === 1 ? "" : "s"} no gate step runs:`,
-    ...uncovered.map((file) => `  ${file}`),
-    `Move each under a suite the gate runs (${roots.join(", ")}), or declare its root in scripts/lib/gate-steps.mjs.`,
-  ].join("\n");
+/**
+ * The test files an opt-in suite declares that a gate step also runs. Each
+ * would make the default gate run it, or report it skipped.
+ */
+export function findOptInFilesTheGateRuns(files, steps, optIn) {
+  return files.filter(
+    (file) =>
+      optIn.some((suite) => runs(suite, file)) &&
+      steps.some((step) => runs(step, file)),
+  );
+}
+
+const plural = (n) => `${n} test file${n === 1 ? "" : "s"}`;
+
+/**
+ * Failure text for the gate log, or null when every test file is run by a
+ * step or declared opt-in, and no opt-in file is also run by a step.
+ */
+export function describeUncovered(uncovered, steps, collidingOptIn = []) {
+  const parts = [];
+  if (uncovered.length > 0) {
+    const roots = steps.flatMap((step) => step.roots ?? []);
+    parts.push(
+      `${plural(uncovered.length)} no gate step runs:`,
+      ...uncovered.map((file) => `  ${file}`),
+      `Move each under a suite the gate runs (${roots.join(", ")}), or declare its root in scripts/lib/gate-steps.mjs.`,
+    );
+  }
+  if (collidingOptIn.length > 0) {
+    parts.push(
+      `${plural(collidingOptIn.length)} declared opt-in that a gate step also runs:`,
+      ...collidingOptIn.map((file) => `  ${file}`),
+      "Add the opt-in root to that step's `exclude` in scripts/lib/gate-steps.mjs.",
+    );
+  }
+  return parts.length > 0 ? parts.join("\n") : null;
 }

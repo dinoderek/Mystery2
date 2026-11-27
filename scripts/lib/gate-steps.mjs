@@ -12,9 +12,14 @@
  * a suite is one entry here. `gate-coverage.mjs` fails the gate on any test
  * file that no step runs.
  *
- * `integration` and `e2e-api` hand their roots to `scripts/run-mock-tests.mjs`,
- * which imports them from here. `e2e-browser`'s root describes the `testDir` in
- * `web/playwright.config.ts`.
+ * `integration` and `e2e-api` hand their roots and `exclude` to
+ * `scripts/run-mock-tests.mjs`, which imports them from here. `e2e-browser`'s
+ * root describes the `testDir` in `web/playwright.config.ts`.
+ *
+ * Suites that call a real model are opt-in: `OPT_IN_SUITES` names them, the
+ * gate steps that would otherwise collect them `exclude` them, and the gate
+ * lists them under its verdict without running them. So a default gate reports
+ * no skipped test.
  */
 
 import path from "node:path";
@@ -47,8 +52,13 @@ function vitestStep({ name, phase, roots, workspace }) {
   };
 }
 
-export const INTEGRATION_ROOTS = ["tests/api/integration"];
-export const E2E_API_ROOTS = ["tests/api/e2e"];
+const INTEGRATION_ROOTS = ["tests/api/integration"];
+const E2E_API_ROOTS = ["tests/api/e2e"];
+/** The live-AI suites, by the suite name `scripts/run-live-ai.mjs` takes. */
+export const LIVE_AI_ROOTS = {
+  integration: "tests/api/integration/live-ai",
+  e2e: "tests/api/e2e/live-ai",
+};
 const LAUNCHER_ROOTS = ["tests/api/launcher"];
 
 export const GATE_STEPS = [
@@ -81,8 +91,8 @@ export const GATE_STEPS = [
   {
     name: "integration",
     phase: 2,
-    // `live-ai/` skips itself without live config; it is covered by path.
     roots: INTEGRATION_ROOTS,
+    exclude: [LIVE_AI_ROOTS.integration],
     files: VITEST_FILES,
     args: ["run", "test:integration"],
   },
@@ -90,6 +100,7 @@ export const GATE_STEPS = [
     name: "e2e-api",
     phase: 2,
     roots: E2E_API_ROOTS,
+    exclude: [LIVE_AI_ROOTS.e2e],
     files: VITEST_FILES,
     args: ["run", "test:e2e"],
   },
@@ -111,6 +122,31 @@ export const GATE_STEPS = [
     args: ["-w", "web", "run", "test:e2e"],
   },
 ];
+
+/**
+ * Suites the gate never runs, because they call a real model and need one
+ * named. Each is covered for `gate-coverage` by its `roots`, and listed under
+ * the gate's verdict with the `command` that runs it.
+ */
+export const OPT_IN_SUITES = [
+  {
+    name: "live-integration",
+    roots: [LIVE_AI_ROOTS.integration],
+    files: VITEST_FILES,
+    command: "npm run test:integration:live -- <ai>",
+  },
+  {
+    name: "live-e2e",
+    roots: [LIVE_AI_ROOTS.e2e],
+    files: VITEST_FILES,
+    command: "npm run test:e2e:live -- <ai>",
+  },
+];
+
+/** Vitest `--exclude` globs for a step's excluded roots. */
+export function excludeArgs(step) {
+  return (step.exclude ?? []).flatMap((root) => ["--exclude", `${root}/**`]);
+}
 
 /**
  * The steps to run: all of them when none is named, else only those named, in

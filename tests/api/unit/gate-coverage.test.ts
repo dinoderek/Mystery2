@@ -4,9 +4,14 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { GATE_STEPS } from "../../../scripts/lib/gate-steps.mjs";
+import {
+  excludeArgs,
+  GATE_STEPS,
+  OPT_IN_SUITES,
+} from "../../../scripts/lib/gate-steps.mjs";
 import {
   describeUncovered,
+  findOptInFilesTheGateRuns,
   findUncoveredTestFiles,
   listTestFiles,
 } from "../../../scripts/lib/gate-coverage.mjs";
@@ -62,6 +67,32 @@ describe("findUncoveredTestFiles", () => {
     expect(findUncoveredTestFiles(["tests/setup-env.ts"], steps)).toEqual([]);
   });
 
+  it("does not count a file under a root the step excludes", () => {
+    const excluding = [
+      { name: "int", roots: ["tests/int"], exclude: ["tests/int/live"], files: /\.test\.ts$/ },
+    ];
+    expect(
+      findUncoveredTestFiles(
+        ["tests/int/a.test.ts", "tests/int/live/b.test.ts"],
+        excluding,
+      ),
+    ).toEqual(["tests/int/live/b.test.ts"]);
+  });
+
+  it("names an opt-in file that a gate step also runs", () => {
+    const optIn = [{ name: "live", roots: ["tests/int/live"], files: /\.test\.ts$/ }];
+    const files = ["tests/int/a.test.ts", "tests/int/live/b.test.ts"];
+    const including = [{ name: "int", roots: ["tests/int"], files: /\.test\.ts$/ }];
+    expect(findOptInFilesTheGateRuns(files, including, optIn)).toEqual([
+      "tests/int/live/b.test.ts",
+    ]);
+    const excluding = [{ ...including[0], exclude: ["tests/int/live"] }];
+    expect(findOptInFilesTheGateRuns(files, excluding, optIn)).toEqual([]);
+    const text = describeUncovered([], including, ["tests/int/live/b.test.ts"]);
+    expect(text).toContain("declared opt-in that a gate step also runs");
+    expect(text).toContain("tests/int/live/b.test.ts");
+  });
+
   it("reports the failure with each file named", () => {
     const text = describeUncovered(["tests/foo.test.ts"], steps);
     expect(text).toContain("tests/foo.test.ts");
@@ -79,6 +110,25 @@ describe("the gate's real steps", () => {
       (s: { name: string }) => s.name === "unit-api",
     )!;
     expect(api.args).toContain("tests/api/unit");
+  });
+
+  it("leave every opt-in suite's files to the opt-in suite", () => {
+    const files = OPT_IN_SUITES.flatMap((suite: { roots: string[] }) =>
+      suite.roots.map((root) => `${root}/x.test.ts`),
+    );
+    expect(files.length).toBeGreaterThan(0);
+    expect(findUncoveredTestFiles(files, OPT_IN_SUITES)).toEqual([]);
+    expect(findUncoveredTestFiles(files, GATE_STEPS)).toEqual(files);
+  });
+
+  it("pass each excluded root to Vitest as an exclude glob", () => {
+    const integration = GATE_STEPS.find(
+      (s: { name: string }) => s.name === "integration",
+    )!;
+    expect(excludeArgs(integration)).toEqual([
+      "--exclude",
+      "tests/api/integration/live-ai/**",
+    ]);
   });
 });
 

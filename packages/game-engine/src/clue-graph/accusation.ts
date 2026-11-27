@@ -7,7 +7,14 @@
 import { ruleMet } from "../../../shared/src/clue-graph-reach.ts";
 import { relevantClues } from "../../../shared/src/clue-graph-route.ts";
 import type { ClueGraphCase, ClueGraphRule } from "../../../shared/src/clue-graph-schema.ts";
+import {
+  parseGraphAccusationRoundOutput,
+  parseGraphEndingOutput,
+  type GraphAccusationOutput,
+  type GraphVerdictOutput,
+} from "../ai-contracts.ts";
 import { isLastAccusation } from "../accusations.ts";
+import { playOf } from "./history.ts";
 import { currentLeads, notebook, type NotebookEntry } from "./leads.ts";
 import { isLive, searchKey, sourceCharacter, supportedConclusions, type ClueGraphPlay } from "./play.ts";
 
@@ -117,6 +124,36 @@ export function settleAccusation(
   const notHeld = report.cited.filter((id) => !play.held.includes(id));
   const accusation = { accused: report.accused, cited };
   return { saved: { ...accusation, verdict: decideAccusation(graph, play, history, accusation) }, notHeld };
+}
+
+/** A decided report: what the event saves, and how the narrator is asked to word it. */
+export interface JudgedReport extends SettledAccusation {
+  /** The verdict when it ends the case, else null. */
+  result: "win" | "lose" | null;
+  /** The role that words it, and what its request adds to the report's. */
+  reply: SavedAccusation & { role: ReturnType<typeof accusationRole> };
+  /** The parser for the narrator's wording. */
+  parse: (value: unknown) => GraphVerdictOutput;
+}
+
+/**
+ * From the narrator's report to the request for its reply, as the game and its
+ * replay both take it: the engine decides on the history's play and picks the
+ * role, the request fields and the parser. Null when the report names someone
+ * the case does not hold, which each caller refuses in its own way.
+ */
+export function judgeReport(graph: ClueGraphCase, history: HistoryRow[], report: GraphAccusationOutput): JudgedReport | null {
+  const accused = report.accused_character_id;
+  if (accused !== null && !Object.hasOwn(graph.characters, accused)) return null;
+  const settled = settleAccusation(graph, playOf(graph, history), history, { accused, cited: report.cited_clue_ids });
+  const { verdict } = settled.saved;
+  const ended = resolves(verdict);
+  return {
+    ...settled,
+    result: ended ? verdict : null,
+    reply: { role: accusationRole(verdict), ...settled.saved },
+    parse: ended ? parseGraphEndingOutput : parseGraphAccusationRoundOutput,
+  };
 }
 
 /** The clues a lead is about: the character's, or the spot's. */

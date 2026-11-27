@@ -1,6 +1,6 @@
 import type { AIPromptKey } from "./ai-contracts.ts";
 import {
-  authoredFieldBudget,
+  lineBudget,
   type InteractionId,
   renderComplexityGuidance,
   renderGuidance,
@@ -61,13 +61,13 @@ function renderRoleGuidance(
 }
 
 /**
- * The menu's lines are not a moment of play but the line the generator once
- * authored under a title, so each takes that field's budget at the reader's age.
+ * The menu's lines are not a moment of play, so each takes the menu line's
+ * budget at the reader's age rather than an interaction's.
  */
 function renderOneLinerGuidance(readingAge: number): string {
   return [
     renderComplexityGuidance(readingAge),
-    `Length (guidance, not a hard limit): aim for about ${authoredFieldBudget("one_liner", readingAge)} words in each line, and one sentence. Prefer shorter.`,
+    `Length (guidance, not a hard limit): aim for about ${lineBudget("menu_line", readingAge)} words in each line, and one sentence. Prefer shorter.`,
   ].join("\n");
 }
 

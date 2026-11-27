@@ -5,7 +5,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import type { ClueGraphWorld } from "@my2/shared";
 import { READING_AGES } from "../../../packages/shared/src/reading-age.ts";
-import { authoredFieldBudget, MAX_READING_AGE, MIN_READING_AGE } from "../../../packages/shared/src/age-profile.ts";
+import { lineBudget, MAX_READING_AGE, MIN_READING_AGE } from "../../../packages/shared/src/age-profile.ts";
 import { buildNarrationPrompt, buildRoleRequest } from "../../../packages/game-engine/src/role-request.ts";
 import { READING_AGE_REQUIRED } from "../../../packages/shared/src/mystery-api-contracts.ts";
 import { asRejectedResponse, RequestRejectedError } from "../../../packages/game-engine/src/errors.ts";
@@ -87,8 +87,8 @@ describe("the narrator prompt follows the reading age it is given", () => {
 
   it("sizes the notebook line for the reader's age", async () => {
     const at6 = (await graphGreeting(graph, 6)).prompt;
-    expect(at6).toContain(`a line of about ${authoredFieldBudget("clue_text", 6)} words`);
-    expect(authoredFieldBudget("clue_text", 6)).not.toBe(authoredFieldBudget("clue_text", 11));
+    expect(at6).toContain(`a line of about ${lineBudget("notebook_line", 6)} words`);
+    expect(lineBudget("notebook_line", 6)).not.toBe(lineBudget("notebook_line", 11));
   });
 });
 

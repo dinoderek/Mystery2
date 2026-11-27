@@ -7,14 +7,9 @@
  * WHY THIS EXISTS
  *
  * Assembling a narrator request means three things: pick the role, build its
- * context, and render its prompt at the request's `reading_age`. That used to be inlined in every endpoint handler AND
- * re-implemented by the runtime eval harness, so there were two independent
- * assembly paths. They drifted: the harness called
- * `loadPromptTemplate(role)` with no age and no style, so `clampReadingAge`
- * silently fell back to age 6 and every evaluated prompt was built for the
- * wrong reader while being graded against another age.
- *
- * One assembly path removes that class of bug by construction. Transport —
+ * context, and render its prompt at the request's `reading_age`. The endpoint
+ * handlers and the runtime eval harness both assemble here, so an evaluated
+ * prompt is built for the same reader, and the same way, as a played one. Transport —
  * an HTTP call to the server, or a local CLI replay — becomes a detail
  * layered on top rather than a second implementation.
  *
@@ -28,7 +23,7 @@
  */
 
 import type { AIPromptKey, AIRoleName } from "./ai-contracts.ts";
-import { authoredFieldBudget, type InteractionId } from "../../shared/src/age-profile.ts";
+import { lineBudget, type InteractionId } from "../../shared/src/age-profile.ts";
 import {
   type AIContext,
   type BlueprintContext,
@@ -180,9 +175,9 @@ export type RoleRequestInput = GameRoleInput | OneLinerRoleInput;
 
 type InputFor<R extends RoleRequestName> = Extract<RoleRequestInput, { role: R }>;
 
-/** How long a notebook line runs at the reader's age: the age's length for a clue. */
+/** How long a notebook line runs at the reader's age. */
 function notebookWords(readingAge: number): number {
-  return authoredFieldBudget("clue_text", readingAge);
+  return lineBudget("notebook_line", readingAge);
 }
 
 function locationNameFor(blueprint: BlueprintContext, locationId: string | null | undefined): string {

@@ -238,66 +238,24 @@ export function renderGuidance(id: InteractionId, age: number): string {
 }
 
 /**
- * The player-facing fields the blueprint generator authors as prose, each with
- * an explicit word budget per age — the generation-time counterpart to
- * WORD_BUDGET. Without these the generator only heard "a sentence or two",
- * which says nothing about how long a sentence may be at age 6 versus 11.
- *
- * Titles, location names, and sub-location names are deliberately absent: a
- * name is a label rather than prose, and its length does not scale with reading
- * age.
+ * Two lines the narrator writes outside an interaction, each with an explicit
+ * word budget per age: a case's menu line (the `one_liner` role, from the
+ * case's first opening fact) and a notebook line (a clue as the investigator
+ * noted it).
  */
-export type AuthoredFieldId =
-  | "one_liner"
-  | "premise"
-  | "notebook_summary"
-  | "location_description"
-  | "clue_text";
+export type LineId = "menu_line" | "notebook_line";
 
-const AUTHORED_FIELD_BUDGET: Record<AuthoredFieldId, Record<number, number>> = {
-  one_liner: { 6: 8, 7: 10, 8: 12, 9: 14, 10: 16, 11: 18 },
-  premise: { 6: 25, 7: 30, 8: 35, 9: 40, 10: 45, 11: 50 },
-  notebook_summary: { 6: 12, 7: 14, 8: 16, 9: 18, 10: 20, 11: 22 },
-  location_description: { 6: 20, 7: 24, 8: 28, 9: 32, 10: 36, 11: 40 },
-  clue_text: { 6: 12, 7: 14, 8: 16, 9: 20, 10: 24, 11: 28 },
+const LINE_BUDGET: Record<LineId, Record<number, number>> = {
+  menu_line: { 6: 8, 7: 10, 8: 12, 9: 14, 10: 16, 11: 18 },
+  notebook_line: { 6: 12, 7: 14, 8: 16, 9: 20, 10: 24, 11: 28 },
 };
 
-const AUTHORED_FIELD_LABEL: Record<AuthoredFieldId, string> = {
-  one_liner: "`metadata.one_liner`",
-  premise: "`narrative.premise`",
-  notebook_summary:
-    "every `starting_knowledge` summary (`mystery_summary`, and each location and character `summary`)",
-  location_description: "every location `description`",
-  clue_text: "every clue `text`, wherever it is authored",
-};
-
-/** The explicit target word budget for an authored field at a given age. */
-export function authoredFieldBudget(id: AuthoredFieldId, age: number): number {
-  return AUTHORED_FIELD_BUDGET[id][clampReadingAge(age)];
+/** The explicit target word budget for a line at a given age. */
+export function lineBudget(id: LineId, age: number): number {
+  return LINE_BUDGET[id][clampReadingAge(age)];
 }
 
-/** All authored player-facing prose fields. */
-export function allAuthoredFields(): AuthoredFieldId[] {
-  return Object.keys(AUTHORED_FIELD_BUDGET) as AuthoredFieldId[];
-}
-
-/**
- * Generation-time guidance for the blueprint generator: the age's complexity
- * rules plus an explicit word budget per player-facing prose field. Generation
- * authors many fields rather than one interaction, so the length dial is a
- * per-field table instead of the single budget a runtime role gets.
- */
-export function renderGenerationGuidance(age: number): string {
-  const p = getAgeProfile(age);
-  return [
-    "## Age-appropriate writing",
-    renderComplexityGuidance(age),
-    "",
-    "### Length of player-facing text",
-    `Soft targets, biased short, with no minimum. Bias toward brevity to hold a ${p.age}-year-old's attention; never write a wall of text. Go a little over only where the mystery genuinely needs it.`,
-    ...allAuthoredFields().map(
-      (id) =>
-        `- ${AUTHORED_FIELD_LABEL[id]}: about ${authoredFieldBudget(id, age)} words`,
-    ),
-  ].join("\n");
+/** Every line with its own budget. */
+export function allLines(): LineId[] {
+  return Object.keys(LINE_BUDGET) as LineId[];
 }

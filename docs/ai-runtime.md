@@ -39,7 +39,7 @@ reports invented movement.
 
 `one_liner` is played outside a game: `blueprints-list`, asked for lines,
 words every listed case's line in one call, from its first opening fact, at
-the profile's age and the case one-liner's word budget (`authoredFieldBudget`).
+the profile's age and the menu line's word budget (`lineBudget`).
 A case left without exactly one line fails the call; the endpoint logs it once
 and answers the titles alone. Nothing caches a line.
 

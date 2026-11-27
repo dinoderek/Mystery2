@@ -56,7 +56,7 @@ A change in the left column is not finished until the right column agrees.
 | Change | Also touches |
 |---|---|
 | Narrator prompt, contract or context | mock provider and its tests, golden transcripts, eval prompt snapshots, "Narration at play" in `docs/blueprint-generation-flows.md` |
-| `packages/shared/src/age-profile.ts` | narrator prompts, the `age_appropriate_turn` judge's built prompt, the per-age tables in `gm_broad`, player-text fields, eval prompt snapshots |
+| `packages/shared/src/age-profile.ts` | narrator prompts, the `age_appropriate_turn` judge's built prompt, the per-age tables in `gm_broad`, `lineBudget` callers, eval prompt snapshots |
 | The definition of "earned" | talk prompt, mock, `gm_roleplay`, `gm_broad`, `gm_spoiler`, `gm_clue_discipline`, `docs/game.md`, `docs/ai-runtime.md` |
 | Blueprint schema | context builders and "Narration at play", case judges and the case check, fixtures |
 | Event shapes | transcripts, resume, `playedEvents` readers, trace and runtime readers, goldens |

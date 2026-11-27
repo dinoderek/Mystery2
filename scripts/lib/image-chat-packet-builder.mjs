@@ -5,13 +5,13 @@ import {
 } from "./image-prompt-builder.mjs";
 
 function findCharacter(blueprint, characterId) {
-  return (blueprint?.world?.characters ?? []).find(
+  return blueprint.world.characters.find(
     (character) => character.id === characterId,
   );
 }
 
 function findLocation(blueprint, locationId) {
-  return (blueprint?.world?.locations ?? []).find(
+  return blueprint.world.locations.find(
     (location) => location.id === locationId,
   );
 }
@@ -49,7 +49,7 @@ export function buildImageReferenceManifest(blueprint, target) {
 
   const references = [];
 
-  for (const characterId of blueprint?.cover_image?.character_ids ?? []) {
+  for (const characterId of blueprint.cover_image.character_ids) {
     references.push({
       id: characterId,
       kind: "character_portrait",
@@ -57,7 +57,7 @@ export function buildImageReferenceManifest(blueprint, target) {
     });
   }
 
-  for (const locationId of blueprint?.cover_image?.location_ids ?? []) {
+  for (const locationId of blueprint.cover_image.location_ids) {
     references.push({
       id: locationId,
       kind: "location_scene",
@@ -92,7 +92,7 @@ export function buildImageChatPacket({
     aspectRatio,
   });
   const recommendedImageFilename = imageFilename ?? `${createImageId(
-    blueprint.metadata?.title ?? blueprint.id,
+    blueprint.metadata.title,
     target.targetType,
     target.targetKey,
   )}.png`;

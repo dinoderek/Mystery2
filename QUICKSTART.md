@@ -6,16 +6,13 @@
 
 ## First-Time Setup
 
-**Optional shared config root** — to share local-only files across clones or
-worktrees, export an absolute path before any other command:
+To share local files across clones or worktrees, export an absolute config root:
 
 ```bash
 export MYSTERY_CONFIG_ROOT="/absolute/path/to/mystery-config"
 ```
 
-When set, gitignored files (`.env.*.local`, seed files, generated outputs)
-resolve from that directory instead of the repo root. Layout mirrors repo-local
-filenames:
+Its layout mirrors the repo root:
 
 ```text
 $MYSTERY_CONFIG_ROOT/
@@ -40,11 +37,9 @@ Blueprints and images are shared across worktrees; databases are not (see
 ./dev doctor
 ```
 
-Checks dependencies, Playwright and the port. Worktrees: `./dev worktree create
-<branch>`; see `docs/local-infrastructure.md`.
+Checks dependencies, Playwright and the port. See `docs/local-infrastructure.md`.
 
-There is nothing to seed. The database is created on first run, and blueprints
-are read off disk — the committed stories in `blueprints/` are enough to play.
+The first run creates the database and loads the bundled stories.
 
 A database older than schema 7 is refused at start, naming its path: delete
 it with `npm run db:reset` (`--force` for `prod`), which loses its games,
@@ -116,13 +111,35 @@ the firewall asks. Rules: `docs/local-infrastructure.md`.
 Playing on `prod` records each day's games, model calls and server output in
 `$MYSTERY_CONFIG_ROOT/playtests/<date>/`, with a `notes.md` to fill in.
 
+### Running on a home NAS
+
+On the NAS, create a data folder owned by the container's UID and GID:
+
+```bash
+sudo install -d -m 0700 -o 1000 -g 1000 /srv/mystery2-data
+```
+
+In the Mystery2 checkout, create `.env`. Use the NAS's reserved LAN IP and
+its DNS names:
+
+```dotenv
+MYSTERY_BIND_IP=192.168.1.10
+MYSTERY_DATA_DIR=/srv/mystery2-data
+MYSTERY_ALLOWED_HOSTS=atlas,atlas.local
+```
+
+Run `docker compose up -d --build` from the checkout for setup and after
+pulling updates. Open `http://atlas:50000` or the LAN IP with port 50000.
+Follow the trusted network rules in
+[`docs/local-infrastructure.md`](docs/local-infrastructure.md).
+The data folder keeps saves and custom cases across rebuilds. Mock narration
+works immediately. For live narration, put an OpenRouter `ai.json` in the
+data folder, readable by UID 1000, and run `docker compose restart mystery2`.
+
 ## Profiles
 
-Type a name and choose a reading age (6 to 11) on the first screen and that
-profile exists; the age can change on the settings page. A different name is a
-separate set of cases. Profiles are local to the machine and have
-no passwords — they keep one person's cases apart from another's, not anyone
-out.
+Enter a name and reading age (6 to 11). Each profile has its own cases and its
+reading age can change in settings. Profiles have no passwords.
 
 ## Blueprint Generation
 
@@ -152,21 +169,17 @@ Flags: `./dev generate --help`.
 | Runtime | Live narrator responses to a single action | `./dev eval judge turn`, `./dev eval cases` |
 | Playtest | Whole games played by an AI investigator | `./dev eval play` |
 
-Start with [`docs/evaluation-pipeline.md`](docs/evaluation-pipeline.md) for the
-shared design, then the per-pipeline runbooks:
+See the [pipeline design](docs/evaluation-pipeline.md) and runbooks:
 [`evaluation/README.md`](evaluation/README.md) (blueprint),
 [`evaluation/trace/README.md`](evaluation/trace/README.md) (trace), and
 [`evaluation/runtime/README.md`](evaluation/runtime/README.md) (runtime), and
 [`evaluation/playtest/README.md`](evaluation/playtest/README.md) (playtest).
 
 ```bash
-./dev generate <brief> --judge             # generate and judge a case
-./dev eval judge game <id|trace.json>... | --bundle <dir>   # judge played games
-./dev eval judge turn <case-or-dir>          # eval a runtime case
-./dev eval judge turn <run>/<subject>/turn.json  # judge a stored turn again
-./dev eval cases <trace.json>                # build runtime cases from a trace
+./dev eval judge game <id|trace.json>...
+./dev eval judge game --bundle <dir>
+./dev eval judge turn <case-or-dir|turn.json>
 ```
-
 
 `./dev eval` reads its model bindings from one file; to change one, copy
 `evaluation/config.example.json` to `evaluation/config.json`.

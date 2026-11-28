@@ -22,11 +22,11 @@ passing final case to `blueprints/clue-graph/`.
 
 `./dev gen-images` (`scripts/generate-blueprint-images.mjs`) calls OpenRouter's Images API
 (`POST /api/v1/images`) and writes each image to `<image_id>.png`. The aspect
-ratio is sent as a parameter and written into the prompt, so the two agree.
+ratio, checked against OpenRouter’s list, goes to the API and into the prompt.
 
-Each PNG also gets a full-size WebP (`scripts/lib/compress-image.mjs`), or
-fails; the game serves a WebP no older than its PNG instead.
-`npm run images:compress` covers others.
+Each PNG also gets a full-size WebP (`scripts/lib/compress-image.mjs`), or the
+target fails. The game serves the WebP unless older than the PNG.
+`npm run images:compress` backfills the rest.
 
 Three phases keep images consistent:
 

@@ -691,7 +691,12 @@ async function generateSingleTarget({
       referenceImages: refs,
     });
     await fs.writeFile(outputPath, bytes);
-    const compressedPath = await compressImageFile(outputPath);
+    const compressedPath = await compressImageFile(outputPath).catch((error) => {
+      throw new Error(
+        `Saved ${outputPath} but could not compress it; fix and rerun with --import-images: ` +
+          (error instanceof Error ? error.message : String(error)),
+      );
+    });
     console.log(`[done] ${label} — ${outputPath}, ${path.basename(compressedPath)}`);
 
     return {

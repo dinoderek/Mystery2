@@ -409,6 +409,7 @@ describe("runImageGeneration", () => {
     const output = await runImageGeneration(options, { fetchImpl: fetchMock, apiKey: "test-key", env: {} });
 
     expect(output.results[0]).toMatchObject({ status: "failed", image_id: null });
+    expect(output.results[0].error_message).toContain(path.join(outputDir, `mock-case.character-${characterKey}.png`));
     expect(await readdir(outputDir)).toEqual([`mock-case.character-${characterKey}.png`]);
   });
 

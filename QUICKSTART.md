@@ -179,6 +179,7 @@ Copy `.env.images.example` to `.env.images.local` and set `OPENROUTER_API_KEY`.
 ./dev gen-images --blueprint-path spring-treats-6yo.json --all
 ./dev gen-images --blueprint-path spring-treats-6yo.json --characters <character-id>
 ./dev gen-images --blueprint-path spring-treats-6yo.json --all --chat-packets  # no key needed
+npm run images:compress  # backfill
 ```
 
 Every flag, default and file location: `./dev gen-images --help`.

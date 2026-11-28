@@ -37,6 +37,25 @@ describe("blueprint images", () => {
     }
   });
 
+  it("serves an image's compressed copy in its place, under the id the blueprint names", async () => {
+    const blueprint = readMockCase();
+    const portrait = Object.values(blueprint.characters).find((person) => person.portrait_image_id)!.portrait_image_id!;
+    const compressed = portrait.replace(/\.png$/u, ".webp");
+    const webpBytes = new TextEncoder().encode("RIFF-stand-in-webp");
+    seedTestImage(portrait);
+    seedTestImage(compressed, webpBytes);
+
+    try {
+      const bytesRes = await fetch(`${BASE_URL}/api/images/${buildImageStorageKey(MOCK_BLUEPRINT_ID, portrait)}`);
+
+      expect(bytesRes.status).toBe(200);
+      expect(bytesRes.headers.get("content-type")).toBe("image/webp");
+      expect(new Uint8Array(await bytesRes.arrayBuffer())).toEqual(webpBytes);
+    } finally {
+      removeTestImage(compressed);
+    }
+  });
+
   it("404s an image the blueprint does not reference, even when the file exists", async () => {
     // The private bucket's read policy became this check, and it is the whole
     // of what confines the route: the blueprint has to name the image.

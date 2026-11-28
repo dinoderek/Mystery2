@@ -8,6 +8,9 @@
 // target's conventional name in the images directory, when there is one
 // (`shared/src/image-ids.ts`): a committed case names no image ids, or only
 // those, and its art lives beside every other case's.
+//
+// An image is served from its compressed copy when that copy is current
+// (`compressedImageFilename`), so callers keep naming the original.
 
 import fs from "node:fs";
 import path from "node:path";
@@ -15,7 +18,7 @@ import type { PlayableCase } from "../../shared/src/playable-case.ts";
 import { buildClueGraphWorld } from "../../shared/src/clue-graph-case.ts";
 import { validateClueGraph } from "../../shared/src/clue-graph-validator.ts";
 import { CLUE_GRAPH_FORMAT, type ClueGraphCase } from "../../shared/src/clue-graph-schema.ts";
-import { conventionalImageId, type ImageTargetType } from "../../shared/src/image-ids.ts";
+import { compressedImageFilename, conventionalImageId, type ImageTargetType } from "../../shared/src/image-ids.ts";
 import type { BlueprintSummaryEntry, ContentStore } from "./context.ts";
 import type { LogWriter } from "./logging.ts";
 import { validateSceneManifest, type SceneManifest } from "../../shared/src/scene-schema.ts";
@@ -82,7 +85,7 @@ export function createLocalContentStore(
     if (!isSafeSegment(caseId)) return graph;
     const filed = (targetType: ImageTargetType, targetKey: string | null = null): string | undefined => {
       const imageId = conventionalImageId(caseId, targetType, targetKey);
-      return isSafeSegment(imageId) && fs.existsSync(path.join(options.imagesDir, imageId)) ? imageId : undefined;
+      return resolveImageFile(options.imagesDir, imageId) ? imageId : undefined;
     };
     const cover = graph.metadata.image_id ?? filed("blueprint");
     return {
@@ -246,12 +249,22 @@ export function createLocalContentStore(
   };
 }
 
-/** Absolute path of an image file, or null when it is missing or unsafe. */
+/**
+ * Absolute path of the file to serve for an image id, or null when it is
+ * missing or unsafe: the compressed copy when there is one no older than the
+ * original (or no original at all), else the original.
+ */
 export function resolveImageFile(
   imagesDir: string,
   imageFilename: string,
 ): string | null {
   if (!isSafeSegment(imageFilename)) return null;
-  const absolute = path.join(imagesDir, imageFilename);
-  return fs.existsSync(absolute) ? absolute : null;
+  const original = path.join(imagesDir, imageFilename);
+  const compressed = path.join(imagesDir, compressedImageFilename(imageFilename));
+  const originalStats = fs.statSync(original, { throwIfNoEntry: false });
+  if (compressed !== original) {
+    const compressedStats = fs.statSync(compressed, { throwIfNoEntry: false });
+    if (compressedStats && (!originalStats || compressedStats.mtimeMs >= originalStats.mtimeMs)) return compressed;
+  }
+  return originalStats ? original : null;
 }

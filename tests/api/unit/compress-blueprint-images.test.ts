@@ -8,6 +8,8 @@ import { describe, expect, it } from "vitest";
 import { runCompressImages } from "../../../scripts/compress-blueprint-images.mjs";
 import { compressImagesInDir } from "../../../scripts/lib/compress-image.mjs";
 
+type Item = { source: string; output: string };
+
 const PNG_BYTES = await sharp({ create: { width: 3, height: 2, channels: 3, background: "#36c" } }).png().toBuffer();
 
 async function imagesDir() {
@@ -22,7 +24,7 @@ describe("compressImagesInDir", () => {
     const { compressed, failed } = await compressImagesInDir(dir);
 
     expect(failed).toEqual([]);
-    expect(compressed.map((item) => path.basename(item.output))).toEqual(["case.blueprint.webp"]);
+    expect(compressed.map((item: Item) => path.basename(item.output))).toEqual(["case.blueprint.webp"]);
     expect(await sharp(path.join(dir, "case.blueprint.webp")).metadata()).toMatchObject({ format: "webp", width: 3, height: 2 });
   });
 
@@ -35,7 +37,7 @@ describe("compressImagesInDir", () => {
 
     const { compressed } = await compressImagesInDir(dir);
 
-    expect(compressed.map((item) => path.basename(item.source))).toEqual(["b.cover.png"]);
+    expect(compressed.map((item: Item) => path.basename(item.source))).toEqual(["b.cover.png"]);
   });
 
   it("reports a PNG it cannot decode and still compresses the rest", async () => {
@@ -45,8 +47,8 @@ describe("compressImagesInDir", () => {
 
     const { compressed, failed } = await compressImagesInDir(dir);
 
-    expect(failed.map((item) => path.basename(item.source))).toEqual(["a.broken.png"]);
-    expect(compressed.map((item) => path.basename(item.source))).toEqual(["b.cover.png"]);
+    expect(failed.map((item: Item) => path.basename(item.source))).toEqual(["a.broken.png"]);
+    expect(compressed.map((item: Item) => path.basename(item.source))).toEqual(["b.cover.png"]);
   });
 });
 

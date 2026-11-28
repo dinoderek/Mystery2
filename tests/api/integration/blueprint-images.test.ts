@@ -38,8 +38,7 @@ describe("blueprint images", () => {
   });
 
   it("serves an image's compressed copy in its place, under the id the blueprint names", async () => {
-    const blueprint = readMockCase();
-    const portrait = Object.values(blueprint.characters).find((person) => person.portrait_image_id)!.portrait_image_id!;
+    const portrait = collectBlueprintImageReferences(readMockCase()).find((reference: { purpose: string }) => reference.purpose === "character_portrait")!.imageFilename as string;
     const compressed = portrait.replace(/\.png$/u, ".webp");
     const webpBytes = new TextEncoder().encode("RIFF-stand-in-webp");
     seedTestImage(portrait);

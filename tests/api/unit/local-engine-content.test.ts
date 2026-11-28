@@ -206,6 +206,13 @@ describe("listBlueprints", () => {
     expect(filed.world.locations.find((place) => place.id === "loc-kitchen")?.location_image_id).toBe("mock-case.location-loc-kitchen.png");
   });
 
+  it("files an image whose only copy is the compressed one", async () => {
+    fs.writeFileSync(path.join(primaryDir, "mock-case.json"), JSON.stringify(caseWithoutImages()));
+    fs.writeFileSync(path.join(imagesDir, "mock-case.blueprint.webp"), "webp");
+
+    expect((await store().listBlueprints())[0].blueprint.metadata.image_id).toBe("mock-case.blueprint.png");
+  });
+
   it("keeps the image ids a case names over the conventional files", async () => {
     writeBlueprint(primaryDir, "mock-case.json", { metadata: { ...CASE_FILE.metadata, image_id: "named-cover.png" } });
     fs.writeFileSync(path.join(imagesDir, "mock-case.blueprint.png"), "png");
@@ -297,6 +304,33 @@ describe("resolveImageFile", () => {
     expect(resolveImageFile(imagesDir, IMAGE)).toBe(path.join(imagesDir, IMAGE));
     expect(resolveImageFile(imagesDir, "missing.png")).toBeNull();
     expect(resolveImageFile(imagesDir, "../escape.png")).toBeNull();
+  });
+
+  const COMPRESSED = "mock-blueprint.blueprint.webp";
+  const setMtime = (file: string, seconds: number) => fs.utimesSync(path.join(imagesDir, file), seconds, seconds);
+
+  it("serves the compressed copy in the original's place while it is current", () => {
+    fs.writeFileSync(path.join(imagesDir, IMAGE), "png-bytes");
+    fs.writeFileSync(path.join(imagesDir, COMPRESSED), "webp-bytes");
+    setMtime(IMAGE, 1_000);
+    setMtime(COMPRESSED, 1_000);
+
+    expect(resolveImageFile(imagesDir, IMAGE)).toBe(path.join(imagesDir, COMPRESSED));
+  });
+
+  it("serves the original when its compressed copy is older, as after a redraw", () => {
+    fs.writeFileSync(path.join(imagesDir, IMAGE), "png-bytes");
+    fs.writeFileSync(path.join(imagesDir, COMPRESSED), "webp-bytes");
+    setMtime(IMAGE, 2_000);
+    setMtime(COMPRESSED, 1_000);
+
+    expect(resolveImageFile(imagesDir, IMAGE)).toBe(path.join(imagesDir, IMAGE));
+  });
+
+  it("serves the compressed copy alone when the original is gone", () => {
+    fs.writeFileSync(path.join(imagesDir, COMPRESSED), "webp-bytes");
+
+    expect(resolveImageFile(imagesDir, IMAGE)).toBe(path.join(imagesDir, COMPRESSED));
   });
 });
 

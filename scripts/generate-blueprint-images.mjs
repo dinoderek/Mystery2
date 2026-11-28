@@ -18,6 +18,7 @@ import {
   getImagesEnvPath,
 } from "./local-config.mjs";
 import { patchBlueprintFile } from "./lib/patch-blueprint-images.mjs";
+import { compressImageFile } from "./lib/compress-image.mjs";
 import { projectClueGraphArtwork } from "./lib/clue-graph-artwork.mjs";
 import { conventionalImageId } from "../packages/shared/src/image-ids.ts";
 import { resolveImageTargets } from "./lib/image-targets.mjs";
@@ -113,7 +114,8 @@ async function fetchWithTimeout(fetchImpl, url, init, timeoutMs) {
 export const IMAGE_USAGE = `Usage: ./dev gen-images --blueprint-path <path> [targets] [options]
 
 Generates a blueprint's artwork through OpenRouter's Images API and patches the
-new image ids into the blueprint. Portraits come first, then locations (given
+new image ids into the blueprint. Each PNG gets a compressed WebP beside it,
+which the game serves in its place. Portraits come first, then locations (given
 the portraits as references), then the cover (given both). A case committed
 under the repo's blueprints/ is never patched: its images are written as
 <case id>.blueprint.png, <case id>.character-<id>.png and
@@ -147,7 +149,7 @@ Options
                                chat-gen-prompts/images). Never patches ids.
   --chat-packets-combined      The same, all targets in one file.
   --import-images              Patch the blueprint from PNGs already saved under
-                               their expected names.
+                               their expected names, compressing each.
   --import-dir <dir>           Where to look. Default: the images directory.
   -h, --help                   Show this help.
 
@@ -689,7 +691,13 @@ async function generateSingleTarget({
       referenceImages: refs,
     });
     await fs.writeFile(outputPath, bytes);
-    console.log(`[done] ${label} — ${outputPath}`);
+    const compressedPath = await compressImageFile(outputPath).catch((error) => {
+      throw new Error(
+        `Saved ${outputPath} but could not compress it; fix and rerun with --import-images: ` +
+          (error instanceof Error ? error.message : String(error)),
+      );
+    });
+    console.log(`[done] ${label} — ${outputPath}, ${path.basename(compressedPath)}`);
 
     return {
       target_type: target.targetType,
@@ -760,6 +768,21 @@ async function importGeneratedImages({
 
     if (pngFiles.has(expectedFilename)) {
       const filePath = path.join(importDir, expectedFilename);
+      try {
+        await compressImageFile(filePath);
+      } catch (error) {
+        const errorMessage = `Could not compress ${filePath}: ${error instanceof Error ? error.message : String(error)}`;
+        console.error(`[error] ${label} — ${errorMessage}`);
+        results.push({
+          target_type: target.targetType,
+          target_key: target.targetKey,
+          status: "failed",
+          image_id: null,
+          file_path: null,
+          error_message: errorMessage,
+        });
+        continue;
+      }
       console.log(`[matched] ${label} — ${filePath}`);
       results.push({
         target_type: target.targetType,

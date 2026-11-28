@@ -1,10 +1,14 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import sharp from "sharp";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ClueGraphCaseSchema } from "../../../packages/shared/src/clue-graph-schema.ts";
 import { buildClueGraphWorld } from "../../../packages/shared/src/clue-graph-case.ts";
 import { main } from "../../../scripts/dev-cli.mjs";
+
+// A real image: the generator compresses every one it writes.
+const PNG_BYTES = await sharp({ create: { width: 2, height: 2, channels: 3, background: "#3a6" } }).png().toBuffer();
 
 const dirs: string[] = [];
 afterEach(() => {
@@ -37,7 +41,7 @@ describe("./dev gen-images on clue-graph cases", () => {
     const requests: Array<{ prompt: string; input_references?: unknown[] }> = [];
     const fetchImpl = vi.fn(async (_url: string, init: { body: string }) => {
       requests.push(JSON.parse(init.body));
-      return new Response(JSON.stringify({ data: [{ b64_json: Buffer.from("stub image").toString("base64"), media_type: "image/png" }] }), { status: 200 });
+      return new Response(JSON.stringify({ data: [{ b64_json: PNG_BYTES.toString("base64"), media_type: "image/png" }] }), { status: 200 });
     });
     const err: string[] = [];
     const status = await main(["gen-images", "--blueprint-path", file, "--output-dir", path.join(dir, "images"), "--all"], {

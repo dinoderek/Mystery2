@@ -14,3 +14,13 @@ export type ImageTargetType = "blueprint" | "character" | "location";
 export function conventionalImageId(caseId: string, targetType: ImageTargetType, targetKey: string | null = null): string {
   return targetType === "blueprint" ? `${caseId}.blueprint.png` : `${caseId}.${targetType}-${targetKey}.png`;
 }
+
+/**
+ * The compressed copy of an image: the same name with a `.webp` extension,
+ * kept beside the original, which stays the lossless master. The generator
+ * writes it, and the game serves it in the original's place while it is not
+ * older than the original.
+ */
+export function compressedImageFilename(imageFilename: string): string {
+  return imageFilename.replace(/\.[^.]+$/u, ".webp");
+}

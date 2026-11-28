@@ -22,7 +22,11 @@ passing final case to `blueprints/clue-graph/`.
 
 `./dev gen-images` (`scripts/generate-blueprint-images.mjs`) calls OpenRouter's Images API
 (`POST /api/v1/images`) and writes each image to `<image_id>.png`. The aspect
-ratio is sent as a parameter and written into the prompt, so the two agree.
+ratio, checked against OpenRouter’s list, goes to the API and into the prompt.
+
+Each PNG also gets a full-size WebP (`scripts/lib/compress-image.mjs`), or the
+target fails. The game serves the WebP unless older than the PNG.
+`npm run images:compress` backfills the rest.
 
 Three phases keep images consistent:
 
@@ -38,17 +42,14 @@ the opening location. References not made this run are read from disk.
 - A portrait's backdrop is `visual_direction.portrait_background` when set,
   otherwise a built-in bokeh wash, and never depicts a mystery location.
 - References use `input_references[]` in the prompt legend’s order; past the default model's limit of 10, the first 10 go, with a warning.
-- `--chat-packets` writes the same prompts and references for pasting into a
+- `--chat-packets` writes the prompts and references for pasting into a
   chat.
 - A case committed under `blueprints/` is never patched, so tracked file and
   untracked images cannot disagree: its images get fixed names
   (`packages/shared/src/image-ids.ts`), replacing the last ones, and the engine
   fills in any id the case does not name.
 
-For `clue-graph/2`, portraits use appearance facts, locations public facts,
-covers cover facts (else the opening's) and visual direction; artwork is optional.
-
-Ratios are checked against OpenRouter’s list.
+Artwork is optional.
 
 ## 3D scenes
 

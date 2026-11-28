@@ -2,6 +2,7 @@ import { copyFile, mkdir, mkdtemp, readdir, readFile, writeFile } from "node:fs/
 import os from "node:os";
 import path from "node:path";
 
+import sharp from "sharp";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -19,7 +20,10 @@ import { createImageId } from "../../../scripts/lib/image-prompt-builder.mjs";
 
 const MOCK_CASE = path.resolve("blueprints/clue-graph/mock-case.json");
 
-const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+// A real image, so the run can compress what it writes.
+const PNG_BYTES = await sharp({ create: { width: 2, height: 2, channels: 3, background: "#c33" } }).png().toBuffer();
+// A PNG signature and nothing after it: accepted from the API, undecodable.
+const TRUNCATED_PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 function imagesApiResponse(
   bytes: Buffer = PNG_BYTES,
@@ -321,6 +325,8 @@ describe("runImageGeneration", () => {
 
     const written = await readFile(path.join(outputDir, expectedId));
     expect(written.equals(PNG_BYTES)).toBe(true);
+    const compressed = await sharp(path.join(outputDir, expectedId.replace(/\.png$/u, ".webp"))).metadata();
+    expect(compressed).toMatchObject({ format: "webp", width: 2, height: 2 });
 
     expect(fetchMock.mock.calls[0][0]).toBe(OPENROUTER_IMAGES_URL);
     const sent = JSON.parse(fetchMock.mock.calls[0][1].body);
@@ -345,7 +351,10 @@ describe("runImageGeneration", () => {
     }
 
     // The second run replaced the first image rather than writing a `-1` beside it.
-    expect(await readdir(outputDir)).toEqual([`mock-case.character-${characterKey}.png`]);
+    expect((await readdir(outputDir)).sort()).toEqual([
+      `mock-case.character-${characterKey}.png`,
+      `mock-case.character-${characterKey}.webp`,
+    ]);
     expect(await readFile(MOCK_CASE, "utf-8")).toBe(before);
   });
 
@@ -390,6 +399,39 @@ describe("runImageGeneration", () => {
     expect(isCommittedCase(MOCK_CASE)).toBe(true);
     expect(isCommittedCase(path.resolve("blueprints"))).toBe(false);
     expect(isCommittedCase(path.join(os.tmpdir(), "blueprints", "case.json"))).toBe(false);
+  });
+
+  it("fails a target whose image cannot be compressed", async () => {
+    const outputDir = await mkdtemp(path.join(os.tmpdir(), "mystery-images-"));
+    const fetchMock = vi.fn().mockImplementation(async () => imagesApiResponse(TRUNCATED_PNG));
+    const options = parseGenerateImageArgs(["--blueprint-path", MOCK_CASE, "--output-dir", outputDir, "--characters", characterKey]);
+
+    const output = await runImageGeneration(options, { fetchImpl: fetchMock, apiKey: "test-key", env: {} });
+
+    expect(output.results[0]).toMatchObject({ status: "failed", image_id: null });
+    expect(output.results[0].error_message).toContain(path.join(outputDir, `mock-case.character-${characterKey}.png`));
+    expect(await readdir(outputDir)).toEqual([`mock-case.character-${characterKey}.png`]);
+  });
+
+  it("compresses each image it imports, and fails one it cannot decode", async () => {
+    const importDir = await mkdtemp(path.join(os.tmpdir(), "mystery-images-"));
+    await writeFile(path.join(importDir, "mock-case.character-char-alice.png"), PNG_BYTES);
+    await writeFile(path.join(importDir, "mock-case.character-char-bob.png"), TRUNCATED_PNG);
+    const options = parseGenerateImageArgs([
+      "--blueprint-path", MOCK_CASE, "--import-images", "--import-dir", importDir, "--characters", "char-alice,char-bob",
+    ]);
+
+    const output = await runImageGeneration(options, { env: {} });
+
+    expect(output.results).toEqual([
+      expect.objectContaining({ target_key: "char-alice", status: "generated", image_id: "mock-case.character-char-alice.png" }),
+      expect.objectContaining({ target_key: "char-bob", status: "failed", image_id: null }),
+    ]);
+    expect((await readdir(importDir)).sort()).toEqual([
+      "mock-case.character-char-alice.png",
+      "mock-case.character-char-alice.webp",
+      "mock-case.character-char-bob.png",
+    ]);
   });
 
   it("reports a failed target without aborting the run", async () => {

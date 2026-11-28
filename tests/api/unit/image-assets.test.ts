@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -5,7 +7,10 @@ import {
   ensureCanonicalImageId,
   isCanonicalImageId,
 } from "../../../packages/game-engine/src/images.ts";
+import { conventionalImageId } from "../../../packages/shared/src/image-ids.ts";
 import { createImageId } from "../../../scripts/lib/image-prompt-builder.mjs";
+
+const COMMITTED_CASES_DIR = path.resolve(import.meta.dirname, "../../../blueprints/clue-graph");
 
 const CANONICAL_FILENAME =
   "mock-blueprint.blueprint.png";
@@ -49,7 +54,53 @@ describe("image helper utilities", () => {
     }
   });
 
+  it("accepts the snake_case location and character ids clue graphs use", () => {
+    for (const id of [
+      "missing-blue-rosette.location-tea_stall.png",
+      "missing-blue-rosette.character-mrs_okafor.webp",
+      "case_one.location-front_hall.jpeg",
+    ]) {
+      expect(isCanonicalImageId(id), id).toBe(true);
+    }
+  });
 
+  it("still rejects anything that could leave the images directory or is not an image", () => {
+    for (const id of [
+      "../secrets.blueprint.png",
+      "case.location-..png",
+      "case..png",
+      ".case.blueprint.png",
+      "case/x.blueprint.png",
+      "case\\x.blueprint.png",
+      "case.location-tea stall.png",
+      "case._hidden.png",
+      "case.blueprint.svg",
+      "case.blueprint.png.exe",
+      "case.blueprint.gif",
+      "case.blueprint",
+      "case.blueprint.png\0",
+      "",
+      42,
+      null,
+    ]) {
+      expect(isCanonicalImageId(id), String(id)).toBe(false);
+    }
+  });
 
-
+  it("every committed case's conventional image ids are canonical", () => {
+    const files = fs.readdirSync(COMMITTED_CASES_DIR).filter((file) => file.endsWith(".json"));
+    expect(files.length).toBeGreaterThan(0);
+    for (const file of files) {
+      const graph = JSON.parse(fs.readFileSync(path.join(COMMITTED_CASES_DIR, file), "utf-8"));
+      const caseId: string = graph.metadata.id;
+      const ids = [
+        conventionalImageId(caseId, "blueprint"),
+        ...Object.keys(graph.locations).map((key) => conventionalImageId(caseId, "location", key)),
+        ...Object.keys(graph.characters).map((key) => conventionalImageId(caseId, "character", key)),
+      ];
+      for (const id of ids) {
+        expect(isCanonicalImageId(id), `${file}: "${id}"`).toBe(true);
+      }
+    }
+  });
 });

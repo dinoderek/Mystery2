@@ -6,6 +6,19 @@
 
 export type ImageTargetType = "blueprint" | "character" | "location";
 
+// `<name>.<name>.<png|jpg|jpeg|webp>`, each name letters, digits, hyphens and
+// underscores, starting with a letter or digit. That admits every id
+// `conventionalImageId` makes from a snake_case location or character id, and
+// keeps a filename inside the images directory: no slash, no `..`, no leading
+// dot.
+const IMAGE_ID_PATTERN =
+  /^[a-z0-9][a-z0-9_-]*\.[a-z0-9][a-z0-9_-]*\.(?:png|jpe?g|webp)$/i;
+
+/** Whether the value is a filename the image route will serve. */
+export function isCanonicalImageId(value: unknown): value is string {
+  return typeof value === "string" && IMAGE_ID_PATTERN.test(value);
+}
+
 /**
  * `<case id>.blueprint.png` for the cover, `<case id>.character-<id>.png` for a
  * portrait and `<case id>.location-<id>.png` for a location, where the case id

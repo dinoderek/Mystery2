@@ -20,7 +20,7 @@ import {
 import { patchBlueprintFile } from "./lib/patch-blueprint-images.mjs";
 import { compressImageFile } from "./lib/compress-image.mjs";
 import { projectClueGraphArtwork } from "./lib/clue-graph-artwork.mjs";
-import { conventionalImageId } from "../packages/shared/src/image-ids.ts";
+import { conventionalImageId, isCanonicalImageId } from "../packages/shared/src/image-ids.ts";
 import { resolveImageTargets } from "./lib/image-targets.mjs";
 import { loadEnvFile } from "./lib/env-file.mjs";
 
@@ -563,6 +563,19 @@ export async function generateImageAsset({
   return parseImagePayload(await response.json());
 }
 
+// A committed case's image goes by its conventional name, which the game serves
+// only if it is canonical: a location or character id with, say, a space in it
+// would write art the game never shows, so it stops the run instead.
+function committedImageId(caseId, targetType, targetKey) {
+  const imageId = conventionalImageId(caseId, targetType, targetKey);
+  if (!isCanonicalImageId(imageId)) {
+    throw new Error(
+      `Image name "${imageId}" is not one the game serves: case, location and character ids need letters, digits, hyphens or underscores.`,
+    );
+  }
+  return imageId;
+}
+
 function buildOutputFilename(baseImageId) {
   return `${baseImageId}.png`;
 }
@@ -608,7 +621,7 @@ async function generateSingleTarget({
   // A committed case's image replaces the last one under its fixed name; any
   // other case's gets a fresh name, which is patched into the case.
   const { imageId, filename, outputPath } = options.committedCaseId
-    ? fixedOutput(options.outputDir, conventionalImageId(options.committedCaseId, target.targetType, target.targetKey))
+    ? fixedOutput(options.outputDir, committedImageId(options.committedCaseId, target.targetType, target.targetKey))
     : await findUniqueOutput(options.outputDir, createImageId(blueprintName, target.targetType, target.targetKey));
   const label = formatImageTargetLabel(target);
 
@@ -762,7 +775,7 @@ async function importGeneratedImages({
 
   for (const target of targets) {
     const expectedFilename = options.committedCaseId
-      ? conventionalImageId(options.committedCaseId, target.targetType, target.targetKey)
+      ? committedImageId(options.committedCaseId, target.targetType, target.targetKey)
       : `${createImageId(blueprintName, target.targetType, target.targetKey)}.png`;
     const label = formatImageTargetLabel(target);
 
@@ -858,7 +871,7 @@ async function exportImageChatPackets({
       target,
       aspectRatio: options.aspectRatio,
       imageFilename: options.committedCaseId
-        ? conventionalImageId(options.committedCaseId, target.targetType, target.targetKey)
+        ? committedImageId(options.committedCaseId, target.targetType, target.targetKey)
         : null,
     });
 

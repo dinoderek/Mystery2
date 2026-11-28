@@ -18,7 +18,7 @@ import type { PlayableCase } from "../../shared/src/playable-case.ts";
 import { buildClueGraphWorld } from "../../shared/src/clue-graph-case.ts";
 import { validateClueGraph } from "../../shared/src/clue-graph-validator.ts";
 import { CLUE_GRAPH_FORMAT, type ClueGraphCase } from "../../shared/src/clue-graph-schema.ts";
-import { compressedImageFilename, conventionalImageId, type ImageTargetType } from "../../shared/src/image-ids.ts";
+import { compressedImageFilename, conventionalImageId, isCanonicalImageId, type ImageTargetType } from "../../shared/src/image-ids.ts";
 import type { BlueprintSummaryEntry, ContentStore } from "./context.ts";
 import type { LogWriter } from "./logging.ts";
 import { validateSceneManifest, type SceneManifest } from "../../shared/src/scene-schema.ts";
@@ -85,6 +85,8 @@ export function createLocalContentStore(
     if (!isSafeSegment(caseId)) return graph;
     const filed = (targetType: ImageTargetType, targetKey: string | null = null): string | undefined => {
       const imageId = conventionalImageId(caseId, targetType, targetKey);
+      // An id the image route would refuse is no image at all.
+      if (!isCanonicalImageId(imageId)) return undefined;
       return resolveImageFile(options.imagesDir, imageId) ? imageId : undefined;
     };
     const cover = graph.metadata.image_id ?? filed("blueprint");

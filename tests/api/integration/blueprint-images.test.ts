@@ -10,6 +10,7 @@ import {
 import { collectBlueprintImageReferences } from "../../../scripts/lib/blueprint-image-manifest.mjs";
 import { buildImageStorageKey } from "../../../packages/game-engine/src/images.ts";
 import { readMockCase } from "../../testkit/src/mock-case";
+import { clueGraphCaseId } from "../../../packages/shared/src/clue-graph-case.ts";
 
 // The contract: the image ids a blueprint names are the files the server
 // serves, at the path `blueprintImageUrl()` builds — and only those.
@@ -78,6 +79,31 @@ describe("blueprint images", () => {
 
     const bytesRes = await fetch(`${BASE_URL}/api/images/${MOCK_BLUEPRINT_ID}/${coverId}`);
     expect(bytesRes.status).toBe(404);
+  });
+
+  it("serves a committed case's filed art for a snake_case location, under the .png id it names", async () => {
+    // A committed case names no image ids: the engine fills each one from the
+    // images directory under `conventionalImageId`'s name. Location ids are
+    // snake_case, so the route has to take an underscore.
+    // The route names the case by its catalog id, not its `metadata.id`.
+    const blueprintId = clueGraphCaseId("missing-blue-rosette");
+    const imageId = "missing-blue-rosette.location-tea_stall.png";
+    seedTestImage(imageId);
+
+    try {
+      const bytesRes = await fetch(`${BASE_URL}/api/images/${blueprintId}/${imageId}`);
+      expect(bytesRes.status).toBe(200);
+      expect(new Uint8Array(await bytesRes.arrayBuffer())).toEqual(STUB_PNG);
+
+      // The compressed copy is served in the original's place, never by its
+      // own name: the blueprint names only the .png.
+      const webpRes = await fetch(
+        `${BASE_URL}/api/images/${blueprintId}/${imageId.replace(/\.png$/u, ".webp")}`,
+      );
+      expect(webpRes.status).toBe(404);
+    } finally {
+      removeTestImage(imageId);
+    }
   });
 
   it("rejects an image id that is not a canonical filename", async () => {

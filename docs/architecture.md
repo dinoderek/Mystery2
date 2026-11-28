@@ -2,8 +2,8 @@
 
 ## Decision summary
 
-The game runs as **one Node process on the player's machine**. There is no
-cloud backend, container or separate API service.
+The game runs as **one Node process** on the player's machine or a
+[home NAS](../QUICKSTART.md#running-on-a-home-nas).
 
 - **Server**: SvelteKit on `adapter-node`. One process serves the SPA and `/api`.
 - **Engine**: `packages/game-engine/`. The state machine, clue graph, prompts,
@@ -22,9 +22,8 @@ installed, started, seeded or restarted); **testability** (the full gate runs
 against a real server and database, with no external dependencies); **a
 queryable history** (every session is an exportable row).
 
-Non-goals: hosting, offline play, and multi-user access control. Profiles keep
-one person's cases apart from another's on a shared machine. They are not a
-security boundary.
+Non-goals: public hosting, offline play, and multi-user access control.
+Profiles separate each person's cases on a shared machine.
 
 A turn is in-process end to end except the model call, and one transaction
 saves the session change and its events.

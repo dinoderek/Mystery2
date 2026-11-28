@@ -1,0 +1,16 @@
+services:
+  mystery2:
+    build: .
+    restart: unless-stopped
+    environment:
+      MYSTERY_ALLOWED_HOSTS: localhost,${MYSTERY_ALLOWED_HOSTS:-}
+    ports:
+      - host_ip: ${MYSTERY_BIND_IP:?Set MYSTERY_BIND_IP to the NAS LAN address}
+        published: "50000"
+        target: 50000
+    volumes:
+      - type: bind
+        source: ${MYSTERY_DATA_DIR:?Set MYSTERY_DATA_DIR to the NAS data directory}
+        target: /data
+        bind:
+          create_host_path: false
